@@ -1,0 +1,47 @@
+syntax = "proto2";
+package message;
+import "message.proto";
+
+message C_A_LoginRequest{
+required Ipacket PacketHead = 1;
+required string AccountName = 2;
+required string BuildNo = 3;
+required int32  SocketId = 4;
+//required string Password = 5;
+}
+
+message C_A_LoginRequest1{
+required C_A_LoginRequest Login= 1;
+}
+
+message C_A_RegisterRequest{
+required Ipacket PacketHead = 1;
+required string AccountName = 2;
+required int32  SocketId = 3;
+//required string Password = 4;
+}
+
+message C_W_CreatePlayerRequest{
+required Ipacket PacketHead = 1;
+required string PlayerName = 2;
+required int32  Sex = 3;
+}
+
+message C_W_Game_LoginRequset{
+required Ipacket PacketHead = 1;
+required int32	PlayerId =2;
+}
+
+message C_G_LogoutResponse{
+required Ipacket PacketHead = 1;
+}
+
+message C_W_ChatMessage{
+required Ipacket PacketHead = 1;
+required int32	Sender = 2;
+required int32	Recver = 3;
+required int32	MessageType = 4;
+required string	Message = 5;
+}
+
+

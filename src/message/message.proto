@@ -1,0 +1,56 @@
+syntax = "proto2";
+package message;
+
+enum SERVICE{
+    NONE= 0;
+    CLIENT= 1;
+    GATESERVER= 2;
+    ACCOUNTSERVER=3;
+    WORLDSERVER=4;
+};
+
+enum CHAT{
+    MSG_TYPE_WORLD= 0;
+    MSG_TYPE_PRIVATE= 1;
+    MSG_TYPE_ORG= 2;
+    MSG_TYPE_COUNT= 3;
+};
+
+message Ipacket{
+required int32  Stx = 1 [default=0x27];
+required int32  DestServerType = 2;
+required int32  Ckx = 3 [default=0x72];
+required int32  Id = 4;
+}
+
+message PlayerData{
+required int32 PlayerID = 1;
+required string PlayerName = 2;
+required int32 PlayerGold = 3;
+}
+
+message W_C_CreatePlayerResponse{
+required Ipacket PacketHead = 1;
+required int32 Error = 2;
+required int32 PlayerId = 3;
+}
+
+message W_C_SelectPlayerResponse{
+required Ipacket PacketHead = 1;
+required int32	AccountId = 2;
+repeated PlayerData PlayerData = 3;
+}
+
+message A_C_RegisterResponse{
+required Ipacket PacketHead = 1;
+required int32	Error = 2;
+required int32  SocketId = 3;
+}
+
+message A_C_LoginRequest{
+required Ipacket PacketHead = 1;
+required int32  Error = 2;
+required int32  SocketId = 3;
+required string AccountName = 4;
+//required string Password = 5;
+}
