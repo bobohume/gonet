@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
-	"encoding/base64"
+	//"encoding/base64"
 )
 
 const(
@@ -102,7 +102,7 @@ func (this *Config)Read(path string)  {
 
 	for {
 		line, _, err := fileIn.ReadLine()
-		buffer1 := make([]byte, len(line)*2)
+		//buffer1 := make([]byte, len(line)*2)
 		if err != nil {
 			if err == io.EOF {
 				break
@@ -110,12 +110,13 @@ func (this *Config)Read(path string)  {
 			panic(err)
 		}
 
-		nlen ,err := base64.StdEncoding.Decode(buffer1, line)
-		if err != nil {
-			panic(err)
-		}
+		//nlen ,err := base64.StdEncoding.Decode(buffer1, line)
+		nlen := len(line)
+		//if err != nil {
+		//	panic(err)
+		//}
 
-		buffer := buffer1[:nlen]
+		buffer := line[:]
 		state := STATE_NONE
 		comment := false
 		i := 0
