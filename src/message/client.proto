@@ -43,5 +43,3 @@ required int32	Recver = 3;
 required int32	MessageType = 4;
 required string	Message = 5;
 }
-
-

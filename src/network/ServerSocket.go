@@ -36,8 +36,8 @@ type ServerSocket struct {
 	m_bCanAccept    bool
 	m_bNagle        bool
 	m_ClientList    map[int]*ServerSocketClient
+	m_ClientLocker	*sync.RWMutex
 	m_ClientChan	chan ClientChan
-	m_SendChan 		chan SendChan
 	m_Listen        *net.TCPListener
 	m_Pool          sync.Pool
 	m_Lock          sync.Mutex
@@ -49,7 +49,7 @@ type ClientChan struct{
 	id int
 }
 
-type SendChan struct {
+type WriteChan struct {
 	buff	[]byte
 	id		int
 }
@@ -57,8 +57,8 @@ type SendChan struct {
 func (this *ServerSocket) Init(ip string, port int) bool {
 	this.Socket.Init(ip, port)
 	this.m_ClientList = make(map[int]*ServerSocketClient)
+	this.m_ClientLocker = &sync.RWMutex{}
 	this.m_ClientChan = make(chan ClientChan, 1000)
-	this.m_SendChan = make(chan SendChan, 1000)
 	this.m_sIP = ip
 	this.m_nPort = port
 	this.m_Pool = sync.Pool{
@@ -104,7 +104,9 @@ func (this *ServerSocket) AssignClientId() int {
 }
 
 func (this *ServerSocket) GetClientById(id int) *ServerSocketClient {
+	this.m_ClientLocker.RLock()
 	client, exist := this.m_ClientList[id]
+	this.m_ClientLocker.RUnlock()
 	if exist == true {
 		return client
 	}
@@ -173,27 +175,28 @@ func (this *ServerSocket) Stop() bool {
 }
 
 func (this *ServerSocket) SendByID(id int, buff  []byte) int{
-	var sendChan SendChan
-	sendChan.buff = base.SetTcpEnd(buff)
-	sendChan.id = id
-	this.m_SendChan <- sendChan
+	pClient := this.GetClientById(id)
+	if pClient != nil{
+		pClient.Send(base.SetTcpEnd(buff))
+	}
 	return  0
 }
 
 func (this *ServerSocket) SendMsgByID(id int, funcName string, params ...interface{}){
-	var sendChan SendChan
-	sendChan.buff = base.SetTcpEnd(base.GetPacket(funcName, params...))
-	sendChan.id = id
-
-	this.m_SendChan <- sendChan
+	pClient := this.GetClientById(id)
+	if pClient != nil{
+		pClient.Send(base.SetTcpEnd(base.GetPacket(funcName, params...)))
+	}
 }
 
 func (this *ServerSocket) Restart() bool {
 	return true
 }
+
 func (this *ServerSocket) Connect() bool {
 	return true
 }
+
 func (this *ServerSocket) Disconnect(bool) bool {
 	return true
 }
@@ -240,20 +243,19 @@ func timeRoutine(pServer *ServerSocket){
 		case clientChan := <- pServer.m_ClientChan:
 			if clientChan.state == ADD_CLIENT{
 				if clientChan.pClient != nil {
+					pServer.m_ClientLocker.Lock()
 					pServer.m_ClientList[clientChan.pClient.m_ClientId] = clientChan.pClient
+					pServer.m_ClientLocker.Unlock()
 				}
 			}else if clientChan.state == DEL_CLIENT{
+				pServer.m_ClientLocker.Lock()
 				delete(pServer.m_ClientList, clientChan.id)
+				pServer.m_ClientLocker.Unlock()
 			}else if clientChan.state == CLOSE_CLIENT{
 				pClinet := pServer.GetClientById(clientChan.id)
 				if pClinet != nil{
 					pClinet.Stop()
 				}
-			}
-		case sendChan := <- pServer.m_SendChan:
-			pClient := pServer.GetClientById(sendChan.id)
-			if pClient != nil{
-				go SendClient(pClient, sendChan.buff)
 			}
 		}
 	}

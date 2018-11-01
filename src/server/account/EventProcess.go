@@ -3,11 +3,13 @@ package account
 import (
 	"actor"
 	"base"
-	"log"
 	"database/sql"
+	"db"
 	"fmt"
-	"message"
 	"github.com/golang/protobuf/proto"
+	"log"
+	"message"
+	"server/common"
 )
 
 type (
@@ -24,54 +26,58 @@ type (
 func (this *EventProcess) Init(num int) {
 	this.Actor.Init(num)
 	this.m_db = SERVER.GetDB()
-	this.RegisterCall("COMMON_RegisterRequest", func(caller *actor.Caller, nType int, GateId int, Ip string, Port int) {
-		var ServerInfo stServerInfo
-		ServerInfo.SocketId = caller.SocketId
-		ServerInfo.Type = nType
-		ServerInfo.GateId = GateId
-		ServerInfo.Ip = Ip
-		ServerInfo.Port = Port
+	this.RegisterCall("COMMON_RegisterRequest", func(nType int, Ip string, Port int) {
+		pServerInfo := new(common.ServerInfo)
+		pServerInfo.SocketId = this.GetSocketId()
+		pServerInfo.Type = nType
+		pServerInfo.Ip = Ip
+		pServerInfo.Port = Port
 
-		SERVER.GetServerMgr().SendMsg(caller.SocketId, "CONNECT", nType, GateId, Ip, Port)
+		SERVER.GetServerMgr().SendMsg("CONNECT", nType, Ip, Port)
 
-		switch ServerInfo.Type {
+		switch pServerInfo.Type {
 		case int(message.SERVICE_GATESERVER):
-			SERVER.GetServer().SendMsgByID(caller.SocketId, "COMMON_RegisterResponse")
+			SERVER.GetServer().SendMsgByID(this.GetSocketId(), "COMMON_RegisterResponse")
+		case int(message.SERVICE_WORLDSERVER):
+			SERVER.GetServer().SendMsgByID(this.GetSocketId(), "COMMON_RegisterResponse")
 		}
 	})
 
 	//链接断开
-	this.RegisterCall("DISCONNECT", func(caller *actor.Caller, socketid int) {
-		SERVER.GetServerMgr().SendMsg(caller.SocketId, "DISCONNECT", socketid)
+	this.RegisterCall("DISCONNECT", func(socketid int) {
+		SERVER.GetServerMgr().SendMsg("DISCONNECT", socketid)
 	})
 
 	//创建账号
-	this.RegisterCall("C_A_RegisterRequest", func(caller *actor.Caller, packet *message.C_A_RegisterRequest) {
+	this.RegisterCall("C_A_RegisterRequest", func(packet *message.C_A_RegisterRequest) {
 		accountName := *packet.AccountName
 		//password := *packet.Password
 		password := "123456"
 		socketId := int(*packet.SocketId)
-		tx, _ := this.m_db.Begin()
 		Error := 1
 		var result string
 		var accountId int
-		_, err := tx.Exec(fmt.Sprintf("call `usp_activeaccount`('%s', '%s')", accountName, password))
+		rows, err := this.m_db.Query(fmt.Sprintf("call `usp_activeaccount`('%s', '%s')", accountName, password))
 		if err == nil {
-			row := tx.QueryRow("select @result, @accountId")
-			if row != nil {
-				row.Scan(&result, &accountId)
-				if (result == "0000") {
-					SERVER.GetLog().Printf("帐号[%s]创建成功", accountName)
-					//登录账号
-					SERVER.GetAccountMgr().SendMsg(caller.SocketId, "Account_Login", accountName, accountId, socketId)
-					Error = 0
+			rows.Next()
+			rows.Next()
+			if rows.NextResultSet(){
+				rs := db.Query(rows)
+				if rs.Next(){
+					accountId = rs.Row().Int("@accountId")
+					result = rs.Row().String("@result")
+					if (result == "0000") {
+						SERVER.GetLog().Printf("帐号[%s]创建成功", accountName)
+						//登录账号
+						SERVER.GetAccountMgr().SendMsg( "Account_Login", accountName, accountId, socketId, this.GetSocketId())
+						Error = 0
+					}
 				}
 			}
 		}
-		tx.Commit()
 
 		if Error != 0 {
-			SendToClient(caller.SocketId, &message.A_C_RegisterResponse{
+			SendToClient(this.GetSocketId(), &message.A_C_RegisterResponse{
 				PacketHead: message.BuildPacketHead( accountId, 0),
 				Error:      proto.Int32(int32(Error)),
 				SocketId:packet.SocketId,
@@ -80,7 +86,7 @@ func (this *EventProcess) Init(num int) {
 	})
 
 	//登录账号
-	this.RegisterCall("C_A_LoginRequest", func(caller *actor.Caller, packet *message.C_A_LoginRequest) {
+	this.RegisterCall("C_A_LoginRequest", func(packet *message.C_A_LoginRequest) {
 		accountName := *packet.AccountName
 		//password := *packet.Password
 		password := "123456"
@@ -90,33 +96,31 @@ func (this *EventProcess) Init(num int) {
 
 		if base.CVERSION().IsAcceptableBuildVersion(buildVersion) {
 			log.Printf("账号[%s]登陆账号服务器", accountName)
-
-			tx, _ := this.m_db.Begin()
-			_, err := tx.Exec(fmt.Sprintf("call `usp_login`('%s', '%s')", accountName, password))
-			if err == nil {
-				row := tx.QueryRow("select @result, @accountId")
-				if row != nil {
-					var result string
-					var accountId int
-					row.Scan(&result, &accountId)
-
-					//register account
-					if result == "0001" {
-						error = base.ACCOUNT_NOEXIST
-					} else if (result == "0000") {
-						error = base.NONE_ERROR
-						SERVER.GetAccountMgr().SendMsg(caller.SocketId, "Account_Login", accountName, accountId, socketId)
+			rows, err := this.m_db.Query(fmt.Sprintf("call `usp_login`('%s', '%s')", accountName, password))
+			if err == nil{
+				rows.Next()
+				if(rows.NextResultSet()){//存储过程反馈多个select的时候
+					rs := db.Query(rows)
+					if rs.Next(){
+						accountId := rs.Row().Int("@accountId")
+						result := rs.Row().String("@result")
+						//register account
+						if result == "0001" {
+							error = base.ACCOUNT_NOEXIST
+						} else if (result == "0000") {
+							error = base.NONE_ERROR
+							SERVER.GetAccountMgr().SendMsg("Account_Login", accountName, accountId, socketId, this.GetSocketId())
+						}
 					}
 				}
 			}
-			tx.Commit()
 		} else {
 			error = base.VERSION_ERROR
 			log.Println("版本验证错误 clientVersion=%s,err=%d", buildVersion, error)
 		}
 
 		if error != base.NONE_ERROR {
-			SendToClient(caller.SocketId, &message.A_C_LoginRequest{
+			SendToClient(this.GetSocketId(), &message.A_C_LoginRequest{
 				PacketHead:message.BuildPacketHead( 0, 0 ),
 				Error:proto.Int32(int32(error)),
 				SocketId:packet.SocketId,
@@ -126,27 +130,23 @@ func (this *EventProcess) Init(num int) {
 	})
 
 	//创建玩家
-	this.RegisterCall("W_A_CreatePlayer", func(caller *actor.Caller, accountId int, playername string, sex int32) {
-		tx, _ := this.m_db.Begin()
-		_, err := tx.Exec(fmt.Sprintf("call `usp_createplayer`(%d, '%s')", accountId, playername))
-		if err == nil {
-			row := tx.QueryRow("select @err, @playerId")
-			if row != nil {
-				var err int
-				var playerId int
-				row.Scan(&err, &playerId)
-
+	this.RegisterCall("W_A_CreatePlayer", func(accountId int, playername string, sex int32) {
+		rows, err := this.m_db.Query(fmt.Sprintf("call `usp_createplayer`(%d, '%s')", accountId, playername))
+		if err == nil{
+			rs := db.Query(rows)
+			if rs.Next(){
+				err := rs.Row().Int("@err")
+				playerId := rs.Row().Int("@playerId")
 				if err == 0 && playerId > 0 {
-					SERVER.GetServer().SendMsgByID(caller.SocketId, "A_W_CreatePlayer", accountId, playerId, playername, sex)
+					SERVER.GetServer().SendMsgByID(this.GetSocketId(), "A_W_CreatePlayer", accountId, playerId, playername, sex)
 				}
 			}
 		}
-		tx.Commit()
 	})
 
 	//删除玩家
-	this.RegisterCall("W_A_DeletePlayer", func(caller *actor.Caller, accountId int, playerId int) {
-		this.m_db.Exec(fmt.Sprintf("update tbl_player set deleteFlag = 1 where accountId =%d and playerid=%d", accountId, playerId))
+	this.RegisterCall("W_A_DeletePlayer", func(accountId int, playerId int) {
+		this.m_db.Exec(fmt.Sprintf("update tbl_player set delete_flag = 1 where account_id =%d and player_id=%d", accountId, playerId))
 	})
 
 	this.Actor.Start()

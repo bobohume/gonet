@@ -4,7 +4,6 @@ import (
 	"actor"
 	"base"
 	"strings"
-	"message"
 )
 
 type (
@@ -15,20 +14,19 @@ type (
 
 func (this *UserServerProcess) Init(num int) {
 	this.Actor.Init(num)
-	this.RegisterCall("DISCONNECT", func(caller *actor.Caller, socketId int) {
-		SERVER.GetPlayerMgr().SendMsg(caller.SocketId, "DEL_ACCOUNT", caller.SocketId)
+	this.RegisterCall("DISCONNECT", func(socketId int) {
+		SERVER.GetPlayerMgr().SendMsg("DEL_ACCOUNT", socketId)
 	})
 
 	this.Actor.Start()
 }
 
 func (this *UserServerProcess) PacketFunc(id int, buff []byte) bool{
-	packetId,_ := message.Decode(buff)
+	/*packetId,_ := message.Decode(buff)
 	packet := message.GetPakcet(packetId)
 	if packet != nil{
 		return false
-	}
-
+	}*/
 	var io actor.CallIO
 	io.Buff = buff
 	io.SocketId = id

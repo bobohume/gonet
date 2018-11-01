@@ -3,9 +3,8 @@ package netgate
 import (
 	"actor"
 	"base"
-	"message"
-	"fmt"
 	"github.com/golang/protobuf/proto"
+	"message"
 )
 
 type(
@@ -14,9 +13,11 @@ type(
 	}
 
 	IUserPrcoess interface {
-		CheckClient(int,string,base.BitStream)bool
-		SwtichSendToWorld(int,interface{}, []byte)
-		SwtichSendToAccount(int,interface{}, []byte)
+		actor.IActor
+
+		CheckClient(int, string, interface{})bool
+		SwtichSendToWorld(int, string, interface{}, []byte)
+		SwtichSendToAccount(int, string, interface{}, []byte)
 	}
 )
 
@@ -40,21 +41,21 @@ func (this *UserPrcoess)CheckClient(sockId int, packetName string, packet interf
 func (this *UserPrcoess)SwtichSendToWorld(socketId int, packetName string, packet interface{}, buff []byte){
 	if this.CheckClient(socketId, packetName, packet) == true{
 		buff = base.SetTcpEnd(buff)
-		SERVER.GetWorldScoket().Send(buff)
+		SERVER.GetWorldSocket().Send(buff)
 	}
 }
 
 func (this *UserPrcoess)SwtichSendToAccount(socketId int, packetName string, packet interface{}, buff []byte){
 	if this.CheckClient(socketId, packetName, packet) == true{
 		buff = base.SetTcpEnd(buff)
-		SERVER.GetAccountScoket().Send(buff)
+		SERVER.GetAccountSocket().Send(buff)
 	}
 }
 
 func (this *UserPrcoess) PacketFunc(socketid int, buff []byte) bool{
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Println("UserPrcoess PacketFunc", err)
+			SERVER.GetLog().Println("UserPrcoess PacketFunc", err)
 		}
 	}()
 
@@ -80,7 +81,7 @@ func (this *UserPrcoess) PacketFunc(socketid int, buff []byte) bool{
 	packetName := message.GetMessageName(packet)
 	if packetName  == base.ToLower("C_A_LoginRequest") {
 		packet.(*message.C_A_LoginRequest).SocketId = proto.Int32(int32(socketid))
-	}else if packetName  == base.ToLower("C_A_LoginRequest") {
+	}else if packetName  == base.ToLower("C_A_RegisterRequest") {
 		packet.(*message.C_A_RegisterRequest).SocketId = proto.Int32(int32(socketid))
 	}
 	/*if *packetHead.Message  == base.GetMessageCode1("C_A_LoginRequest"){
@@ -115,7 +116,7 @@ func (this *UserPrcoess) PacketFunc(socketid int, buff []byte) bool{
 /*func (this *UserEventPrcoess) PacketFunc(socketid int, buff []byte) bool{
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Println("UserEventPrcoess PacketFunc", err)
+			SERVER.GetLog().Println("UserEventPrcoess PacketFunc", err)
 		}
 	}()
 
@@ -160,14 +161,14 @@ func (this *UserPrcoess) PacketFunc(socketid int, buff []byte) bool{
 
 func (this *UserPrcoess) Init(num int) {
 	this.Actor.Init(num)
-	this.RegisterCall("C_G_LoginRequest", func(caller *actor.Caller, accountId int, UID int) {
-		//SERVER.GetPlayerMgr().SendMsg(caller.SocketId, "ADD_ACCOUNT", caller.SocketId, accountId, UID)
+	this.RegisterCall("C_G_LoginRequest", func(accountId int, UID int) {
+		//SERVER.GetPlayerMgr().SendMsg("ADD_ACCOUNT", caller.SocketId, accountId, UID)
 	})
 
-	this.RegisterCall("C_G_LogoutRequest", func(caller *actor.Caller, accountId int, UID int){
-		SERVER.GetLog().Printf("logout Socket:%d Account:%d UID:%d ",caller.SocketId, accountId,UID )
-		SERVER.GetPlayerMgr().SendMsg(caller.SocketId, "DEL_ACCOUNT", caller.SocketId)
-		SendToClient(caller.SocketId, &message.C_G_LogoutResponse{PacketHead:message.BuildPacketHead( 0, 0)})
+	this.RegisterCall("C_G_LogoutRequest", func(accountId int, UID int){
+		SERVER.GetLog().Printf("logout Socket:%d Account:%d UID:%d ",this.GetSocketId(), accountId,UID )
+		SERVER.GetPlayerMgr().SendMsg("DEL_ACCOUNT", this.GetSocketId())
+		SendToClient(this.GetSocketId(), &message.C_G_LogoutResponse{PacketHead:message.BuildPacketHead( 0, 0)})
 	})
 
 	this.Actor.Start()

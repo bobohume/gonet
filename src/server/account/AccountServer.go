@@ -1,21 +1,20 @@
  package account
 
-import (
-	"network"
-	"database/sql"
-	"base"
-	"db"
-	"strconv"
-	"fmt"
-	"github.com/golang/protobuf/proto"
-	"message"
-	"log"
-)
+ import (
+	 "base"
+	 "database/sql"
+	 "db"
+	 "github.com/golang/protobuf/proto"
+	 "log"
+	 "message"
+	 "network"
+	 "strconv"
+ )
 
 type(
 	ServerMgr struct{
 		m_pService	*network.ServerSocket
-		m_pServerMgr *CServerSocketManager
+		m_pServerMgr *ServerSocketManager
 		m_pActorDB *sql.DB
 		m_Inited bool
 		m_config base.Config
@@ -26,11 +25,10 @@ type(
 	IServerMgr interface{
 		Init() bool
 		InitDB() bool
-		Stop()
-		Loop()
 		GetDB() *sql.DB
 		GetLog() *base.CLog
 		GetServer() *network.ServerSocket
+		GetServerMgr() *ServerSocketManager
 		GetAccountMgr() *AccountMgr
 	}
 
@@ -97,14 +95,13 @@ func (this *ServerMgr)Init() bool{
 	this.m_pService.BindPacketFunc(packet.PacketFunc)
 	this.m_pService.BindPacketFunc(this.m_AccountMgr.PacketFunc)
 
-	this.m_pServerMgr = new(CServerSocketManager)
+	this.m_pServerMgr = new(ServerSocketManager)
 	this.m_pServerMgr.Init(1000)
 
 	return  false
 }
 
 func (this *ServerMgr)InitDB() bool{
-	fmt.Println(DB_Server, DB_UserId, DB_Password, DB_Name)
 	this.m_pActorDB = db.OpenDB(DB_Server, DB_UserId, DB_Password, DB_Name)
 	err := this.m_pActorDB.Ping()
 	return  err != nil
@@ -122,7 +119,7 @@ func (this *ServerMgr)InitDB() bool{
 	 return this.m_pService
  }
 
- func (this *ServerMgr) GetServerMgr() *CServerSocketManager{
+ func (this *ServerMgr) GetServerMgr() *ServerSocketManager{
 	 return this.m_pServerMgr
  }
 

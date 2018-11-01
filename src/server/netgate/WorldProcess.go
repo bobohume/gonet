@@ -2,6 +2,8 @@ package netgate
 
 import (
 	"actor"
+	"base"
+	"fmt"
 	"message"
 	"strconv"
 	"server/common"
@@ -20,40 +22,41 @@ type (
 	}
 )
 
-func (this * WorldProcess)RegisterServer(ServerType int,  ServerId int, Ip string, Port int)  {
-	SERVER.GetWorldScoket().SendMsg("COMMON_RegisterRequest",ServerType, ServerId, Ip, Port)
+func (this * WorldProcess)RegisterServer(ServerType int, Ip string, Port int)  {
+	SERVER.GetWorldSocket().SendMsg("COMMON_RegisterRequest",ServerType, Ip, Port)
 }
 
 func (this *WorldProcess) Init(num int) {
 	this.Actor.Init(num)
-	this.m_LostTimer = common.NewSimpleTimer(3)
+	this.m_LostTimer = common.NewSimpleTimer(10)
+	this.m_LostTimer.Start()
 	this.RegisterTimer(1 * 1000 * 1000 * 1000, this.Update)
-	this.RegisterCall("COMMON_RegisterRequest", func(caller *actor.Caller) {
+	this.RegisterCall("COMMON_RegisterRequest", func() {
 		port,_:=strconv.Atoi(UserNetPort)
-		this.RegisterServer(int(message.SERVICE_GATESERVER), SERVER.m_GateId, UserNetIP, port)
+		this.RegisterServer(int(message.SERVICE_GATESERVER), UserNetIP, port)
 	})
 
-	this.RegisterCall("COMMON_RegisterResponse", func(caller *actor.Caller) {
+	this.RegisterCall("COMMON_RegisterResponse", func() {
 			//收到worldserver对自己注册的反馈
 			this.m_LostTimer.Stop()
 			SERVER.GetLog().Println("收到world对自己注册的反馈")
-			SERVER.GetPlayerMgr().SendMsg(caller.SocketId, "Account_Relink")
+			SERVER.GetPlayerMgr().SendMsg("Account_Relink")
 	})
 
-	this.RegisterCall("G_ClientLost", func(caller *actor.Caller, accountId int) {
-		SERVER.GetAccountScoket().SendMsg("G_ClientLost", accountId)
+	this.RegisterCall("G_ClientLost", func(accountId int) {
+		SERVER.GetAccountSocket().SendMsg("G_ClientLost", accountId)
 	})
 
-	this.RegisterCall("DISCONNECT", func(caller *actor.Caller, socketId int) {
+	this.RegisterCall("DISCONNECT", func(socketId int) {
 		this.m_LostTimer.Start()
 	})
 
-	this.RegisterCall("W_A_CreatePlayer", func(caller *actor.Caller, accountId int, playername string, sex int32) {
-		SERVER.GetAccountScoket().SendMsg("W_A_CreatePlayer", accountId, playername, sex)
+	this.RegisterCall("W_A_CreatePlayer", func(accountId int, playername string, sex int32) {
+		SERVER.GetAccountSocket().SendMsg("W_A_CreatePlayer", accountId, playername, sex)
 	})
 
-	this.RegisterCall("W_A_DeletePlayer", func(caller *actor.Caller, accountId int, playerId int) {
-		SERVER.GetAccountScoket().SendMsg("W_A_DeletePlayer", accountId, playerId)
+	this.RegisterCall("W_A_DeletePlayer", func(accountId int, playerId int) {
+		SERVER.GetAccountSocket().SendMsg("W_A_DeletePlayer", accountId, playerId)
 	})
 
 	this.Actor.Start()
@@ -61,8 +64,23 @@ func (this *WorldProcess) Init(num int) {
 
 func (this* WorldProcess) Update(){
 	if this.m_LostTimer.CheckTimer(){
-		SERVER.GetWorldScoket().Start()
+		SERVER.GetWorldSocket().Start()
 	}
+}
+
+func DispatchPacketToClient(id int, buff []byte) bool{
+	defer func(){
+		if err := recover(); err != nil{
+			fmt.Println("WorldClientProcess PacketFunc", err)
+		}
+	}()
+
+	bitstream := base.NewBitStream(buff, len(buff))
+	bitstream.ReadString()//统一格式包头名字
+	accountId := bitstream.ReadInt(base.Bit32)
+	socketId := SERVER.GetPlayerMgr().GetAccountSocket(accountId)
+	SERVER.GetServer().SendByID(socketId, bitstream.GetBytePtr())
+	return false
 }
 
 

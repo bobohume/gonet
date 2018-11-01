@@ -6,17 +6,14 @@ import (
 	"fmt"
 )
 
+//datatype
 const(
 	DType_none    = iota
 	DType_String	= iota
-	DType_Enum8	= iota
-	DType_Enum16	= iota
+	DType_Enum		= iota
 	DType_S8		= iota
 	DType_S16		= iota
 	DType_S32		= iota
-	DType_U8		= iota
-	DType_U16		= iota
-	DType_U32		= iota
 	DType_F32		= iota
 	DType_F64		= iota
 )
@@ -26,16 +23,12 @@ type(
 		Type	int
 
 		String	string
+		Enum int
 		S8	int8
 		S16	int16
-		S32 int32
-		U8  uint8
-		U16 uint16
-		U32 uint32
+		S32 int
 		F32 float32
 		F64 float64
-		Enum8 uint8
-		Enum16 uint16
 	}
 
 	CDataFile struct{
@@ -127,33 +120,21 @@ func (this *CDataFile) GetData(pData *RData) bool {
 		this.fdata.Read(buf1)
 		pData.String = string(buf1)
 		//fmt.Println(pData.String, nLen)
-	case DType_U8:
-		pData.U8,_ = this.fdata.ReadByte()
 	case DType_S8:
 		nByte,_ = this.fdata.ReadByte()
 		pData.S8 = int8(nByte)
-	case DType_U16:
-		buf := make([]byte, 2)
-		this.fdata.Read(buf)
-		pData.U16 = uint16(BytesToInt16(buf))
 	case DType_S16:
 		buf := make([]byte, 2)
 		this.fdata.Read(buf)
 		pData.S16 = int16(BytesToInt16(buf))
-	case DType_U32:
-		buf := make([]byte, 4)
-		this.fdata.Read(buf)
-		pData.U32 = uint32(BytesToInt(buf))
 	case DType_S32:
 		buf := make([]byte, 4)
 		this.fdata.Read(buf)
-		pData.S32 = int32(BytesToInt(buf))
-	case DType_Enum8:
-		pData.Enum8,_ = this.fdata.ReadByte()
-	case DType_Enum16:
+		pData.S32 = BytesToInt(buf)
+	case DType_Enum:
 		buf := make([]byte, 2)
 		this.fdata.Read(buf)
-		pData.Enum16 = uint16(BytesToInt(buf))
+		pData.Enum = int(BytesToInt16(buf))
 	case DType_F32:
 		buf := make([]byte, 4)
 		this.fdata.Read(buf)
@@ -168,4 +149,42 @@ func (this *CDataFile) GetData(pData *RData) bool {
 	this.currentColumnIndex = (this.currentColumnIndex + 1) % this.ColumNum
 	this.readstep--
 	return true
+}
+
+/****************************
+	RData funciton
+****************************/
+func (this *RData) GetString(dataname, datacol string) string{
+	IFAssert(this.Type == DType_String,  fmt.Sprintf("read [%s] col[%s] error", dataname, datacol))
+	return this.String
+}
+
+func (this *RData) GetEnum(dataname, datacol string) int{
+	IFAssert(this.Type == DType_Enum,  fmt.Sprintf("read [%s] col[%s] error", dataname, datacol))
+	return this.Enum
+}
+
+func (this *RData) GetS8(dataname, datacol string) int8{
+	IFAssert(this.Type == DType_S8,  fmt.Sprintf("read [%s] col[%s] error", dataname, datacol))
+	return this.S8
+}
+
+func (this *RData) GetS16(dataname, datacol string) int16{
+	IFAssert(this.Type == DType_S16,  fmt.Sprintf("read [%s] col[%s] error", dataname, datacol))
+	return this.S16
+}
+
+func (this *RData) GetS32(dataname, datacol string) int{
+	IFAssert(this.Type == DType_S32,  fmt.Sprintf("read [%s] col[%s] error", dataname, datacol))
+	return this.S32
+}
+
+func (this *RData) GetF32(dataname, datacol string) float32{
+	IFAssert(this.Type == DType_F32,  fmt.Sprintf("read [%s] col[%s] error", dataname, datacol))
+	return this.F32
+}
+
+func (this *RData) GetF64(dataname, datacol string) float64{
+	IFAssert(this.Type == DType_F64,  fmt.Sprintf("read [%s] col[%s] error", dataname, datacol))
+	return this.F64
 }

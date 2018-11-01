@@ -8,20 +8,20 @@ import (
 )
 
 type(
-	CBanData struct{
+	BanData struct{
 		BanName string
 	}
 
-	CBanDataRes struct{
-		common.CBaseDataRes
+	BanDataRes struct{
+		common.BaseDataRes
 	}
 )
 
 var(
-	BANDREPOSITORY	CBanDataRes
+	BANDATA	BanDataRes
 )
 
-func (this *CBanDataRes) Read() bool {
+func (this *BanDataRes) Read() bool {
 	this.Init()
 	var file base.CDataFile
 	lineData := &base.RData{}
@@ -32,7 +32,7 @@ func (this *CBanDataRes) Read() bool {
 	}
 
 	for i := 0; i < file.RecordNum; i++{
-		pData := CBanData{}
+		pData := BanData{}
 
 		file.GetData(lineData)
 		base.IFAssert(lineData.Type == base.DType_String, "read BanWord.dat BanName error")
@@ -41,14 +41,23 @@ func (this *CBanDataRes) Read() bool {
 			continue
 		}
 
-		this.AddData(pData.BanName, pData)
+		//this.AddData(pData.BanName, pData)
 	}
 
 	return true
 }
 
+func (this *BanDataRes) GetData(id int) *BanData {
+	pData := this.BaseDataRes.GetBaseData(id)
+	if pData != nil{
+		return pData.(*BanData)
+	}
+
+	return nil
+}
+
 func ReplaceBanWord(msg string, replace string) string{
-	for i,_ := range BANDREPOSITORY.DataMap{
+	for i,_ := range BANDATA.DataMap{
 		msg = strings.Replace(msg, i.(string), replace, -1 )
 	}
 	return msg

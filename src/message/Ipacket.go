@@ -23,11 +23,11 @@ func parseTypeStruct(message interface{}, packetHead *Ipacket) {
 	}()
 
 	parseTypeElem := func (val reflect.Value, packetHead *Ipacket) {
-		defer func() {
+		/*defer func() {
 			if err := recover(); err != nil {
 				fmt.Println("GetPakcetHead", err)
 			}
-		}()
+		}()*/
 
 		sType := strings.ToLower(val.Type().String())
 		index := strings.Index(sType, ".")
@@ -37,8 +37,10 @@ func parseTypeStruct(message interface{}, packetHead *Ipacket) {
 
 		switch sType {
 		case "*message":
-			value := val.Elem().Interface()
-			parseTypeStruct(value, packetHead)
+			if !val.IsNil(){
+				value := val.Elem().Interface()
+				parseTypeStruct(value, packetHead)
+			}
 		}
 	}
 
@@ -173,9 +175,14 @@ func GetPakcet(packetId uint32) proto.Message{
 		RegisterPacket(&C_G_LogoutResponse{})
 		RegisterPacket(&C_W_CreatePlayerRequest{})
 		RegisterPacket(&C_W_Game_LoginRequset{})
+		RegisterPacket(&C_W_LoginCopyMap{})
+		RegisterPacket(&C_W_Move{})
 		// test for client
 		RegisterPacket(&W_C_SelectPlayerResponse{})
 		RegisterPacket(&W_C_CreatePlayerResponse{})
+		RegisterPacket(&W_C_LoginMap{})
+		RegisterPacket(&W_C_Move{})
+		RegisterPacket(&W_C_ADD_SIMOBJ{})
 		RegisterPacket(&A_C_LoginRequest{})
 		RegisterPacket(&A_C_RegisterResponse{})
 		Packet_CreateFactorInit = true

@@ -78,7 +78,7 @@ func (s Server) serveWebSocket(w http.ResponseWriter, req *http.Request) {
 	// The server should abort the WebSocket connection if it finds
 	// the client did not send a handshake that matches with protocol
 	// specification.
-	defer rwc.Close()
+	//defer rwc.Close()
 	conn, err := newServerConn(rwc, buf, req, &s.Config, s.Handshake)
 	if err != nil {
 		return

@@ -7,6 +7,7 @@ import (
 	"base"
 	"server/world/player"
 	"db"
+	"fmt"
 )
 
 const(
@@ -34,29 +35,32 @@ const (
 	SocialError_DbError	= iota	       	// 数据库操作错误
 )
 
+//分布式考虑直接数据库
 type (
 	SocialItem struct {
-		PlayerId int	`primary`
-		TargetId int	`primary`
-		Type	int8
-		FriendValue	int
+		PlayerId int	`sql:"primary;name:player_id"`
+		TargetId int	`sql:"primary;name:target_id"`
+		Type	int8	`sql:"name:type"`
+		FriendValue	int `sql:"name:friend_value"`
 	}
 
 	SOCIALITEMMAP map[int] *SocialItem
 
 	SocialMgr struct{
 		actor.Actor
+
 		m_db *sql.DB
 		m_Log *base.CLog
-		m_SocialMap map[int]	SOCIALITEMMAP
 	}
 
 	ISocialMgr interface {
 		actor.IActor
-		makeLink(int, int, int8) int//加好友
-		destoryLink(int, int) int//删除好友
-		addFreindValue(int, int , int) int//增加好友度
 
+		makeLink(int, int, int8) int//加好友
+		destoryLink(int, int, int8) int//删除好友
+		addFriendValue(int, int, int) int//增加好友度
+		loadSocialDB(int, int8) SOCIALITEMMAP
+		loadSocialById(int, int, int8) *SocialItem
 		isFriendType(int8) bool
 		isBestFriendType(int8) bool
 		hasMakeLink(int8, int8)	bool
@@ -84,9 +88,8 @@ func (this *SocialMgr) Init(num int) {
 	this.m_Log = world.SERVER.GetLog()
 	this.Actor.Init(num)
 	actor.GetGActorList().RegisterGActorList("social", this)
-	this.m_SocialMap = make(map[int] SOCIALITEMMAP)
 
-	this.RegisterCall("C_W_MakeLinkRequest", func(caller *actor.Caller, PlayerId, TargetId int, Type int8) {
+	this.RegisterCall("C_W_MakeLinkRequest", func(PlayerId, TargetId int, Type int8) {
 		pPlayer := player.PLAYERSIMPLEMGR.GetPlayerDataById(PlayerId)
 		pTarget	:= player.PLAYERSIMPLEMGR.GetPlayerDataById(TargetId)
 		if pPlayer == nil || pTarget == nil{
@@ -98,7 +101,7 @@ func (this *SocialMgr) Init(num int) {
 	this.Actor.Start()
 }
 
-func (this *SocialMgr) isFreindType(Type int8) bool{
+func (this *SocialMgr) isFriendType(Type int8) bool{
 	if Type != Temp && Type != Mute && Type != Enemy{
 		return	true
 	}
@@ -132,6 +135,39 @@ func (this *SocialMgr) hasMakeLink(oldType, newType int8) bool{
 	return true
 }
 
+func loadSocialDB(row db.IRow, s *SocialItem){
+	s.PlayerId = row.Int("player_id")
+	s.TargetId = row.Int("target_id")
+	s.Type = int8(row.Int("type"))
+	s.FriendValue = row.Int("friend_value")
+}
+
+func (this *SocialMgr) loadSocialDB(PlayerId int, Type int8) SOCIALITEMMAP{
+	SocialMap := make(SOCIALITEMMAP)
+	Item := &SocialItem{}
+	rows, err := this.m_db.Query(db.LoadSql(Item, sqlTable, fmt.Sprintf("player_id=%d and type=%d", PlayerId, Type)))
+	if err != nil{
+		return SocialMap
+	}
+	rs := db.Query(rows)
+	if rs.Next(){
+		loadSocialDB(rs.Row(), Item)
+		SocialMap[Item.TargetId] = Item
+	}
+	return SocialMap
+}
+
+func (this *SocialMgr) loadSocialById(PlayerId, TargetId int, Type int8) *SocialItem{
+	Item := &SocialItem{}
+	rows, err := this.m_db.Query(db.LoadSql(Item, sqlTable, fmt.Sprintf("player_id=%d and type=%d and target_id=%d", PlayerId, Type, TargetId)))
+	rs := db.Query(rows)
+	if err != nil && rs.Next(){
+		loadSocialDB(rs.Row(), Item)
+		return Item
+	}
+	return nil
+}
+
 func (this *SocialMgr) 	makeLink(PlayerId, TargetId int, Type int8) int{
 	if Type >= Count{
 		return SocialError_Unknown
@@ -145,21 +181,18 @@ func (this *SocialMgr) 	makeLink(PlayerId, TargetId int, Type int8) int{
 		return SocialError_Self
 	}
 
-	SocialMap, exist := this.m_SocialMap[PlayerId]
+	SocialMap := this.loadSocialDB(PlayerId, Type)
+	Item, exist := SocialMap[TargetId]
 	if exist{
-		nCount := 0
 		firstPlayerId := 0
-		var Item *SocialItem
+		nCount := len(SocialMap)
 
+		//找一个空的
 		for _, v := range SocialMap{
-			if Item == nil && v.TargetId == TargetId{
-				Item = v
-			}
-
-			if v.Type == Type{
-				nCount++
+			if v.TargetId != TargetId{
 				if firstPlayerId == 0{
 					firstPlayerId = v.TargetId
+					break
 				}
 			}
 		}
@@ -170,7 +203,7 @@ func (this *SocialMgr) 	makeLink(PlayerId, TargetId int, Type int8) int{
 				return SocialError_MaxCount
 			}else{
 				// 当仇人或临时好友添加满时，删除一个仇人或临时好友
-				if firstPlayerId != 0 && SocialError_None != this.destoryLink( PlayerId, firstPlayerId ){
+				if firstPlayerId != 0 && SocialError_None != this.destoryLink( PlayerId, firstPlayerId, Type){
 					return SocialError_DbError
 				}
 			}
@@ -200,9 +233,7 @@ func (this *SocialMgr) 	makeLink(PlayerId, TargetId int, Type int8) int{
 		Item.Type = Type
 		Item.FriendValue = 0
 
-		SocialMap = make(SOCIALITEMMAP)
 		SocialMap[TargetId] = Item
-		this.m_SocialMap[PlayerId] = SocialMap
 		this.m_db.Exec(db.InsertSql(Item, sqlTable))
 		this.m_Log.Printf("新增社会关系playerId=%d,destPlayerId=%d,type=%d", PlayerId, TargetId, Item.Type)
 		return SocialError_None
@@ -211,24 +242,20 @@ func (this *SocialMgr) 	makeLink(PlayerId, TargetId int, Type int8) int{
 	return SocialError_DbError
 }
 
-func (this *SocialMgr) destoryLink(PlayerId, TargetId int) int{
+func (this *SocialMgr) destoryLink(PlayerId, TargetId int, Type int8) int{
 	if PlayerId == TargetId{
 		return  SocialError_Self
 	}
 
-	SocialMap, exist := this.m_SocialMap[PlayerId]
-	if !exist{
-		return SocialError_NotFound
-	}
+	Item := &SocialItem{}
+	Item.PlayerId = PlayerId
+	Item.TargetId = TargetId
+	Item.Type = Type
+	Item.FriendValue = 0
 
-	Item, exist := SocialMap[TargetId]
-	if(!exist){
-		return SocialError_NotFound
-	}
 
 	if Item.Type == Friend || Item.Type == Mute || Item.Type == Temp || Item.Type == Enemy{
 		this.m_db.Exec(db.DeleteSql(Item, sqlTable))
-		delete(SocialMap, TargetId)
 		return SocialError_None
 	}
 
@@ -236,25 +263,20 @@ func (this *SocialMgr) destoryLink(PlayerId, TargetId int) int{
 }
 
 func (this *SocialMgr) addFriendValue(PlayerId, TargetId, Value int) int{
-	SocialMap1, exist1 := this.m_SocialMap[PlayerId]
-	SocialMap2, exist2 := this.m_SocialMap[TargetId]
-	if !exist1 || !exist2{
+	Item1 := this.loadSocialById(PlayerId, TargetId, Friend)
+	Item2 := this.loadSocialById(TargetId, PlayerId, Friend)
+
+	if Item1 == nil || Item2 == nil{
 		return 0
 	}
 
-	Item1, exist1 := SocialMap1[TargetId]
-	Item2, exist2 := SocialMap2[PlayerId]
-	if !exist1 || !exist2{
-		return 0
-	}
-
-	if !this.isFreindType(Item1.Type) || !this.isFreindType(Item2.Type){
+	if !this.isFriendType(Item1.Type) || !this.isFriendType(Item2.Type){
 		return 0
 	}
 
 	Item1.FriendValue +=Value
 	Item2.FriendValue = Item1.FriendValue
-	this.m_db.Exec(db.UpdateSqlEx(Item1, sqlTable, "FriendValue"))
-	this.m_db.Exec(db.UpdateSqlEx(Item2, sqlTable, "FriendValue"))
+	this.m_db.Exec(db.UpdateSqlEx(Item1, sqlTable, "friend_value"))
+	this.m_db.Exec(db.UpdateSqlEx(Item2, sqlTable, "friend_value"))
 	return Value
 }

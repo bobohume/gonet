@@ -17,7 +17,7 @@ type (
 		OnTrigle eventHandle
 	}
 
-	CTimerStateMachine struct{
+	TimerStateMachine struct{
 		m_preState int
 		m_curState int
 		m_expireInterval int64
@@ -31,16 +31,16 @@ type (
 	ITimerStateMachine interface {
 		SetStateHandle(int,interface{}, interface{}, interface{}, interface{})
 		SetStateChanged(interface{})
-		SetState(int, int, bool)
+		SetState(int, int64, bool)
 		GetState() int
 		GetPreState() int
-		Update(int)
+		Update(int64)
 		Trigger(...interface{})
 	}
 )
 
-func NewCTimerStateMachine(_maxState int, _eventHandle interface{}) *CTimerStateMachine{
-	timeState := new(CTimerStateMachine)
+func NewCTimerStateMachine(_maxState int, _eventHandle interface{}) *TimerStateMachine{
+	timeState := new(TimerStateMachine)
 	timeState.m_maxState = _maxState
 	timeState.m_states = make([]State, _maxState)
 
@@ -52,11 +52,11 @@ func NewCTimerStateMachine(_maxState int, _eventHandle interface{}) *CTimerState
 	return timeState
 }
 
-func (this *CTimerStateMachine) SetStateChanged(onStateChanged interface{}){
+func (this *TimerStateMachine) SetStateChanged(onStateChanged interface{}){
 	this.m_onStateChanged = onStateChanged.(func())
 }
 
-func (this *CTimerStateMachine) SetStateHandle(index int,OnEnter interface{}, OnLeave interface{}, OnExpire interface{}, OnExec interface{}){
+func (this *TimerStateMachine) SetStateHandle(index int,OnEnter interface{}, OnLeave interface{}, OnExpire interface{}, OnExec interface{}){
 	if OnEnter != nil{
 		this.m_states[index].OnEnter  = OnEnter.(func())
 	}
@@ -71,14 +71,14 @@ func (this *CTimerStateMachine) SetStateHandle(index int,OnEnter interface{}, On
 	}
 }
 
-func (this *CTimerStateMachine) GetState() int{
+func (this *TimerStateMachine) GetState() int{
 	if this.m_curState < 0{
 		return 0
 	}
 	return this.m_curState
 }
 
-func (this *CTimerStateMachine) SetState(state int, expireTime int64, isLoop bool){
+func (this *TimerStateMachine) SetState(state int, expireTime int64, isLoop bool){
 	base.Assert(state >= 0 && state < this.m_maxState,"invalid state")
 
 	if state >= this.m_maxState{
@@ -110,11 +110,11 @@ func (this *CTimerStateMachine) SetState(state int, expireTime int64, isLoop boo
 }
 
 //获取前面的一个状态
-func (this *CTimerStateMachine) GetPreState()int{
+func (this *TimerStateMachine) GetPreState()int{
 	return this.m_preState
 }
 
-func (this *CTimerStateMachine) Update(curTime int64){
+func (this *TimerStateMachine) Update(curTime int64){
 	if (-1 == this.m_curState){
 		return
 	}
@@ -139,7 +139,7 @@ func (this *CTimerStateMachine) Update(curTime int64){
 	}
 }
 
-func (this *CTimerStateMachine) Trigger(params ...interface{}){
+func (this *TimerStateMachine) Trigger(params ...interface{}){
 	if(this.m_curState < 0){
 		return
 	}

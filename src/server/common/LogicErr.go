@@ -1,7 +1,7 @@
 package common
 
 import (
-	"server/world"
+	"base"
 )
 
 /*const(
@@ -9,5 +9,5 @@ import (
 )*/
 
 func DBERROR(msg string, err error){
-	world.SERVER.GetLog().Printf("db [%s] error [%s]", msg, err.Error())
+	base.GLOG.Printf("db [%s] error [%s]", msg, err.Error())
 }

@@ -21,6 +21,7 @@ type (
 		getSeed() int
 		rand() int
 		RandI(int, int) int
+		RandF(float32, float32) float32
 	}
 )
 
@@ -58,12 +59,26 @@ func (this *MRadomLCG) rand() int{
 	return  this.mSeed
 }
 
+func (this *MRadomLCG) randf() float32{
+	return  float32(this.rand()) * (1.0/2147483647.0)
+}
+
 func (this *MRadomLCG) RandI(i int, n int)int {
 	if i > n {
 		Assert(false, "MRandomGenerator::randi: inverted range")
+		return i
 	}
 
 	return  int(i + this.rand() % (n - i  + 1))
+}
+
+func (this *MRadomLCG) RandF(i float32, n float32) float32 {
+	if i > n {
+		Assert(false, "MRandomGenerator::randi: inverted range")
+		return i
+	}
+
+	return (i + (n - i) * this.randf())
 }
 
 func generateSeed() int{
@@ -77,7 +92,7 @@ var (
 	pRadomMgr *MRadomLCG
 )
 
-func RANDOMMGR() *MRadomLCG{
+func RAND() *MRadomLCG{
 	if pRadomMgr == nil {
 		pRadomMgr = new(MRadomLCG)
 		pRadomMgr.Init()

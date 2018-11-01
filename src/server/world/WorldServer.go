@@ -1,20 +1,20 @@
  package world
 
-import (
-	"network"
-	"database/sql"
-	"base"
-	"db"
-	"strconv"
-	"github.com/golang/protobuf/proto"
-	"message"
-	"log"
-)
+ import (
+	 "base"
+	 "database/sql"
+	 "db"
+	 "github.com/golang/protobuf/proto"
+	 "log"
+	 "message"
+	 "network"
+	 "strconv"
+ )
 
 type(
 	ServerMgr struct{
 		m_pService	*network.ServerSocket
-		m_pServerMgr *CServerSocketManager
+		m_pServerMgr *ServerSocketManager
 		m_pActorDB *sql.DB
 		m_Inited bool
 		m_config base.Config
@@ -24,8 +24,6 @@ type(
 	IServerMgr interface{
 		Init() bool
 		InitDB() bool
-		Stop()
-		Loop()
 		GetDB() *sql.DB
 		GetLog() *base.CLog
 		GetServer() *network.ServerSocket
@@ -92,7 +90,7 @@ func (this *ServerMgr)Init() bool{
 	packet.Init(1000)
 	this.m_pService.BindPacketFunc(packet.PacketFunc)
 
-	this.m_pServerMgr = new(CServerSocketManager)
+	this.m_pServerMgr = new(ServerSocketManager)
 	this.m_pServerMgr.Init(1000)
 
 	return  false
@@ -116,7 +114,7 @@ func (this *ServerMgr)InitDB() bool{
 	 return this.m_pService
  }
 
- func (this *ServerMgr) GetServerMgr() *CServerSocketManager{
+ func (this *ServerMgr) GetServerMgr() *ServerSocketManager{
 	 return this.m_pServerMgr
  }
 

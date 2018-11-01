@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
 )
 
 const (
@@ -26,6 +27,10 @@ func Assert(x bool, y string) {
 	}
 }
 
+func Abs(x float32) float32{
+	return float32(math.Abs(float64(x)))
+}
+
 func IFAssert(x bool, y string) {
 	if bool(x) == false {
 		log.Fatalf("\nFatal :{%s}", y)
@@ -41,8 +46,8 @@ func BIT64(x interface{}) interface{}{
 }
 
 //整形转换成字节
-func IntToBytes(n int) []byte {
-	tmp := int32(n)
+func IntToBytes(val int) []byte {
+	tmp := int32(val)
 	bytesBuffer := bytes.NewBuffer([]byte{})
 	binary.Write(bytesBuffer, binary.LittleEndian, tmp)
 	return bytesBuffer.Bytes()
@@ -65,8 +70,8 @@ func BytesToInt16(b []byte) int16 {
 }
 
 //转化64位
-func Int64ToBytes(n int64) []byte {
-	tmp := uint64(n)
+func Int64ToBytes(val int64) []byte {
+	tmp := uint64(val)
 	bytes := make([]byte, 8)
 	binary.LittleEndian.PutUint64(bytes, tmp)
 	return bytes
@@ -79,8 +84,8 @@ func BytesToInt64(b []byte) int64 {
 }
 
 //转化float
-func Float32ToByte(float float32) []byte {
-	bits := math.Float32bits(float)
+func Float32ToByte(val float32) []byte {
+	bits := math.Float32bits(val)
 	bytes := make([]byte, 4)
 	binary.LittleEndian.PutUint32(bytes, bits)
 	return bytes
@@ -92,8 +97,8 @@ func ByteToFloat32(b []byte) float32 {
 }
 
 //转化float64
-func Float64ToByte(float float64) []byte {
-	bits := math.Float64bits(float)
+func Float64ToByte(val float64) []byte {
+	bits := math.Float64bits(val)
 	bytes := make([]byte, 8)
 	binary.LittleEndian.PutUint64(bytes, bits)
 	return bytes
@@ -114,6 +119,19 @@ func Htonl(n uint64) []byte{
 	bytes := make([]byte, 8)
 	binary.LittleEndian.PutUint64(bytes, n)
 	return bytes
+}
+
+func ChechErr(err error) {
+	if err == nil {
+		return
+	}
+	log.Panicf("错误：%s\n", err.Error())
+}
+
+func GetDBTime(strTime string) *time.Time{
+	DefaultTimeLoc := time.Local
+	loginTime, _ := time.ParseInLocation("2006-01-02 15:04:05", strTime, DefaultTimeLoc)
+	return &loginTime
 }
 
 func PathExists(path string) (bool) {
@@ -163,6 +181,23 @@ func GetArrayTypeString(sTypeName string) string{
 	return sTypeName
 }
 
+func ParseTag(sf reflect.StructField, tag string) map[string]string {
+	setting := map[string]string{}
+	for _, str := range []string{sf.Tag.Get(tag)} {
+		tags := strings.Split(str, ";")
+		for _, value := range tags {
+			v := strings.Split(value, ":")
+			k := strings.TrimSpace(strings.ToLower(v[0]))
+			if len(v) >= 2 {
+				setting[k] = strings.Join(v[1:], ":")
+			} else {
+				setting[k] = k
+			}
+		}
+	}
+	return setting
+}
+
 func GetTypeString(param interface{}) string{
 	paramType := reflect.TypeOf(param)
 	sType := ""
@@ -174,6 +209,21 @@ func GetTypeString(param interface{}) string{
 		sType = GetArrayTypeString(paramType.String())
 	}else{
 		sType = paramType.Kind().String()
+	}
+	return sType
+}
+
+func GetTypeStringEx(classField reflect.StructField, classVal reflect.Value) string{
+	paramType := classField.Type
+	sType := ""
+	if paramType.Kind() == reflect.Ptr{
+		sType = "*" + paramType.Elem().Kind().String()
+	}else if paramType.Kind() == reflect.Slice{
+		sType = GetSliceTypeString(paramType.String())
+	}else if paramType.Kind() == reflect.Array{
+		sType = GetArrayTypeString(paramType.String())
+	} else{
+		sType = classField.Type.Kind().String()
 	}
 	return sType
 }

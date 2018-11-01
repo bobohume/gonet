@@ -1,12 +1,13 @@
 package network
 
 import (
+	"base"
 	"fmt"
 	"log"
-	"net"
+	"net/http"
 	"sync"
 	"sync/atomic"
-	"base"
+	"golang.org/x/net/websocket"
 )
 
 type IWebSocket interface {
@@ -15,7 +16,7 @@ type IWebSocket interface {
 	AssignClientId() int
 	GetClientById(int) *WebSocketClient
 	LoadClient() *WebSocketClient
-	AddClinet(*net.TCPConn, string, int) *WebSocketClient
+	AddClinet(*websocket.Conn, string, int) *WebSocketClient
 	DelClinet(*WebSocketClient) bool
 	StopClient(int)
 }
@@ -30,9 +31,8 @@ type WebSocket struct {
 	m_bCanAccept    bool
 	m_bNagle        bool
 	m_ClientList    map[int]*WebSocketClient
-	m_ClientChan	chan WClientChan
-	m_SendChan 		chan SendChan
-	m_Listen        *net.TCPListener
+	m_ClientLocker	*sync.RWMutex
+	m_ClientChan 	chan WClientChan
 	m_Pool          sync.Pool
 	m_Lock          sync.Mutex
 }
@@ -46,8 +46,8 @@ type WClientChan struct{
 func (this *WebSocket) Init(ip string, port int) bool {
 	this.Socket.Init(ip, port)
 	this.m_ClientList = make(map[int]*WebSocketClient)
+	this.m_ClientLocker = &sync.RWMutex{}
 	this.m_ClientChan = make(chan WClientChan, 1000)
-	this.m_SendChan = make(chan SendChan, 1000)
 	this.m_sIP = ip
 	this.m_nPort = port
 	this.m_Pool = sync.Pool{
@@ -58,6 +58,7 @@ func (this *WebSocket) Init(ip string, port int) bool {
 	}
 	return true
 }
+
 func (this *WebSocket) Start() bool {
 	this.m_bShuttingDown = false
 
@@ -65,24 +66,19 @@ func (this *WebSocket) Start() bool {
 		this.m_sIP = "127.0.0.1"
 	}
 
-	var strRemote = fmt.Sprintf("%s:%d", this.m_sIP, this.m_nPort)
-	tcpAddr, err := net.ResolveTCPAddr("tcp4", strRemote)
-	if err != nil {
-		log.Fatal("%v", err)
-	}
-	ln, err := net.ListenTCP("tcp4", tcpAddr)
-	if err != nil {
-		log.Fatal("%v", err)
-		return false
-	}
+	go func() {
+		var strRemote = fmt.Sprintf("%s:%d", this.m_sIP, this.m_nPort)
+		http.Handle("/ws", websocket.Handler(this.wserverRoutine))
+		err := http.ListenAndServe(strRemote, nil)
+		if err != nil {
+			fmt.Errorf("WebSocket ListenAndServe:", err)
+		}
+	}()
 
-	fmt.Printf("启动监听，等待链接！\n")
-
-	this.m_Listen = ln
+	fmt.Printf("WebSocket 启动监听，等待链接！\n")
 	//延迟，监听关闭
 	//defer ln.Close()
 	this.m_nState = SSF_ACCEPT
-	go wserverRoutine(this)
 	go wtimeRoutine(this)
 	return true
 }
@@ -93,7 +89,9 @@ func (this *WebSocket) AssignClientId() int {
 }
 
 func (this *WebSocket) GetClientById(id int) *WebSocketClient {
+	this.m_ClientLocker.RLock()
 	client, exist := this.m_ClientList[id]
+	this.m_ClientLocker.RUnlock()
 	if exist == true {
 		return client
 	}
@@ -101,16 +99,15 @@ func (this *WebSocket) GetClientById(id int) *WebSocketClient {
 	return nil
 }
 
-func (this *WebSocket) AddClinet(tcpConn *net.TCPConn, addr string, connectType int) *WebSocketClient {
+func (this *WebSocket) AddClinet(tcpConn *websocket.Conn, addr string, connectType int) *WebSocketClient {
 	pClient := this.LoadClient()
 	if pClient != nil {
 		pClient.Socket.Init("", 0)
 		pClient.m_pServer = this
 		pClient.m_ClientId = this.AssignClientId()
-		pClient.m_Conn = tcpConn
+		pClient.m_WebConn = tcpConn
 		pClient.m_sIP = addr
 		pClient.SetConnectType(connectType)
-		pClient.SetTcpConn(tcpConn)
 		this.NotifyActor(pClient, ADD_CLIENT)
 		pClient.Start()
 		this.m_nClientCount++
@@ -163,18 +160,18 @@ func (this *WebSocket) Stop() bool {
 }
 
 func (this *WebSocket) SendByID(id int, buff  []byte) int{
-	var sendChan SendChan
-	sendChan.buff = buff
-	sendChan.id = id
-	this.m_SendChan <- sendChan
+	pClient := this.GetClientById(id)
+	if pClient != nil{
+		pClient.Send(base.SetTcpEnd(buff))
+	}
 	return  0
 }
 
 func (this *WebSocket) SendMsgByID(id int, funcName string, params ...interface{}){
-	var sendChan SendChan
-	sendChan.buff = base.GetPacket(funcName, params...)
-	sendChan.id = id
-	this.m_SendChan <- sendChan
+	pClient := this.GetClientById(id)
+	if pClient != nil{
+		pClient.Send(base.SetTcpEnd(base.GetPacket(funcName, params...)))
+	}
 }
 
 func (this *WebSocket) Restart() bool {
@@ -191,36 +188,13 @@ func (this *WebSocket) OnNetFail(int) {
 }
 
 func (this *WebSocket) Close() {
-	defer this.m_Listen.Close()
 	this.Clear()
 	//this.m_Pool.Put(this)
 }
 
-func WSendClient(pClient *WebSocketClient, buff []byte){
-	defer func() {
-		if err := recover(); err != nil {
-			fmt.Println("SendRpc", err) // 这里的err其实就是panic传入的内容，55
-		}
-	}()
-
-	if pClient != nil{
-		pClient.Send(buff)
-	}
-}
-
-func wserverRoutine(server *WebSocket) {
-	for {
-		tcpConn, err := server.m_Listen.AcceptTCP()
-		handleError(err)
-		if err != nil {
-			return
-		}
-
-		fmt.Printf("客户端：%s已连接！\n", tcpConn.RemoteAddr().String())
-		//延迟，关闭链接
-		//defer tcpConn.Close()
-		whandleConn(server, tcpConn, tcpConn.RemoteAddr().String())
-	}
+func (this *WebSocket)wserverRoutine(conn *websocket.Conn){
+	fmt.Printf("客户端：%s已连接！\n", conn.RemoteAddr().String())
+	whandleConn(this, conn, conn.RemoteAddr().String())
 }
 
 func wtimeRoutine(pServer *WebSocket){
@@ -239,16 +213,11 @@ func wtimeRoutine(pServer *WebSocket){
 					pClinet.Stop()
 				}
 			}
-		case sendChan := <- pServer.m_SendChan:
-			pClient := pServer.GetClientById(sendChan.id)
-			if pClient != nil{
-				go WSendClient(pClient, sendChan.buff)
-			}
 		}
 	}
 }
 
-func whandleConn(server *WebSocket, tcpConn *net.TCPConn, addr string) bool {
+func whandleConn(server *WebSocket, tcpConn *websocket.Conn, addr string) bool {
 	if tcpConn == nil {
 		return false
 	}

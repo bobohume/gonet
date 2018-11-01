@@ -24,20 +24,25 @@ type (
 		m_pTimer 	 *time.Ticker//定时器
 		m_TimerCall	func()//定时器触发函数
 		m_bStart	bool
+		m_SocketId	int
+		m_CallId	int
 	}
 
 	IActor interface {
 		Init(int)
-		Clear()
+		clear()
 		Stop()
 		Start()
 		FindCall(string) interface{}
 		RegisterCall(string, interface{})//这里在回调的第一个参数为默认附加参数，为CALLER 信息， 同线程为ACOTRID,remote为SOCKETID
-		SendMsg(int,string, ...interface{})
+		SendMsg(string, ...interface{})
 		Send(CallIO)
 		PacketFunc(int,[]byte) bool//回调函数
 		RegisterTimer(time.Duration, interface{})//注册定时器,时间为纳秒 1000 * 1000 * 1000
 		GetId() int
+		GetCallId() int
+		GetSocketId() int//rpc is safe
+		SendNoBlock(CallIO)
 	}
 
 	CallIO struct {
@@ -45,30 +50,13 @@ type (
 		ActorId int
 		Buff []byte
 	}
-
-	Caller struct{
-		SocketId int
-		ActorId int
-	}
 )
 
 const (
 	DESDORY_EVENT = iota
 )
 
-func SendActor(pActor IActor, io CallIO){
-	defer func() {
-		if err := recover(); err != nil {
-			fmt.Println("SendActor", err)
-		}
-	}()
-
-	if pActor != nil{
-		pActor.Send(io)
-	}
-}
-
-func SendMsg(pActor *Actor, sokcetId int, funcName string, params ...interface{}){
+func SendMsg(pActor IActor, sokcetId int, funcName string, params ...interface{}){
 	defer func() {
 		if err := recover(); err != nil {
 			fmt.Println("SendMsg", err)
@@ -76,7 +64,7 @@ func SendMsg(pActor *Actor, sokcetId int, funcName string, params ...interface{}
 	}()
 
 	var io CallIO
-	io.ActorId = pActor.m_Id
+	io.ActorId = pActor.GetId()
 	io.SocketId = sokcetId
 	io.Buff = base.GetPacket(funcName, params...)
 
@@ -94,6 +82,14 @@ func (this *Actor) GetId() int {
 	return this.m_Id
 }
 
+func (this *Actor) GetSocketId() int {
+	return this.m_SocketId
+}
+
+func (this *Actor) GetCallId() int {
+	return this.m_CallId
+}
+
 func (this *Actor) Init(chanNum int) {
 	this.m_CallChan = make(chan CallIO, chanNum)
 	this.m_AcotrChan = make(chan int, 1)
@@ -105,12 +101,15 @@ func (this *Actor) Init(chanNum int) {
 }
 
 func (this *Actor)  RegisterTimer(duration time.Duration, fun interface{}){
+	this.m_pTimer.Stop()
 	this.m_pTimer = time.NewTicker(duration)
 	this.m_TimerCall = fun.(func())
 }
 
-func (this *Actor) Clear() {
+func (this *Actor) clear() {
 	this.m_Id = 0
+	this.m_CallId = 0
+	this.m_SocketId = 0
 	this.m_bStart = false
 	//this.m_pActorMgr = nil
 	close(this.m_AcotrChan)
@@ -130,7 +129,7 @@ func (this *Actor) Stop() {
 
 func (this *Actor) Start(){
 	if this.m_bStart == false{
-		go ActorRoutine(this)
+		go this.run()
 		this.m_bStart = true
 	}
 }
@@ -157,17 +156,39 @@ func (this *Actor) RegisterCall(funcName string, call interface{}) {
 	this.m_CallMap[funcName] = call
 }
 
-func (this *Actor)  SendMsg(sokcetId int, funcName string, params ...interface{}) {
+func (this *Actor) SendMsg(funcName string, params ...interface{}) {
 	var io CallIO
 	io.ActorId = this.m_Id
-	io.SocketId = sokcetId
+	io.SocketId = 0
 	io.Buff = base.GetPacket(funcName, params...)
 	this.Send(io)
 }
 
 func (this *Actor) Send(io CallIO) {
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Println("Send", err)
+		}
+	}()
+
 	this.m_CallChan <- io
 }
+
+//防止消息过快,主要在player里面
+func (this *Actor) SendNoBlock(io CallIO) {
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Println("SendNoBlock", err)
+		}
+	}()
+
+	select {
+	case this.m_CallChan <- io: //chan满后再写即阻塞，select进入default分支报错
+	default:
+		break
+	}
+}
+
 
 func (this *Actor) PacketFunc(id int, buff []byte) bool{
 	var io CallIO
@@ -187,13 +208,14 @@ func (this *Actor) PacketFunc(id int, buff []byte) bool{
 }
 
 func (this *Actor) call(io CallIO) {
+	funcName := ""
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Println("actor call", err)
+			fmt.Println(fmt.Sprintf("actor call [%s]", funcName), err)
 		}
 	}()
 	bitstream := base.NewBitStream(io.Buff, len(io.Buff))
-	funcName := bitstream.ReadString()
+	funcName = bitstream.ReadString()
 	funcName = strings.ToLower(funcName)
 	pFunc := this.FindCall(funcName)
 	if pFunc != nil {
@@ -202,12 +224,10 @@ func (this *Actor) call(io CallIO) {
 		strParams := reflect.TypeOf(pFunc).String()
 
 		nCurLen := bitstream.ReadInt(8)
-		params := make([]interface{}, nCurLen+1)
-		var caller Caller
-		caller.SocketId = io.SocketId
-		caller.ActorId = io.ActorId
-		params[0] = &caller
-		for i := 1; i < nCurLen+1; i++  {
+		params := make([]interface{}, nCurLen)
+		this.m_SocketId = io.SocketId
+		this.m_CallId = io.ActorId
+		for i := 0; i < nCurLen; i++  {
 			switch bitstream.ReadInt(8) {
 			case 1:
 				params[i] = bitstream.ReadFlag()
@@ -367,7 +387,7 @@ func (this *Actor) call(io CallIO) {
 		}
 
 		//params no fit
-		for i := 0;  i< nCurLen+1; i++ {
+		for i := 0;  i< nCurLen; i++ {
 			if k.In(i).Kind() != reflect.TypeOf(params[i]).Kind() {
 				log.Println(k.In(i).Kind(), reflect.TypeOf(params[i]).Kind())
 				log.Printf("func [%s] params no fit, func params [%s], params [%v]", funcName, strParams, params)
@@ -389,7 +409,31 @@ func (this *Actor) call(io CallIO) {
 	}
 }
 
-func ActorRoutine(pActor *Actor) bool {
+func (this *Actor) 	run(){
+	bExit := false
+	for {
+		select {
+		case io := <-this.m_CallChan:
+			this.call(io)
+		case msg := <-this.m_AcotrChan :
+			if msg == DESDORY_EVENT{
+				bExit = true
+				break
+			}
+		case <- this.m_pTimer.C:
+			if this.m_TimerCall != nil{
+				this.m_TimerCall()
+			}
+		}
+		if bExit{
+			break
+		}
+	}
+
+	this.clear()
+}
+
+/*func ActorRoutine(pActor *Actor) bool {
 	if pActor == nil {
 		return false
 	}
@@ -414,6 +458,6 @@ func ActorRoutine(pActor *Actor) bool {
 		}
 	}
 
-	pActor.Clear()
+	pActor.clear()
 	return true
-}
+}*/

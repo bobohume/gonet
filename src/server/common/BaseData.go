@@ -1,7 +1,7 @@
 package common
 
 type(
-	CBaseDataRes struct{
+	BaseDataRes struct{
 		DataMap map[interface{}] interface{}
 	}
 
@@ -10,26 +10,26 @@ type(
 		Clear()
 		Init()
 		AddData(int, interface{})
-		GetData(int) interface{}
+		GetBaseData(int) interface{}
 		Read() bool
 	}
 )
 
-func (this *CBaseDataRes) Close(){
+func (this *BaseDataRes) Close(){
 	this.Clear()
 }
 
-func (this *CBaseDataRes) Clear(){
+func (this *BaseDataRes) Clear(){
 	for i,_ := range this.DataMap{
 		delete(this.DataMap, i)
 	}
 }
 
-func (this *CBaseDataRes) AddData(id interface{}, pData interface{}){
+func (this *BaseDataRes) AddData(id int, pData interface{}){
 	this.DataMap[id] = pData
 }
 
-func (this *CBaseDataRes) GetData(id interface{}) interface{}{
+func (this *BaseDataRes) GetBaseData(id int) interface{}{
 	pData, exist := this.DataMap[id]
 	if exist{
 		return pData
@@ -37,10 +37,10 @@ func (this *CBaseDataRes) GetData(id interface{}) interface{}{
 	return nil
 }
 
-func (this *CBaseDataRes) Init(){
+func (this *BaseDataRes) Init(){
 	this.DataMap = make(map[interface{}] interface{})
 }
 
-func (this *CBaseDataRes) Read() bool{
+func (this *BaseDataRes) Read() bool{
 	return true
 }

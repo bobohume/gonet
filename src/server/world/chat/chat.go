@@ -68,7 +68,7 @@ func (this *ChatMgr) Init(num int) {
 	this.m_playerChatMap = make(map[int64] *stPlayerChatRecord)
 
 	//聊天信息
-	this.RegisterCall("C_W_ChatMessage", func(caller *actor.Caller, packet *message.C_W_ChatMessage){
+	this.RegisterCall("C_W_ChatMessage", func(packet *message.C_W_ChatMessage){
 		playerId := int(*packet.Sender)
 		accountId := int(*packet.GetPacketHead().Id)
 		if accountId == 0{
@@ -113,7 +113,7 @@ func (this *ChatMgr) Init(num int) {
 	})
 
 	//注册频道
-	this.RegisterCall("RegisterChannel", func(caller *actor.Caller, messageType int8) {
+	this.RegisterCall("RegisterChannel", func(messageType int8) {
 		channelId := this.GetChannelManager().RegisterChannel(messageType, "")
 
 		if 0 == channelId{
@@ -125,17 +125,17 @@ func (this *ChatMgr) Init(num int) {
 	})
 
 	//销毁频道
-	this.RegisterCall("UnRegisterChannel", func(caller *actor.Caller, channelId int) {
+	this.RegisterCall("UnRegisterChannel", func(channelId int) {
 		this.GetChannelManager().UnregisterChannel(channelId)
 	})
 
 	//添加玩家到频道
-	this.RegisterCall("AddPlayerToChannel", func(caller *actor.Caller, playerId, channelId int, playerName string) {
+	this.RegisterCall("AddPlayerToChannel", func(playerId, channelId int, playerName string) {
 		this.GetChannelManager().AddPlayer(playerId, channelId, playerName)
 	})
 
 	//删除玩家到频道
-	this.RegisterCall("RemovePlayerToChannel", func(caller *actor.Caller, playerId, channelId int) {
+	this.RegisterCall("RemovePlayerToChannel", func(playerId, channelId int) {
 		this.GetChannelManager().RemovePlayer(playerId, channelId)
 	})
 	
@@ -164,7 +164,7 @@ func (this *ChatMgr) SendMessage(chat *ChatMessage, playerList []int){
 }
 
 func (this *ChatMgr) SendMessageToAll(chat *ChatMessage){
-	world.SERVER.GetServerMgr().SendMsg(0, "Chat_SendMessageAll", )
+	world.SERVER.GetServerMgr().SendMsg("Chat_SendMessageAll", )
 }
 
 

@@ -28,6 +28,34 @@ func QuickSort(arr []int, left int, right int){
 	QuickSort(arr, i+1, right)
 }
 
+//-----------quick2 sort----------//
+func QuickSort2(arr []int, left, right int){
+	i, j := left, right
+	if i >= j {
+		return
+	}
+
+	key := arr[i]
+	for i < j{
+		for ;j > i; j--{
+			if arr[j] < key{
+				arr[i] = arr[j]
+				break
+			}
+		}
+
+		for ;i < j; i++{
+			if arr[i] > key{
+				arr[j] = arr[i]
+				break
+			}
+		}
+	}
+	arr[i] = key
+	QuickSort2(arr, left, i-1)
+	QuickSort2(arr, i+1, right)
+}
+
 //-----------insert sort----------//
 func InsertSort(arr []int){
 	for i:=1; i < len(arr); i++{
@@ -92,7 +120,7 @@ func MinHeap(arr []int){
 
 func PopHeap(arr []int, bMax bool) []int{
 	nLen := len(arr)
-	if nLen <= 1{
+	if nLen < 1{
 		return arr
 	}
 	swap(&arr[0], &arr[nLen-1])

@@ -2,53 +2,51 @@ package world
 
 import (
 	"actor"
-	"container/list"
+	"base"
 	"message"
+	"server/common"
+	"sync"
 )
 
 type (
-	HashSocketMap map[int] *stServerInfo
+	HashSocketMap map[int] *common.ServerInfo
 
-	CServerSocketManager struct{
+	ServerSocketManager struct{
 		actor.Actor
+
+		m_Locker	*sync.RWMutex
 		m_SocketMap HashSocketMap
 		m_GateMap 	HashSocketMap
 	}
 
 	IServerSocketManager interface {
 		actor.IActor
-		AddServerMap(stServerInfo)
-		ReleaseServerMap(int,bool)
-		GetAllGate(list.List)
-		GetGateId(int)int
-		GetSeverInfo(int, int) *stServerInfo
-	}
 
-	stServerInfo struct {
-		Type int//服务类型编号
-		GateId int//服务网关编号
-		Ip string//服务IP
-		Port int//服务端口
-		SocketId int//连接句柄
+		AddServerMap(*common.ServerInfo)
+		ReleaseServerMap(int,bool)
+		GetAllGate(base.IVector)
+		GetSeverInfo(int, int) *common.ServerInfo
 	}
 )
 
-func (this *CServerSocketManager) AddServerMap(info stServerInfo){
-	delete(this.m_SocketMap, info.SocketId)
+func (this *ServerSocketManager) AddServerMap(pSeverInfo *common.ServerInfo){
+	this.m_Locker.Lock()
+	this.m_SocketMap[pSeverInfo.SocketId] = pSeverInfo
+	this.m_Locker.Unlock()
 
-	pServerInfo := new(stServerInfo)
-	*pServerInfo = info
-	this.m_SocketMap[info.SocketId] = pServerInfo
-
-	switch info.Type {
+	switch pSeverInfo.Type {
 	case int(message.SERVICE_GATESERVER):
-		this.m_GateMap[info.GateId] = pServerInfo
-		SERVER.GetLog().Printf("ADD GATE SERVER: [%d]-[%s:%d]", pServerInfo.GateId, pServerInfo.Ip, pServerInfo.Port)
+		this.m_Locker.Lock()
+		this.m_GateMap[pSeverInfo.SocketId] = pSeverInfo
+		this.m_Locker.Unlock()
+		SERVER.GetLog().Printf("ADD GATE SERVER: [%d]-[%s:%d]", pSeverInfo.SocketId, pSeverInfo.Ip, pSeverInfo.Port)
 	}
 }
 
-func (this *CServerSocketManager) ReleaseServerMap(socketid int, bClose bool){
+func (this *ServerSocketManager) ReleaseServerMap(socketid int, bClose bool){
+	this.m_Locker.RLock()
 	pServerInfo, exist := this.m_SocketMap[socketid]
+	this.m_Locker.RUnlock()
 	if !exist{
 		return
 	}
@@ -56,57 +54,56 @@ func (this *CServerSocketManager) ReleaseServerMap(socketid int, bClose bool){
 	SERVER.GetLog().Printf("服务器断开连接socketid[%d]",socketid)
 	switch pServerInfo.Type {
 	case int(message.SERVICE_GATESERVER):
-		SERVER.GetLog().Printf("与Gate服务器断开连接,id[%d]",pServerInfo.GateId)
-		delete(this.m_SocketMap, pServerInfo.GateId)
+		SERVER.GetLog().Printf("与Gate服务器断开连接,id[%d]",pServerInfo.SocketId)
+		this.m_Locker.Lock()
+		delete(this.m_GateMap, pServerInfo.SocketId)
+		this.m_Locker.Unlock()
 	}
 
+	this.m_Locker.Lock()
 	delete(this.m_SocketMap, pServerInfo.SocketId)
+	this.m_Locker.Unlock()
 	if bClose {
 		SERVER.GetServer().StopClient(socketid)
 	}
 }
 
-func (this *CServerSocketManager) GetSeverInfo(nType int, gateid int) *stServerInfo{
+func (this *ServerSocketManager) GetSeverInfo(nType int, socketId int) *common.ServerInfo{
 	switch nType {
 	case int(message.SERVICE_GATESERVER):
-		pServerInfo, _ := this.m_GateMap[gateid]
+		this.m_Locker.RLock()
+		pServerInfo, _ := this.m_GateMap[socketId]
+		this.m_Locker.RUnlock()
 		return  pServerInfo
 	}
 	return  nil
 }
 
-func (this *CServerSocketManager) GetGateId(socketid int)int{
-	pServerInfo, exist := this.m_SocketMap[socketid]
-	if !exist{
-		return -1
-	}
-	return  pServerInfo.GateId
-}
-
-func (this *CServerSocketManager) GetAllGate(gates list.List){
+func (this *ServerSocketManager) GetAllGate(vec base.IVector){
+	this.m_Locker.RLock()
 	for _, v := range this.m_GateMap{
-		gates.PushBack(v)
+		vec.Push_back(v)
 	}
+	this.m_Locker.RUnlock()
 }
 
-
-func (this *CServerSocketManager) Init(num int){
+func (this *ServerSocketManager) Init(num int){
 	this.Actor.Init(num)
 	this.m_GateMap 		= make(HashSocketMap)
 	this.m_SocketMap 	= make(HashSocketMap)
-	this.RegisterCall("DISCONNECT", func(caller *actor.Caller, socketid int) {
+	this.m_Locker		= &sync.RWMutex{}
+	this.RegisterCall("DISCONNECT", func(socketid int) {
 		this.ReleaseServerMap(socketid, false)
 	})
 
-	this.RegisterCall("CONNECT", func(caller *actor.Caller, nType int, GateId int, Ip string, Port int) {
-		var ServerInfo stServerInfo
-		ServerInfo.SocketId = caller.SocketId
-		ServerInfo.Type = nType
-		ServerInfo.GateId = GateId
-		ServerInfo.Ip = Ip
-		ServerInfo.Port = Port
+	this.RegisterCall("CONNECT", func(nType int, Ip string, Port int) {
+		pServerInfo := new(common.ServerInfo)
+		pServerInfo.SocketId = this.GetSocketId()
+		pServerInfo.Type = nType
+		pServerInfo.Ip = Ip
+		pServerInfo.Port = Port
 
-		this.AddServerMap(ServerInfo)
+		this.AddServerMap(pServerInfo)
 	})
 	this.Actor.Start()
 }

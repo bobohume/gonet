@@ -1,6 +1,7 @@
 package db
 import (
-"reflect"
+	"base"
+	"reflect"
 "fmt"
 "strings"
 "strconv"
@@ -15,14 +16,14 @@ const(
 )
 
 func getInsertSql(classField reflect.StructField, classVal reflect.Value) (bool,string,string) {
-	classType := classField.Name
-	defer func() {
+	classType := getSqlName(classField)
+	/*defer func() {
 		if err := recover(); err != nil {
 			fmt.Println("getInsertSql", classType,  err)
 		}
-	}()
+	}()*/
 
-	sType := getTypeString(classField, classVal)
+	sType := base.GetTypeStringEx(classField, classVal)
 	//fmt.Println(classVal, classType, sType, classVal.Type().String())
 	sqlname := ""
 	sqlvalue := ""
@@ -480,20 +481,28 @@ func InsertSqlEx(obj interface{}, sqltable string, params ...string) string {
 
 	sqlname := ""
 	sqlvalue := ""
-	for _, v := range params{
-		if !protoVal.FieldByName(v).CanInterface(){//private成员不能读取
+	nameMap := make(map[string] string)
+	for _,v := range params{
+		v1 := strings.ToLower(v)
+		nameMap[v1] = v1
+	}
+	for i := 0; i < protoType.NumField(); i++ {
+		if !protoVal.Field(i).CanInterface() {//private成员不能读取
 			continue
 		}
 
-		v1,_ := protoType.FieldByName(v)
-		bRight, name, value := getInsertSql(v1, protoVal.FieldByName(v))
-		if !bRight{
-			errorStr := fmt.Sprintf("InsertSqlEx error %s", reflect.TypeOf(obj).Name())
-			panic(errorStr)
-			return ""//丢弃这个包
+		sf := protoType.Field(i)
+		_, exist := nameMap[getSqlName(sf)]
+		if exist{
+			bRight, name, value := getInsertSql(sf, protoVal.Field(i))
+			if !bRight{
+				errorStr := fmt.Sprintf("InsertSqlEx error %s", reflect.TypeOf(obj).Name())
+				panic(errorStr)
+				return ""//丢弃这个包
+			}
+			sqlname += name
+			sqlvalue += value
 		}
-		sqlname += name
-		sqlvalue += value
 	}
 	return insertSqlStr(sqltable, sqlname, sqlvalue)
 }

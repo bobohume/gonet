@@ -19,7 +19,7 @@ func consoleError(buf []byte){
  func ParseConsole(pCmd actor.IActor, command []byte) {
 	defer func() {
 		if err := recover(); err != nil{
-			fmt.Printf("parseConsole error [%s]", error.Error)
+			fmt.Printf("parseConsole error [%s]", err.(error).Error())
 		}
 	}()
 
@@ -53,16 +53,17 @@ func consoleError(buf []byte){
 	}
 
 	if pCmd.FindCall(funcName) != nil{
-		pCmd.SendMsg(0, funcName, params...)
+		pCmd.SendMsg(funcName, params...)
 	}else{
 		consoleError(command)
 	}
 }
 
+//linux下面nohup &开启的时候当nohup文件占满磁盘的时候，这个就不会阻塞了，注意
 func consoleroutine(pCmd actor.IActor) {
 	command := make([]byte, 1024)
-	reader := bufio.NewReader(os.Stdin)
 	for {
+		reader := bufio.NewReader(os.Stdin)
 		command, _, _ = reader.ReadLine()
 		ParseConsole(pCmd, command)
 	}

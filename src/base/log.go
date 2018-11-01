@@ -28,12 +28,17 @@ type (
 	ILog interface {
 		Init(string) bool
 		Write(int)
-		WreiteFile(int)
+		WriteFile(int)
+		Println(...interface{})
+		Print(...interface{})
+		Fatalln(...interface{})
+		Fatal(...interface{})
+		Fatalf(string, ...interface{})
 	}
 )
 
 var(
-	G_Log CLog
+	GLOG *CLog
 )
 
 func (this *CLog) Init(fileName string) bool {
@@ -41,6 +46,7 @@ func (this *CLog) Init(fileName string) bool {
 	this.m_FileName = fileName
 	this.m_LogSuffix = "log"
 	this.m_ErrSuffix = "err"
+	GLOG = this
 	return true
 }
 

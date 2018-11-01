@@ -1,12 +1,12 @@
 package db
 
 import (
-	"reflect"
-	"fmt"
-	"strings"
-	"strconv"
-	"log"
 	"base"
+	"fmt"
+	"log"
+	"reflect"
+	"strconv"
+	"strings"
 )
 
 const(
@@ -14,30 +14,15 @@ const(
 	delete_sqlarray = "%s%d='%s',"
 )
 
-func getTypeString(classField reflect.StructField, classVal reflect.Value) string{
-	paramType := classField.Type
-	sType := ""
-	if paramType.Kind() == reflect.Ptr{
-		sType = "*" + paramType.Elem().Kind().String()
-	}else if paramType.Kind() == reflect.Slice{
-		sType = base.GetSliceTypeString(paramType.String())
-	}else if paramType.Kind() == reflect.Array{
-		sType = base.GetArrayTypeString(paramType.String())
-	} else{
-		sType = classField.Type.Kind().String()
-	}
-	return sType
-}
-
 func getDeleteSql(classField reflect.StructField, classVal reflect.Value) (bool,string,string) {
-	classType := classField.Name
-	defer func() {
+	classType := getSqlName(classField)
+	/*defer func() {
 		if err := recover(); err != nil {
 			fmt.Println("getDeleteSql", classType,  err)
 		}
-	}()
+	}()*/
 
-	sType := getTypeString(classField, classVal)
+	sType := base.GetTypeStringEx(classField, classVal)
 	//fmt.Println(classVal, classType, sType, classVal.Type().String())
 	var strsql *string
 	primarysql := ""
@@ -449,21 +434,30 @@ func DeleteSqlEx(obj interface{}, sqltable string, params ...string) string {
 
 	str := ""
 	primary := ""
-	for _, v := range params{
-		if !protoVal.FieldByName(v).CanInterface(){//private成员不能读取
+	nameMap := make(map[string] string)
+	for _,v := range params{
+		v1 := strings.ToLower(v)
+		nameMap[v1] = v1
+	}
+	for i := 0; i < protoType.NumField(); i++ {
+		if !protoVal.Field(i).CanInterface() {
 			continue
 		}
 
-		v1,_ := protoType.FieldByName(v)
-		bRight, strsql, strprimary := getDeleteSql(v1, protoVal.FieldByName(v))
-		if !bRight{
-			errorStr := fmt.Sprintf("DeleteSqlEx error %s", reflect.TypeOf(obj).Name())
-			panic(errorStr)
-			return ""//丢弃这个包
+		sf := protoType.Field(i)
+		_, exist := nameMap[getSqlName(sf)]
+		if exist{
+			bRight, name, value := getDeleteSql(sf, protoVal.Field(i))
+			if !bRight{
+				errorStr := fmt.Sprintf("DeleteSqlEx error %s", reflect.TypeOf(obj).Name())
+				panic(errorStr)
+				return ""//丢弃这个包
+			}
+			str += name
+			primary += value
 		}
-		str += strsql
-		primary += strprimary
 	}
+
 	return deleteSqlStr(sqltable, str, primary)
 }
 

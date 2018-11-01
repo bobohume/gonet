@@ -2,7 +2,6 @@ package base
 
 import (
 	"strings"
-	"hash/fnv"
 )
 
 const(
@@ -80,8 +79,9 @@ var(
 )
 
 func GetMessageCode1(strName string) uint32 {
-	h := fnv.New32()
+	return GetMessageCode2(strName)
+	/*h := fnv.New32()
 	h.Write([]byte(strName))
 	sum := h.Sum(nil)
-	return uint32(BytesToInt(sum))
+	return uint32(BytesToInt(sum))*/
 }

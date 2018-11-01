@@ -1,35 +1,34 @@
  package netgate
 
-import (
-	"network"
-	"base"
-	"strconv"
-	"time"
-	"github.com/golang/protobuf/proto"
-)
+ import (
+	 "base"
+	 "github.com/golang/protobuf/proto"
+	 "network"
+	 "strconv"
+	 "time"
+ )
 
 type(
 	ServerMgr struct{
 		m_pService	*network.ServerSocket
 		m_pWorldClient *network.ClientSocket
 		m_pAccountClient *network.ClientSocket
+		m_pMonitorClient *network.ClientSocket
 		m_Inited bool
 		m_config base.Config
 		m_Log	base.CLog
 		m_TimeTraceTimer *time.Ticker
-		m_GateId int
-		m_PlayerMgr *CPlayerManager
+		m_PlayerMgr *PlayerManager
 	}
 
 	IServerMgr interface{
 		Init() bool
-		Stop()
-		Loop()
 		GetLog() *base.CLog
 		GetServer() *network.ServerSocket
-		GetWroldScoket() *network.ClientSocket
-		GetAccountScoket() *network.ClientSocket
-		GetPlayerMgr() *CPlayerManager
+		GetWorldSocket() *network.ClientSocket
+		GetAccountSocket() *network.ClientSocket
+		GetMonitorSocket() *network.ClientSocket
+		GetPlayerMgr() *PlayerManager
 		OnServerStart()
 	}
 
@@ -56,15 +55,20 @@ var(
 	 return this.m_pService
  }
 
- func (this *ServerMgr) GetPlayerMgr() *CPlayerManager{
+ func (this *ServerMgr) GetPlayerMgr() *PlayerManager{
  	return this.m_PlayerMgr
  }
 
- func (this *ServerMgr) GetWorldScoket() *network.ClientSocket{
+ func (this *ServerMgr) GetWorldSocket() *network.ClientSocket{
  	return this.m_pWorldClient
  }
- func (this *ServerMgr) GetAccountScoket() *network.ClientSocket {
+
+ func (this *ServerMgr) GetAccountSocket() *network.ClientSocket {
  	return this.m_pAccountClient
+ }
+
+ func (this *ServerMgr) GetMonitorSocket() *network.ClientSocket{
+ 	return this.m_pMonitorClient
  }
 
 func (this *ServerMgr)Init() bool{
@@ -90,7 +94,6 @@ func (this *ServerMgr)Init() bool{
 		this.m_Log.Println("**********************************************************");
 	}
 	ShowMessage()
-	this.m_GateId,_ = strconv.Atoi(NetGateId)
 
 	//初始化socket
 	this.m_pService = new(network.ServerSocket)
@@ -102,8 +105,8 @@ func (this *ServerMgr)Init() bool{
 	packet.Init(1000)
 	packet1 := new(UserServerProcess)
 	packet1.Init(1000)
-	this.m_pService.BindPacketFunc(packet1.PacketFunc)
 	this.m_pService.BindPacketFunc(packet.PacketFunc)
+	this.m_pService.BindPacketFunc(packet1.PacketFunc)
 	this.m_pService.Start()
 
 	//websocket
@@ -126,11 +129,9 @@ func (this *ServerMgr)Init() bool{
 	this.m_pWorldClient.Init(WorldServerIP,port)
 	packet2 := new(WorldProcess)
 	packet2.Init(1000)
-	packet21 := new(WorldClientProcess)
-	packet21.Init(1000)
 	this.m_pWorldClient.BindPacketFunc(packet2.PacketFunc)
-	this.m_pWorldClient.BindPacketFunc(packet21.PacketFunc)
-	this.m_pWorldClient.Start()
+	this.m_pWorldClient.BindPacketFunc(DispatchPacketToClient)
+	//this.m_pWorldClient.Start()
 
 	//连接account
 	this.m_pAccountClient = new(network.ClientSocket)
@@ -139,11 +140,11 @@ func (this *ServerMgr)Init() bool{
 	packet3 := new(AccountProcess)
 	packet3.Init(1000)
 	this.m_pAccountClient.BindPacketFunc(packet3.PacketFunc)
-	this.m_pAccountClient.Start()
+	//this.m_pAccountClient.Start()
 
 
 	//初始玩家管理
-	this.m_PlayerMgr = new(CPlayerManager)
+	this.m_PlayerMgr = new(PlayerManager)
 	this.m_PlayerMgr.Init(1000)
 
 	return  false
@@ -161,9 +162,9 @@ func SendToClient(socketId int, packet proto.Message){
 }
 
 func SendToWorld(msg string, params ...interface{}){
-	SERVER.GetWorldScoket().SendMsg(msg, params...)
+	SERVER.GetWorldSocket().SendMsg(msg, params...)
 }
 
  func SendToAccount(msg string, params ...interface{}){
-	 SERVER.GetAccountScoket().SendMsg(msg, params...)
+	 SERVER.GetAccountSocket().SendMsg(msg, params...)
  }

@@ -1,6 +1,7 @@
 package db
 
 import (
+	"base"
 	"reflect"
 	"fmt"
 	"strings"
@@ -14,14 +15,14 @@ const(
 )
 
 func getUpdateSql(classField reflect.StructField, classVal reflect.Value) (bool,string,string) {
-	classType := classField.Name
-	defer func() {
+	classType := getSqlName(classField)
+	/*defer func() {
 		if err := recover(); err != nil {
 			fmt.Println("getUpdateSql", classType, classVal,  err)
 		}
-	}()
+	}()*/
 
-	sType := getTypeString(classField, classVal)
+	sType := base.GetTypeStringEx(classField, classVal)
 	//fmt.Println(classVal, classType, sType, classVal.Type().String())
 	var strsql *string
 	primarysql := ""
@@ -438,20 +439,28 @@ func UpdateSqlEx(obj interface{}, sqltable string, params ...string) string {
 
 	str := ""
 	primary := ""
-	for _, v := range params{
-		v1,_ := protoType.FieldByName(v)
-		if !protoVal.FieldByName(v).CanInterface(){//private成员不能读取
+	nameMap := make(map[string] string)
+	for _,v := range params{
+		v1 := strings.ToLower(v)
+		nameMap[v1] = v1
+	}
+	for i := 0; i < protoType.NumField(); i++ {
+		if !protoVal.Field(i).CanInterface() {//private成员不能读取
 			continue
 		}
 
-		bRight, strsql, strprimary := getUpdateSql(v1, protoVal.FieldByName(v))
-		if !bRight{
-			errorStr := fmt.Sprintf("UpdateSqlEx error %s", reflect.TypeOf(obj).Name())
-			panic(errorStr)
-			return ""//丢弃这个包
+		sf := protoType.Field(i)
+		_, exist := nameMap[getSqlName(sf)]
+		if exist{
+			bRight, name, value := getUpdateSql(sf, protoVal.Field(i))
+			if !bRight{
+				errorStr := fmt.Sprintf("UpdateSqlEx error %s", reflect.TypeOf(obj).Name())
+				panic(errorStr)
+				return ""//丢弃这个包
+			}
+			str += name
+			primary += value
 		}
-		str += strsql
-		primary += strprimary
 	}
 	return updateSqlStr(sqltable, str, primary)
 }

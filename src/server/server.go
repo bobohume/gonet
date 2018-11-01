@@ -1,16 +1,19 @@
 package main
 
 import (
-	"server/account"
-	"server/netgate"
-	"time"
-	"os"
-	"server/world"
 	"base"
+	"fmt"
+	"os"
+	"os/signal"
+	"server/account"
+	"server/common"
+	"server/netgate"
+	"server/world"
 )
 
 func main() {
 	args := os.Args
+	base.RegisterMessage(&common.ServerInfo{})
 	if args[1] == "account"{
 		account.SERVER.Init()
 	}else if args[1] == "netgate"{
@@ -23,10 +26,8 @@ func main() {
 	
 	InitMgr(args[1])
 
-	for{
-		/*if args[1] == "netgate"{
-			netgate.SERVER.GetAccountScoket().SendMsg("11111")
-		}*/
-		time.Sleep(10000)
-	}
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, os.Kill)
+	s := <-c
+	fmt.Printf("server【%s】 exit ------- signal:[%v]", args[1], s)
 }

@@ -1,5 +1,7 @@
 package base
 
+import "fmt"
+
 //----------------bitsream---------------
 //for example
 //buf := make([]byte, 256)
@@ -10,16 +12,13 @@ package base
 //bitstream := NewBitStream(buf)
 //----------------------------------------
 
-import (
-	"fmt"
-)
-
 const (
 	Bit8   = 8
 	Bit16  = 16
 	Bit32  = 32
 	Bit64  = 64
 	Bit128 = 128
+	MAX_PACKET = 128 * 1024
 )
 
 type (
@@ -49,13 +48,14 @@ type (
 		GetStreamSize() int
 		SetPosition(int) bool
 		clear()
+		resize() bool
 
 		WriteBits(int, []byte)
 		ReadBits(int, []byte)
 		WriteInt(int, int)
 		ReadInt(int) int
 		ReadFlag() bool
-		WriteFlag()
+		WriteFlag(bool) bool
 		WriteString(string)
 		ReadString() string
 
@@ -63,19 +63,18 @@ type (
 		ReadInt64(int) int64
 		WriteFloat(float32)
 		ReadFloat() float32
-		WriteFLoat64(float64)
+		WriteFloat64(float64)
 		ReadFloat64() float64
 	}
 )
 
 func (this *BitStream) BuildPacketStream(buffer []byte, writeSize int) bool {
-	if writeSize == 0 {
+	if writeSize <= 0 {
 		return false
 	}
 
 	this.setBuffer(buffer, writeSize, -1)
 	this.SetPosition(0)
-	fmt.Print("")
 	return true
 }
 
@@ -90,7 +89,7 @@ func (this *BitStream) setBuffer(bufPtr []byte, size int, maxSize int) {
 		maxSize = size
 	}
 	this.maxWriteBitNum = maxSize << 3
-	this.bitsLimite = size << 3
+	this.bitsLimite = size
 	this.error = false
 }
 
@@ -106,14 +105,8 @@ func (this *BitStream) GetReadByteSize() int {
 	return (this.maxReadBitNum >> 3) - this.GetPosition()
 }
 
-func (this *BitStream) getCurPos() int {
+func (this *BitStream) GetCurPos() int {
 	return this.bitNum
-}
-
-func (this *BitStream) clear() {
-	var buff []byte
-	buff = make([]byte, this.bufSize)
-	this.dataPtr = buff
 }
 
 func (this *BitStream) GetPosition() int {
@@ -135,6 +128,26 @@ func (this *BitStream) SetPosition(pos int) bool {
 	return true
 }
 
+func (this *BitStream) clear() {
+	var buff []byte
+	buff = make([]byte, this.bufSize)
+	this.dataPtr = buff
+}
+
+func (this *BitStream) resize() bool{
+	fmt.Println("BitStream Resize")
+	this.dataPtr = append(this.dataPtr, make([]byte, this.bitsLimite)...)
+	size := this.bitsLimite * 2
+	if size <= 0 && size >= MAX_PACKET{
+		return false
+	}
+	this.bufSize = size
+	this.maxReadBitNum = size << 3
+	this.maxWriteBitNum = size << 3
+	this.bitsLimite = size
+	return true
+}
+
 func (this *BitStream) WriteBits(bitCount int, bitPtr []byte) {
 	if bitCount == 0 {
 		return
@@ -151,9 +164,11 @@ func (this *BitStream) WriteBits(bitCount int, bitPtr []byte) {
 	}
 
 	if bitCount+this.bitNum > this.maxWriteBitNum {
-		this.error = true
-		Assert(false, "Out of range write")
-		return
+		if !this.resize(){
+			this.error = true
+			Assert(false, "Out of range write")
+			return
+		}
 	}
 
 	byteCount := (bitCount + 7) >> 3
@@ -179,9 +194,11 @@ func (this *BitStream) ReadBits(bitCount int, bitPtr []byte) {
 	}
 
 	if bitCount+this.bitNum > this.maxReadBitNum {
-		this.error = true
-		Assert(false, "Out of range read")
-		return
+		if !this.resize(){
+			this.error = true
+			Assert(false, "Out of range read")
+			return
+		}
 	}
 
 	byteCount := (bitCount + 7) >> 3
@@ -216,7 +233,11 @@ func (this *BitStream) ReadFlag() bool {
 		if this.bitNum+8 < this.maxReadBitNum {
 			this.bitNum += 8
 		} else {
-			this.tailFlag = true
+			if !this.resize(){
+				this.tailFlag = true
+			}else{
+				this.bitNum += 8
+			}
 		}
 	}
 
@@ -239,7 +260,11 @@ func (this *BitStream) WriteFlag(val bool) bool {
 		if this.bitNum+8 < this.maxWriteBitNum {
 			this.bitNum += 8 //Ray; 跳开8个用于写flag
 		} else {
-			this.tailFlag = true
+			if !this.resize(){
+				this.tailFlag = true
+			}else {
+				this.bitNum += 8 //Ray; 跳开8个用于写flag
+			}
 		}
 	}
 

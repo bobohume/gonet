@@ -4,6 +4,7 @@ import (
 	"actor"
 	"database/sql"
 	"message"
+	"server/common"
 )
 
 type (
@@ -20,25 +21,24 @@ type (
 func (this *EventProcess) Init(num int) {
 	this.Actor.Init(num)
 	this.m_db = SERVER.GetDB()
-	this.RegisterCall("COMMON_RegisterRequest", func(caller *actor.Caller, nType int, GateId int, Ip string, Port int) {
-		var ServerInfo stServerInfo
-		ServerInfo.SocketId = caller.SocketId
-		ServerInfo.Type = nType
-		ServerInfo.GateId = GateId
-		ServerInfo.Ip = Ip
-		ServerInfo.Port = Port
+	this.RegisterCall("COMMON_RegisterRequest", func(nType int, Ip string, Port int) {
+		pServerInfo := new(common.ServerInfo)
+		pServerInfo.SocketId = this.GetSocketId()
+		pServerInfo.Type = nType
+		pServerInfo.Ip = Ip
+		pServerInfo.Port = Port
 
-		SERVER.GetServerMgr().SendMsg(caller.SocketId,"CONNECT", nType, GateId, Ip, Port)
+		SERVER.GetServerMgr().SendMsg("CONNECT", nType, Ip, Port)
 
-		switch ServerInfo.Type {
+		switch pServerInfo.Type {
 		case int(message.SERVICE_GATESERVER):
-			SERVER.GetServer().SendMsgByID(caller.SocketId, "COMMON_RegisterResponse")
+			SERVER.GetServer().SendMsgByID(this.GetSocketId(), "COMMON_RegisterResponse")
 		}
 	})
 
 	//断开链接
-	this.RegisterCall("DISCONNECT", func(caller *actor.Caller, socketid int) {
-		SERVER.GetServerMgr().SendMsg(caller.SocketId, "DISCONNECT", socketid)
+	this.RegisterCall("DISCONNECT", func(socketid int) {
+		SERVER.GetServerMgr().SendMsg("DISCONNECT", socketid)
 	})
 
 	this.Actor.Start()

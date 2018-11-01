@@ -50,7 +50,6 @@ func (this *ClientSocket) Stop() bool {
 		return true
 	}
 
-	this.Send([]byte("exit"))//通知服务器
 	this.m_bShuttingDown = true
 	return true
 }
@@ -85,20 +84,21 @@ func (this *ClientSocket) Connect() bool {
 	if this.m_nState == SSF_CONNECT{
 		return false
 	}
-	this.m_nState = SSF_CONNECT
+
 	var strRemote = fmt.Sprintf("%s:%d", this.m_sIP, this.m_nPort)
 	tcpAddr, err := net.ResolveTCPAddr("tcp4", strRemote)
 	if err != nil {
 		log.Printf("%v", err)
 	}
-	ln, err := net.DialTCP("tcp4", nil, tcpAddr)
-	if err != nil {
+	ln, err1 := net.DialTCP("tcp4", nil, tcpAddr)
+	if err1 != nil {
 		return false
 	}
 
+	this.m_nState = SSF_CONNECT
 	this.SetTcpConn(ln)
 	fmt.Printf("连接成功，请输入信息！\n")
-	this.CallPacket("COMMON_RegisterRequest")
+	this.CallMsg("COMMON_RegisterRequest")
 	return true
 }
 
@@ -106,7 +106,7 @@ func (this *ClientSocket) OnDisconnect() {
 }
 func (this *ClientSocket) OnNetFail(int) {
     this.Stop()
-	this.CallPacket("DISCONNECT", this.m_ClientId)
+	this.CallMsg("DISCONNECT", this.m_ClientId)
 }
 
 func clientRoutine(pClient *ClientSocket) bool {
@@ -114,14 +114,20 @@ func clientRoutine(pClient *ClientSocket) bool {
 		return false
 	}
 
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Println("clientRoutine", err)
+		}
+	}()
+
 	for {
 		if pClient.m_bShuttingDown {
 			break
 		}
 
 		var buff= make([]byte, pClient.m_MaxReceiveBufferSize)
-		n, err := io.ReadFull(pClient.m_Reader, buff)
-		//n, err := pClient.m_Conn.Read(buff)
+		//n, err := io.ReadFull(pClient.m_Reader, buff)
+		n, err := pClient.m_Conn.Read(buff)
 		if err == io.EOF {
 			fmt.Printf("远程链接：%s已经关闭！\n", pClient.m_Conn.RemoteAddr().String())
 			pClient.OnNetFail(0)

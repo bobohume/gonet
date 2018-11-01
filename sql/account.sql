@@ -2,7 +2,8 @@
 SQLyog Ultimate v11.52 (64 bit)
 MySQL - 5.7.17-log : Database - md_account
 *********************************************************************
-*/
+*/
+
 
 /*!40101 SET NAMES utf8 */;
 
@@ -22,21 +23,18 @@ DROP TABLE IF EXISTS `tbl_account`;
 
 CREATE TABLE `tbl_account` (
   `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '自增量',
-  `accountId` int(11) NOT NULL DEFAULT '0' COMMENT '账号id',
-  `accountName` varchar(100) NOT NULL DEFAULT '' COMMENT '账号名字',
+  `account_id` int(11) NOT NULL DEFAULT '0' COMMENT '账号id',
+  `account_name` varchar(100) NOT NULL DEFAULT '' COMMENT '账号名字',
   `password` varchar(32) NOT NULL DEFAULT '' COMMENT '密码',
   `status` int(11) NOT NULL DEFAULT '0' COMMENT '账号状态',
-  `loginTime` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '登录时间',
-  `logoutTime` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '登出时间',
-  `loginIp` varchar(20) NOT NULL DEFAULT '' COMMENT '登录ip',
+  `login_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '登录时间',
+  `logout_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '登出时间',
+  `login_ip` varchar(20) NOT NULL DEFAULT '' COMMENT '登录ip',
   PRIMARY KEY (`id`),
-  KEY `idx_tbl_account_accountName` (`accountName`),
-  KEY `idx_tbl_account_accountId` (`accountId`)
+  KEY `idx_tbl_account_account_name` (`account_name`),
+  KEY `idx_tbl_account_account_id` (`account_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=234 DEFAULT CHARSET=utf8;
 
-/*Data for the table `tbl_account` */
-
-insert  into `tbl_account`(`id`,`accountId`,`accountName`,`password`,`status`,`loginTime`,`logoutTime`,`loginIp`) values (232,50000232,'test66666','e10adc3949ba59abbe56e057f20f883e',0,'2018-01-18 20:53:13','2018-01-18 20:53:13',''),(233,10000233,'test166666','e10adc3949ba59abbe56e057f20f883e',0,'2018-01-19 12:08:55','2018-01-19 12:08:55','');
 
 /*Table structure for table `tbl_player` */
 
@@ -44,18 +42,14 @@ DROP TABLE IF EXISTS `tbl_player`;
 
 CREATE TABLE `tbl_player` (
   `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '自增量',
-  `playerId` int(11) NOT NULL DEFAULT '0' COMMENT '玩家ID',
-  `playerName` varchar(32) NOT NULL DEFAULT '' COMMENT '玩家名字',
-  `accountId` int(11) NOT NULL DEFAULT '0' COMMENT '账号ID',
-  `deleteFlag` tinyint(4) NOT NULL DEFAULT '0' COMMENT '删除标志',
+  `player_id` int(11) NOT NULL DEFAULT '0' COMMENT '玩家ID',
+  `player_name` varchar(32) NOT NULL DEFAULT '' COMMENT '玩家名字',
+  `account_id` int(11) NOT NULL DEFAULT '0' COMMENT '账号ID',
+  `delete_flag` tinyint(4) NOT NULL DEFAULT '0' COMMENT '删除标志',
   PRIMARY KEY (`id`),
-  KEY `idx_tbl_player_accountId` (`accountId`),
-  KEY `idx_tbl_player_playerId` (`playerId`)
+  KEY `idx_tbl_player_account_id` (`account_id`),
+  KEY `idx_tbl_player_player_id` (`player_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=237 DEFAULT CHARSET=utf8;
-
-/*Data for the table `tbl_player` */
-
-insert  into `tbl_player`(`id`,`playerId`,`playerName`,`accountId`,`deleteFlag`) values (229,50000229,'我是大坏蛋11',228,1),(230,50000230,'我是大坏蛋11',229,0),(231,50000231,'我是大坏蛋11',230,0),(232,50000232,'我是大坏蛋11',230,0),(233,50000233,'我是大坏蛋11',230,0),(234,50000234,'我是大坏蛋11',230,0),(235,50000235,'我是大坏蛋11',231,1),(236,50000236,'我是大坏蛋11((',50000232,0);
 
 /* Procedure structure for procedure `usp_activeaccount` */
 
@@ -68,21 +62,21 @@ BEGIN
      SET @accountid = -1;
 	 SET @result = '0000';
      
-    IF @result = '0000' AND EXISTS(SELECT 1 FROM tbl_account A  WHERE A.accountName = _userid) THEN
+    IF @result = '0000' AND EXISTS(SELECT 1 FROM tbl_account A  WHERE A.account_name = _userid) THEN
 		SET @result = '0002';
 	END IF;
     
 	IF @result = '0000' THEN
 		-- 开始事务
 		-- BEGIN
-		SELECT @accountid = A.accountid FROM tbl_account A WHERE A.accountName = _userid;
+		SELECT @accountid = A.account_id FROM tbl_account A WHERE A.account_name = _userid;
 		IF FOUND_ROWS() = 0 THEN
 			-- 开始插入帐号信息
-			INSERT INTO tbl_account(accountName,password)		
+			INSERT INTO tbl_account(account_name,password)
 				SELECT _userid,MD5(_password);
 			IF ROW_COUNT() = 1 THEN
 				SET @accountid = 10000000 + @@IDENTITY;
-                update tbl_account set accountid = @accountid where id=@@IDENTITY;
+                update tbl_account set account_id = @accountid where id=@@IDENTITY;
 			ELSE
 				SET @result = '0003';
 			END IF;
@@ -111,11 +105,11 @@ begin
     set @playerId = 0;
         
 	if @err = -1 then
-		insert into tbl_player(accountId, playerName)
+		insert into tbl_player(account_id, player_name)
 			value(_accountId, _playerName);
 		if row_count() <> 0 then
 			set @playerid = 10000000 + @@IDENTITY;
-			update tbl_player set playerId = @playerId where id=@@IDENTITY;
+			update tbl_player set player_id = @playerId where id=@@IDENTITY;
 			set @err = 0;
 		end if;
 	end if;
@@ -141,7 +135,7 @@ BEGIN
     set @result = '0000';
     set @accountId = 0;
     set @pwd = '';
-    select @accountId:= A.accountId, @pwd:= A.password from tbl_account A where accountName = _userid;
+    select @accountId:= A.account_id, @pwd:= A.password from tbl_account A where account_name = _userid;
     if found_rows() = 0 then
 		set @result = '0001';
 	else

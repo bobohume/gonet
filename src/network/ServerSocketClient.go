@@ -18,6 +18,7 @@ type IServerSocketClient interface {
 
 type ServerSocketClient struct {
 	Socket
+	m_WriteChan   chan []byte
 	m_pServer     *ServerSocket
 }
 
@@ -37,9 +38,13 @@ func (this *ServerSocketClient) Start() bool {
 		return false
 	}
 
+	this.m_WriteChan = make(chan []byte, MAX_WRITE_CHAN)
 	this.m_nState = SSF_CONNECT
 	this.m_Conn.SetNoDelay(true)
+	//this.m_Conn.SetKeepAlive(true)
+	//this.m_Conn.SetKeepAlivePeriod(5*time.Second)
 	go serverclientRoutine(this)
+	//go serverclientWriteRoutine(this)
 	return true
 }
 
@@ -74,13 +79,37 @@ func (this *ServerSocketClient) ReceivePacket(Id int, buff []byte){
 
 func (this *ServerSocketClient) OnNetFail(error int) {
 	this.Stop()
-	this.CallPacket("DISCONNECT", this.m_ClientId)
+	if this.m_PacketFuncList.Len() > 0 {
+		this.CallMsg("DISCONNECT", this.m_ClientId)
+	}else if (this.m_pServer != nil && this.m_pServer.m_PacketFuncList.Len() > 0){
+		this.m_pServer.CallMsg("DISCONNECT", this.m_ClientId)
+	}
 }
 
 func (this *ServerSocketClient) Close() {
+	close(this.m_WriteChan)
 	this.Socket.Close()
 	if this.m_pServer != nil {
 		this.m_pServer.DelClinet(this)
+	}
+}
+
+//防止消息过快
+func (this *ServerSocketClient) SendNoBlock(buff []byte) {
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Println("WriteBuf", err)
+		}
+	}()
+
+	if this.m_nConnectType == CLIENT_CONNECT{
+		select {
+		case this.m_WriteChan <- buff: //chan满后再写即阻塞，select进入default分支报错
+		default:
+			break
+		}
+	}else{
+		this.m_WriteChan <- buff
 	}
 }
 
@@ -89,14 +118,20 @@ func serverclientRoutine(pClient *ServerSocketClient) bool {
 		return false
 	}
 
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Println("serverclientRoutine", err)
+		}
+	}()
+
 	for {
 		if pClient.m_bShuttingDown {
 			break
 		}
 
 		var buff = make([]byte, pClient.m_MaxReceiveBufferSize)
-		n, err := io.ReadFull(pClient.m_Reader, buff)
-		//n, err := pClient.m_Conn.Read(buff)
+		//n, err := io.ReadFull(pClient.m_Reader, buff)
+		n, err := pClient.m_Conn.Read(buff)
 		if err == io.EOF {
 			fmt.Printf("远程链接：%s已经关闭！\n", pClient.m_Conn.RemoteAddr().String())
 			pClient.OnNetFail(0)
@@ -119,5 +154,21 @@ func serverclientRoutine(pClient *ServerSocketClient) bool {
 
 	pClient.Close()
 	fmt.Printf("%s关闭连接", pClient.m_sIP)
+	return true
+}
+
+func serverclientWriteRoutine(pClient *ServerSocketClient) bool {
+	for {
+		select {
+		case buff := <-pClient.m_WriteChan :
+			pClient.Send(buff)
+		}
+
+		if pClient.m_bShuttingDown {
+			break
+		}
+	}
+
+	pClient.Close()
 	return true
 }

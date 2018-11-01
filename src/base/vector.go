@@ -16,7 +16,6 @@ type (
 		increment()
 		decrement()
 
-
 		Erase(int)
 		Push_front(interface{})
 		Push_back(interface{})
@@ -26,6 +25,7 @@ type (
 		Back() interface{}
 		Begin() *interface{}
 		End() *interface{}
+		Next(*int) *interface{}
 		First() interface{}
 		Last() interface{}
 		Empty() bool
@@ -33,7 +33,9 @@ type (
 		Clear()
 		Len() int
 		Get(int) interface{}
-		Address() []interface{}
+		Array() []interface{}
+		Swap(i, j int)
+		Less(i, j int) bool
 	}
 )
 
@@ -119,11 +121,29 @@ func (this *Vector) Back() interface{}{
 }
 
 func (this *Vector) Begin() *interface{}{
-	return &this.mArray[0]
+	if this.Empty(){
+		return nil
+	}else{
+		return &this.mArray[0]
+	}
 }
 
 func (this *Vector) End() *interface{}{
-	return &this.mArray[this.mElementCount]
+	if this.Empty() {
+		return nil
+	}else{
+		return &this.mArray[this.mElementCount]
+	}
+}
+
+func (this *Vector) Next(index *int) *interface{}{
+	if *index < this.mElementCount - 1 {
+		index1 := index
+		*index++
+		return &this.mArray[*index1]
+	}
+
+	return this.End()
 }
 
 func (this *Vector) First() interface{}{
@@ -141,7 +161,7 @@ func (this *Vector) Empty() bool{
 }
 
 func (this *Vector) Size() int{
-	return  this.mElementCount
+	return  this.mArraySize
 }
 
 func (this *Vector) Clear() {
@@ -149,7 +169,7 @@ func (this *Vector) Clear() {
 }
 
 func (this *Vector) Len() int{
-	return this.mArraySize
+	return this.mElementCount
 }
 
 func (this *Vector) Get(index int) interface{}{
@@ -159,6 +179,14 @@ func (this *Vector) Get(index int) interface{}{
 
 func (this *Vector) Array() []interface{}{
 	return this.mArray[0:this.mElementCount]
+}
+
+func (this *Vector) Swap(i, j int){
+	this.mArray[i], this.mArray[j] = this.mArray[j], this.mArray[i]
+}
+
+func (this *Vector) Less(i, j int) bool {
+	return true
 }
 
 func NewVector() *Vector{

@@ -14,7 +14,7 @@ type (
 	IActorList interface {
 		RegisterGActorList(string, IActor)
 		SendGActor(string, int, string, ...interface{})
-		GetGActor(string) *IActor
+		GetGActor(string) IActor
 		InitGActorListHandle(network.ISocket)
 	}
 )
@@ -39,7 +39,7 @@ func (this *ActorList) SendGActor(name string, sokcetId int, funcName string, pa
 	name = strings.ToLower(name)
 	pActor := this.GetGActor(name)
 	if pActor != nil{
-		pActor.SendMsg(sokcetId, funcName, params...)
+		pActor.SendMsg(funcName, params...)
 	}
 }
 

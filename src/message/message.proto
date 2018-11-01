@@ -7,6 +7,7 @@ enum SERVICE{
     GATESERVER= 2;
     ACCOUNTSERVER=3;
     WORLDSERVER=4;
+    MONITORSERVER=5;
 };
 
 enum CHAT{
