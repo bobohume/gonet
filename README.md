@@ -14,4 +14,4 @@ websocket模式下，要在net，websocket注视掉如下代码：https://studyg
 4.win下执行build.bat,start.bat
 
 5.linux下执行build.sh,start.sh
-
+有问题可以加qq群：950288306
