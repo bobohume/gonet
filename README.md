@@ -19,4 +19,4 @@ websocket模式下，要在net，websocket注视掉如下代码：https://studyg
 
 
 服务器架构如下：
-go-server/框架.jpg
+![image](https://github.com/bobohume/go-server/blob/master/框架.jpg)
