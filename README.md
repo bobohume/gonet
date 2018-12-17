@@ -5,6 +5,8 @@ goland 游戏服务器架构，mmo架构，ai行为树，配置data
 
 websocket模式下，要在net，websocket注视掉如下代码：https://studygolang.com/articles/14842
 
+代码除了mysql，protobuf，redis这几个第三方库以外，其他都是自己写的，方便性能和修改，主动权在自己手里
+
 1.配置golang的gopath和goroot
 
 2.bin目录下的sxz_server.cfg配置数据库以及端口
