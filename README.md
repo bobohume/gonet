@@ -16,3 +16,7 @@ websocket模式下，要在net，websocket注视掉如下代码：https://studyg
 5.linux下执行build.sh,start.sh
 
 有问题可以加qq群：950288306
+
+
+服务器架构如下：
+go-server/框架.jpg
