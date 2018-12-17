@@ -8,6 +8,7 @@ websocket模式下，要在net，websocket注视掉如下代码：https://studyg
 代码除了mysql，protobuf，redis这几个第三方库以外，其他都是自己写的，方便性能和修改，主动权在自己手里
 
 服务器之间rpc，客户端服务器之间protobuf + rpc，客户端tcp遵从如下消息包头
+
     前四位 protobuf name 的 crc，中间protobuf字节流， 尾部+结束标志#@
 
 1.配置golang的gopath和goroot
