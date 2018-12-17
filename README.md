@@ -1,5 +1,5 @@
 # go-server
-goland 游戏服务器架构，mmo架构，ai行为树，配置data
+goland 游戏服务器架构，mmo架构，ai行为树，配置data，游戏大部分都在内存运算。
 
 设计之初，建立在actor模式下的；rpc，以及消息驱动，rpc无需注册，支持int，数据，struct（struct必须要注册结构题即可）；sql封装简单的orm，具体看demo
 
