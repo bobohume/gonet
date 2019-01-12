@@ -58,21 +58,21 @@ message C_W_Move{
 
 message W_C_LoginMap{
     required Ipacket PacketHead = 1;
-    required int32 Id = 2;
+    required int64 Id = 2;
     required Point3F Pos = 3;
     required float Rotation = 4;
 }
 
 message W_C_Move{
     required Ipacket PacketHead = 1;
-    required int32 Id = 2;
+    required int64 Id = 2;
     required Point3F Pos = 3;
     required float Rotation = 4;
 }
 
 message W_C_ADD_SIMOBJ{
     required Ipacket PacketHead = 1;
-    required int32 Id = 2;
+    required int64 Id = 2;
     required Point3F Pos = 3;
     required float Rotation = 4;
 }

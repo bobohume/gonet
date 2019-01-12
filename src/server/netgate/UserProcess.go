@@ -16,20 +16,21 @@ type(
 		actor.IActor
 
 		CheckClient(int, string, interface{})bool
+		CheckClientEx(int, string, interface{}) *AccountInfo
 		SwtichSendToWorld(int, string, interface{}, []byte)
 		SwtichSendToAccount(int, string, interface{}, []byte)
 	}
 )
 
-func (this *UserPrcoess)CheckClient(sockId int, packetName string, packet interface{}) bool{
+func (this *UserPrcoess) CheckClient(sockId int, packetName string, packet interface{}) bool{
 	packetHead := packet.(*message.Ipacket)
 	if packetHead != nil{
 		if IsCheckClient(packetName){
 			return  true
 		}
 
-		accountId := SERVER.GetPlayerMgr().GetSocketAccount(sockId)
-		if accountId <= 0 || accountId != int(*packetHead.Id) {
+		accountId := SERVER.GetPlayerMgr().GetAccount(sockId)
+		if accountId <= 0 || accountId != (*packetHead.Id) {
 			SERVER.GetLog().Fatalf("Old socket communication or viciousness[%d].", sockId)
 			return false
 		}
@@ -38,10 +39,28 @@ func (this *UserPrcoess)CheckClient(sockId int, packetName string, packet interf
 	return  false
 }
 
+func (this *UserPrcoess) CheckClientEx(sockId int, packetName string, packet interface{}) *AccountInfo{
+	packetHead := packet.(*message.Ipacket)
+	if packetHead != nil{
+		if IsCheckClient(packetName){
+			return  nil
+		}
+
+		pAccountInfo := SERVER.GetPlayerMgr().GetAccountInfo(sockId)
+		if pAccountInfo != nil && (pAccountInfo.AccountId <= 0 || pAccountInfo.AccountId != (*packetHead.Id)){
+			SERVER.GetLog().Fatalf("Old socket communication or viciousness[%d].", sockId)
+			return nil
+		}
+		return pAccountInfo
+	}
+	return nil
+}
+
 func (this *UserPrcoess)SwtichSendToWorld(socketId int, packetName string, packet interface{}, buff []byte){
-	if this.CheckClient(socketId, packetName, packet) == true{
+	pAccountInfo := this.CheckClientEx(socketId, packetName, packet)
+	if pAccountInfo != nil{
 		buff = base.SetTcpEnd(buff)
-		SERVER.GetWorldSocket().Send(buff)
+		SERVER.GetDispatchMgr().Send(pAccountInfo.WSocketId, buff)
 	}
 }
 

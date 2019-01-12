@@ -1,0 +1,1 @@
+protoc --go_out=../src/message  --proto_path=../src/message ../src/message/message.proto ../src/message/client.proto ../src/message/game.proto

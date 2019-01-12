@@ -20,14 +20,28 @@ func main() {
 	port,_ := strconv.Atoi(UserNetPort)
 	CLIENT = new(network.ClientSocket)
 	CLIENT.Init(UserNetIP, port)
-	PACKET := new(EventProcess)
+	PACKET = new(EventProcess)
 	PACKET.Init(1)
 	CLIENT.BindPacketFunc(PACKET.PacketFunc)
+	PACKET.Client = CLIENT
 	if CLIENT.Start(){
 		PACKET.LoginAccount()
 	}
 
 	InitCmd()
+
+	/*for i := 0; i < 10000; i++{
+		client := new(network.ClientSocket)
+		client.Init(UserNetIP, port)
+		packet := new(EventProcess)
+		packet.Init(1)
+		client.BindPacketFunc(packet.PacketFunc)
+		packet.Client = client
+		if client.Start(){
+			packet.LoginAccount()
+		}
+		//time.Sleep(1 * time.Microsecond)
+	}*/
 	//PACKET.LoginGame()
 	//for{
 	//	PACKET.LoginAccount()

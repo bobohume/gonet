@@ -21,11 +21,11 @@ message Ipacket{
 required int32  Stx = 1 [default=0x27];
 required int32  DestServerType = 2;
 required int32  Ckx = 3 [default=0x72];
-required int32  Id = 4;
+required int64  Id = 4;
 }
 
 message PlayerData{
-required int32 PlayerID = 1;
+required int64 PlayerID = 1;
 required string PlayerName = 2;
 required int32 PlayerGold = 3;
 }
@@ -33,12 +33,12 @@ required int32 PlayerGold = 3;
 message W_C_CreatePlayerResponse{
 required Ipacket PacketHead = 1;
 required int32 Error = 2;
-required int32 PlayerId = 3;
+required int64 PlayerId = 3;
 }
 
 message W_C_SelectPlayerResponse{
 required Ipacket PacketHead = 1;
-required int32	AccountId = 2;
+required int64	AccountId = 2;
 repeated PlayerData PlayerData = 3;
 }
 

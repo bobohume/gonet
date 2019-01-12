@@ -3,11 +3,13 @@ package base
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
+	"hash/crc32"
 	"log"
 	"math"
 	"os"
-	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -154,6 +156,56 @@ func GetSliceTypeString(sTypeName string) string{
 	if sTypeName == "bool" || sTypeName == "float64" || sTypeName == "float32" || sTypeName == "int8" ||
 		sTypeName == "uint8" || sTypeName == "int16" || sTypeName == "uint16" || sTypeName == "int32" ||
 		sTypeName == "uint32" || sTypeName == "int64" || sTypeName == "uint64" ||  sTypeName == "string"||
+		sTypeName == "int" || sTypeName == "uint" ||
+		sTypeName == "*bool" || sTypeName == "*float64" || sTypeName == "*float32" || sTypeName == "*int8" ||
+		sTypeName == "*uint8" || sTypeName == "*int16" || sTypeName == "*uint16" || sTypeName == "*int32" ||
+		sTypeName == "*uint32" || sTypeName == "*int64" || sTypeName == "*uint64" ||  sTypeName == "*string"||
+		sTypeName == "*int" || sTypeName == "*uint"{
+		return "[]" + sTypeName
+	}else{
+		if strings.Index(sTypeName, "*") != -1{
+			return "[]*struct"
+		}
+		return "[]struct"
+	}
+
+	return sTypeName
+}
+
+func GetArrayTypeString(sTypeName string) string{
+	index := strings.Index(sTypeName, "]")
+	if index != -1{
+		sTypeName = sTypeName[index+1:]
+	}
+
+	if sTypeName == "bool" || sTypeName == "float64" || sTypeName == "float32" || sTypeName == "int8" ||
+		sTypeName == "uint8" || sTypeName == "int16" || sTypeName == "uint16" || sTypeName == "int32" ||
+		sTypeName == "uint32" || sTypeName == "int64" || sTypeName == "uint64" ||  sTypeName == "string"||
+		sTypeName == "int"  || sTypeName == "uint" ||
+		sTypeName == "*bool" || sTypeName == "*float64" || sTypeName == "*float32" || sTypeName == "*int8" ||
+		sTypeName == "*uint8" || sTypeName == "*int16" || sTypeName == "*uint16" || sTypeName == "*int32" ||
+		sTypeName == "*uint32" || sTypeName == "*int64" || sTypeName == "*uint64" ||  sTypeName == "*string"||
+		sTypeName == "*int" || sTypeName == "*uint"{
+		return "[*]" + sTypeName
+	}else{
+		if strings.Index(sTypeName, "*") != -1{
+			return "[*]*struct"
+		}
+		return "[*]struct"
+	}
+
+	return sTypeName
+}
+
+func GetSliceTypeStringEx(sTypeName string) string{
+	index := strings.Index(sTypeName, "]")
+	if index != -1{
+		sTypeName = sTypeName[index+1:]
+	}
+
+	if sTypeName == "bool" || sTypeName == "float64" || sTypeName == "float32" || sTypeName == "int8" ||
+		sTypeName == "uint8" || sTypeName == "int16" || sTypeName == "uint16" || sTypeName == "int32" ||
+		sTypeName == "uint32" || sTypeName == "int64" || sTypeName == "uint64" ||  sTypeName == "string"||
 		sTypeName == "int" || sTypeName == "uint"{
 		return "[]" + sTypeName
 	}else{
@@ -163,7 +215,7 @@ func GetSliceTypeString(sTypeName string) string{
 	return sTypeName
 }
 
-func GetArrayTypeString(sTypeName string) string{
+func GetArrayTypeStringEx(sTypeName string) string{
 	index := strings.Index(sTypeName, "]")
 	if index != -1{
 		sTypeName = sTypeName[index+1:]
@@ -198,6 +250,24 @@ func ParseTag(sf reflect.StructField, tag string) map[string]string {
 	return setting
 }
 
+func GetClassName(param interface{}) string{
+	sType := strings.ToLower(reflect.ValueOf(param).Type().String())
+	index := strings.Index(sType, ".")
+	if index!= -1{
+		sType = sType[index+1:]
+	}
+	return sType
+}
+
+func GetPacketType(param interface{})string{
+	sType := strings.ToLower(reflect.ValueOf(param).Type().String())
+	index := strings.Index(sType, ".")
+	if index!= -1{
+		sType = sType[:index]
+	}
+	return sType
+}
+
 func GetTypeString(param interface{}) string{
 	paramType := reflect.TypeOf(param)
 	sType := ""
@@ -219,189 +289,60 @@ func GetTypeStringEx(classField reflect.StructField, classVal reflect.Value) str
 	if paramType.Kind() == reflect.Ptr{
 		sType = "*" + paramType.Elem().Kind().String()
 	}else if paramType.Kind() == reflect.Slice{
-		sType = GetSliceTypeString(paramType.String())
+		sType = GetSliceTypeStringEx(paramType.String())
 	}else if paramType.Kind() == reflect.Array{
-		sType = GetArrayTypeString(paramType.String())
+		sType = GetArrayTypeStringEx(paramType.String())
 	} else{
 		sType = classField.Type.Kind().String()
 	}
 	return sType
 }
 
-func GetPacket(funcName string, params ...interface{})[]byte {
+//copy name and type is right
+func Copy(source interface{}, dest interface{}){
 	defer func() {
-		if err := recover(); err != nil {
-			fmt.Println("GetPacket", err)
+		if err := recover(); err != nil{
+			fmt.Printf("copy source to dest error")
 		}
 	}()
+	getvaltype := func(val interface{}) (reflect.Value, reflect.Type){
 
-	msg := make([]byte, 1024)
-	bitstream := NewBitStream(msg, 1024)
-	bitstream.WriteString(funcName)
-	bitstream.WriteInt(len(params), 8)
-	for _, param := range params {
-		sType := GetTypeString(param)
-		switch sType {
-		case "bool":
-			bitstream.WriteInt(1, 8)
-			bitstream.WriteFlag(param.(bool))
-		case "float64":
-			bitstream.WriteInt(2, 8)
-			bitstream.WriteFloat64(param.(float64))
-		case "float32":
-			bitstream.WriteInt(3, 8)
-			bitstream.WriteFloat(param.(float32))
-		case "int8":
-			bitstream.WriteInt(4, 8)
-			bitstream.WriteInt(int(param.(int8)), 8)
-		case "uint8":
-			bitstream.WriteInt(5, 8)
-			bitstream.WriteInt(int(param.(uint8)),8)
-		case "int16":
-			bitstream.WriteInt(6, 8)
-			bitstream.WriteInt(int(param.(int16)),16)
-		case "uint16":
-			bitstream.WriteInt(7, 8)
-			bitstream.WriteInt(int(param.(uint16)),16)
-		case "int32":
-			bitstream.WriteInt(8, 8)
-			bitstream.WriteInt(int(param.(int32)),32)
-		case "uint32":
-			bitstream.WriteInt(9, 8)
-			bitstream.WriteInt(int(param.(uint32)),32)
-		case "int64":
-			bitstream.WriteInt(10, 8)
-			bitstream.WriteInt64(param.(int64), 64)
-		case "uint64":
-			bitstream.WriteInt(11, 8)
-			bitstream.WriteInt64(int64(param.(uint64)), 64)
-		case "string":
-			bitstream.WriteInt(12, 8)
-			bitstream.WriteString(param.(string))
-		case "int":
-			bitstream.WriteInt(13, 8)
-			bitstream.WriteInt(param.(int), 32)
-		case "uint":
-			bitstream.WriteInt(14, 8)
-			bitstream.WriteInt(int(param.(uint)), 32)
-		case "[]bool":
-			bitstream.WriteInt(15, 8)
-			nLen := len(param.([]bool))
-			bitstream.WriteInt(nLen, 16)
-			for i := 0; i < nLen; i++ {
-				bitstream.WriteFlag(param.([]bool)[i])
-			}
-		case "[]float64":
-			bitstream.WriteInt(16, 8)
-			nLen := len(param.([]float64))
-			bitstream.WriteInt(nLen, 16)
-			for i := 0; i < nLen; i++ {
-				bitstream.WriteFloat64(param.([]float64)[i])
-			}
-		case "[]float32":
-			bitstream.WriteInt(17, 8)
-			nLen := len(param.([]float32))
-			bitstream.WriteInt(nLen, 16)
-			for i := 0; i < nLen; i++ {
-				bitstream.WriteFloat(param.([]float32)[i])
-			}
-		case "[]int8":
-			bitstream.WriteInt(18, 8)
-			nLen := len(param.([]int8))
-			bitstream.WriteInt(nLen, 16)
-			for i := 0; i < nLen; i++ {
-				bitstream.WriteInt(int(param.([]int8)[i]), 8)
-			}
-		case "[]uint8":
-			bitstream.WriteInt(19, 8)
-			nLen := len(param.([]uint8))
-			bitstream.WriteInt(nLen, 16)
-			for i := 0; i < nLen; i++ {
-				bitstream.WriteInt(int(param.([]uint8)[i]), 8)
-			}
-		case "[]int16":
-			bitstream.WriteInt(20, 8)
-			nLen := len(param.([]int16))
-			bitstream.WriteInt(nLen, 16)
-			for i := 0; i < nLen; i++ {
-				bitstream.WriteInt(int(param.([]int16)[i]), 16)
-			}
-		case "[]uint16":
-			bitstream.WriteInt(21, 8)
-			nLen := len(param.([]uint16))
-			bitstream.WriteInt(nLen, 16)
-			for i := 0; i < nLen; i++ {
-				bitstream.WriteInt(int(param.([]uint16)[i]), 16)
-			}
-		case "[]int32":
-			bitstream.WriteInt(22, 8)
-			nLen := len(param.([]int32))
-			bitstream.WriteInt(nLen, 16)
-			for i := 0; i < nLen; i++ {
-				bitstream.WriteInt(int(param.([]int32)[i]), 32)
-			}
-		case "[]uint32":
-			bitstream.WriteInt(23, 8)
-			nLen := len(param.([]uint32))
-			bitstream.WriteInt(nLen, 16)
-			for i := 0; i < nLen; i++ {
-				bitstream.WriteInt(int(param.([]uint32)[i]), 32)
-			}
-		case "[]int64":
-			bitstream.WriteInt(24, 8)
-			nLen := len(param.([]int64))
-			bitstream.WriteInt(nLen, 16)
-			for i := 0; i < nLen; i++ {
-				bitstream.WriteInt64(param.([]int64)[i], 64)
-			}
-		case "[]uint64":
-			bitstream.WriteInt(25, 8)
-			nLen := len(param.([]uint64))
-			bitstream.WriteInt(nLen, 16)
-			for i := 0; i < nLen; i++ {
-				bitstream.WriteInt64(int64(param.([]uint64)[i]), 64)
-			}
-		case "[]string":
-			bitstream.WriteInt(26, 8)
-			nLen := len(param.([]string))
-			bitstream.WriteInt(nLen, 16)
-			for i := 0; i < nLen; i++ {
-				bitstream.WriteString(param.([]string)[i])
-			}
-		case "[]int":
-			bitstream.WriteInt(27, 8)
-			nLen := len(param.([]int))
-			bitstream.WriteInt(nLen, 16)
-			for i := 0; i < nLen; i++ {
-				bitstream.WriteInt(param.([]int)[i], 32)
-			}
-		case "[]uint":
-			bitstream.WriteInt(28, 8)
-			nLen := len(param.([]uint))
-			bitstream.WriteInt(nLen, 16)
-			for i := 0; i < nLen; i++ {
-				bitstream.WriteInt(int(param.([]uint)[i]), 32)
-			}
-		case "*struct"://结构体必须重写WriteData and ReadData
-			bitstream.WriteInt(29, 8)
-			bitstream.WriteString(getMessageName(param.(Message)))
-			param.(Message).WriteData(bitstream)
-		case "[]struct"://结构体必须重写WriteData and ReadData
-			bitstream.WriteInt(30, 8)
-			val := reflect.ValueOf(param)
-			nLen := val.Len()
-			bitstream.WriteInt(nLen, 16)
-			for i := 0; i < nLen; i++ {
-				bitstream.WriteString(getMessageName(val.Index(i).Interface().(Message)))
-				val.Index(i).Interface().(Message).WriteData(bitstream)
-			}
-		default:
-			fmt.Println("params type not supported", sType,  reflect.TypeOf(param))
-			panic("params type not supported")
+		protoType := reflect.TypeOf(val)
+		protoVal := reflect.ValueOf(val)
+		for protoType.Kind() == reflect.Ptr {
+			protoType = protoType.Elem()
+			protoVal = protoVal.Elem()
 		}
+
+		return protoVal, protoType
 	}
 
-	return bitstream.GetBuffer()
+	val0, type0 := getvaltype(source)
+	val1, type1 := getvaltype(dest)
+
+	for i := 0; i < type0.NumField(); i++{
+		if !val0.Field(i).CanSet(){//小写成员只有只读
+			continue
+		}
+
+		for j := 0; j < type1.NumField(); j++{
+			if val1.Field(j).Kind() == reflect.Struct{
+				val := val1.Field(j).FieldByName(type0.Field(i).Name)
+				if val.IsValid(){
+					if val.Type() == type0.Field(i).Type{
+						val.Set(val0.Field(i))
+					}
+				}
+			}else{
+				val := val1.FieldByName(type0.Field(i).Name)
+				if val.IsValid(){
+					if val.Type() == type0.Field(i).Type{
+						val.Set(val0.Field(i))
+					}
+				}
+			}
+		}
+	}
 }
 
 func ToLower(name string) string{
@@ -412,3 +353,38 @@ func SetTcpEnd(buff []byte) []byte{
 	buff = append(buff, []byte(TCP_END)...)
 	return buff
 }
+
+func ToHash(str string) uint32{
+	return crc32.ChecksumIEEE([]byte(str))
+}
+
+//-----------string strconv type-------------//
+func Int(str string) int{
+	n, _ := strconv.Atoi(str)
+	return n
+}
+
+func Int64(str string) int64{
+	n, _ := strconv.ParseInt(str, 0, 64)
+	return n
+}
+
+func Float32(str string) float32{
+	n, _ := strconv.ParseFloat(str, 32)
+	return float32(n)
+}
+
+func Float64(str string) float64{
+	n, _ := strconv.ParseFloat(str, 64)
+	return n
+}
+
+func Bool(str string) bool{
+	n, _ := strconv.ParseBool(str)
+	return n
+}
+
+func Time(str string) int64 {
+	return GetDBTime(str).Unix()
+}
+//--------------------------------------------//

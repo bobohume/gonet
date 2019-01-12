@@ -33,7 +33,7 @@ func (this *EventProcess) Init(num int) {
 		pServerInfo.Ip = Ip
 		pServerInfo.Port = Port
 
-		SERVER.GetServerMgr().SendMsg("CONNECT", nType, Ip, Port)
+		SERVER.GetServerMgr().SendMsg("CONNECT", pServerInfo)
 
 		switch pServerInfo.Type {
 		case int(message.SERVICE_GATESERVER):
@@ -56,15 +56,13 @@ func (this *EventProcess) Init(num int) {
 		socketId := int(*packet.SocketId)
 		Error := 1
 		var result string
-		var accountId int
-		rows, err := this.m_db.Query(fmt.Sprintf("call `usp_activeaccount`('%s', '%s')", accountName, password))
-		if err == nil {
-			rows.Next()
-			rows.Next()
+		var accountId int64
+		rows, err := this.m_db.Query(fmt.Sprintf("call `usp_activeaccount`('%s', '%s', %d)", accountName, password, base.UUID.UUID()))
+		if err == nil && rows != nil{
 			if rows.NextResultSet(){
 				rs := db.Query(rows)
 				if rs.Next(){
-					accountId = rs.Row().Int("@accountId")
+					accountId = rs.Row().Int64("@accountId")
 					result = rs.Row().String("@result")
 					if (result == "0000") {
 						SERVER.GetLog().Printf("帐号[%s]创建成功", accountName)
@@ -97,12 +95,11 @@ func (this *EventProcess) Init(num int) {
 		if base.CVERSION().IsAcceptableBuildVersion(buildVersion) {
 			log.Printf("账号[%s]登陆账号服务器", accountName)
 			rows, err := this.m_db.Query(fmt.Sprintf("call `usp_login`('%s', '%s')", accountName, password))
-			if err == nil{
-				rows.Next()
+			if err == nil && rows != nil{
 				if(rows.NextResultSet()){//存储过程反馈多个select的时候
 					rs := db.Query(rows)
 					if rs.Next(){
-						accountId := rs.Row().Int("@accountId")
+						accountId := rs.Row().Int64("@accountId")
 						result := rs.Row().String("@result")
 						//register account
 						if result == "0001" {
@@ -130,22 +127,22 @@ func (this *EventProcess) Init(num int) {
 	})
 
 	//创建玩家
-	this.RegisterCall("W_A_CreatePlayer", func(accountId int, playername string, sex int32) {
-		rows, err := this.m_db.Query(fmt.Sprintf("call `usp_createplayer`(%d, '%s')", accountId, playername))
-		if err == nil{
+	this.RegisterCall("W_A_CreatePlayer", func(accountId int64, playername string, sex int32, socketId int) {
+		rows, err := this.m_db.Query(fmt.Sprintf("call `usp_createplayer`(%d, '%s', %d)", accountId, playername, base.UUID.UUID()))
+		if err == nil && rows != nil{
 			rs := db.Query(rows)
 			if rs.Next(){
 				err := rs.Row().Int("@err")
-				playerId := rs.Row().Int("@playerId")
+				playerId := rs.Row().Int64("@playerId")
 				if err == 0 && playerId > 0 {
-					SERVER.GetServer().SendMsgByID(this.GetSocketId(), "A_W_CreatePlayer", accountId, playerId, playername, sex)
+					SERVER.GetServer().SendMsgByID(this.GetSocketId(), "A_W_CreatePlayer", accountId, playerId, playername, sex, socketId)
 				}
 			}
 		}
 	})
 
 	//删除玩家
-	this.RegisterCall("W_A_DeletePlayer", func(accountId int, playerId int) {
+	this.RegisterCall("W_A_DeletePlayer", func(accountId int64, playerId int64) {
 		this.m_db.Exec(fmt.Sprintf("update tbl_player set delete_flag = 1 where account_id =%d and player_id=%d", accountId, playerId))
 	})
 

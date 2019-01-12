@@ -11,7 +11,7 @@ type (
 	AccountMgr struct {
 		actor.Actor
 
-		m_AccountMap map[int] *Account
+		m_AccountMap map[int64] *Account
 		m_AccountNameMap map[string] *Account
 		m_db *sql.DB
 	}
@@ -19,10 +19,10 @@ type (
 	IAccountMgr interface {
 		actor.IActor
 
-		GetAccount(int) *Account
-		AddAccount(int) *Account
-		RemoveAccount(int)
-		KickAccount(int)
+		GetAccount(int64) *Account
+		AddAccount(int64) *Account
+		RemoveAccount(int64, int)
+		KickAccount(int64)
 	}
 )
 
@@ -33,11 +33,11 @@ var (
 func (this* AccountMgr) Init(num int){
 	this.m_db = SERVER.GetDB()
 	this.Actor.Init(1000)
-	this.m_AccountMap = make(map[int] *Account)
+	this.m_AccountMap = make(map[int64] *Account)
 	this.m_AccountNameMap = make(map[string] *Account)
 	//this.RegisterTimer(1000 * 1000 * 1000, this.Update)//定时器
 	//账号登录处理
-	this.RegisterCall("Account_Login", func(accountName string, accountId int, socketId, id int) {
+	this.RegisterCall("Account_Login", func(accountName string, accountId int64, socketId, id int) {
 		LoginAccount := func(pAccount *Account) {
 			if pAccount != nil {
 				SERVER.GetLog().Printf("帐号[%s]返回登录OK", accountName)
@@ -51,7 +51,7 @@ func (this* AccountMgr) Init(num int){
 				return
 			}
 
-			this.RemoveAccount(accountId, this.GetSocketId())
+			this.RemoveAccount(accountId, socketId)
 		}
 
 		pAccount = this.AddAccount(accountId)
@@ -59,7 +59,7 @@ func (this* AccountMgr) Init(num int){
 	})
 
 	//账号断开连接
-	this.RegisterCall("G_ClientLost", func(accountId int) {
+	this.RegisterCall("G_ClientLost", func(accountId int64) {
 		SERVER.GetLog().Printf("账号[%d] 断开链接", accountId)
 		this.RemoveAccount(accountId, 0)
 	})
@@ -67,7 +67,7 @@ func (this* AccountMgr) Init(num int){
 	this.Actor.Start()
 }
 
-func (this *AccountMgr) GetAccount(accountId int) *Account{
+func (this *AccountMgr) GetAccount(accountId int64) *Account{
 	pAccount, exist := this.m_AccountMap[accountId]
 	if exist{
 		return pAccount
@@ -76,7 +76,7 @@ func (this *AccountMgr) GetAccount(accountId int) *Account{
 }
 
 func loadAccount(row db.IRow, a *AccountDB){
-	a.AccountId = row.Int("account_id")
+	a.AccountId = row.Int64("account_id")
 	a.AccountName = row.String("account_name")
 	a.LoginIp = row.String("login_ip")
 	a.Status = row.Int("status")
@@ -84,8 +84,8 @@ func loadAccount(row db.IRow, a *AccountDB){
 	a.LogoutTime = row.Time("logout_time")
 }
 
-func (this *AccountMgr) AddAccount(accountId int) *Account{
-	LoadAccountDB := func(accountId int) *AccountDB {
+func (this *AccountMgr) AddAccount(accountId int64) *Account{
+	LoadAccountDB := func(accountId int64) *AccountDB {
 		rows, err := this.m_db.Query(fmt.Sprintf("select account_id, account_name, status, login_time, logout_time, login_ip from tbl_account where account_id=%d", accountId))
 		rs := db.Query(rows)
 		if err == nil && rs.Next() {
@@ -109,16 +109,16 @@ func (this *AccountMgr) AddAccount(accountId int) *Account{
 	return nil
 }
 
-func (this *AccountMgr) RemoveAccount(accountId int, socketId int){
+func (this *AccountMgr) RemoveAccount(accountId int64, socketId int){
 	pAccount := this.GetAccount(accountId)
 	if pAccount != nil{
 		delete(this.m_AccountNameMap, pAccount.AccountName)
 		delete(this.m_AccountMap, accountId)
 		SERVER.GetLog().Printf("账号[%d]断开链接", accountId)
-		SERVER.GetServerMgr().SendMsg("G_ClientLost", accountId, socketId)
+		SERVER.GetServerMgr().KickWorldPlayer(accountId)
 	}
 }
 
-func (this *AccountMgr) KickAccount(accountId int){
+func (this *AccountMgr) KickAccount(accountId int64){
 
 }

@@ -131,10 +131,12 @@ func getLoadSql(classField reflect.StructField, classVal reflect.Value) (bool,st
 		sqlvalue += fmt.Sprintf(load_sql, strconv.FormatUint(uint64(value),10))
 		sqlname += fmt.Sprintf(load_sqlname, classType)
 	case "*struct":
-		value := classVal.Elem().Interface()
-		n,p := parseLoadSql(value)
-		sqlname += n
-		sqlvalue += p
+		if !classVal.IsNil() {
+			value := classVal.Elem().Interface()
+			n, p := parseLoadSql(value)
+			sqlname += n
+			sqlvalue += p
+		}
 	case "float64":
 		sqlvalue += fmt.Sprintf(load_sql, strconv.FormatFloat(classVal.Float(), 'f', -1, 64))
 		sqlname += fmt.Sprintf(load_sqlname, classType)

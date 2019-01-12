@@ -22,10 +22,10 @@ USE `md_actor`;
 DROP TABLE IF EXISTS `tbl_mail`;
 
 CREATE TABLE `tbl_mail` (
-  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '邮件ID',
-  `sender` int(11) NOT NULL DEFAULT '0' COMMENT '发送者',
+  `id` bigint(20) NOT NULL  DEFAULT '0' COMMENT '邮件ID',
+  `sender` bigint(20) NOT NULL DEFAULT '0' COMMENT '发送者',
   `sender_name` varchar(32) NOT NULL DEFAULT '' COMMENT '发送者名字',
-  `recver` int(11) NOT NULL DEFAULT '0' COMMENT '接收者',
+  `recver` bigint(20) NOT NULL DEFAULT '0' COMMENT '接收者',
   `recver_name` varchar(32) NOT NULL DEFAULT '' COMMENT '接收者名字',
   `money` int(11) NOT NULL DEFAULT '0' COMMENT '金钱',
   `item_id` int(11) NOT NULL DEFAULT '0' COMMENT '物品ID',
@@ -45,10 +45,10 @@ CREATE TABLE `tbl_mail` (
 DROP TABLE IF EXISTS `tbl_mail_deleted`;
 
 CREATE TABLE `tbl_mail_deleted` (
-  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '邮件ID',
-  `sender` int(11) NOT NULL DEFAULT '0' COMMENT '发送者',
+  `id` bigint(20) NOT NULL COMMENT '邮件ID',
+  `sender` bigint(20) NOT NULL DEFAULT '0' COMMENT '发送者',
   `sender_name` varchar(32) NOT NULL DEFAULT '' COMMENT '发送者名字',
-  `recver` int(11) NOT NULL DEFAULT '0' COMMENT '接收者',
+  `recver` bigint(20) NOT NULL DEFAULT '0' COMMENT '接收者',
   `recver_name` varchar(32) NOT NULL DEFAULT '' COMMENT '接收者名字',
   `money` int(11) NOT NULL DEFAULT '0' COMMENT '金钱',
   `item_id` int(11) NOT NULL DEFAULT '0' COMMENT '物品ID',
@@ -71,8 +71,8 @@ CREATE TABLE `tbl_mail_deleted` (
 DROP TABLE IF EXISTS `tbl_player`;
 
 CREATE TABLE `tbl_player` (
-  `account_id` int(11) NOT NULL DEFAULT '0' COMMENT '账号ID',
-  `player_id` int(11) NOT NULL COMMENT '玩家ID',
+  `account_id` bigint(20) NOT NULL DEFAULT '0' COMMENT '账号ID',
+  `player_id` bigint(20) NOT NULL COMMENT '玩家ID',
   `player_name` varchar(32) DEFAULT '' COMMENT '玩家名字',
   `sex` int(11) NOT NULL DEFAULT '0' COMMENT '性别',
   `level` int(11) NOT NULL DEFAULT '0' COMMENT '等级',
@@ -93,8 +93,8 @@ CREATE TABLE `tbl_player` (
 DROP TABLE IF EXISTS `tbl_social`;
 
 CREATE TABLE `tbl_social` (
-  `player_id` int(11) NOT NULL COMMENT '玩家id',
-  `target_id` int(11) NOT NULL COMMENT '目标玩家id',
+  `player_id` bigint(20) NOT NULL COMMENT '玩家id',
+  `target_id` bigint(20) NOT NULL COMMENT '目标玩家id',
   `type` tinyint(4) NOT NULL DEFAULT '0' COMMENT '关系类型',
   `friend_value` int(11) NOT NULL DEFAULT '0' COMMENT '好友度',
   PRIMARY KEY (`player_id`, `target_id`, `type`)
@@ -124,7 +124,7 @@ CREATE TABLE `tbl_toprank` (
 
 DELIMITER $$
 
-/*!50003 CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_checkcreateplayer`(in _accountId int)
+/*!50003 CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_checkcreateplayer`(in _accountId bigint)
 begin
 	set @err = 0;
 	select @err := case when count(player_id) >= 1 then -1 else  0 end from tbl_player where account_id = _accountId;
@@ -138,10 +138,10 @@ DELIMITER ;
 
 DELIMITER $$
 
-/*!50003 CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_createplayer`(in _accountId int,
+/*!50003 CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_createplayer`(in _accountId bigint,
 in _playerName varchar(32),
 in _sex int,
-in _playerId int)
+in _playerId bigint)
 begin
 	set @err = -1;
     set @playerId = _playerId;
@@ -176,8 +176,8 @@ DELIMITER ;
 
 DELIMITER $$
 
-/*!50003 CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_updatemail`(in _mailid int, in _sender int, in _sendername varchar(32),
-in _money int, in _itemid int, in _itemcount int, in _recver int, in _recvername varchar(32),
+/*!50003 CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_updatemail`(in _mailid bigint, in _sender bigint, in _sendername varchar(32),
+in _money int, in _itemid int, in _itemcount int, in _recver bigint, in _recvername varchar(32),
 in _issystem tinyint, in _title varchar(128),  in _message varchar(2048))
 BEGIN
 	set @count = 0, @err = 0, @mailid = _mailid, @recver = _recver, @recvername = _recvername;
@@ -221,12 +221,10 @@ BEGIN
                                 content = _mssage
                                 where id = _mailid;
 		else
-			insert into tbl_mail(sender, sender_name, money, item_id, item_count,
+			insert into tbl_mail(id, sender, sender_name, money, item_id, item_count,
 						send_time,recver,recver_name, is_system, title, content)
-                        values(_sender, _sendername,_money, _itemid, _itemcount,
+                        values(_mailid, _sender, _sendername,_money, _itemid, _itemcount,
                         current_timestamp, _recver, @recvername, _issystem, _title, _message);
-                        set _mailid = @@IDENTITY;
-                        set @mailid = _mailid;
         end if;
 	end if;
     
@@ -240,7 +238,7 @@ DELIMITER ;
 
 DELIMITER $$
 
-/*!50003 CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_updateplayerGold`(in playerId int,
+/*!50003 CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_updateplayerGold`(in playerId bigint,
 in _gold int)
 begin
 	set @curGold = 0;

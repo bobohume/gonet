@@ -27,9 +27,7 @@ func (this *EventProcess) Init(num int) {
 		pServerInfo.Type = nType
 		pServerInfo.Ip = Ip
 		pServerInfo.Port = Port
-
-		SERVER.GetServerMgr().SendMsg("CONNECT", nType, Ip, Port)
-
+		SERVER.GetServerMgr().SendMsg("CONNECT", pServerInfo)
 		switch pServerInfo.Type {
 		case int(message.SERVICE_GATESERVER):
 			SERVER.GetServer().SendMsgByID(this.GetSocketId(), "COMMON_RegisterResponse")

@@ -52,7 +52,7 @@ func parseTypeStruct(message interface{}, packetHead *Ipacket) {
 		} else if TypeName == "Ckx"{
 			*packetHead.Ckx = *protoVal.Interface().(*int32)
 		} else if TypeName == "Id"{
-			*packetHead.Id = *protoVal.Interface().(*int32)
+			*packetHead.Id = *protoVal.Interface().(*int64)
 		}else {
 			return false
 		}
@@ -80,12 +80,12 @@ func GetPakcetHead(message interface{}) *Ipacket{
 	return packetHead
 }
 
-func BuildPacketHead(id int, destservertype int) *Ipacket{
+func BuildPacketHead(id int64, destservertype int) *Ipacket{
 	ipacket := &Ipacket{
 		Stx:	proto.Int32(Default_Ipacket_Stx),
 		DestServerType:	proto.Int32(int32(destservertype)),
 		Ckx:	proto.Int32(Default_Ipacket_Ckx),
-		Id:	proto.Int32(int32(id)),
+		Id:	proto.Int64(id),
 	}
 	return ipacket
 }
@@ -137,7 +137,7 @@ func GetProtoBufPacket(packet proto.Message, bitstream *base.BitStream) bool {
 		}
 		switch sType {
 		case "*message":
-			bitstream.WriteInt(31, 8)
+			bitstream.WriteInt(120, 8)
 			bitstream.WriteString(packet.(proto.Message).String())
 		default:
 			log.Printf("packet params type not supported", packet, sType)
@@ -177,6 +177,7 @@ func GetPakcet(packetId uint32) proto.Message{
 		RegisterPacket(&C_W_Game_LoginRequset{})
 		RegisterPacket(&C_W_LoginCopyMap{})
 		RegisterPacket(&C_W_Move{})
+		RegisterPacket(&C_W_ChatMessage{})
 		// test for client
 		RegisterPacket(&W_C_SelectPlayerResponse{})
 		RegisterPacket(&W_C_CreatePlayerResponse{})
@@ -185,6 +186,7 @@ func GetPakcet(packetId uint32) proto.Message{
 		RegisterPacket(&W_C_ADD_SIMOBJ{})
 		RegisterPacket(&A_C_LoginRequest{})
 		RegisterPacket(&A_C_RegisterResponse{})
+		RegisterPacket(&W_C_ChatMessage{})
 		Packet_CreateFactorInit = true
 	}
 

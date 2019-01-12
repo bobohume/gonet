@@ -138,7 +138,7 @@ func (this *BitStream) resize() bool{
 	fmt.Println("BitStream Resize")
 	this.dataPtr = append(this.dataPtr, make([]byte, this.bitsLimite)...)
 	size := this.bitsLimite * 2
-	if size <= 0 && size >= MAX_PACKET{
+	if size <= 0 && size >= MAX_PACKET * 10{
 		return false
 	}
 	this.bufSize = size

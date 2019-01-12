@@ -47,7 +47,7 @@ func (this *CmdProcess) Init(num int) {
 		score, _ := strconv.Atoi(argv3)
 		val0, _ := strconv.Atoi(argv4)
 		val1, _ := strconv.Atoi(argv5)
-		toprank.TOPMGR.SendMsg( "InTopRank", nType, uint64(id), name, score, val0, val1)
+		toprank.MGR().SendMsg( "InTopRank", nType, int64(id), name, score, val0, val1)
 	})
 
 	this.Actor.Start()

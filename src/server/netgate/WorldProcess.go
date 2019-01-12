@@ -5,31 +5,39 @@ import (
 	"base"
 	"fmt"
 	"message"
-	"strconv"
 	"server/common"
+	"strconv"
 )
 
 type (
 	WorldProcess struct {
 		actor.Actor
 		m_LostTimer *common.SimpleTimer
+
+		m_SocketId int
 	}
 
 	IWorldlProcess interface {
 		actor.IActor
 
-		RegisterServer(int, int, string, int)
+		RegisterServer(int, string, int)
+		SetSocketId(int)
 	}
 )
 
-func (this * WorldProcess)RegisterServer(ServerType int, Ip string, Port int)  {
-	SERVER.GetWorldSocket().SendMsg("COMMON_RegisterRequest",ServerType, Ip, Port)
+func (this * WorldProcess) RegisterServer(ServerType int, Ip string, Port int)  {
+	SERVER.GetDispatchMgr().SendMsg(this.m_SocketId, "COMMON_RegisterRequest",ServerType, Ip, Port)
+}
+
+func (this * WorldProcess) SetSocketId(socketId int){
+	this.m_SocketId = socketId
 }
 
 func (this *WorldProcess) Init(num int) {
 	this.Actor.Init(num)
 	this.m_LostTimer = common.NewSimpleTimer(10)
 	this.m_LostTimer.Start()
+	this.m_SocketId = 0
 	this.RegisterTimer(1 * 1000 * 1000 * 1000, this.Update)
 	this.RegisterCall("COMMON_RegisterRequest", func() {
 		port,_:=strconv.Atoi(UserNetPort)
@@ -40,23 +48,14 @@ func (this *WorldProcess) Init(num int) {
 			//收到worldserver对自己注册的反馈
 			this.m_LostTimer.Stop()
 			SERVER.GetLog().Println("收到world对自己注册的反馈")
-			SERVER.GetPlayerMgr().SendMsg("Account_Relink")
 	})
 
-	this.RegisterCall("G_ClientLost", func(accountId int) {
-		SERVER.GetAccountSocket().SendMsg("G_ClientLost", accountId)
+	this.RegisterCall("STOP_ACTOR", func() {
+		this.Stop()
 	})
 
 	this.RegisterCall("DISCONNECT", func(socketId int) {
 		this.m_LostTimer.Start()
-	})
-
-	this.RegisterCall("W_A_CreatePlayer", func(accountId int, playername string, sex int32) {
-		SERVER.GetAccountSocket().SendMsg("W_A_CreatePlayer", accountId, playername, sex)
-	})
-
-	this.RegisterCall("W_A_DeletePlayer", func(accountId int, playerId int) {
-		SERVER.GetAccountSocket().SendMsg("W_A_DeletePlayer", accountId, playerId)
 	})
 
 	this.Actor.Start()
@@ -64,7 +63,7 @@ func (this *WorldProcess) Init(num int) {
 
 func (this* WorldProcess) Update(){
 	if this.m_LostTimer.CheckTimer(){
-		SERVER.GetWorldSocket().Start()
+		SERVER.GetDispatchMgr().GetSocket(this.m_SocketId).Start()
 	}
 }
 
@@ -77,8 +76,8 @@ func DispatchPacketToClient(id int, buff []byte) bool{
 
 	bitstream := base.NewBitStream(buff, len(buff))
 	bitstream.ReadString()//统一格式包头名字
-	accountId := bitstream.ReadInt(base.Bit32)
-	socketId := SERVER.GetPlayerMgr().GetAccountSocket(accountId)
+	accountId := bitstream.ReadInt64(base.Bit64)
+	socketId := SERVER.GetPlayerMgr().GetSocket(accountId)
 	SERVER.GetServer().SendByID(socketId, bitstream.GetBytePtr())
 	return false
 }

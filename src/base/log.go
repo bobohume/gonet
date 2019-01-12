@@ -11,7 +11,7 @@ import (
 const (
 	LG_WARN = iota
 	LG_ERROR = iota
-	PATH = "Log"
+	PATH = "log"
 )
 
 type (

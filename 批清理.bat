@@ -20,6 +20,8 @@ del /f /s /q .\*.DS_Store
 del /f /s /q server.exe
 del /f /s /q client.exe
 del /f /s /q nohup.out
+del /f /s /q server
+del /f /s /q client
 rd  /s /q .\pkg
 rd  /s /q .\.idea
 

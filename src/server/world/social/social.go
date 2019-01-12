@@ -1,13 +1,13 @@
 package social
 
 import (
-	"server/world"
 	"actor"
-	"database/sql"
 	"base"
-	"server/world/player"
+	"database/sql"
 	"db"
 	"fmt"
+	"server/world"
+	"server/world/player"
 )
 
 const(
@@ -38,13 +38,13 @@ const (
 //分布式考虑直接数据库
 type (
 	SocialItem struct {
-		PlayerId int	`sql:"primary;name:player_id"`
-		TargetId int	`sql:"primary;name:target_id"`
+		PlayerId int64	`sql:"primary;name:player_id"`
+		TargetId int64	`sql:"primary;name:target_id"`
 		Type	int8	`sql:"name:type"`
 		FriendValue	int `sql:"name:friend_value"`
 	}
 
-	SOCIALITEMMAP map[int] *SocialItem
+	SOCIALITEMMAP map[int64] *SocialItem
 
 	SocialMgr struct{
 		actor.Actor
@@ -56,11 +56,11 @@ type (
 	ISocialMgr interface {
 		actor.IActor
 
-		makeLink(int, int, int8) int//加好友
-		destoryLink(int, int, int8) int//删除好友
-		addFriendValue(int, int, int) int//增加好友度
-		loadSocialDB(int, int8) SOCIALITEMMAP
-		loadSocialById(int, int, int8) *SocialItem
+		makeLink(int64, int64, int8) int//加好友
+		destoryLink(int64, int64, int8) int//删除好友
+		addFriendValue(int64, int64, int) int//增加好友度
+		loadSocialDB(int64, int8) SOCIALITEMMAP
+		loadSocialById(int64, int64, int8) *SocialItem
 		isFriendType(int8) bool
 		isBestFriendType(int8) bool
 		hasMakeLink(int8, int8)	bool
@@ -68,8 +68,20 @@ type (
 )
 
 var(
-	SOCIALMGR SocialMgr
+	g_pMgr actor.IActor
 )
+
+func MGR() actor.IActor{
+	if g_pMgr == nil{
+		g_pMgr = &SocialMgr{}
+		if world.OpenRedis{
+			g_pMgr = &SocialMgrR{}
+		}else{
+			g_pMgr = &SocialMgr{}
+		}
+	}
+	return g_pMgr
+}
 
 func getSocialTypeMaxCount(Type int8) int{
 	if Type >= Count ||  Type < 0{
@@ -87,9 +99,9 @@ func (this *SocialMgr) Init(num int) {
 	this.m_db = world.SERVER.GetDB()
 	this.m_Log = world.SERVER.GetLog()
 	this.Actor.Init(num)
-	actor.GetGActorList().RegisterGActorList("social", this)
+	actor.MGR().AddActor(this)
 
-	this.RegisterCall("C_W_MakeLinkRequest", func(PlayerId, TargetId int, Type int8) {
+	this.RegisterCall("C_W_MakeLinkRequest", func(PlayerId, TargetId int64, Type int8) {
 		pPlayer := player.PLAYERSIMPLEMGR.GetPlayerDataById(PlayerId)
 		pTarget	:= player.PLAYERSIMPLEMGR.GetPlayerDataById(TargetId)
 		if pPlayer == nil || pTarget == nil{
@@ -136,13 +148,13 @@ func (this *SocialMgr) hasMakeLink(oldType, newType int8) bool{
 }
 
 func loadSocialDB(row db.IRow, s *SocialItem){
-	s.PlayerId = row.Int("player_id")
-	s.TargetId = row.Int("target_id")
+	s.PlayerId = row.Int64("player_id")
+	s.TargetId = row.Int64("target_id")
 	s.Type = int8(row.Int("type"))
 	s.FriendValue = row.Int("friend_value")
 }
 
-func (this *SocialMgr) loadSocialDB(PlayerId int, Type int8) SOCIALITEMMAP{
+func (this *SocialMgr) loadSocialDB(PlayerId int64, Type int8) SOCIALITEMMAP{
 	SocialMap := make(SOCIALITEMMAP)
 	Item := &SocialItem{}
 	rows, err := this.m_db.Query(db.LoadSql(Item, sqlTable, fmt.Sprintf("player_id=%d and type=%d", PlayerId, Type)))
@@ -157,7 +169,7 @@ func (this *SocialMgr) loadSocialDB(PlayerId int, Type int8) SOCIALITEMMAP{
 	return SocialMap
 }
 
-func (this *SocialMgr) loadSocialById(PlayerId, TargetId int, Type int8) *SocialItem{
+func (this *SocialMgr) loadSocialById(PlayerId, TargetId int64, Type int8) *SocialItem{
 	Item := &SocialItem{}
 	rows, err := this.m_db.Query(db.LoadSql(Item, sqlTable, fmt.Sprintf("player_id=%d and type=%d and target_id=%d", PlayerId, Type, TargetId)))
 	rs := db.Query(rows)
@@ -168,7 +180,7 @@ func (this *SocialMgr) loadSocialById(PlayerId, TargetId int, Type int8) *Social
 	return nil
 }
 
-func (this *SocialMgr) 	makeLink(PlayerId, TargetId int, Type int8) int{
+func (this *SocialMgr) 	makeLink(PlayerId, TargetId int64, Type int8) int{
 	if Type >= Count{
 		return SocialError_Unknown
 	}
@@ -184,7 +196,7 @@ func (this *SocialMgr) 	makeLink(PlayerId, TargetId int, Type int8) int{
 	SocialMap := this.loadSocialDB(PlayerId, Type)
 	Item, exist := SocialMap[TargetId]
 	if exist{
-		firstPlayerId := 0
+		firstPlayerId := int64(0)
 		nCount := len(SocialMap)
 
 		//找一个空的
@@ -242,7 +254,7 @@ func (this *SocialMgr) 	makeLink(PlayerId, TargetId int, Type int8) int{
 	return SocialError_DbError
 }
 
-func (this *SocialMgr) destoryLink(PlayerId, TargetId int, Type int8) int{
+func (this *SocialMgr) destoryLink(PlayerId, TargetId int64, Type int8) int{
 	if PlayerId == TargetId{
 		return  SocialError_Self
 	}
@@ -262,7 +274,7 @@ func (this *SocialMgr) destoryLink(PlayerId, TargetId int, Type int8) int{
 	return SocialError_Unallowed
 }
 
-func (this *SocialMgr) addFriendValue(PlayerId, TargetId, Value int) int{
+func (this *SocialMgr) addFriendValue(PlayerId, TargetId int64, Value int) int{
 	Item1 := this.loadSocialById(PlayerId, TargetId, Friend)
 	Item2 := this.loadSocialById(TargetId, PlayerId, Friend)
 

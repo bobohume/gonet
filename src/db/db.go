@@ -4,10 +4,9 @@ import (
 	"base"
 	"database/sql"
 	"fmt"
-	"strconv"
-
 	_ "github.com/go-sql-driver/mysql"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -22,12 +21,13 @@ type(
 
 	IRow interface {
 		init()
+		Set(key, val string)
 		Get(key string) string
 		String(key string) string
 		Int(key string) int
 		Int64(key string) int64
-		Flot32(key string) float32
-		Flot64(key string) float64
+		Float32(key string) float32
+		Float64(key string) float64
 		Bool(key string) bool
 		Time(key string) int64
 		Obj(obj interface{}) bool
@@ -41,6 +41,7 @@ type(
 	IRows interface {
 		Next() bool
 		Row() *Row
+		Obj(obj interface{}) bool
 	}
 )
 
@@ -90,8 +91,21 @@ func isDatetime(sf reflect.StructField) bool{
 	return false
 }
 
+func isIgnore(sf reflect.StructField) bool{
+	tagMap := base.ParseTag(sf, "sql")
+	if _, exist := tagMap["-"];exist{
+		return true
+	}
+
+	return false
+}
+
 func (this *Row) init() {
 	this.m_Resut = make(map[string] string)
+}
+
+func (this *Row) Set(key, val string){
+	this.m_Resut[key] = val
 }
 
 func (this *Row) Get(key string) string{
@@ -118,12 +132,12 @@ func (this *Row) Int64(key string) int64{
 	return n
 }
 
-func (this *Row) Flot32(key string) float32{
+func (this *Row) Float32(key string) float32{
 	n, _ := strconv.ParseFloat(this.Get(key), 32)
 	return float32(n)
 }
 
-func (this *Row) Flot64(key string) float64{
+func (this *Row) Float64(key string) float64{
 	n, _ := strconv.ParseFloat(this.Get(key), 64)
 	return n
 }
@@ -162,6 +176,34 @@ func (this *Rows) Row() *Row{
 	return NewRow()
 }
 
+func (this *Rows) Obj(obj interface{}) bool{
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Println("rows load obj", err)
+		}
+	}()
+
+	r := reflect.Indirect(reflect.ValueOf(obj))
+	isPtr := false
+	if kind := r.Kind(); kind == reflect.Slice {
+		rType := r.Type().Elem()
+		if rType.Kind() == reflect.Ptr {
+			isPtr = true
+			rType = rType.Elem()
+		}
+		for this.Next(){
+			elem := reflect.New(rType).Elem()
+			LoadObjSql(elem.Addr().Interface(), this.Row())
+			if isPtr{
+				r.Set(reflect.Append(r, elem.Addr()))
+			}else{
+				r.Set(reflect.Append(r, elem))
+			}
+		}
+	}
+	return true
+}
+
 func NewRow() *Row{
 	row := &Row{}
 	row.init()
@@ -171,25 +213,27 @@ func NewRow() *Row{
 func Query(rows *sql.Rows) *Rows{
 	rs := &Rows{}
 	rs.init()
-	cloumns, err := rows.Columns()
-	cloumnsLen := len(cloumns)
-	if err == nil && cloumnsLen > 0{
-		for rows.Next(){
-			r := NewRow()
-			value := make([]*string, cloumnsLen)
-			value1 := make([]interface{}, cloumnsLen)
-			for i, _ := range value{
-				value[i] = new(string)
-				value1[i] = value[i]
+	if rows != nil{
+		cloumns, err := rows.Columns()
+		cloumnsLen := len(cloumns)
+		if err == nil && cloumnsLen > 0{
+			for rows.Next(){
+				r := NewRow()
+				value := make([]*string, cloumnsLen)
+				value1 := make([]interface{}, cloumnsLen)
+				for i, _ := range value{
+					value[i] = new(string)
+					value1[i] = value[i]
+				}
+				rows.Scan(value1...)
+				for i, v := range value{
+					r.m_Resut[cloumns[i]] = *v
+				}
+				rs.m_Rows = append(rs.m_Rows, r)
 			}
-			rows.Scan(value1...)
-			for i, v := range value{
-				r.m_Resut[cloumns[i]] = *v
-			}
-			rs.m_Rows = append(rs.m_Rows, r)
 		}
+		rows.Close()
 	}
-	rows.Close()
 	return rs
 }
 

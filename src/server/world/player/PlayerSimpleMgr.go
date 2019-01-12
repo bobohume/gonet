@@ -2,20 +2,20 @@ package player
 
 import (
 	"actor"
-	"time"
-	"database/sql"
 	"base"
-	"fmt"
+	"database/sql"
 	"db"
-	"sync"
+	"fmt"
 	"server/common"
 	"server/world"
+	"sync"
+	"time"
 )
 
 type(
 	PlayerSimpleMgr struct{
 		actor.Actor
-		m_SimplePlayerMap map[int] *SimplePlayerData
+		m_SimplePlayerMap map[int64] *SimplePlayerData
 		m_SimplePlayerNameMap map[string] *SimplePlayerData
 		m_Locker *sync.RWMutex
 		m_db *sql.DB
@@ -27,8 +27,8 @@ type(
 
 		LoadSimplePlayerDatas()
 		GetPlayerDataByName(string) *SimplePlayerData
-		GetPlayerDataById(int) *SimplePlayerData
-		GetPlayerName(int) string
+		GetPlayerDataById(int64) *SimplePlayerData
+		GetPlayerName(int64) string
 	}
 )
 
@@ -37,8 +37,8 @@ var(
 )
 
 func loadSimple(row db.IRow, s *SimplePlayerData){
-	s.AccountId = row.Int("account_id")
-	s.PlayerId = row.Int("player_id")
+	s.AccountId = row.Int64("account_id")
+	s.PlayerId = row.Int64("player_id")
 	s.PlayerName = row.String("player_name")
 	s.Level = row.Int("level")
 	s.Sex = row.Int("sex")
@@ -57,9 +57,8 @@ func (this *PlayerSimpleMgr) Init(num int) {
 	this.m_Locker = &sync.RWMutex{}
 	this.m_db = world.SERVER.GetDB()
 	this.m_Log = world.SERVER.GetLog()
-	this.m_SimplePlayerMap = make(map[int] *SimplePlayerData)
+	this.m_SimplePlayerMap = make(map[int64] *SimplePlayerData)
 	this.m_SimplePlayerNameMap = make(map[string] *SimplePlayerData)
-
 	this.Actor.Start()
 }
 
@@ -74,6 +73,7 @@ func (this *PlayerSimpleMgr) LoadSimplePlayerDatas() {
 	for rs.Next(){
 		pData := &SimplePlayerData{}
 		loadSimple(rs.Row(), pData)
+		//rs.Row().Obj(pData)
 		this.m_Locker.Lock()
 		this.m_SimplePlayerMap[pData.PlayerId] = pData
 		this.m_SimplePlayerNameMap[pData.PlayerName] = pData
@@ -81,7 +81,7 @@ func (this *PlayerSimpleMgr) LoadSimplePlayerDatas() {
 	}
 
 	endTime := time.Now().Unix()
-	this.m_Log.Println("结束读取玩家的简单信息[%d],timecost[%d]", startTime, endTime-startTime)
+	this.m_Log.Printf("结束读取玩家的简单信息[%d],timecost[%d]", startTime, endTime-startTime)
 }
 
 func (this *PlayerSimpleMgr) GetPlayerDataByName(name string) *SimplePlayerData{
@@ -103,7 +103,7 @@ func (this *PlayerSimpleMgr) GetPlayerDataByName(name string) *SimplePlayerData{
 	return pData
 }
 
-func (this *PlayerSimpleMgr) GetPlayerDataById(playerId int) *SimplePlayerData{
+func (this *PlayerSimpleMgr) GetPlayerDataById(playerId int64) *SimplePlayerData{
 	this.m_Locker.RLock()
 	pData, exist := this.m_SimplePlayerMap[playerId]
 	this.m_Locker.RUnlock()
@@ -122,7 +122,7 @@ func (this *PlayerSimpleMgr) GetPlayerDataById(playerId int) *SimplePlayerData{
 	return pData
 }
 
-func (this *PlayerSimpleMgr) GetPlayerName(playerId int) string{
+func (this *PlayerSimpleMgr) GetPlayerName(playerId int64) string{
 	pData := this.GetPlayerDataById(playerId)
 	if pData != nil {
 		return pData.PlayerName
@@ -131,7 +131,7 @@ func (this *PlayerSimpleMgr) GetPlayerName(playerId int) string{
 	return  ""
 }
 
-func LoadSimplePlayerData(playerId int) *SimplePlayerData{
+func LoadSimplePlayerData(playerId int64) *SimplePlayerData{
 	pData := new(SimplePlayerData)
 	rows, err := world.SERVER.GetDB().Query(db.LoadSql(pData, "tbl_player", fmt.Sprintf("player_id =%d", playerId)))
 	rs := db.Query(rows)
@@ -146,23 +146,16 @@ func LoadSimplePlayerData(playerId int) *SimplePlayerData{
 
 func LoadSimplePlayerDataByName(name string) *SimplePlayerData{
 	pData := new(SimplePlayerData)
-	var LoginTime string
-	var LogoutTime string
-	row := world.SERVER.GetDB().QueryRow(db.LoadSql(pData, "tbl_player", fmt.Sprintf("player_name='%s'", name)))
-	if row != nil{
-		err := row.Scan(&pData.AccountId, &pData.PlayerId, &pData.PlayerName, &pData.Level, &pData.Sex, &pData.Gold, &pData.DrawGold, &pData.Vip, &LoginTime, &LogoutTime)
-		if err == nil {
-			pData.LastLoginTime = base.GetDBTime(LoginTime).Unix()
-			pData.LastLogoutTime = base.GetDBTime(LogoutTime).Unix()
-			return pData
-		}else{
-			common.DBERROR("LoadSimplePlayerDataByName",err)
-		}
+	rows, err := world.SERVER.GetDB().Query(db.LoadSql(pData, "tbl_player", fmt.Sprintf("player_name='%s'", name)))
+	rs := db.Query(rows)
+	if err == nil && rs.Next(){
+		loadSimple(rs.Row(), pData)
+		return pData
 	}
 	return nil
 }
 
-func LoadSimplePlayerDatas(accountId int) []*SimplePlayerData{
+func LoadSimplePlayerDatas(accountId int64) []*SimplePlayerData{
 	pList := make([]*SimplePlayerData, 0)
 	nPlayerNum := 0
 	pData := new(SimplePlayerData)

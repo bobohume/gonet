@@ -2,25 +2,23 @@ package chat
 
 import (
 	"actor"
+	"github.com/golang/protobuf/proto"
 	"message"
+	"server/world"
 	player2 "server/world/player"
 	"time"
-	"server/world"
 )
 
 const(
-	CHAT_MSG_WORLD	 = iota
-	CHAT_MSG_TYPE_ORG	 =iota
-
-	CHAT_PENDING_TIME_NORAML = 3000
-	CHAT_PENDING_TIME_PRIVATE = 1000
-	CHAT_PENDING_TIME_WORLDPLUS = 30000
+	CHAT_PENDING_TIME_NORAML = 1
+	CHAT_PENDING_TIME_PRIVATE = 1
+	CHAT_PENDING_TIME_WORLDPLUS = 1
 )
 
 type(
 	ChatMessage struct{
-		Sender	int
-		Recver	int
+		Sender	int64
+		Recver	int64
 		MessageType int8
 		Message string
 		SenderName string
@@ -33,8 +31,10 @@ type(
 	}
 
 	player struct{
-		playerId int
+		accountId int64
+		playerId int64
 		playerName string
+		sockeId int
 	}
 
 	ChatMgr struct {
@@ -46,15 +46,14 @@ type(
 	IChatMgr interface {
 		actor.IActor
 
-		SendMessageTo(*ChatMessage, int)
-		SendMessageToChannel(*ChatMessage, int)
-		SendMessage(*ChatMessage, []int)
+		SendMessageTo(*ChatMessage, int64)
+		SendMessageToChannel(*ChatMessage, int64)
 		SendMessageToAll(*ChatMessage)
 		GetChannelManager() *ChannelMgr
 
-		setPlayerChatLastTime(int, int8, int64)
-		getPlayerChatLastTime(int, int8) int64
-		getPlayerChatPendingTime(int, int8) int64
+		setPlayerChatLastTime(int64, int8, int64)
+		getPlayerChatLastTime(int64, int8) int64
+		getPlayerChatPendingTime(int64, int8) int64
 	}
 )
 
@@ -66,11 +65,12 @@ func (this *ChatMgr) Init(num int) {
 	this.Actor.Init(num)
 
 	this.m_playerChatMap = make(map[int64] *stPlayerChatRecord)
-
+	actor.MGR().AddActor(this)
+	this.m_channelManager.Init()
 	//聊天信息
 	this.RegisterCall("C_W_ChatMessage", func(packet *message.C_W_ChatMessage){
-		playerId := int(*packet.Sender)
-		accountId := int(*packet.GetPacketHead().Id)
+		playerId := *packet.Sender
+		accountId := *packet.GetPacketHead().Id
 		if accountId == 0{
 			return
 		}
@@ -78,7 +78,7 @@ func (this *ChatMgr) Init(num int) {
 		msg := &ChatMessage{}
 		msg.Sender = playerId
 		msg.Message = *packet.Message
-		msg.Recver = int(*packet.Recver)
+		msg.Recver = *packet.Recver
 		msg.MessageType = int8(*packet.MessageType)
 		msg.RecverName = player2.PLAYERSIMPLEMGR.GetPlayerName(msg.Recver)
 		//替换屏蔽字库
@@ -102,13 +102,14 @@ func (this *ChatMgr) Init(num int) {
 			msg.Recver != msg.Sender{// 不能给自己发点对点消息
 			this.SendMessageTo(msg, msg.Recver)
 		}else if msg.MessageType == int8(message.CHAT_MSG_TYPE_WORLD){
-			this.SendMessageToAll(msg)
+			//this.SendMessageToAll(msg)
+			this.m_channelManager.SendMessageToChannel(msg, channelId)
 		}else{
 			if channelId == 0 {
 				return
 			}
 
-			this.SendMessageToChannel(msg, channelId)
+			this.m_channelManager.SendMessageToChannel(msg, channelId)
 		}
 	})
 
@@ -125,17 +126,20 @@ func (this *ChatMgr) Init(num int) {
 	})
 
 	//销毁频道
-	this.RegisterCall("UnRegisterChannel", func(channelId int) {
+	this.RegisterCall("UnRegisterChannel", func(channelId int64) {
 		this.GetChannelManager().UnregisterChannel(channelId)
 	})
 
 	//添加玩家到频道
-	this.RegisterCall("AddPlayerToChannel", func(playerId, channelId int, playerName string) {
-		this.GetChannelManager().AddPlayer(playerId, channelId, playerName)
+	this.RegisterCall("AddPlayerToChannel", func(accoudId, playerId int64, channelId int64, playerName string, socketId int) {
+		if channelId == -3000{
+			channelId = g_wordChannelId
+		}
+		this.GetChannelManager().AddPlayer(accoudId, playerId, channelId, playerName, socketId)
 	})
 
 	//删除玩家到频道
-	this.RegisterCall("RemovePlayerToChannel", func(playerId, channelId int) {
+	this.RegisterCall("RemovePlayerToChannel", func(playerId int64, channelId int64) {
 		this.GetChannelManager().RemovePlayer(playerId, channelId)
 	})
 	
@@ -146,21 +150,20 @@ func (this *ChatMgr) GetChannelManager() *ChannelMgr{
 	return &this.m_channelManager
 }
 
-func (this *ChatMgr) SendMessageTo(chat *ChatMessage, playerId int){
+func (this *ChatMgr) SendMessageTo(chat *ChatMessage, playerId int64){
 
 }
 
-func (this *ChatMgr) SendMessageToChannel(chat *ChatMessage, channelid int){
-	if channelid == 0{
-		return
-	}
-
-	playerList := this.GetChannelManager().GetPlayerList(channelid)
-	this.SendMessage(chat, playerList)
-}
-
-func (this *ChatMgr) SendMessage(chat *ChatMessage, playerList []int){
-
+func SendMessage(chat *ChatMessage, player *player){
+	world.SendToClient(player.sockeId, &message.W_C_ChatMessage{
+		PacketHead:message.BuildPacketHead(player.accountId, int(message.SERVICE_CLIENT)),
+		Sender:proto.Int64(chat.Sender),
+		SenderName:proto.String(chat.SenderName),
+		Recver:proto.Int64(chat.Recver),
+		RecverName:proto.String(chat.RecverName),
+		MessageType:proto.Int32(int32(chat.MessageType)),
+		Message:proto.String(chat.Message),
+	})
 }
 
 func (this *ChatMgr) SendMessageToAll(chat *ChatMessage){
@@ -168,14 +171,15 @@ func (this *ChatMgr) SendMessageToAll(chat *ChatMessage){
 }
 
 
-func (this *ChatMgr) setPlayerChatLastTime(playerid int, cMessageType int8, nTime int64){
+func (this *ChatMgr) setPlayerChatLastTime(playerid int64, cMessageType int8, nTime int64){
 	v := int64(playerid)
 	v = (v << 8) | int64(cMessageType)
 
+	this.m_playerChatMap[v] = &stPlayerChatRecord{}
 	this.m_playerChatMap[v].nLastTime = nTime
 }
 
-func (this *ChatMgr) getPlayerChatLastTime(playerid int, cMessageType int8) int64{
+func (this *ChatMgr) getPlayerChatLastTime(playerid int64, cMessageType int8) int64{
 	v := int64(playerid)
 	v = (v << 8) | int64(cMessageType)
 
@@ -186,11 +190,15 @@ func (this *ChatMgr) getPlayerChatLastTime(playerid int, cMessageType int8) int6
 	return 0
 }
 
-func (this *ChatMgr) getPlayerChatPendingTime(playerid int, cMessageType int8) int64{
+func (this *ChatMgr) getPlayerChatPendingTime(playerid int64, cMessageType int8) int64{
 	v := int64(playerid)
 	v = (v << 8) | int64(cMessageType)
 
-	pData := this.m_playerChatMap[v]
+	pData, exist := this.m_playerChatMap[v]
+	if !exist{
+		return 0
+	}
+
 	if pData.nPendingTime == 0{
 		switch cMessageType {
 		case int8(message.CHAT_MSG_TYPE_PRIVATE):

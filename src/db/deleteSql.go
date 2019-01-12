@@ -122,10 +122,12 @@ func getDeleteSql(classField reflect.StructField, classVal reflect.Value) (bool,
 		}
 		*strsql += fmt.Sprintf(delete_sql, classType, strconv.FormatUint(uint64(value),10))
 	case "*struct":
-		value := classVal.Elem().Interface()
-		n,p := parseDeleteSql(value)
-		noramlsql += n
-		primarysql += p
+		if !classVal.IsNil() {
+			value := classVal.Elem().Interface()
+			n, p := parseDeleteSql(value)
+			noramlsql += n
+			primarysql += p
+		}
 	case "float64":
 		*strsql += fmt.Sprintf(delete_sql, classType, strconv.FormatFloat(classVal.Float(), 'f', -1, 64))
 	case "float32":

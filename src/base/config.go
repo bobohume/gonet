@@ -1,10 +1,11 @@
 package base
 // read ini tool
 import (
-	"os"
 	"bufio"
 	"fmt"
 	"io"
+	"os"
+	"strconv"
 	"strings"
 	//"encoding/base64"
 )
@@ -40,6 +41,12 @@ type(
 		Read(string)
 		Get(string) string
 		Get2(string, string)(string, string)
+		Int(key string) int
+		Int64(key string) int64
+		Float32(key string) float32
+		Float64(key string) float64
+		Bool(key string) bool
+		Time(key string) int64
 	}
 )
 
@@ -49,14 +56,14 @@ func Token(srcBuffer []byte, begin int, end int, toLower bool) (string, int){
 	token := make([]byte, nlen)
 	copy(token, srcBuffer[begin:begin+nlen])
 	begin = end + 1
-	str :=strings.ToLower(string(token));
+	//str :=strings.ToLower(string(token))
+	str := string(token)
 	str = strings.TrimSpace(str)
 	return str, begin
 }
 
-func (this *Config)Get(key string) string{
-	key = strings.ToLower(key)
-
+func (this *Config) Get(key string) string{
+	//key = strings.ToLower(key)
 	for _,map1 := range this.m_cfgInfo{
 		val,exist := map1[key];
 		if (exist == true){
@@ -67,7 +74,36 @@ func (this *Config)Get(key string) string{
 	return "";
 }
 
-func (this *Config)Get2(key string, sep string)(string, string){
+func (this *Config) Int(key string) int{
+	n, _ := strconv.Atoi(this.Get(key))
+	return n
+}
+
+func (this *Config) Int64(key string) int64{
+	n, _ := strconv.ParseInt(this.Get(key), 0, 64)
+	return n
+}
+
+func (this *Config) Float32(key string) float32{
+	n, _ := strconv.ParseFloat(this.Get(key), 32)
+	return float32(n)
+}
+
+func (this *Config) Float64(key string) float64{
+	n, _ := strconv.ParseFloat(this.Get(key), 64)
+	return n
+}
+
+func (this *Config) Bool(key string) bool{
+	n, _ := strconv.ParseBool(this.Get(key))
+	return n
+}
+
+func (this *Config) Time(key string) int64 {
+	return GetDBTime(this.Get(key)).Unix()
+}
+
+func (this *Config) Get2(key string, sep string) (string, string){
 	split := func(buf string, sep string)(string, string) {
 		index := strings.Index(buf, sep)
 		first := buf[:index]
@@ -77,7 +113,7 @@ func (this *Config)Get2(key string, sep string)(string, string){
 	return  split(this.Get(key), sep)
 }
 
-func (this *Config)Read(path string)  {
+func (this *Config) Read(path string)  {
 	this.m_cfgInfo = make(map [CfgKey] SectionInfo)
 	for i,_ := range this.m_cfgInfo{
 		delete(this.m_cfgInfo, i)

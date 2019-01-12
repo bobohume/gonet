@@ -183,7 +183,7 @@ func (this *Socket) BindPacketFunc(callfunc HandleFunc){
 func (this *Socket) CallMsg(funcName string, params ...interface{}){
 	buff := base.GetPacket(funcName, params...)
 	buff = base.SetTcpEnd(buff)
-	if this.m_nConnectType == CLIENT_CONNECT{
+	if this.m_nConnectType == CLIENT_CONNECT && this.m_nState != SSF_SHUT_DOWN{
 		this.handlePacket(this.m_ClientId, buff)
 		return
 	}

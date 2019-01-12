@@ -1,11 +1,9 @@
 package player
 
-import "base"
-
 type (
 	SimplePlayerData struct{
-		AccountId int `sql:"name:account_id"`
-		PlayerId int `sql:"primary;name:player_id"`
+		AccountId int64 `sql:"name:account_id"`
+		PlayerId int64 `sql:"primary;name:player_id"`
 		PlayerName string `sql:"name:player_name"`
 		Level int `sql:"name:level"`
 		Sex	  int `sql:"name:sex"`
@@ -17,10 +15,10 @@ type (
 	}
 )
 
-func (this *SimplePlayerData) ReadData(b *base.BitStream){
+/*func (this *SimplePlayerData) ReadData(b *base.BitStream){
 	base.ReadData(this, b)
-}
+}*/
 
-func (this *SimplePlayerData) WriteData(b *base.BitStream){
+/*func (this *SimplePlayerData) WriteData(b *base.BitStream){
 	base.WriteData(this, b)
-}
+}*/

@@ -8,13 +8,14 @@
 	 "log"
 	 "message"
 	 "network"
-	 "strconv"
+	 "server/common"
  )
 
 type(
 	ServerMgr struct{
 		m_pService	*network.ServerSocket
 		m_pServerMgr *ServerSocketManager
+		m_pMonitorClient *common.MonitorClient
 		m_pActorDB *sql.DB
 		m_Inited bool
 		m_config base.Config
@@ -38,6 +39,7 @@ type(
 var(
 	UserNetIP string
 	UserNetPort string
+	WorkID	int
 	DB_Server string
 	DB_Name string
 	DB_UserId string
@@ -55,7 +57,7 @@ func (this *ServerMgr)Init() bool{
 	this.m_Log.Init("account")
 	//初始ini配置文件
 	this.m_config.Read("SXZ_SERVER.CFG")
-	UserNetIP, UserNetPort 			=this.m_config.Get2("Account_WANAddress", ":")
+	UserNetIP, UserNetPort = this.m_config.Get2("Account_LANAddress", ":")
 	DB_Server 	= this.m_config.Get("AccountDB_LANIP")
 	DB_Name		= this.m_config.Get("AccountDB_Name");
 	DB_UserId	= this.m_config.Get("AccountDB_UserId");
@@ -83,9 +85,14 @@ func (this *ServerMgr)Init() bool{
 	this.m_AccountMgr = new(AccountMgr)
 	this.m_AccountMgr.Init(1000)
 
+	//链接monitor
+	this.m_pMonitorClient = new(common.MonitorClient)
+	monitorIp, monitroPort := this.m_config.Get2("Monitor_LANAddress", ":")
+	this.m_pMonitorClient.Connect(int(message.SERVICE_ACCOUNTSERVER), monitorIp, monitroPort, UserNetIP, UserNetPort)
+
 	//初始化socket
 	this.m_pService = new(network.ServerSocket)
-	port,_:=strconv.Atoi(UserNetPort)
+	port := base.Int(UserNetPort)
 	this.m_pService.Init(UserNetIP, port)
 	this.m_pService.SetMaxReceiveBufferSize(1024)
 	this.m_pService.SetMaxSendBufferSize(1024)

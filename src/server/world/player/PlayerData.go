@@ -29,14 +29,14 @@ const(
 
 type (
 	PlayerData struct{
-		AccountId int
-		PlayerId int
+		AccountId int64
+		PlayerId int64
 		SocketId int
 		AccountName string
 		PlayerSimpleData *SimplePlayerData
 
 		PlayerNum int
-		PlayerIdList []int
+		PlayerIdList []int64
 		PlayerSimpleDataList []*SimplePlayerData
 		m_db *sql.DB
 		m_Log *base.CLog
@@ -44,9 +44,10 @@ type (
 
 	IPlayerData interface {
 		Init()
-		GetPlayerId() int
+		GetPlayerId() int64
 		GetPlayerCount() int
-		SetPlayerId(int) bool
+		SetPlayerId(int64) bool
+		GetPlayerName() string
 	}
 )
 
@@ -57,8 +58,15 @@ func (this *PlayerData) Init(){
 	//this.PlayerSimpleDataList = make([]*SimplePlayerData, 0)
 }
 
-func (this *PlayerData) GetPlayerId()int{
+func (this *PlayerData) GetPlayerId()int64{
 	return this.PlayerId
+}
+
+func (this *PlayerData) GetPlayerName() string{
+	if this.PlayerSimpleData != nil{
+		return this.PlayerSimpleData.PlayerName
+	}
+	return ""
 }
 
 func (this *PlayerData) GetPlayerCount()int{
@@ -71,7 +79,7 @@ func (this *PlayerData) GetPlayerCount()int{
 	return count
 }
 
-func (this *PlayerData) SetPlayerId(PlayerId int) bool{
+func (this *PlayerData) SetPlayerId(PlayerId int64) bool{
 	for i := 0; i < len(this.PlayerIdList); i++ {
 		if this.PlayerIdList[i] == PlayerId {
 			this.PlayerId = PlayerId

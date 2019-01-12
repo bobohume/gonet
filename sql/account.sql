@@ -22,17 +22,15 @@ USE `md_account`;
 DROP TABLE IF EXISTS `tbl_account`;
 
 CREATE TABLE `tbl_account` (
-  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '自增量',
-  `account_id` int(11) NOT NULL DEFAULT '0' COMMENT '账号id',
+  `account_id` bigint(20) NOT NULL DEFAULT '0' COMMENT '账号id',
   `account_name` varchar(100) NOT NULL DEFAULT '' COMMENT '账号名字',
   `password` varchar(32) NOT NULL DEFAULT '' COMMENT '密码',
   `status` int(11) NOT NULL DEFAULT '0' COMMENT '账号状态',
   `login_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '登录时间',
   `logout_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '登出时间',
   `login_ip` varchar(20) NOT NULL DEFAULT '' COMMENT '登录ip',
-  PRIMARY KEY (`id`),
-  KEY `idx_tbl_account_account_name` (`account_name`),
-  KEY `idx_tbl_account_account_id` (`account_id`)
+  PRIMARY KEY (`account_id`),
+  KEY `idx_tbl_account_account_name` (`account_name`)
 ) ENGINE=InnoDB AUTO_INCREMENT=234 DEFAULT CHARSET=utf8;
 
 
@@ -41,14 +39,12 @@ CREATE TABLE `tbl_account` (
 DROP TABLE IF EXISTS `tbl_player`;
 
 CREATE TABLE `tbl_player` (
-  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '自增量',
-  `player_id` int(11) NOT NULL DEFAULT '0' COMMENT '玩家ID',
+  `player_id` bigint(20) NOT NULL DEFAULT '0' COMMENT '玩家ID',
   `player_name` varchar(32) NOT NULL DEFAULT '' COMMENT '玩家名字',
-  `account_id` int(11) NOT NULL DEFAULT '0' COMMENT '账号ID',
+  `account_id` bigint(20) NOT NULL DEFAULT '0' COMMENT '账号ID',
   `delete_flag` tinyint(4) NOT NULL DEFAULT '0' COMMENT '删除标志',
-  PRIMARY KEY (`id`),
-  KEY `idx_tbl_player_account_id` (`account_id`),
-  KEY `idx_tbl_player_player_id` (`player_id`)
+  PRIMARY KEY (`player_id`),
+  KEY `idx_tbl_player_account_id` (`account_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=237 DEFAULT CHARSET=utf8;
 
 /* Procedure structure for procedure `usp_activeaccount` */
@@ -57,7 +53,7 @@ CREATE TABLE `tbl_player` (
 
 DELIMITER $$
 
-/*!50003 CREATE DEFINER=`root`@`localhost` PROCEDURE `usp_activeaccount`(IN _userid VARCHAR(50), IN _password VARCHAR(32))
+/*!50003 CREATE DEFINER=`root`@`localhost` PROCEDURE `usp_activeaccount`(IN _userid VARCHAR(50), IN _password VARCHAR(32), IN _uid bigint)
 BEGIN
      SET @accountid = -1;
 	 SET @result = '0000';
@@ -72,11 +68,10 @@ BEGIN
 		SELECT @accountid = A.account_id FROM tbl_account A WHERE A.account_name = _userid;
 		IF FOUND_ROWS() = 0 THEN
 			-- 开始插入帐号信息
-			INSERT INTO tbl_account(account_name,password)
-				SELECT _userid,MD5(_password);
+			INSERT INTO tbl_account(account_name,password, account_id)
+				SELECT _userid,MD5(_password), _uid;
 			IF ROW_COUNT() = 1 THEN
-				SET @accountid = 10000000 + @@IDENTITY;
-                update tbl_account set account_id = @accountid where id=@@IDENTITY;
+			  SET @accountId = _uid;
 			ELSE
 				SET @result = '0003';
 			END IF;
@@ -88,7 +83,7 @@ BEGIN
 		END IF;
 	
 	END IF;
-    SELECT @result, @accountid;
+    SELECT @result, @accountId;
 END */$$
 DELIMITER ;
 
@@ -98,18 +93,17 @@ DELIMITER ;
 
 DELIMITER $$
 
-/*!50003 CREATE DEFINER=`root`@`localhost` PROCEDURE `usp_createplayer`(in _accountId int,
-in _playerName varchar(32))
+/*!50003 CREATE DEFINER=`root`@`localhost` PROCEDURE `usp_createplayer`(in _accountId bigint,
+in _playerName varchar(32), in _uid bigint)
 begin
 	set @err = -1;
     set @playerId = 0;
         
 	if @err = -1 then
-		insert into tbl_player(account_id, player_name)
-			value(_accountId, _playerName);
+		insert into tbl_player(account_id, player_name, player_id)
+			value(_accountId, _playerName, _uid);
 		if row_count() <> 0 then
-			set @playerid = 10000000 + @@IDENTITY;
-			update tbl_player set player_id = @playerId where id=@@IDENTITY;
+		  set @playerId = _uid;
 			set @err = 0;
 		end if;
 	end if;

@@ -36,17 +36,14 @@ func (this *AccountProcess) Init(num int) {
 
 	this.RegisterCall("COMMON_RegisterResponse", func() {
 		this.m_LostTimer.Stop()
+		//SERVER.GetPlayerMgr().SendMsg("Account_Relink")
 	})
 
 	this.RegisterCall("DISCONNECT", func(socketId int) {
 		this.m_LostTimer.Start()
 	})
 
-	this.RegisterCall("G_ClientLost", func(accountId int) {
-		SERVER.GetWorldSocket().SendMsg("G_ClientLost", accountId)
-	})
-
-	this.RegisterCall("A_G_Account_Login", func(accountId int, socketId int) {
+	this.RegisterCall("A_G_Account_Login", func(accountId int64, socketId int) {
 		SERVER.GetPlayerMgr().SendMsg("ADD_ACCOUNT", socketId, accountId)
 	})
 
@@ -58,10 +55,6 @@ func (this *AccountProcess) Init(num int) {
 	this.RegisterCall("A_C_LoginRequest", func(packet *message.A_C_LoginRequest) {
 		buff := message.Encode(packet)
 		SERVER.GetServer().SendByID(int(*packet.SocketId), buff)
-	})
-
-	this.RegisterCall("A_W_CreatePlayer", func(accountId int, playerId int, playername string, sex int32) {
-		SERVER.GetWorldSocket().SendMsg("A_W_CreatePlayer", accountId, playerId, playername, sex)
 	})
 
 	this.Actor.Start()

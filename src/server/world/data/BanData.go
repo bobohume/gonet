@@ -35,8 +35,7 @@ func (this *BanDataRes) Read() bool {
 		pData := BanData{}
 
 		file.GetData(lineData)
-		base.IFAssert(lineData.Type == base.DType_String, "read BanWord.dat BanName error")
-		pData.BanName = lineData.String
+		pData.BanName = lineData.String("BanWord.dat","BanName" )
 		if pData.BanName == ""{
 			continue
 		}

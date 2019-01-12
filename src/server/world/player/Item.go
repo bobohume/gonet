@@ -11,14 +11,14 @@ import (
 
 type(
 	Item struct {
-		Id uint64 `sql:"primary"`						//物品唯一Id
+		Id int64 `sql:"primary"`						//物品唯一Id
 		PlayerId int `sql:"primary;name:player_id"`		//玩家Id
 		ItemId int	`sql:"name:item_id"`				//模板Id
 		Quantity int `sql:name:quantity`				//数量(对于装备，只能为1)
 	}
 
 	Equip struct {
-		Id uint64 `sql:"primary"`						//物品唯一Id
+		Id int64 `sql:"primary"`						//物品唯一Id
 		PlayerId int `sql:"primary;name:player_id"`		//玩家Id
 		ItemId int `sql:"name:item_id"`					//模板Id
 		Level int	`sql:"name:level"`					//等级
@@ -31,8 +31,8 @@ type(
 	}
 
 	ItemMgr struct {
-		m_ItemMap map[uint64] *Item
-		m_EquipMap map[uint64] *Equip
+		m_ItemMap map[int64] *Item
+		m_EquipMap map[int64] *Equip
 		m_Player *Player
 		m_db *sql.DB
 		m_Log *base.CLog
@@ -64,7 +64,7 @@ func (this *ItemMgr) CreateItem(ItemId, PlayerId, Quantity int) (*Item, *Equip) 
 	}
 
 	pItem := &Item{}
-	pItem.Id = base.Uuid()
+	pItem.Id = base.UUID.UUID()
 	pItem.ItemId = ItemId
 	pItem.Quantity = Quantity
 	pItem.PlayerId = PlayerId
@@ -126,7 +126,7 @@ func (this *ItemMgr) DelEquip(pEquip *Equip) bool{
 	return false
 }
 
-func (this *ItemMgr) DelEquipById(Id uint64, PlayerId int) bool{
+func (this *ItemMgr) DelEquipById(Id int64, PlayerId int) bool{
 	pEquip, exist := this.m_EquipMap[Id]
 	if exist{
 		return this.DelEquip(pEquip)
@@ -142,8 +142,8 @@ func (this *ItemMgr) addItem(ItemId, PlayerId, Quantity int) bool{
 
 	iLeftQuantity, iNeedQuantity:= Quantity, 0
 	bEnough := false
-	BatMap := make(map[uint64] int)
-	CreateMap := make(map[uint64] (*ItemEquipPair))
+	BatMap := make(map[int64] int)
+	CreateMap := make(map[int64] (*ItemEquipPair))
 	for _, pItem := range this.m_ItemMap{
 		if pItem != nil && pItem.ItemId == ItemId && pItem.Quantity < pItemData.MaxDie{
 			iNeedQuantity = iLeftQuantity
@@ -214,7 +214,7 @@ func (this *ItemMgr) reduceItem(ItemId, PlayerId, Quantity int) bool{
 	iLeftQuantity, iNeedQuantity := int(math.Abs(float64(Quantity))), 0
 	bEnough := false
 	bEquip := pItemData.IsEquip()
-	BatMap := make(map[uint64] int)
+	BatMap := make(map[int64] int)
 	for _, pItem := range this.m_ItemMap{
 		if pItem != nil && pItem.ItemId == ItemId{
 			iNeedQuantity = iLeftQuantity

@@ -142,11 +142,6 @@ func serverclientRoutine(pClient *ServerSocketClient) bool {
 			pClient.OnNetFail(0)
 			break
 		}
-		if string(buff[:n]) == "exit" {
-			fmt.Printf("远程链接：%s退出！\n", pClient.m_Conn.RemoteAddr().String())
-			pClient.OnNetFail(0)
-			break
-		}
 		if n > 0 {
 			pClient.ReceivePacket(pClient.m_ClientId, buff[:n])
 		}

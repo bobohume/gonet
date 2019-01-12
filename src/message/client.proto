@@ -29,7 +29,7 @@ required int32  Sex = 3;
 
 message C_W_Game_LoginRequset{
 required Ipacket PacketHead = 1;
-required int32	PlayerId =2;
+required int64	PlayerId =2;
 }
 
 message C_G_LogoutResponse{
@@ -38,8 +38,18 @@ required Ipacket PacketHead = 1;
 
 message C_W_ChatMessage{
 required Ipacket PacketHead = 1;
-required int32	Sender = 2;
-required int32	Recver = 3;
+required int64	Sender = 2;
+required int64	Recver = 3;
 required int32	MessageType = 4;
 required string	Message = 5;
+}
+
+message W_C_ChatMessage{
+required Ipacket PacketHead = 1;
+required int64	Sender = 2;
+required string	SenderName = 3;
+required int64	Recver = 4;
+required string	RecverName = 5;
+required int32	MessageType = 6;
+required string	Message = 7;
 }

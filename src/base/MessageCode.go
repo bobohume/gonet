@@ -1,6 +1,7 @@
 package base
 
 import (
+	"hash/crc32"
 	"strings"
 )
 
@@ -79,7 +80,8 @@ var(
 )
 
 func GetMessageCode1(strName string) uint32 {
-	return GetMessageCode2(strName)
+	return crc32.ChecksumIEEE([]byte(strName))
+	//return GetMessageCode2(strName)
 	/*h := fnv.New32()
 	h.Write([]byte(strName))
 	sum := h.Sum(nil)

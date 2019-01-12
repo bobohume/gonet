@@ -2,14 +2,14 @@ package toprank
 
 import (
 	"actor"
+	"base"
+	"database/sql"
 	"db"
 	"fmt"
-	"time"
-	"sort"
 	"server/common"
 	"server/world"
-	"database/sql"
-	"base"
+	"sort"
+	"time"
 )
 
 const(
@@ -25,16 +25,33 @@ const(
 
 type(
 	TopRank struct{
-		Id uint64	`sql:"primary;name:id"`
-		Type int8	`sql:"primary;name:type"`
-		Name string `sql:"name:name"`
-		Score int `sql:"name:score"`
-		Value [2]int `sql:"name:value"`
-		LastTime int64 `sql:"datetime;name:last_time"`
+		Id int64	`sql:"primary;name:id"			json:"id"`
+		Type int8	`sql:"primary;name:type"		json:"type"`
+		Name string `sql:"name:name"				json:"name"`
+		Score int `sql:"name:score"					json:"score"`
+		Value [2]int `sql:"name:value"				json:"value"`
+		LastTime int64 `sql:"datetime;name:last_time"	json:"last_time"`
 	}
+)
 
+var(
+	g_pMgr actor.IActor
+)
+
+func MGR() actor.IActor{
+	if g_pMgr == nil{
+		if world.OpenRedis{
+			g_pMgr = &TopMgrR{}
+		}else{
+			g_pMgr = &TopMgr{}
+		}
+	}
+	return g_pMgr
+}
+
+type(
 	TOPRANKSET []*TopRank//排行榜队列
-	TOPRANKMAP map[uint64] *TopRank//排行榜队列
+	TOPRANKMAP map[int64] *TopRank//排行榜队列
 	TopMgr struct {
 		actor.Actor
 
@@ -49,23 +66,19 @@ type(
 		actor.IActor
 
 		loadDB()
-		newInData(int, uint64, string, int, int, int)
-		getRank(int, uint64) *TopRank
-		createRank(int, uint64, string, int, int, int) *TopRank
+		newInData(int, int64, string, int, int, int)
+		getRank(int, int64) *TopRank
+		createRank(int, int64, string, int, int, int) *TopRank
 		clearTop(int)
 		deleteOverDue(int)
-		getPlayerRank(int, int) int //获取排名
+		getPlayerRank(int, int64) int //获取排名
 		clearRank()
-		Update()
+		update()
 	}
 )
 
-var(
-	TOPMGR TopMgr
-)
-
 func loadTopRank(row db.IRow, t *TopRank){
-	t.Id = uint64(row.Int64("id"))
+	t.Id = row.Int64("id")
 	t.Type = int8(row.Int("type"))
 	t.Name = row.String("name")
 	t.Score = row.Int("score")
@@ -78,7 +91,6 @@ func (this *TopMgr) loadDB() {
 	//pData := &TopRank{}
 	this.m_Log.Println("读取排行榜")
 	this.clearRank()
-	fmt.Sprintf(fmt.Sprintf("select * from %s order by `score` limit 0, %d", sqlTable, TOP_RANK_MAX))
 	rows, err := this.m_db.Query(fmt.Sprintf("select * from %s order by `score` limit 0, %d", sqlTable, TOP_RANK_MAX));
 	//row, err := this.m_db.Query(db.LoadSql(pData, sqlTable, ""));
 	if err != nil{
@@ -100,11 +112,11 @@ func (this *TopMgr) Init(num int){
 	this.m_Log = world.SERVER.GetLog()
 	this.m_topRankTimer = common.NewSimpleTimer(TOP_RANK_SYNC_TIME)
 	this.Actor.Init(num)
-	actor.GetGActorList().RegisterGActorList("toprank", this)
+	actor.MGR().AddActor(this)
 	this.clearRank()
 
-	this.RegisterTimer(1000 * 1000 * 1000, this.Update)//定时器
-	this.RegisterCall("InTopRank", func(nType int, id uint64, name string, score,val0,val1 int) {
+	this.RegisterTimer(1000 * 1000 * 1000, this.update)//定时器
+	this.RegisterCall("InTopRank", func(nType int, id int64, name string, score,val0,val1 int) {
 		this.newInData(nType, id, name, score, val0, val1)
 	})
 
@@ -128,7 +140,7 @@ func (this *TopMgr) showTest(nType int){
 	}
 }
 
-func (this *TopMgr) newInData(nType int, id uint64, name string, score,val0,val1 int){
+func (this *TopMgr) newInData(nType int, id int64, name string, score,val0,val1 int){
 	pData := this.getRank(nType, id)
 	if pData == nil{
 		pData = this.createRank(nType, id, name, score, val0, val1)
@@ -167,7 +179,7 @@ func (this *TopMgr) clearTop(nType int){
 	this.m_db.Exec(fmt.Sprintf("delete %s where type=%d"), sqlTable, nType)
 }
 
-func (this *TopMgr) getRank(nType int, id uint64) *TopRank{
+func (this *TopMgr) getRank(nType int, id int64) *TopRank{
 	items := this.m_topRankMap[nType]
 	pData, exist := items[id]
 	if exist{
@@ -176,7 +188,7 @@ func (this *TopMgr) getRank(nType int, id uint64) *TopRank{
 	return nil
 }
 
-func (this *TopMgr) createRank(nType int, id uint64, name string, score,val0,val1 int) *TopRank{
+func (this *TopMgr) createRank(nType int, id int64, name string, score,val0,val1 int) *TopRank{
 	pData := &TopRank{}
 	pData.Type = int8(nType)
 	pData.Id = id
@@ -215,8 +227,8 @@ func (this *TopMgr) deleteOverDue(nType int){
 	}
 }
 
-func (this* TopMgr) getPlayerRank(nType, playerId int) int{
-	Id := uint64(playerId)
+func (this* TopMgr) getPlayerRank(nType int, playerId int64) int{
+	Id := playerId
 	pData := this.getRank(nType, Id)
 	if pData != nil{
 		items := this.m_topRankSet[nType]
@@ -237,7 +249,7 @@ func (this* TopMgr) getPlayerRank(nType, playerId int) int{
 	return -1
 }
 
-func (this* TopMgr) Update(){
+func (this* TopMgr) update(){
 	//每隔一定时间同步sql的数据
 	if this.m_topRankTimer.CheckTimer(){
 		this.loadDB()

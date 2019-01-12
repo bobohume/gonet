@@ -7,13 +7,11 @@ import (
 	"flag"
 	"fmt"
 	"github.com/golang/protobuf/proto"
-	"github.com/satori/go.uuid"
 	"log"
 	"message"
 	"net"
 	"net/http"
 	"network"
-	"redis"
 	"runtime"
 	"server/common"
 	"strconv"
@@ -95,21 +93,21 @@ func (this *CmdProcess) Init(num int) {
 		i += 1
 	}
 	this.Actor.Init(num)
-	this.RegisterCall("cpus", func(caller *actor.Caller) {
+	this.RegisterCall("cpus", func() {
 		fmt.Println(runtime.NumCPU(), " cpus and ", runtime.GOMAXPROCS(0), " in use")
 	})
 
-	this.RegisterCall("routines", func(caller *actor.Caller) {
+	this.RegisterCall("routines", func() {
 		fmt.Println("Current number of goroutines: ", runtime.NumGoroutine())
 	})
 
-	this.RegisterCall("setcpus", func(caller *actor.Caller, args string) {
+	this.RegisterCall("setcpus", func(args string) {
 		n, _ := strconv.Atoi(args)
 		runtime.GOMAXPROCS(n)
 		fmt.Println(runtime.NumCPU(), " cpus and ", runtime.GOMAXPROCS(0), " in use")
 	})
 
-	this.RegisterCall("startgc", func(caller *actor.Caller) {
+	this.RegisterCall("startgc", func() {
 		runtime.GC()
 		fmt.Println("gc finished")
 	})
@@ -140,11 +138,28 @@ type TOPRANKSET map[int] int//排行榜队列
 
 var lang = flag.String("lang", "golang", "the lang of the program")
 func main() {
+	ttt := make(map[int64] int64)
+	base.UUID.Init(0)
+	time1 := time.Now().UnixNano() / int64(time.Millisecond)
+	for i := 0; i < 10000000; i++{
+		n := base.UUID.UUID()
+		_, bEx := ttt[n]
+		if bEx{
+			fmt.Println("重复uid")
+			continue
+		}
+		ttt[n] = n
+	}
+	fmt.Println("end", time.Now().UnixNano() / int64(time.Millisecond) - time1)
+
+	for {
+		time.Sleep(1)
+	}
+
 	str := []byte("我是大另议11111222")
 	fmt.Println(str)
 	J := uint8(1)
 	var1 :=Sqltest{&J, 2, "test", []uint{1, 2}, []int{3,4}, [1]Sqltest1{Sqltest1{1, 1}},  []string{"tes21", "tes31"}, [2]bool{false,true},[2]float64{1, 2.2}, time.Now().Unix(), time.Now().Unix(), }
-	fmt.Println(redis.RedisStr(var1))
 	fmt.Println(db.UpdateSql(var1, "tb_test"))
 	fmt.Println(db.UpdateSqlEx(var1, "tb_test", "_i", "J2"))
 	fmt.Println(db.LoadSql(var1, "tb_test","playerid = 111"))
@@ -239,7 +254,6 @@ func main() {
 	//func1 := (funcName1)(ponit)
 	//common.StartConsole(pCmd)
 	flag.Parse()
-	fmt.Println(uuid.NewV1())
 	//var sss base.BitStream
 
 	test := &message.C_A_LoginRequest1{

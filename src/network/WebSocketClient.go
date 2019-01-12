@@ -41,6 +41,10 @@ func (this *WebSocketClient) Send(buff []byte) int {
 		}
 	}()
 
+	if this.m_Conn == nil{
+		return 0
+	}
+
 	if len(buff) > this.m_MaxSendBufferSize{
 		log.Print(" SendError size",len(buff))
 		return  0
@@ -117,12 +121,6 @@ func wserverclientRoutine(pClient *WebSocketClient) bool {
 		}
 		if err != nil {
 			handleError(err)
-			pClient.OnNetFail(0)
-			break
-		}
-
-		if string(buff[:n]) == "exit" {
-			fmt.Printf("远程链接：%s退出！\n", pClient.m_WebConn.RemoteAddr().String())
 			pClient.OnNetFail(0)
 			break
 		}
