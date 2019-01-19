@@ -133,7 +133,7 @@ func (this *PlayerMgr) AddPlayer(accountId int64) *Player{
 	this.m_Lock.Lock()
 	this.m_PlayerMap[accountId] = pPlayer
 	this.m_Lock.Unlock()
-	pPlayer.Init(10)
+	pPlayer.Init(MAX_PLAYER_CHAN)
 	return pPlayer
 }
 

@@ -17,9 +17,9 @@ const(
 	STATUS_IDEL 				= 	iota
 	STATUS_LOGIN				=	iota
 	STATUS_IN_SELECT			=	iota
-	STATUS_IN_GAME			=	iota
+	STATUS_IN_GAME				=	iota
 	STATUS_LOGOUT				=	iota
-	STATUS_OFFLINE			=	iota
+	STATUS_OFFLINE				=	iota
 	STATUS_COUNT				=	iota
 )
 

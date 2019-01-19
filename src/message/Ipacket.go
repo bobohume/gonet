@@ -45,7 +45,15 @@ func parseTypeStruct(message interface{}, packetHead *Ipacket) {
 	}
 
 	setPacketHead := func(packetHead *Ipacket, TypeName string, protoVal reflect.Value) bool{
-		if TypeName == "DestServerType"{
+		if TypeName == "PacketHead"{
+			*packetHead.DestServerType = *protoVal.Elem().FieldByName("DestServerType").Interface().(*int32)
+			*packetHead.Stx = *protoVal.Elem().FieldByName("Stx").Interface().(*int32)
+			*packetHead.Ckx = *protoVal.Elem().FieldByName("Ckx").Interface().(*int32)
+			*packetHead.Id = *protoVal.Elem().FieldByName("Id").Interface().(*int64)
+		}else{
+			return false
+		}
+		/*if TypeName == "DestServerType"{
 			*packetHead.DestServerType = *protoVal.Interface().(*int32)
 		} else if TypeName == "Stx"{
 			*packetHead.Stx =  *protoVal.Interface().(*int32)
@@ -55,7 +63,7 @@ func parseTypeStruct(message interface{}, packetHead *Ipacket) {
 			*packetHead.Id = *protoVal.Interface().(*int64)
 		}else {
 			return false
-		}
+		}*/
 
 		return true
 	}
@@ -70,6 +78,8 @@ func parseTypeStruct(message interface{}, packetHead *Ipacket) {
 	for i := 0; i < protoType.NumField(); i++{
 		if !setPacketHead(packetHead, protoType.Field(i).Name, protoVal.Field(i)){
 			parseTypeElem(protoVal.Field(i), packetHead)
+		}else{
+			break
 		}
 	}
 }

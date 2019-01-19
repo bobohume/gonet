@@ -31,7 +31,7 @@ type(
 )
 
 func (this* Player) Init(num int){
-	this.Actor.Init(MAX_PLAYER_CHAN)
+	this.Actor.Init(num)
 	this.PlayerData.Init()
 	this.RegisterTimer(1000 * 1000 * 1000, this.Update)//定时器
 	this.m_offlineTimer = common.NewSimpleTimer(5 *60)

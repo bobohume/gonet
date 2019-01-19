@@ -158,16 +158,17 @@ func (this *Actor) SendMsg(funcName string, params ...interface{}) {
 	this.Send(io)
 }
 
-func (this *Actor) Send(io CallIO) {
-	go func() {
-		defer func() {
-			if err := recover(); err != nil {
-				fmt.Println("Send", err)
-			}
-		}()
 
-		this.m_CallChan <- io
+func (this *Actor) Send(io CallIO) {
+	//go func() {
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Println("Send", err)
+		}
 	}()
+
+	this.m_CallChan <- io
+	//}()
 }
 
 //防止消息过快,主要在player里面
