@@ -15,58 +15,53 @@ var(
 	Packet_CreateFactorInit bool
 )
 
-func parseTypeStruct(message interface{}, packetHead *Ipacket) {
+func parseTypeElem(val reflect.Value, packetHead **Ipacket) {
+	sType := strings.ToLower(val.Type().String())
+	index := strings.Index(sType, ".")
+	if index!= -1{
+		sType = sType[:index]
+	}
+
+	switch sType {
+	case "*message":
+		if !val.IsNil(){
+			value := val.Elem().Interface()
+			parseTypeStruct(value, packetHead)
+		}
+	}
+}
+
+func setPacketHead(packetHead **Ipacket, TypeName string, protoVal reflect.Value) bool{
+	if TypeName == "PacketHead"{
+		*packetHead = protoVal.Interface().(*Ipacket)
+		//*packetHead.DestServerType = *protoVal.Elem().FieldByName("DestServerType").Interface().(*int32)
+		//*packetHead.Stx = *protoVal.Elem().FieldByName("Stx").Interface().(*int32)
+		//*packetHead.Ckx = *protoVal.Elem().FieldByName("Ckx").Interface().(*int32)
+		//*packetHead.Id = *protoVal.Elem().FieldByName("Id").Interface().(*int64)
+	}else{
+		return false
+	}
+	/*if TypeName == "DestServerType"{
+		*packetHead.DestServerType = *protoVal.Interface().(*int32)
+	} else if TypeName == "Stx"{
+		*packetHead.Stx =  *protoVal.Interface().(*int32)
+	} else if TypeName == "Ckx"{
+		*packetHead.Ckx = *protoVal.Interface().(*int32)
+	} else if TypeName == "Id"{
+		*packetHead.Id = *protoVal.Interface().(*int64)
+	}else {
+		return false
+	}*/
+
+	return true
+}
+
+func parseTypeStruct(message interface{}, packetHead **Ipacket) {
 	defer func() {
 		if err := recover(); err != nil {
 			fmt.Println("GetPakcetHead", err)
 		}
 	}()
-
-	parseTypeElem := func (val reflect.Value, packetHead *Ipacket) {
-		/*defer func() {
-			if err := recover(); err != nil {
-				fmt.Println("GetPakcetHead", err)
-			}
-		}()*/
-
-		sType := strings.ToLower(val.Type().String())
-		index := strings.Index(sType, ".")
-		if index!= -1{
-			sType = sType[:index]
-		}
-
-		switch sType {
-		case "*message":
-			if !val.IsNil(){
-				value := val.Elem().Interface()
-				parseTypeStruct(value, packetHead)
-			}
-		}
-	}
-
-	setPacketHead := func(packetHead *Ipacket, TypeName string, protoVal reflect.Value) bool{
-		if TypeName == "PacketHead"{
-			*packetHead.DestServerType = *protoVal.Elem().FieldByName("DestServerType").Interface().(*int32)
-			*packetHead.Stx = *protoVal.Elem().FieldByName("Stx").Interface().(*int32)
-			*packetHead.Ckx = *protoVal.Elem().FieldByName("Ckx").Interface().(*int32)
-			*packetHead.Id = *protoVal.Elem().FieldByName("Id").Interface().(*int64)
-		}else{
-			return false
-		}
-		/*if TypeName == "DestServerType"{
-			*packetHead.DestServerType = *protoVal.Interface().(*int32)
-		} else if TypeName == "Stx"{
-			*packetHead.Stx =  *protoVal.Interface().(*int32)
-		} else if TypeName == "Ckx"{
-			*packetHead.Ckx = *protoVal.Interface().(*int32)
-		} else if TypeName == "Id"{
-			*packetHead.Id = *protoVal.Interface().(*int64)
-		}else {
-			return false
-		}*/
-
-		return true
-	}
 
 	protoType := reflect.TypeOf(message)
 	protoVal := reflect.ValueOf(message)
@@ -86,7 +81,7 @@ func parseTypeStruct(message interface{}, packetHead *Ipacket) {
 
 func GetPakcetHead(message interface{}) *Ipacket{
 	packetHead := BuildPacketHead( 0, 0)
-	parseTypeStruct(message, packetHead)
+	parseTypeStruct(message, &packetHead)
 	return packetHead
 }
 

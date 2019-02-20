@@ -36,7 +36,7 @@ func (this *AccountProcess) Init(num int) {
 
 	this.RegisterCall("COMMON_RegisterResponse", func() {
 		this.m_LostTimer.Stop()
-		//SERVER.GetPlayerMgr().SendMsg("Account_Relink")
+		SERVER.GetPlayerMgr().SendMsg("Account_Relink")
 	})
 
 	this.RegisterCall("DISCONNECT", func(socketId int) {

@@ -1,18 +1,12 @@
 package network
 
 import (
+	"base"
 	"fmt"
 	"log"
 	"net"
 	"sync"
 	"sync/atomic"
-	"base"
-)
-
-const (
-	ADD_CLIENT	= iota
-	DEL_CLIENT= iota
-	CLOSE_CLIENT=iota
 )
 
 type IServerSocket interface {
@@ -37,7 +31,6 @@ type ServerSocket struct {
 	m_bNagle        bool
 	m_ClientList    map[int]*ServerSocketClient
 	m_ClientLocker	*sync.RWMutex
-	m_ClientChan	chan ClientChan
 	m_Listen        *net.TCPListener
 	m_Pool          sync.Pool
 	m_Lock          sync.Mutex
@@ -58,7 +51,6 @@ func (this *ServerSocket) Init(ip string, port int) bool {
 	this.Socket.Init(ip, port)
 	this.m_ClientList = make(map[int]*ServerSocketClient)
 	this.m_ClientLocker = &sync.RWMutex{}
-	this.m_ClientChan = make(chan ClientChan, 1000)
 	this.m_sIP = ip
 	this.m_nPort = port
 	this.m_Pool = sync.Pool{
@@ -94,7 +86,6 @@ func (this *ServerSocket) Start() bool {
 	//defer ln.Close()
 	this.m_nState = SSF_ACCEPT
 	go serverRoutine(this)
-	go timeRoutine(this)
 	return true
 }
 
@@ -123,7 +114,9 @@ func (this *ServerSocket) AddClinet(tcpConn *net.TCPConn, addr string, connectTy
 		pClient.m_sIP = addr
 		pClient.SetConnectType(connectType)
 		pClient.SetTcpConn(tcpConn)
-		this.NotifyActor(pClient, ADD_CLIENT)
+		this.m_ClientLocker.Lock()
+		this.m_ClientList[pClient.m_ClientId] = pClient
+		this.m_ClientLocker.Unlock()
 		pClient.Start()
 		this.m_nClientCount++
 		return pClient
@@ -133,28 +126,19 @@ func (this *ServerSocket) AddClinet(tcpConn *net.TCPConn, addr string, connectTy
 	return nil
 }
 
-func (this *ServerSocket) NotifyActor(pClient *ServerSocketClient, state int){
-	if pClient != nil {
-		var clientChan ClientChan
-		clientChan.pClient = pClient
-		clientChan.state = state
-		clientChan.id = pClient.m_ClientId
-		this.m_ClientChan <- clientChan
-	}
-}
-
 func (this *ServerSocket) DelClinet(pClient *ServerSocketClient) bool {
 	this.m_Pool.Put(pClient)
-	this.NotifyActor(pClient, DEL_CLIENT)
+	this.m_ClientLocker.Lock()
+	delete(this.m_ClientList, pClient.m_ClientId)
+	this.m_ClientLocker.Unlock()
 	return true
 }
 
 func (this *ServerSocket) StopClient(id int){
-	var clientChan ClientChan
-	clientChan.pClient = nil
-	clientChan.state = CLOSE_CLIENT
-	clientChan.id = id
-	this.m_ClientChan <- clientChan
+	pClinet := this.GetClientById(id)
+	if pClinet != nil{
+		pClinet.Stop()
+	}
 }
 
 func (this *ServerSocket) LoadClient() *ServerSocketClient {
@@ -234,30 +218,6 @@ func serverRoutine(server *ServerSocket) {
 		//延迟，关闭链接
 		//defer tcpConn.Close()
 		handleConn(server, tcpConn, tcpConn.RemoteAddr().String())
-	}
-}
-
-func timeRoutine(pServer *ServerSocket){
-	for{
-		select {
-		case clientChan := <- pServer.m_ClientChan:
-			if clientChan.state == ADD_CLIENT{
-				if clientChan.pClient != nil {
-					pServer.m_ClientLocker.Lock()
-					pServer.m_ClientList[clientChan.pClient.m_ClientId] = clientChan.pClient
-					pServer.m_ClientLocker.Unlock()
-				}
-			}else if clientChan.state == DEL_CLIENT{
-				pServer.m_ClientLocker.Lock()
-				delete(pServer.m_ClientList, clientChan.id)
-				pServer.m_ClientLocker.Unlock()
-			}else if clientChan.state == CLOSE_CLIENT{
-				pClinet := pServer.GetClientById(clientChan.id)
-				if pClinet != nil{
-					pClinet.Stop()
-				}
-			}
-		}
 	}
 }
 

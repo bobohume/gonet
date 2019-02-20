@@ -205,11 +205,6 @@ func (this *Actor) PacketFunc(id int, buff []byte) bool{
 
 func (this *Actor) call(io CallIO) {
 	funcName := ""
-	defer func() {
-		if err := recover(); err != nil {
-			fmt.Println(fmt.Sprintf("actor call [%s]", funcName), err)
-		}
-	}()
 	bitstream := base.NewBitStream(io.Buff, len(io.Buff))
 	funcName = bitstream.ReadString()
 	funcName = strings.ToLower(funcName)
@@ -940,29 +935,31 @@ func (this *Actor) call(io CallIO) {
 	}
 }
 
-func (this *Actor) 	run(){
+func (this *Actor) loop() bool{
 	defer func() {
 		if err := recover(); err != nil{
-			fmt.Println("actor run", err)
+			base.TraceCode()
 		}
 	}()
 
-	bExit := false
-	for {
-		select {
-		case io := <-this.m_CallChan:
-			this.call(io)
-		case msg := <-this.m_AcotrChan :
-			if msg == DESDORY_EVENT{
-				bExit = true
-				break
-			}
-		case <- this.m_pTimer.C:
-			if this.m_TimerCall != nil{
-				this.m_TimerCall()
-			}
+	select {
+	case io := <-this.m_CallChan:
+		this.call(io)
+	case msg := <-this.m_AcotrChan :
+		if msg == DESDORY_EVENT{
+			return true
 		}
-		if bExit{
+	case <- this.m_pTimer.C:
+		if this.m_TimerCall != nil{
+			this.m_TimerCall()
+		}
+	}
+	return false
+}
+
+func (this *Actor) run(){
+	for {
+		if this.loop(){
 			break
 		}
 	}

@@ -75,13 +75,13 @@ func (this *Vector) resize(newCount int) bool{
 
 		this.mElementCount = newCount
 		this.mArraySize = blocks * VectorBlockSize;
-		this.mArray = append(this.mArray, make([]interface{}, VectorBlockSize)...)
+		this.mArray = append(this.mArray, make([]interface{}, VectorBlockSize + 1)...)
 	}
 	return  true;
 }
 
 func (this *Vector) Erase(index int) {
-	Assert(index <= this.mElementCount, "Vector<T>::erase - out of bounds index.")
+	Assert(index < this.mElementCount, "Vector<T>::erase - out of bounds index.")
 
 	if index < this.mElementCount - 1 {
 		for i := index; i < this.mElementCount - 1; i++{
@@ -138,9 +138,8 @@ func (this *Vector) End() *interface{}{
 
 func (this *Vector) Next(index *int) *interface{}{
 	if *index < this.mElementCount - 1 {
-		index1 := index
 		*index++
-		return &this.mArray[*index1]
+		return &this.mArray[*index]
 	}
 
 	return this.End()

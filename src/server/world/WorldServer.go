@@ -56,6 +56,14 @@ func (this *ServerMgr)Init() bool{
 		return true
 	}
 
+	//test reload file
+	/*file := &common.FileMonitor{}
+	file.Init(1000)
+	file.AddFile("SXZ_SERVER.CFG", func() {this.m_config.Read("SXZ_SERVER.CFG")})
+	file.AddFile(data.SKILL_DATA_NAME, func() {
+		data.SKILLDATA.Read()
+	})*/
+
 	//初始化log文件
 	this.m_Log.Init("world")
 	//初始ini配置文件

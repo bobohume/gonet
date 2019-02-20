@@ -32,7 +32,7 @@ type WebSocket struct {
 	m_bNagle        bool
 	m_ClientList    map[int]*WebSocketClient
 	m_ClientLocker	*sync.RWMutex
-	m_ClientChan 	chan WClientChan
+	//m_ClientChan 	chan WClientChan
 	m_Pool          sync.Pool
 	m_Lock          sync.Mutex
 }
@@ -47,7 +47,7 @@ func (this *WebSocket) Init(ip string, port int) bool {
 	this.Socket.Init(ip, port)
 	this.m_ClientList = make(map[int]*WebSocketClient)
 	this.m_ClientLocker = &sync.RWMutex{}
-	this.m_ClientChan = make(chan WClientChan, 1000)
+	//this.m_ClientChan = make(chan WClientChan, 1000)
 	this.m_sIP = ip
 	this.m_nPort = port
 	this.m_Pool = sync.Pool{
@@ -79,7 +79,7 @@ func (this *WebSocket) Start() bool {
 	//延迟，监听关闭
 	//defer ln.Close()
 	this.m_nState = SSF_ACCEPT
-	go wtimeRoutine(this)
+	//go wtimeRoutine(this)
 	return true
 }
 
@@ -108,7 +108,10 @@ func (this *WebSocket) AddClinet(tcpConn *websocket.Conn, addr string, connectTy
 		pClient.m_WebConn = tcpConn
 		pClient.m_sIP = addr
 		pClient.SetConnectType(connectType)
-		this.NotifyActor(pClient, ADD_CLIENT)
+		this.m_ClientLocker.Lock()
+		this.m_ClientList[pClient.m_ClientId] = pClient
+		this.m_ClientLocker.Unlock()
+		//this.NotifyActor(pClient, ADD_CLIENT)
 		pClient.Start()
 		this.m_nClientCount++
 		return pClient
@@ -118,7 +121,7 @@ func (this *WebSocket) AddClinet(tcpConn *websocket.Conn, addr string, connectTy
 	return nil
 }
 
-func (this *WebSocket) NotifyActor(pClient *WebSocketClient, state int){
+/*func (this *WebSocket) NotifyActor(pClient *WebSocketClient, state int){
 	if pClient != nil {
 		var clientChan WClientChan
 		clientChan.pClient = pClient
@@ -126,20 +129,27 @@ func (this *WebSocket) NotifyActor(pClient *WebSocketClient, state int){
 		clientChan.id = pClient.m_ClientId
 		this.m_ClientChan <- clientChan
 	}
-}
+}*/
 
 func (this *WebSocket) DelClinet(pClient *WebSocketClient) bool {
 	this.m_Pool.Put(pClient)
-	this.NotifyActor(pClient, DEL_CLIENT)
+	this.m_ClientLocker.Lock()
+	delete(this.m_ClientList, pClient.m_ClientId)
+	this.m_ClientLocker.Unlock()
+	//this.NotifyActor(pClient, DEL_CLIENT)
 	return true
 }
 
 func (this *WebSocket) StopClient(id int){
-	var clientChan WClientChan
+	pClinet := this.GetClientById(id)
+	if pClinet != nil{
+		pClinet.Stop()
+	}
+	/*var clientChan WClientChan
 	clientChan.pClient = nil
 	clientChan.state = CLOSE_CLIENT
 	clientChan.id = id
-	this.m_ClientChan <- clientChan
+	this.m_ClientChan <- clientChan*/
 }
 
 func (this *WebSocket) LoadClient() *WebSocketClient {
@@ -197,7 +207,7 @@ func (this *WebSocket)wserverRoutine(conn *websocket.Conn){
 	whandleConn(this, conn, conn.RemoteAddr().String())
 }
 
-func wtimeRoutine(pServer *WebSocket){
+/*func wtimeRoutine(pServer *WebSocket){
 	for{
 		select {
 		case clientChan := <- pServer.m_ClientChan:
@@ -215,7 +225,7 @@ func wtimeRoutine(pServer *WebSocket){
 			}
 		}
 	}
-}
+}*/
 
 func whandleConn(server *WebSocket, tcpConn *websocket.Conn, addr string) bool {
 	if tcpConn == nil {

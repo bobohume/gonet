@@ -119,7 +119,8 @@ func isJson(obj interface{}) bool{
 func Exec(time int, database int, cmd, key string, args ...interface{}) error{
 	defer func() {
 		if err := recover(); err != nil{
-			base.GLOG.Println("redis exec", err)
+			base.TraceCode()
+			//base.GLOG.Println("redis exec", err)
 		}
 	}()
 	c := POOL.Get()
@@ -147,14 +148,14 @@ func Exec(time int, database int, cmd, key string, args ...interface{}) error{
 		c.Send("EXPIRE", key, time)
 	}
 	c.Flush()
-	_, err := c.Receive()
-	return err
+	return nil
 }
 
 func ExecKV(time int, database int, cmd, key string, args ...interface{}) error{
 	defer func() {
 		if err := recover(); err != nil{
-			base.GLOG.Println("redis execkv", err)
+			base.TraceCode()
+			//base.GLOG.Println("redis execkv", err)
 		}
 	}()
 
@@ -189,15 +190,15 @@ func ExecKV(time int, database int, cmd, key string, args ...interface{}) error{
 		c.Send("EXPIRE", key, time)
 	}
 	c.Flush()
-	_, err := c.Receive()
-	return err
+	return nil
 }
 
 //redis get
 func Query(database int, cmd, key string, obj interface{}, args ...interface{}) error{
 	defer func() {
 		if err := recover(); err != nil{
-			base.GLOG.Println("redis query", err)
+			base.TraceCode()
+			//base.GLOG.Println("redis query", err)
 		}
 	}()
 
@@ -283,7 +284,8 @@ func Query(database int, cmd, key string, obj interface{}, args ...interface{}) 
 func QueryKV(database int, cmd, key string, obj interface{}, args ...interface{}) error{
 	defer func() {
 		if err := recover(); err != nil{
-			base.GLOG.Println("redis querykv", err)
+			base.TraceCode()
+			//base.GLOG.Println("redis querykv", err)
 		}
 	}()
 
