@@ -6,7 +6,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	"fmt"
 	"base"
-	"server/world/game/lmath"
 	"network"
 )
 
@@ -19,8 +18,6 @@ type (
 		PlayerId int64
 		AccountName string
 		SimId int64
-		Pos lmath.Point3F
-		Rot lmath.Point3F
 	}
 
 	IEventProcess interface {
@@ -73,7 +70,6 @@ func (this *EventProcess) PacketFunc(socketid int, buff []byte) bool {
 
 func (this *EventProcess) Init(num int) {
 	this.Actor.Init(num)
-	this.Pos = lmath.Point3F{1, 1, 1}
 	this.RegisterCall("W_C_SelectPlayerResponse", func(packet *message.W_C_SelectPlayerResponse) {
 		this.AccountId = *packet.AccountId
 		nLen := len(packet.PlayerData)
@@ -115,23 +111,7 @@ func (this *EventProcess) Init(num int) {
 	this.RegisterCall("W_C_ChatMessage", func(packet *message.W_C_ChatMessage) {
 		fmt.Println("收到【", *packet.RecverName, "】发送的消息[", *packet.Message+"]")
 	})
-
-	this.RegisterCall("W_C_LoginMap", func(packet *message.W_C_LoginMap) {
-		this.SimId = *packet.Id
-		this.Pos = lmath.Point3F{*packet.Pos.X, *packet.Pos.Y, *packet.Pos.Z}
-		this.Rot = lmath.Point3F{0, 0, *packet.Rotation}
-		fmt.Println("login map")
-	})
-
-	this.RegisterCall("W_C_Move", func(packet *message.W_C_Move) {
-		if this.SimId == *packet.Id{
-			this.Pos = lmath.Point3F{*packet.Pos.X, *packet.Pos.Y, *packet.Pos.Z}
-			this.Rot = lmath.Point3F{0, 0, *packet.Rotation}
-		}else{
-			fmt.Printf("simobj:[%d], Pos:[x:%d, y:%d, z:%d], Rot[%d]", *packet.Id, *packet.Pos.X, *packet.Pos.Y, *packet.Pos.Z, *packet.Rotation)
-		}
-		//this.Move(0, 100.0)
-	})
+	
 	this.Actor.Start()
 }
 
@@ -157,9 +137,3 @@ func (this *EventProcess)  LoginAccount() {
 var(
 	PACKET *EventProcess
 )
-
-func (this *EventProcess)  Move(yaw float32, time float32) {
-	packet1 := &message.C_W_Move{PacketHead: message.BuildPacketHead(this.AccountId, int(message.SERVICE_WORLDSERVER)),
-		Move: &message.C_W_Move_Move{Mode: proto.Int32(0), Normal:&message.C_W_Move_Move_Normal{Pos:&message.Point3F{X:proto.Float32(this.Pos.X), Y:proto.Float32(this.Pos.Y), Z:proto.Float32(this.Pos.Z)}, Yaw:proto.Float32(yaw), Duration:proto.Float32(time)}}}
-	this.SendPacket(packet1)
-}
