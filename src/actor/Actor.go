@@ -706,7 +706,7 @@ func (this *Actor) call(io CallIO) {
 				arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
 				for i := 0; i < nLen; i++ {
 					value :=  (**bool)(unsafe.Pointer(arrayPtr))
-					arrayPtr = arrayPtr + 1
+					arrayPtr = arrayPtr + base.SIZE_BOOL
 					val1 := bitstream.ReadFlag()
 					*value = &val1
 				}
@@ -719,7 +719,7 @@ func (this *Actor) call(io CallIO) {
 				arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
 				for i := 0; i < nLen; i++ {
 					value :=  (**float64)(unsafe.Pointer(arrayPtr))
-					arrayPtr = arrayPtr + 8
+					arrayPtr = arrayPtr + base.SIZE_FLOAT64
 					val1 := bitstream.ReadFloat64()
 					*value = &val1
 				}
@@ -732,7 +732,7 @@ func (this *Actor) call(io CallIO) {
 				arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
 				for i := 0; i < nLen; i++ {
 					value :=  (**float32)(unsafe.Pointer(arrayPtr))
-					arrayPtr = arrayPtr + 4
+					arrayPtr = arrayPtr + base.SIZE_FLOAT32
 					val1 := float32(bitstream.ReadFloat64())
 					*value =  &val1
 				}
@@ -745,7 +745,7 @@ func (this *Actor) call(io CallIO) {
 				arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
 				for i := 0; i < nLen; i++ {
 					value :=  (**int8)(unsafe.Pointer(arrayPtr))
-					arrayPtr = arrayPtr + 1
+					arrayPtr = arrayPtr + base.SIZE_INT8
 					val1 := int8(bitstream.ReadInt(8))
 					*value =  &val1
 				}
@@ -758,7 +758,7 @@ func (this *Actor) call(io CallIO) {
 				arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
 				for i := 0; i < nLen; i++ {
 					value :=  (**uint8)(unsafe.Pointer(arrayPtr))
-					arrayPtr = arrayPtr + 1
+					arrayPtr = arrayPtr + base.SIZE_UINT8
 					val1 := uint8(bitstream.ReadInt(8))
 					*value = &val1
 				}
@@ -771,7 +771,7 @@ func (this *Actor) call(io CallIO) {
 				arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
 				for i := 0; i < nLen; i++ {
 					value :=  (**int16)(unsafe.Pointer(arrayPtr))
-					arrayPtr = arrayPtr + 2
+					arrayPtr = arrayPtr + base.SIZE_INT16
 					val1 := int16(bitstream.ReadInt(16))
 					*value =&val1
 				}
@@ -784,7 +784,7 @@ func (this *Actor) call(io CallIO) {
 				arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
 				for i := 0; i < nLen; i++ {
 					value :=  (**uint16)(unsafe.Pointer(arrayPtr))
-					arrayPtr = arrayPtr + 2
+					arrayPtr = arrayPtr + base.SIZE_UINT16
 					val1 := uint16(bitstream.ReadInt(16))
 					*value = &val1
 				}
@@ -797,7 +797,7 @@ func (this *Actor) call(io CallIO) {
 				arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
 				for i := 0; i < nLen; i++ {
 					value :=  (**int32)(unsafe.Pointer(arrayPtr))
-					arrayPtr = arrayPtr + 4
+					arrayPtr = arrayPtr + base.SIZE_INT32
 					val1 := int32(bitstream.ReadInt(32))
 					*value = &val1
 				}
@@ -810,7 +810,7 @@ func (this *Actor) call(io CallIO) {
 				arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
 				for i := 0; i < nLen; i++ {
 					value :=  (**uint32)(unsafe.Pointer(arrayPtr))
-					arrayPtr = arrayPtr + 4
+					arrayPtr = arrayPtr + base.SIZE_UINT32
 					val1 := uint32(bitstream.ReadInt(32))
 					*value = &val1
 				}
@@ -823,7 +823,7 @@ func (this *Actor) call(io CallIO) {
 				arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
 				for i := 0; i < nLen; i++ {
 					value :=  (**int64)(unsafe.Pointer(arrayPtr))
-					arrayPtr = arrayPtr + 8
+					arrayPtr = arrayPtr + base.SIZE_INT64
 					val1 := int64(bitstream.ReadInt64(64))
 					*value =  &val1
 				}
@@ -836,7 +836,7 @@ func (this *Actor) call(io CallIO) {
 				arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
 				for i := 0; i < nLen; i++ {
 					value :=  (**uint64)(unsafe.Pointer(arrayPtr))
-					arrayPtr = arrayPtr + 8
+					arrayPtr = arrayPtr + base.SIZE_UINT64
 					val1 := uint64(bitstream.ReadInt64(64))
 					*value = &val1
 				}
@@ -849,7 +849,7 @@ func (this *Actor) call(io CallIO) {
 				arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
 				for i := 0; i < nLen; i++ {
 					value :=  (**string)(unsafe.Pointer(arrayPtr))
-					arrayPtr = arrayPtr + 16
+					arrayPtr = arrayPtr + base.SIZE_STRING
 					val1 := string(bitstream.ReadString())
 					*value = &val1
 				}
@@ -862,7 +862,7 @@ func (this *Actor) call(io CallIO) {
 				arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
 				for i := 0; i < nLen; i++ {
 					value :=  (**int)(unsafe.Pointer(arrayPtr))
-					arrayPtr = arrayPtr + 8
+					arrayPtr = arrayPtr + base.SIZE_INT
 					val1 := bitstream.ReadInt(32)
 					*value = &val1
 				}
@@ -875,7 +875,7 @@ func (this *Actor) call(io CallIO) {
 				arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
 				for i := 0; i < nLen; i++ {
 					value :=  (**uint)(unsafe.Pointer(arrayPtr))
-					arrayPtr = arrayPtr + 8
+					arrayPtr = arrayPtr + base.SIZE_UINT
 					val1 := uint(bitstream.ReadInt(32))
 					*value = &val1
 				}
@@ -892,7 +892,7 @@ func (this *Actor) call(io CallIO) {
 					value :=  unsafe.Pointer(unsafe.Pointer(arrayPtr))
 					packet:= base.GetMessage(bitstream.ReadString())
 					base.ReadData(packet, bitstream)
-					arrayPtr = arrayPtr + 8
+					arrayPtr = arrayPtr + base.SIZE_PTR
 					*(*unsafe.Pointer)(value) = unsafe.Pointer(reflect.ValueOf(packet).Pointer())
 				}
 				params[i] = val.Interface()

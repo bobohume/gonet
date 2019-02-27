@@ -1000,7 +1000,7 @@ func parseBType(bitstream *BitStream, classField reflect.StructField, val reflec
 		arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
 		for i := 0; i < nLen; i++ {
 			value :=  (*bool)(unsafe.Pointer(arrayPtr))
-			arrayPtr = arrayPtr + 1
+			arrayPtr = arrayPtr + SIZE_BOOL
 			*value =  bool(bitstream.ReadFlag())
 		}
 	case "[*]float64":
@@ -1008,7 +1008,7 @@ func parseBType(bitstream *BitStream, classField reflect.StructField, val reflec
 		arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
 		for i := 0; i < nLen; i++ {
 			value :=  (*float64)(unsafe.Pointer(arrayPtr))
-			arrayPtr = arrayPtr + 8
+			arrayPtr = arrayPtr + SIZE_FLOAT64
 			*value =  float64(bitstream.ReadFloat64())
 		}
 	case "[*]float32":
@@ -1016,7 +1016,7 @@ func parseBType(bitstream *BitStream, classField reflect.StructField, val reflec
 		arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
 		for i := 0; i < nLen; i++ {
 			value :=  (*float32)(unsafe.Pointer(arrayPtr))
-			arrayPtr = arrayPtr + 4
+			arrayPtr = arrayPtr + SIZE_FLOAT32
 			*value =  float32(bitstream.ReadFloat64())
 		}
 	case "[*]int8":
@@ -1024,7 +1024,7 @@ func parseBType(bitstream *BitStream, classField reflect.StructField, val reflec
 		arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
 		for i := 0; i < nLen; i++ {
 			value :=  (*int8)(unsafe.Pointer(arrayPtr))
-			arrayPtr = arrayPtr + 1
+			arrayPtr = arrayPtr + SIZE_INT8
 			*value =  int8(bitstream.ReadInt(8))
 		}
 	case "[*]uint8":
@@ -1032,7 +1032,7 @@ func parseBType(bitstream *BitStream, classField reflect.StructField, val reflec
 		arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
 		for i := 0; i < nLen; i++ {
 			value :=  (*uint8)(unsafe.Pointer(arrayPtr))
-			arrayPtr = arrayPtr + 1
+			arrayPtr = arrayPtr + SIZE_UINT8
 			*value =  uint8(bitstream.ReadInt(8))
 		}
 	case "[*]int16":
@@ -1040,7 +1040,7 @@ func parseBType(bitstream *BitStream, classField reflect.StructField, val reflec
 		arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
 		for i := 0; i < nLen; i++ {
 			value :=  (*int16)(unsafe.Pointer(arrayPtr))
-			arrayPtr = arrayPtr + 2
+			arrayPtr = arrayPtr + SIZE_INT16
 			*value =  int16(bitstream.ReadInt(16))
 		}
 	case "[*]uint16":
@@ -1048,7 +1048,7 @@ func parseBType(bitstream *BitStream, classField reflect.StructField, val reflec
 		arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
 		for i := 0; i < nLen; i++ {
 			value :=  (*uint16)(unsafe.Pointer(arrayPtr))
-			arrayPtr = arrayPtr + 2
+			arrayPtr = arrayPtr + SIZE_UINT16
 			*value =  uint16(bitstream.ReadInt(16))
 		}
 	case "[*]int32":
@@ -1056,7 +1056,7 @@ func parseBType(bitstream *BitStream, classField reflect.StructField, val reflec
 		arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
 		for i := 0; i < nLen; i++ {
 			value :=  (*int32)(unsafe.Pointer(arrayPtr))
-			arrayPtr = arrayPtr + 4
+			arrayPtr = arrayPtr + SIZE_INT32
 			*value =  int32(bitstream.ReadInt(32))
 		}
 	case "[*]uint32":
@@ -1064,7 +1064,7 @@ func parseBType(bitstream *BitStream, classField reflect.StructField, val reflec
 		arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
 		for i := 0; i < nLen; i++ {
 			value :=  (*uint32)(unsafe.Pointer(arrayPtr))
-			arrayPtr = arrayPtr + 4
+			arrayPtr = arrayPtr + SIZE_UINT32
 			*value =  uint32(bitstream.ReadInt(32))
 		}
 	case "[*]int64":
@@ -1072,7 +1072,7 @@ func parseBType(bitstream *BitStream, classField reflect.StructField, val reflec
 		arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
 		for i := 0; i < nLen; i++ {
 			value :=  (*int64)(unsafe.Pointer(arrayPtr))
-			arrayPtr = arrayPtr + 8
+			arrayPtr = arrayPtr + SIZE_INT64
 			*value =  int64(bitstream.ReadInt64(64))
 		}
 	case "[*]uint64":
@@ -1080,7 +1080,7 @@ func parseBType(bitstream *BitStream, classField reflect.StructField, val reflec
 		arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
 		for i := 0; i < nLen; i++ {
 			value :=  (*uint64)(unsafe.Pointer(arrayPtr))
-			arrayPtr = arrayPtr + 8
+			arrayPtr = arrayPtr + SIZE_UINT64
 			*value =  uint64(bitstream.ReadInt64(64))
 		}
 	case "[*]string":
@@ -1088,7 +1088,7 @@ func parseBType(bitstream *BitStream, classField reflect.StructField, val reflec
 		arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
 		for i := 0; i < nLen; i++ {
 			value :=  (*string)(unsafe.Pointer(arrayPtr))
-			arrayPtr = arrayPtr + 16
+			arrayPtr = arrayPtr + SIZE_STRING
 			*value =  string(bitstream.ReadString())
 		}
 	case "[*]int":
@@ -1096,7 +1096,7 @@ func parseBType(bitstream *BitStream, classField reflect.StructField, val reflec
 		arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
 		for i := 0; i < nLen; i++ {
 			value :=  (*int)(unsafe.Pointer(arrayPtr))
-			arrayPtr = arrayPtr + 8
+			arrayPtr = arrayPtr + SIZE_INT
 			*value =  int(bitstream.ReadInt(32))
 		}
 	case "[*]uint":
@@ -1104,7 +1104,7 @@ func parseBType(bitstream *BitStream, classField reflect.StructField, val reflec
 		arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
 		for i := 0; i < nLen; i++ {
 			value :=  (*uint)(unsafe.Pointer(arrayPtr))
-			arrayPtr = arrayPtr + 8
+			arrayPtr = arrayPtr + SIZE_UINT
 			*value =  uint(bitstream.ReadInt(32))
 		}
 
@@ -1117,7 +1117,7 @@ func parseBType(bitstream *BitStream, classField reflect.StructField, val reflec
 		arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
 		for i := 0; i < nLen; i++ {
 			value :=  (**bool)(unsafe.Pointer(arrayPtr))
-			arrayPtr = arrayPtr + 1
+			arrayPtr = arrayPtr + SIZE_BOOL
 			val1 := bitstream.ReadFlag()
 			*value = &val1
 		}
@@ -1129,7 +1129,7 @@ func parseBType(bitstream *BitStream, classField reflect.StructField, val reflec
 		arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
 		for i := 0; i < nLen; i++ {
 			value :=  (**float64)(unsafe.Pointer(arrayPtr))
-			arrayPtr = arrayPtr + 8
+			arrayPtr = arrayPtr + SIZE_FLOAT64
 			val1 := bitstream.ReadFloat64()
 			*value = &val1
 		}
@@ -1141,7 +1141,7 @@ func parseBType(bitstream *BitStream, classField reflect.StructField, val reflec
 		arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
 		for i := 0; i < nLen; i++ {
 			value :=  (**float32)(unsafe.Pointer(arrayPtr))
-			arrayPtr = arrayPtr + 4
+			arrayPtr = arrayPtr + SIZE_FLOAT32
 			val1 := float32(bitstream.ReadFloat64())
 			*value =  &val1
 		}
@@ -1153,7 +1153,7 @@ func parseBType(bitstream *BitStream, classField reflect.StructField, val reflec
 		arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
 		for i := 0; i < nLen; i++ {
 			value :=  (**int8)(unsafe.Pointer(arrayPtr))
-			arrayPtr = arrayPtr + 1
+			arrayPtr = arrayPtr + SIZE_INT8
 			val1 := int8(bitstream.ReadInt(8))
 			*value =  &val1
 		}
@@ -1165,7 +1165,7 @@ func parseBType(bitstream *BitStream, classField reflect.StructField, val reflec
 		arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
 		for i := 0; i < nLen; i++ {
 			value :=  (**uint8)(unsafe.Pointer(arrayPtr))
-			arrayPtr = arrayPtr + 1
+			arrayPtr = arrayPtr + SIZE_UINT8
 			val1 := uint8(bitstream.ReadInt(8))
 			*value = &val1
 		}
@@ -1177,7 +1177,7 @@ func parseBType(bitstream *BitStream, classField reflect.StructField, val reflec
 		arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
 		for i := 0; i < nLen; i++ {
 			value :=  (**int16)(unsafe.Pointer(arrayPtr))
-			arrayPtr = arrayPtr + 2
+			arrayPtr = arrayPtr + SIZE_INT16
 			val1 := int16(bitstream.ReadInt(16))
 			*value =&val1
 		}
@@ -1189,7 +1189,7 @@ func parseBType(bitstream *BitStream, classField reflect.StructField, val reflec
 		arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
 		for i := 0; i < nLen; i++ {
 			value :=  (**uint16)(unsafe.Pointer(arrayPtr))
-			arrayPtr = arrayPtr + 2
+			arrayPtr = arrayPtr + SIZE_UINT16
 			val1 := uint16(bitstream.ReadInt(16))
 			*value = &val1
 		}
@@ -1201,7 +1201,7 @@ func parseBType(bitstream *BitStream, classField reflect.StructField, val reflec
 		arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
 		for i := 0; i < nLen; i++ {
 			value :=  (**int32)(unsafe.Pointer(arrayPtr))
-			arrayPtr = arrayPtr + 4
+			arrayPtr = arrayPtr + SIZE_INT32
 			val1 := int32(bitstream.ReadInt(32))
 			*value = &val1
 		}
@@ -1213,7 +1213,7 @@ func parseBType(bitstream *BitStream, classField reflect.StructField, val reflec
 		arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
 		for i := 0; i < nLen; i++ {
 			value :=  (**uint32)(unsafe.Pointer(arrayPtr))
-			arrayPtr = arrayPtr + 4
+			arrayPtr = arrayPtr + SIZE_UINT32
 			val1 := uint32(bitstream.ReadInt(32))
 			*value = &val1
 		}
@@ -1225,7 +1225,7 @@ func parseBType(bitstream *BitStream, classField reflect.StructField, val reflec
 		arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
 		for i := 0; i < nLen; i++ {
 			value :=  (**int64)(unsafe.Pointer(arrayPtr))
-			arrayPtr = arrayPtr + 8
+			arrayPtr = arrayPtr + SIZE_INT64
 			val1 := int64(bitstream.ReadInt64(64))
 			*value =  &val1
 		}
@@ -1237,7 +1237,7 @@ func parseBType(bitstream *BitStream, classField reflect.StructField, val reflec
 		arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
 		for i := 0; i < nLen; i++ {
 			value :=  (**uint64)(unsafe.Pointer(arrayPtr))
-			arrayPtr = arrayPtr + 8
+			arrayPtr = arrayPtr + SIZE_UINT64
 			val1 := uint64(bitstream.ReadInt64(64))
 			*value = &val1
 		}
@@ -1249,7 +1249,7 @@ func parseBType(bitstream *BitStream, classField reflect.StructField, val reflec
 		arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
 		for i := 0; i < nLen; i++ {
 			value :=  (**string)(unsafe.Pointer(arrayPtr))
-			arrayPtr = arrayPtr + 16
+			arrayPtr = arrayPtr + SIZE_STRING
 			val1 := string(bitstream.ReadString())
 			*value = &val1
 		}
@@ -1261,7 +1261,7 @@ func parseBType(bitstream *BitStream, classField reflect.StructField, val reflec
 		arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
 		for i := 0; i < nLen; i++ {
 			value :=  (**int)(unsafe.Pointer(arrayPtr))
-			arrayPtr = arrayPtr + 8
+			arrayPtr = arrayPtr + SIZE_INT
 			val1 := bitstream.ReadInt(32)
 			*value = &val1
 		}
@@ -1273,7 +1273,7 @@ func parseBType(bitstream *BitStream, classField reflect.StructField, val reflec
 		arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
 		for i := 0; i < nLen; i++ {
 			value :=  (**uint)(unsafe.Pointer(arrayPtr))
-			arrayPtr = arrayPtr + 8
+			arrayPtr = arrayPtr + SIZE_UINT
 			val1 := uint(bitstream.ReadInt(32))
 			*value = &val1
 		}
