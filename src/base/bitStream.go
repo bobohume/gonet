@@ -19,6 +19,7 @@ const (
 	Bit64  = 64
 	Bit128 = 128
 	MAX_PACKET = 128 * 1024
+	PACKET_HEAD_SIZE = 4
 )
 
 type (

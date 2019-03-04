@@ -37,7 +37,7 @@ func (this *ClientSocket) Start() bool {
 	}
 
 	if this.Connect(){
-		this.m_Conn.SetNoDelay(true)
+		this.m_Conn.(*net.TCPConn).SetNoDelay(true)
 		go clientRoutine(this)
 	}
 	//延迟，监听关闭

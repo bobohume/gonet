@@ -105,8 +105,8 @@ func (this *WebSocket) AddClinet(tcpConn *websocket.Conn, addr string, connectTy
 		pClient.Socket.Init("", 0)
 		pClient.m_pServer = this
 		pClient.m_ClientId = this.AssignClientId()
-		pClient.m_WebConn = tcpConn
 		pClient.m_sIP = addr
+		pClient.SetTcpConn(tcpConn)
 		pClient.SetConnectType(connectType)
 		this.m_ClientLocker.Lock()
 		this.m_ClientList[pClient.m_ClientId] = pClient

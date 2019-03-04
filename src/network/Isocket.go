@@ -2,6 +2,7 @@ package network
 
 import (
 	"base"
+	"bytes"
 	"fmt"
 	"net"
 )
@@ -24,7 +25,7 @@ const (
 type (
 	HandleFunc func(int,[]byte) bool//回调函数
 	Socket struct {
-		m_Conn                 *net.TCPConn
+		m_Conn                 net.Conn
 		//m_Reader				*bufio.Reader
 		//m_Writer				*bufio.Writer
 		m_nPort                int
@@ -74,7 +75,7 @@ type (
 		GetMaxReceiveBufferSize()int
 		BindPacketFunc(HandleFunc)
 		SetConnectType(int)
-		SetTcpConn(*net.TCPConn)
+		SetTcpConn(net.Conn)
 		ReceivePacket(int,	[]byte)
 		HandlePacket(int,	[]byte)
 	}
@@ -170,7 +171,7 @@ func (this *Socket) SetConnectType(nType int){
 	this.m_nConnectType = nType
 }
 
-func (this *Socket) SetTcpConn(conn *net.TCPConn){
+func (this *Socket) SetTcpConn(conn net.Conn){
 	this.m_Conn = conn
 	//this.m_Reader = bufio.NewReader(conn)
 	//this.m_Writer = bufio.NewWriter(conn)
@@ -182,7 +183,7 @@ func (this *Socket) BindPacketFunc(callfunc HandleFunc){
 
 func (this *Socket) CallMsg(funcName string, params ...interface{}){
 	buff := base.GetPacket(funcName, params...)
-	buff = base.SetTcpEnd(buff)
+	//buff = base.SetTcpEnd(buff)
 	if this.m_nConnectType == CLIENT_CONNECT && this.m_nState != SSF_SHUT_DOWN{
 		this.handlePacket(this.m_ClientId, buff)
 		return
@@ -206,7 +207,55 @@ func (this *Socket) HandlePacket(Id int, buff []byte){
 	}
 }
 
-func (this *Socket) ReceivePacket(Id int, dat []byte){
+func (this *Socket) ReceivePacket(Id int, dat []byte) {
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Println("ReceivePacket", err) // 接受包错误
+		}
+	}()
+	//找包结束
+	seekToTcpEnd := func(buff []byte) (bool, int) {
+		nLen := bytes.Index(buff, []byte(base.TCP_END))
+		if nLen != -1{
+			return true, nLen+2
+		}
+		return false, 0
+		/*nLen := len(buff)
+		for i := 0; i < nLen-1; i++ {
+			if (buff[i] == base.TCP_END[0] && buff[i+1] == base.TCP_END[1]) {
+				return true, i + 2
+			}
+		}
+		return false, 0*/
+	}
+
+	buff := append(this.m_pInBuffer, dat...)
+	this.m_pInBuffer = []byte{}
+	nCurSize := 0
+	//fmt.Println(this.m_pInBuffer)
+ParsePacekt:
+	nPacketSize := 0
+	nBufferSize := len(buff[nCurSize:])
+	bFindFlag := false
+	bFindFlag, nPacketSize = seekToTcpEnd(buff[nCurSize:])
+	//fmt.Println(bFindFlag, nPacketSize, nBufferSize)
+	if bFindFlag {
+		if nBufferSize == nPacketSize { //完整包
+			this.HandlePacket(Id, buff[nCurSize:nCurSize+nPacketSize-2])
+			nCurSize += nPacketSize
+		} else if (nBufferSize > nPacketSize) {
+			this.HandlePacket(Id, buff[nCurSize:nCurSize+nPacketSize-2])
+			nCurSize += nPacketSize
+			goto ParsePacekt
+		}
+	} else if nBufferSize < base.MAX_PACKET {
+		this.m_pInBuffer = buff[nCurSize:]
+	} else {
+		fmt.Println("超出最大包限制，丢弃该包")
+	}
+}
+
+/*func (this *Socket) ReceivePacket(Id int, dat []byte){
 	defer func() {
 		if err := recover(); err != nil {
 			fmt.Println("ReceivePacket", err) // 接受包错误
@@ -215,10 +264,13 @@ func (this *Socket) ReceivePacket(Id int, dat []byte){
 	//找包结束
 	seekToTcpEnd := func(buff []byte) (bool, int){
 		nLen := len(buff)
-		for	i := 0; i < nLen - 1; i++ {
-			if (buff[i] == base.TCP_END[0] && buff[i+1] == base.TCP_END[1]){
-				return true, i+2
-			}
+		if nLen < base.PACKET_HEAD_SIZE{
+			return false, 0
+		}
+
+		nSize := base.BytesToInt(buff[0:4])
+		if nSize + base.PACKET_HEAD_SIZE <= nLen{
+			return true, nSize+base.PACKET_HEAD_SIZE
 		}
 		return false, 0
 	}
@@ -235,31 +287,19 @@ ParsePacekt:
 	//fmt.Println(bFindFlag, nPacketSize, nBufferSize)
 	if bFindFlag{
 		if nBufferSize == nPacketSize{		//完整包
-			/*data := make([]byte, nPacketSize-2)
-			for i,j := nCurSize,0; i < nCurSize + nPacketSize-2; i++{
-				data[j] = buff[i]
-				j++
-			}*/
-			//fmt.Println(data)
-			this.HandlePacket(Id, buff[nCurSize:nCurSize+nPacketSize-2])
+			this.HandlePacket(Id, buff[nCurSize+base.PACKET_HEAD_SIZE:nCurSize+nPacketSize])
 			nCurSize += nPacketSize
 		}else if ( nBufferSize > nPacketSize){
-			/*data := make([]byte, nPacketSize-2)
-			for i,j := nCurSize,0; i < nCurSize + nPacketSize-2; i++{
-				data[j] = buff[i]
-				j++
-			}*/
-			//fmt.Println(data)
-			this.HandlePacket(Id, buff[nCurSize:nCurSize+nPacketSize-2])
+			this.HandlePacket(Id, buff[nCurSize+base.PACKET_HEAD_SIZE:nCurSize+nPacketSize])
 			nCurSize += nPacketSize
 			goto ParsePacekt
 		}
-	}else if nCurSize < base.MAX_PACKET{
+	}else if nBufferSize < base.MAX_PACKET{
 		this.m_pInBuffer = buff[nCurSize:]
 	}else{
 		fmt.Println("超出最大包限制，丢弃该包")
 	}
-}
+}*/
 
 /*func (this *Socket) receivePacket1(Id int, buff []byte){
 	//递归最好调用这函数的前面recover，不然性能消耗很大
@@ -313,75 +353,6 @@ ParsePacekt:
 			this.m_bHalf = true
 			this.m_nHalfSize = nBufferSize
 			this.m_pInBuffer = buff
-		}
-	}
-}
-
-func (this *Socket) ReceivePacket2(Id int, dat []byte){
-	defer func() {
-		if err := recover(); err != nil {
-			fmt.Println("ReceivePacket", err) // 接受包错误
-		}
-	}()
-	//找包结束
-	seekToTcpEnd := func(buff []byte) (bool, int){
-		nLen := len(buff)
-		for	i := 0; i < nLen - 1; i++ {
-			if (buff[i] == base.TCP_END[0] && buff[i+1] == base.TCP_END[1]){
-				return true, i+2
-			}
-		}
-		return false, 0
-	}
-
-	buff := dat
-ParsePacekt:
-	nPacketSize := 0
-	nBufferSize := len(buff)
-	bFindFlag := false
-
-	if this.m_bHalf{
-		this.m_bHalf = false
-		buff = append(this.m_pInBuffer, buff...)
-		nBufferSize = len(buff)
-		bFindFlag, nPacketSize = seekToTcpEnd(buff)
-		if bFindFlag{
-			if nBufferSize == nPacketSize{		//完整包
-				this.HandlePacket(Id, append([]byte{}, buff[:nPacketSize-2]...))
-			}else if ( nBufferSize > nPacketSize){
-				//this.ReceivePacket(Id, this.m_pInBuffer[nPacketSize:])//继续解析
-				data := append([]byte{}, buff[:nPacketSize-2]...)
-				this.HandlePacket(Id, data)
-				this.m_pInBuffer = []byte{}
-				this.m_nHalfSize = 0
-				buff = append([]byte{}, buff[nPacketSize:]...)
-				goto ParsePacekt
-			}
-		}else{//丢弃包
-			this.m_pInBuffer = []byte{}
-			this.m_nHalfSize = 0
-			fmt.Println("丢弃一个不完整的包", this.m_pInBuffer, buff)
-			return
-		}
-	}else{
-		buff = append([]byte{}, buff...)
-		bFindFlag, nPacketSize = seekToTcpEnd(buff)
-		//fmt.Println(bFindFlag, nPacketSize, nBufferSize)
-		if bFindFlag{
-			this.m_bHalf = false
-			if nBufferSize == nPacketSize{		//完整包
-				this.HandlePacket(Id, append([]byte{}, buff[:nPacketSize-2]...))
-			}else if ( nBufferSize > nPacketSize){
-				//this.ReceivePacket(Id, buff[nPacketSize:])//继续解析
-				data := append([]byte{}, buff[:nPacketSize-2]...)
-				this.HandlePacket(Id, data)
-				buff = append([]byte{}, buff[nPacketSize:]...)
-				goto ParsePacekt
-			}
-		}else{
-			this.m_bHalf = true
-			this.m_nHalfSize = nBufferSize
-			this.m_pInBuffer = append([]byte{}, buff...)
 		}
 	}
 }*/
