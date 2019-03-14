@@ -1,9 +1,9 @@
 package data
 
 import (
-	"base"
+	"gonet/base"
 	"sync"
-	"server/common"
+	"gonet/server/common"
 )
 
 var(

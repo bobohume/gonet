@@ -1,10 +1,10 @@
 package account
 
 import (
-	"actor"
-	"base"
-	"message"
-	"server/common"
+	"gonet/actor"
+	"gonet/base"
+	"gonet/message"
+	"gonet/server/common"
 	"sync"
 )
 
@@ -49,8 +49,8 @@ func (this *ServerSocketManager) AddServerMap(pServerInfo *common.ServerInfo){
 		vec := base.NewVector()
 		this.GetAllWorld(vec)
 		for _, v := range vec.Array(){
-			pInfo := v.(*common.ServerInfo)
-			if pInfo != nil{
+			pInfo, bOk := v.(*common.ServerInfo)
+			if bOk && pInfo != nil{
 				aIp = append(aIp, pInfo.Ip)
 				aPort = append(aPort, pInfo.Port)
 				aSocket = append(aSocket, pInfo.SocketId)
@@ -65,8 +65,8 @@ func (this *ServerSocketManager) AddServerMap(pServerInfo *common.ServerInfo){
 		vec := base.NewVector()
 		this.GetAllGate(vec)
 		for _, v := range vec.Array(){
-			pInfo := v.(*common.ServerInfo)
-			if pInfo != nil{
+			pInfo, bOk := v.(*common.ServerInfo)
+			if bOk && pInfo != nil{
 				SERVER.GetServer().SendMsgByID(pInfo.SocketId, "Dispatch_Socket_Add", pServerInfo.Ip, pServerInfo.Port, pServerInfo.SocketId)
 			}
 		}
@@ -96,8 +96,8 @@ func (this *ServerSocketManager) ReleaseServerMap(socketid int, bClose bool){
 		vec := base.NewVector()
 		this.GetAllGate(vec)
 		for _, v := range vec.Array(){
-			pInfo := v.(*common.ServerInfo)
-			if pInfo != nil {
+			pInfo, bOk := v.(*common.ServerInfo)
+			if bOk && pInfo != nil {
 				SERVER.GetServer().SendMsgByID(pInfo.SocketId, "Dispatch_Socket_Del", pServerInfo.Ip, pServerInfo.Port, pServerInfo.SocketId)
 			}
 		}
@@ -147,8 +147,8 @@ func (this *ServerSocketManager) KickWorldPlayer(accountId int64){
 	vec := base.NewVector()
 	this.GetAllWorld(vec)
 	for _, v := range vec.Array(){
-		pSeverInfo := v.(*common.ServerInfo)
-		if pSeverInfo!= nil{
+		pSeverInfo, bOk := v.(*common.ServerInfo)
+		if bOk && pSeverInfo!= nil{
 			SERVER.GetServer().SendMsgByID(pSeverInfo.SocketId, "G_ClientLost", accountId)
 		}
 	}

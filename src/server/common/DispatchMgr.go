@@ -1,8 +1,8 @@
 package common
 
 import (
-	"actor"
-	"network"
+	"gonet/actor"
+	"gonet/network"
 	"reflect"
 	"sync"
 )
@@ -25,6 +25,7 @@ type(
 
 	IDispatchMgr interface{
 		//actor.IActor
+		Init1(num int)// no start
 		InitSocket([]string, []int, []int)
 		AddSocket(string, int, int)
 		DelSocket(int)
@@ -56,6 +57,12 @@ func (this *DispatchMgr) Init(num int) {
 	})
 
 	this.Actor.Start()
+}
+
+func (this *DispatchMgr) Init1(num int){
+	this.Actor.Init(num)
+	this.m_pLocker = &sync.RWMutex{}
+	this.m_pClients = make(map[int] *network.ClientSocket)
 }
 
 func (this *DispatchMgr) InitSocket(aIp []string, aPort []int, aSocket []int){

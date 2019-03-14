@@ -1,7 +1,7 @@
 package common
 
 import (
-	"base"
+	"gonet/base"
 )
 
 /*const(

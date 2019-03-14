@@ -1,15 +1,15 @@
 package account
 
 import (
-	"actor"
-	"base"
+	"gonet/actor"
+	"gonet/base"
 	"database/sql"
-	"db"
+	"gonet/db"
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	"log"
-	"message"
-	"server/common"
+	"gonet/message"
+	"gonet/server/common"
 )
 
 type (
@@ -50,10 +50,10 @@ func (this *EventProcess) Init(num int) {
 
 	//创建账号
 	this.RegisterCall("C_A_RegisterRequest", func(packet *message.C_A_RegisterRequest) {
-		accountName := *packet.AccountName
+		accountName := packet.GetAccountName()
 		//password := *packet.Password
 		password := "123456"
-		socketId := int(*packet.SocketId)
+		socketId := int(packet.GetSocketId())
 		Error := 1
 		var result string
 		var accountId int64
@@ -85,11 +85,11 @@ func (this *EventProcess) Init(num int) {
 
 	//登录账号
 	this.RegisterCall("C_A_LoginRequest", func(packet *message.C_A_LoginRequest) {
-		accountName := *packet.AccountName
+		accountName := packet.GetAccountName()
 		//password := *packet.Password
 		password := "123456"
-		buildVersion := *packet.BuildNo
-		socketId := int(*packet.SocketId)
+		buildVersion := packet.GetBuildNo()
+		socketId := int(packet.GetSocketId())
 		error := base.NONE_ERROR
 
 		if base.CVERSION().IsAcceptableBuildVersion(buildVersion) {

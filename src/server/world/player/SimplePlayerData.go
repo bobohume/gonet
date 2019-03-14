@@ -15,10 +15,14 @@ type (
 	}
 )
 
-/*func (this *SimplePlayerData) ReadData(b *base.BitStream){
-	base.ReadData(this, b)
-}*/
+//-----load blob---//
+/*rows, err := world.SERVER.GetDB().Query("select `blob` from tbl_player where player_id = ?" , pData.PlayerId)
+rs := db.Query(rows)
+if rs.Next(){
+fmt.Println(rs.Row().Get("blob"))
+}
 
-/*func (this *SimplePlayerData) WriteData(b *base.BitStream){
-	base.WriteData(this, b)
-}*/
+//-----set blob-----//
+byte, _ := bson.Marshal(pData)
+_, err = world.SERVER.GetDB().Exec("update tbl_player set `blob` = ? where player_id = ?", byte, pData.PlayerId)
+fmt.Println(err)*/

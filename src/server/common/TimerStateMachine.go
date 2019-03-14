@@ -2,7 +2,7 @@ package common
 
 import (
 	"time"
-	"base"
+	"gonet/base"
 )
 
 //状态机

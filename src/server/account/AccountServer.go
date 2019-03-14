@@ -1,14 +1,14 @@
  package account
 
  import (
-	 "base"
+	 "gonet/base"
 	 "database/sql"
-	 "db"
+	 "gonet/db"
 	 "github.com/golang/protobuf/proto"
 	 "log"
-	 "message"
-	 "network"
-	 "server/common"
+	 "gonet/message"
+	 "gonet/network"
+	 "gonet/server/common"
  )
 
 type(

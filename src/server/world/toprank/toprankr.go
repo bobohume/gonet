@@ -1,14 +1,14 @@
 package toprank
 
 import (
-	"actor"
-	"base"
+	"gonet/actor"
+	"gonet/base"
 	"database/sql"
-	"db"
+	"gonet/db"
 	"fmt"
-	"rd"
-	"server/common"
-	"server/world"
+	"gonet/rd"
+	"gonet/server/common"
+	"gonet/server/world"
 )
 
 type(
@@ -52,6 +52,14 @@ func (this *TopMgrR) loadDB(nType int) {
 		rd.ExecKV(-1, world.RdID, "ZADD", getZRdKey(nType), sdata...)
 		rd.ExecKV(-1, world.RdID, "HMSET", getHRdKey(nType), data...)
 	}
+	//redis遍历排行榜
+	/*sdata := []string{}
+	redispo.Query(REDIS_DB, "ZREVRANGE", getZRdKey(nType, getSubType()), &sdata, 0, TOP_RANK_TYPE_MAX - 1)
+	for _, v := range sdata{
+		pData := &toprank.TopData{}
+		redispo.Query(REDIS_DB, "HGET", getHRdKey(nType, nSubType), pData, v)
+		topList = append(topList, pData)
+	}*/
 
 	this.m_Log.Println("读取排行榜加载完成")
 }
@@ -120,7 +128,7 @@ func (this *TopMgrR) createRank(nType int, id int64, name string, score,val0,val
 
 func (this* TopMgrR) getPlayerRank(nType int, playerId int64) int{
 	rank := new(int64)
-	if rd.Query(world.RdID, "ZRANGE", getZRdKey(nType), rank) == nil{
+	if rd.Query(world.RdID, "ZREVRANK", getZRdKey(nType), rank, playerId) == nil{
 		return int(*rank)
 	}
 	return -1

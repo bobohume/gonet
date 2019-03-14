@@ -1,9 +1,9 @@
 package account
 
 import (
-	"actor"
+	"gonet/actor"
 	"database/sql"
-	"db"
+	"gonet/db"
 	"fmt"
 )
 
@@ -115,6 +115,8 @@ func (this *AccountMgr) RemoveAccount(accountId int64, socketId int){
 		delete(this.m_AccountNameMap, pAccount.AccountName)
 		delete(this.m_AccountMap, accountId)
 		SERVER.GetLog().Printf("账号[%d]断开链接", accountId)
+		//假如账号服务器分布式，只要踢出world世界服务器即可
+		//这里要登录的时候就同步到踢人world
 		SERVER.GetServerMgr().KickWorldPlayer(accountId)
 	}
 }

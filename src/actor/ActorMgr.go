@@ -1,9 +1,9 @@
 package actor
 
 import (
-	"base"
+	"gonet/base"
 	"log"
-	"network"
+	"gonet/network"
 	"strings"
 )
 

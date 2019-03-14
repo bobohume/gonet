@@ -1,8 +1,8 @@
 package netgate
 
 import (
-	"actor"
-	"base"
+	"gonet/actor"
+	"gonet/base"
 	"sync"
 	"time"
 )
@@ -59,12 +59,12 @@ func (this *PlayerManager) AddAccountMap(socketId int, accountId int64) int {
 	this.ReleaseSocketMap(Id, Id != socketId)
 
 	accountInfo := NewAccountInfo(socketId, accountId)
-	accountInfo.WSocketId = SERVER.GetDispatchMgr().BalanceSocket()
+	accountInfo.WSocketId = SERVER.GetWorldSocketMgr().BalanceSocket()
 	this.m_Locker.Lock()
 	this.m_AccountMap[accountId] = accountInfo
 	this.m_SocketMap[socketId] = accountId
 	this.m_Locker.Unlock()
-	SERVER.GetDispatchMgr().SendMsg(accountInfo.WSocketId, "G_W_CLoginRequest", accountId)
+	SERVER.GetWorldSocketMgr().SendMsg(accountInfo.WSocketId, "G_W_CLoginRequest", accountId)
 	return  base.NONE_ERROR
 }
 
@@ -128,7 +128,7 @@ func (this *PlayerManager) Init(num int){
 
 		if len(accountMap) != 0{
 			for i, v := range accountMap {
-				SERVER.GetDispatchMgr().SendMsg(v, "G_W_CLoginRequest", i)
+				SERVER.GetWorldSocketMgr().SendMsg(v, "G_W_CLoginRequest", i)
 			}
 		}
 	})

@@ -1,7 +1,7 @@
 package network
 
 import (
-	"base"
+	"gonet/base"
 	"fmt"
 	"log"
 	"net"

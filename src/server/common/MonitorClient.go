@@ -1,9 +1,9 @@
 package common
 
 import (
-	"actor"
-	"base"
-	"network"
+	"gonet/actor"
+	"gonet/base"
+	"gonet/network"
 )
 
 type (

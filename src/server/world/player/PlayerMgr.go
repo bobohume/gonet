@@ -1,14 +1,14 @@
 package player
 
 import (
-	"actor"
-	"db"
+	"gonet/actor"
+	"gonet/db"
 	"fmt"
-	"base"
+	"gonet/base"
 	"strings"
 	"database/sql"
-	"message"
-	"server/world"
+	"gonet/message"
+	"gonet/server/world"
 	"sync"
 	"github.com/golang/protobuf/proto"
 )

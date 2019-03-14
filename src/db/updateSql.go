@@ -1,7 +1,7 @@
 package db
 
 import (
-	"base"
+	"gonet/base"
 	"reflect"
 	"fmt"
 	"strings"
@@ -10,8 +10,8 @@ import (
 )
 
 const(
-	update_sql = "%s='%s',"
-	update_sqlarray = "%s%d='%s',"
+	update_sql = "`%s`='%s',"
+	update_sqlarray = "`%s%d`='%s',"
 )
 
 func getUpdateSql(classField reflect.StructField, classVal reflect.Value) (bool,string,string) {
@@ -201,8 +201,12 @@ func getUpdateSql(classField reflect.StructField, classVal reflect.Value) (bool,
 		if !classVal.IsNil() {
 			value = classVal.Interface().([]uint8)
 		}
-		for i,v := range value{
-			*strsql += fmt.Sprintf(update_sqlarray, classType, i, strconv.FormatUint(uint64(v), 10))
+		if isBlob(classField){
+			*strsql += fmt.Sprintf(update_sql, classType, classVal.Bytes())
+		}else{
+			for i,v := range value{
+				*strsql += fmt.Sprintf(update_sqlarray, classType, i, strconv.FormatUint(uint64(v), 10))
+			}
 		}
 	case "[]int16":
 		value := []int16{}

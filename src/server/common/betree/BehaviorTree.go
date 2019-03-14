@@ -1,7 +1,7 @@
 package betree
 
 import (
-	"base"
+	"gonet/base"
 	"sort"
 )
 

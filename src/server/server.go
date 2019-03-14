@@ -1,15 +1,15 @@
 package main
 
 import (
-	"base"
+	"gonet/base"
 	"fmt"
 	"os"
 	"os/signal"
-	"server/account"
-	"server/common"
-	"server/monitor"
-	"server/netgate"
-	"server/world"
+	"gonet/server/account"
+	"gonet/server/common"
+	"gonet/server/monitor"
+	"gonet/server/netgate"
+	"gonet/server/world"
 )
 
 func main() {

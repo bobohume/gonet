@@ -1,10 +1,10 @@
 package rd
 
 import (
-	"base"
-	"db"
-	"encoding/json"
+	"gonet/base"
+	"gonet/db"
 	"github.com/gomodule/redigo/redis"
+	"gopkg.in/mgo.v2/bson"
 	"reflect"
 	"runtime"
 	"time"
@@ -135,7 +135,7 @@ func Exec(time int, database int, cmd, key string, args ...interface{}) error{
 	vargs = append(vargs, key)
 	if bJson{
 		for _, v := range args{
-			data, err := json.Marshal(v)
+			data, err := bson.Marshal(v)
 			if err == nil{
 				vargs = append(vargs, data)
 			}
@@ -172,7 +172,7 @@ func ExecKV(time int, database int, cmd, key string, args ...interface{}) error{
 	if bJson{
 		for i, v := range args{
 			if i % 2 != 0{
-				data, err := json.Marshal(v)
+				data, err := bson.Marshal(v)
 				if err == nil{
 					vargs = append(vargs, data)
 				}else{
@@ -244,7 +244,7 @@ func Query(database int, cmd, key string, obj interface{}, args ...interface{}) 
 				for _, v := range aData{
 					elem := reflect.New(rType).Elem()
 					if bJson{
-						if json.Unmarshal(v, elem.Addr().Interface()) == nil{
+						if bson.Unmarshal(v, elem.Addr().Interface()) == nil{
 							if isPtr{
 								r.Set(reflect.Append(r, elem.Addr()))
 							}else{
@@ -267,7 +267,7 @@ func Query(database int, cmd, key string, obj interface{}, args ...interface{}) 
 			var data []byte
 			data, err = redis.Bytes(reply, err)
 			if err == nil {
-				return json.Unmarshal(data, obj)
+				return bson.Unmarshal(data, obj)
 			}
 		}else{
 			var val string
@@ -345,7 +345,7 @@ func QueryKV(database int, cmd, key string, obj interface{}, args ...interface{}
 				}else{
 					elem := reflect.New(rType).Elem()
 					if bJson{
-						if json.Unmarshal(v, elem.Addr().Interface()) == nil{
+						if bson.Unmarshal(v, elem.Addr().Interface()) == nil{
 							if isPtr{
 								r.SetMapIndex(vKey, elem.Addr())
 							}else{

@@ -1,10 +1,10 @@
 package netgate
 
 import (
-	"actor"
-	"message"
+	"gonet/actor"
+	"gonet/message"
 	"strconv"
-	"server/common"
+	"gonet/server/common"
 )
 
 type (
@@ -49,12 +49,12 @@ func (this *AccountProcess) Init(num int) {
 
 	this.RegisterCall("A_C_RegisterResponse", func(packet *message.A_C_RegisterResponse) {
 		buff := message.Encode(packet)
-		SERVER.GetServer().SendByID(int(*packet.SocketId), buff)
+		SERVER.GetServer().SendByID(int(packet.GetSocketId()), buff)
 	})
 
 	this.RegisterCall("A_C_LoginRequest", func(packet *message.A_C_LoginRequest) {
 		buff := message.Encode(packet)
-		SERVER.GetServer().SendByID(int(*packet.SocketId), buff)
+		SERVER.GetServer().SendByID(int(packet.GetSocketId()), buff)
 	})
 
 	this.Actor.Start()

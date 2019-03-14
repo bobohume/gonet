@@ -2,8 +2,8 @@ package player
 
 import (
 	"database/sql"
-	"base"
-	"server/world"
+	"gonet/base"
+	"gonet/server/world"
 )
 
 const(

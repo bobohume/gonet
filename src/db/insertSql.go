@@ -1,18 +1,18 @@
 package db
 import (
-	"base"
+	"gonet/base"
 	"reflect"
-"fmt"
-"strings"
-"strconv"
-"log"
+	"fmt"
+	"strings"
+	"strconv"
+	"log"
 )
 
 const(
 	insert_sql = "'%s',"
 	insert_sqlarray = "'%s',"
-	insert_sqlname = "%s,"
-	insert_sqlarrayname = "%s%d,"
+	insert_sqlname = "`%s`,"
+	insert_sqlarrayname = "`%s%d`,"
 )
 
 func getInsertSql(classField reflect.StructField, classVal reflect.Value) (bool,string,string) {
@@ -228,9 +228,14 @@ func getInsertSql(classField reflect.StructField, classVal reflect.Value) (bool,
 		if !classVal.IsNil() {
 			value = classVal.Interface().([]uint8)
 		}
-		for i,v := range value{
-			sqlvalue += fmt.Sprintf(insert_sqlarray, strconv.FormatUint(uint64(v), 10))
-			sqlname += fmt.Sprintf(insert_sqlarrayname, classType, i)
+		if isBlob(classField){
+			sqlvalue += fmt.Sprintf(insert_sql, classVal.Bytes())
+			sqlname += fmt.Sprintf(insert_sqlname, classType)
+		}else{
+			for i,v := range value{
+				sqlvalue += fmt.Sprintf(insert_sqlarray, strconv.FormatUint(uint64(v), 10))
+				sqlname += fmt.Sprintf(insert_sqlarrayname, classType, i)
+			}
 		}
 	case "[]int16":
 		value := []int16{}

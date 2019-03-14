@@ -1,7 +1,7 @@
 package db
 
 import (
-	"base"
+	"gonet/base"
 	"fmt"
 	"log"
 	"reflect"
@@ -10,8 +10,8 @@ import (
 )
 
 const(
-	delete_sql = "%s='%s',"
-	delete_sqlarray = "%s%d='%s',"
+	delete_sql = "`%s`='%s',"
+	delete_sqlarray = "`%s%d`='%s',"
 )
 
 func getDeleteSql(classField reflect.StructField, classVal reflect.Value) (bool,string,string) {

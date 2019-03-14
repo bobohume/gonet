@@ -1,6 +1,8 @@
 cd ../src/server
 go build
-go install
+cp server ./../../bin
+#go install
 cd ../client
 go build
-go install
+cp client ./../../bin
+#go install

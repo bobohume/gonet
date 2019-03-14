@@ -1,11 +1,11 @@
 package monitor
 
 import (
-	"actor"
-	"base"
+	"gonet/actor"
+	"gonet/base"
 	"fmt"
-	"message"
-	"server/common"
+	"gonet/message"
+	"gonet/server/common"
 	"sync"
 )
 

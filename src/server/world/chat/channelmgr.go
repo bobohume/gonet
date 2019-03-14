@@ -1,8 +1,8 @@
 package chat
 
 import (
-	"base"
-	"message"
+	"gonet/base"
+	"gonet/message"
 )
 
 type (

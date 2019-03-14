@@ -1,10 +1,10 @@
 package world
 
 import (
-	"actor"
+	"gonet/actor"
 	"database/sql"
-	"message"
-	"server/common"
+	"gonet/message"
+	"gonet/server/common"
 )
 
 type (

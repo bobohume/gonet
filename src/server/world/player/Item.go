@@ -1,11 +1,11 @@
 package player
 
 import (
-	"server/world/data"
-	"base"
+	"gonet/server/world/data"
+	"gonet/base"
 	"math"
-	"db"
-	"server/world"
+	"gonet/db"
+	"gonet/server/world"
 	"database/sql"
 )
 

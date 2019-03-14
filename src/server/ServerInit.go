@@ -1,15 +1,15 @@
 package main
 
 import (
-	"actor"
-	"server/world"
-	"server/world/chat"
-	"server/world/cmd"
-	"server/world/data"
-	"server/world/mail"
-	"server/world/player"
-	"server/world/social"
-	"server/world/toprank"
+	"gonet/actor"
+	"gonet/server/world"
+	"gonet/server/world/chat"
+	"gonet/server/world/cmd"
+	"gonet/server/world/data"
+	"gonet/server/world/mail"
+	"gonet/server/world/player"
+	"gonet/server/world/social"
+	"gonet/server/world/toprank"
 )
 
 func InitMgr(serverName string){

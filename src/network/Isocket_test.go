@@ -1,7 +1,7 @@
 package network_test
 
 import (
-	"base"
+	"gonet/base"
 	"bytes"
 	"fmt"
 	"testing"

@@ -1,13 +1,13 @@
 package main
 
 import (
-	"base"
+	"gonet/base"
 	"bufio"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
-	"tool/github.com/tealeg/xlsx"
+	"github.com/tealeg/xlsx"
 )
 
 type(
@@ -109,7 +109,7 @@ func OpenExcel(filename string){
 					switch cell.Type() {
 					case xlsx.CellTypeString:
 						stream.WriteInt(base.Int(cell.String()), bitnum)
-					case xlsx.CellTypeStringFormula:
+					case xlsx.CellTypeFormula:
 						stream.WriteInt(base.Int(cell.String()), bitnum)
 					case xlsx.CellTypeNumeric:
 						stream.WriteInt(base.Int(cell.Value), bitnum)
@@ -130,7 +130,7 @@ func OpenExcel(filename string){
 					switch cell.Type() {
 					case xlsx.CellTypeString:
 						stream.WriteString(cell.String())
-					case xlsx.CellTypeStringFormula:
+					case xlsx.CellTypeFormula:
 						stream.WriteString(cell.String())
 					case xlsx.CellTypeNumeric:
 						stream.WriteString(fmt.Sprintf("%d", base.Int64(cell.Value)))
@@ -156,7 +156,7 @@ func OpenExcel(filename string){
 					switch cell.Type() {
 					case xlsx.CellTypeString:
 						stream.WriteFloat(base.Float32(cell.String()))
-					case xlsx.CellTypeStringFormula:
+					case xlsx.CellTypeFormula:
 						stream.WriteFloat(base.Float32(cell.String()))
 					case xlsx.CellTypeNumeric:
 						stream.WriteFloat(base.Float32(cell.String()))
@@ -174,7 +174,7 @@ func OpenExcel(filename string){
 					switch cell.Type() {
 					case xlsx.CellTypeString:
 						stream.WriteFloat64(base.Float64(cell.String()))
-					case xlsx.CellTypeStringFormula:
+					case xlsx.CellTypeFormula:
 						stream.WriteFloat64(base.Float64(cell.String()))
 					case xlsx.CellTypeNumeric:
 						stream.WriteFloat64(base.Float64(cell.String()))
@@ -192,7 +192,7 @@ func OpenExcel(filename string){
 					switch cell.Type() {
 					case xlsx.CellTypeString:
 						stream.WriteInt64(base.Int64(cell.String()), 64)
-					case xlsx.CellTypeStringFormula:
+					case xlsx.CellTypeFormula:
 						stream.WriteInt64(base.Int64(cell.String()), 64)
 					case xlsx.CellTypeNumeric:
 						stream.WriteInt64(base.Int64(cell.Value), 64)

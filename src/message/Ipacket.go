@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"github.com/golang/protobuf/proto"
-	"base"
+	"gonet/base"
 	"strings"
 	"log"
 )

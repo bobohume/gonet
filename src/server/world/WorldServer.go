@@ -1,15 +1,15 @@
  package world
 
  import (
-	 "base"
+	 "gonet/base"
 	 "database/sql"
-	 "db"
+	 "gonet/db"
 	 "github.com/golang/protobuf/proto"
 	 "log"
-	 "message"
-	 "network"
-	 "rd"
-	 "server/common"
+	 "gonet/message"
+	 "gonet/network"
+	 "gonet/rd"
+	 "gonet/server/common"
  )
 
 type(

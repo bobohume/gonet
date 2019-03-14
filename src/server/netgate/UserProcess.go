@@ -1,10 +1,10 @@
 package netgate
 
 import (
-	"actor"
-	"base"
+	"gonet/actor"
+	"gonet/base"
 	"github.com/golang/protobuf/proto"
-	"message"
+	"gonet/message"
 )
 
 type(
@@ -60,7 +60,7 @@ func (this *UserPrcoess)SwtichSendToWorld(socketId int, packetName string, packe
 	pAccountInfo := this.CheckClientEx(socketId, packetName, packet)
 	if pAccountInfo != nil{
 		buff = base.SetTcpEnd(buff)
-		SERVER.GetDispatchMgr().Send(pAccountInfo.WSocketId, buff)
+		SERVER.GetWorldSocketMgr().Send(pAccountInfo.WSocketId, buff)
 	}
 }
 

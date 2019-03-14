@@ -1,13 +1,13 @@
 package player
 
 import (
-	"actor"
-	"base"
+	"gonet/actor"
+	"gonet/base"
 	"database/sql"
-	"db"
+	"gonet/db"
 	"fmt"
-	"server/common"
-	"server/world"
+	"gonet/server/common"
+	"gonet/server/world"
 	"sync"
 	"time"
 )

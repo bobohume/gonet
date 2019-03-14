@@ -1,7 +1,7 @@
 package db
 
 import (
-	"base"
+	"gonet/base"
 	"database/sql"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
@@ -30,6 +30,7 @@ type(
 		Float64(key string) float64
 		Bool(key string) bool
 		Time(key string) int64
+		Byte(key string) []byte
 		Obj(obj interface{}) bool
 	}
 
@@ -85,6 +86,15 @@ func isPrimary(sf reflect.StructField) bool{
 func isDatetime(sf reflect.StructField) bool{
 	tagMap := base.ParseTag(sf, "sql")
 	if _, exist := tagMap["datetime"];exist{
+		return true
+	}
+
+	return false
+}
+
+func isBlob(sf reflect.StructField) bool{
+	tagMap := base.ParseTag(sf, "sql")
+	if _, exist := tagMap["blob"];exist{
 		return true
 	}
 
@@ -149,6 +159,10 @@ func (this *Row) Bool(key string) bool{
 
 func (this *Row) Time(key string) int64{
 	return base.GetDBTime(this.Get(key)).Unix()
+}
+
+func (this *Row) Byte(key string) []byte{
+	return []byte(this.Get(key))
 }
 
 func (this *Row) Obj(obj interface{}) bool{

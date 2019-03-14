@@ -1,10 +1,10 @@
 package monitor
 
 import (
-	"base"
+	"gonet/base"
 	"github.com/golang/protobuf/proto"
-	"message"
-	"network"
+	"gonet/message"
+	"gonet/network"
 )
 
 type(

@@ -1,11 +1,11 @@
  package netgate
 
  import (
-	 "base"
+	 "gonet/base"
 	 "github.com/golang/protobuf/proto"
-	 "message"
-	 "network"
-	 "server/common"
+	 "gonet/message"
+	 "gonet/network"
+	 "gonet/server/common"
 	 "time"
  )
 
@@ -19,14 +19,14 @@ type(
 		m_Log	base.CLog
 		m_TimeTraceTimer *time.Ticker
 		m_PlayerMgr *PlayerManager
-		m_DispatchMgr *common.DispatchMgr
+		m_WorldSocketMgr *common.DispatchMgr
 	}
 
 	IServerMgr interface{
 		Init() bool
 		GetLog() *base.CLog
 		GetServer() *network.ServerSocket
-		GetDispatchMgr() *common.DispatchMgr
+		GetWorldSocketMgr() *common.DispatchMgr
 		GetAccountSocket() *network.ClientSocket
 		GetPlayerMgr() *PlayerManager
 		InitWorldSocket()
@@ -55,8 +55,8 @@ var(
 	 return this.m_pService
  }
 
- func (this *ServerMgr) GetDispatchMgr() *common.DispatchMgr{
- 	return this.m_DispatchMgr
+ func (this *ServerMgr) GetWorldSocketMgr() *common.DispatchMgr{
+ 	return this.m_WorldSocketMgr
  }
 
  func (this *ServerMgr) GetPlayerMgr() *PlayerManager{
@@ -117,14 +117,14 @@ func (this *ServerMgr)Init() bool{
 	packet.Init(1000)
 	packet1 := new(UserServerProcess)
 	packet1.Init(1000)
-	this.m_pService.BindPacketFunc(packet1.PacketFunc)
 	this.m_pService.BindPacketFunc(packet.PacketFunc)
+	this.m_pService.BindPacketFunc(packet1.PacketFunc)
 	this.m_pService.Start()*/
 
-	this.m_DispatchMgr = new(common.DispatchMgr)
-	this.m_DispatchMgr.Init(1000)
-	this.m_DispatchMgr.BindPacket(&WorldProcess{})
-	this.m_DispatchMgr.BindPacketFunc(DispatchPacketToClient)
+	this.m_WorldSocketMgr = new(common.DispatchMgr)
+	this.m_WorldSocketMgr.Init(1000)
+	this.m_WorldSocketMgr.BindPacket(&WorldProcess{})
+	this.m_WorldSocketMgr.BindPacketFunc(DispatchPacketToClient)
 
 	//连接account
 	this.m_pAccountClient = new(network.ClientSocket)
@@ -133,7 +133,7 @@ func (this *ServerMgr)Init() bool{
 	packet3 := new(AccountProcess)
 	packet3.Init(1000)
 	this.m_pAccountClient.BindPacketFunc(packet3.PacketFunc)
-	this.m_pAccountClient.BindPacketFunc(this.m_DispatchMgr.PacketFunc)
+	this.m_pAccountClient.BindPacketFunc(this.m_WorldSocketMgr.PacketFunc)
 	this.m_pAccountClient.Start()
 
 

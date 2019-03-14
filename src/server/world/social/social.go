@@ -1,13 +1,13 @@
 package social
 
 import (
-	"actor"
-	"base"
+	"gonet/actor"
+	"gonet/base"
 	"database/sql"
-	"db"
+	"gonet/db"
 	"fmt"
-	"server/world"
-	"server/world/player"
+	"gonet/server/world"
+	"gonet/server/world/player"
 )
 
 const(

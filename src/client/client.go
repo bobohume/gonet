@@ -1,9 +1,9 @@
 package main
 
 import (
-	"base"
+	"gonet/base"
 	"fmt"
-	"network"
+	"gonet/network"
 	"os"
 	"os/signal"
 	"strconv"

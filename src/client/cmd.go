@@ -1,10 +1,10 @@
 package main
 
 import (
-	"actor"
+	"gonet/actor"
 	"github.com/golang/protobuf/proto"
-	"message"
-	"server/common"
+	"gonet/message"
+	"gonet/server/common"
 )
 
 type (

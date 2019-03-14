@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"net/http"
-	"server/common"
-	"server/world"
+	"gonet/server/common"
+	"gonet/server/world"
 )
 
 //http://localhost:8080/gm?cmd=cpus()

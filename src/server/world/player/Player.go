@@ -1,14 +1,14 @@
 package player
 
 import (
-	"actor"
+	"gonet/actor"
 	"database/sql"
-	"db"
+	"gonet/db"
 	"fmt"
 	"github.com/golang/protobuf/proto"
-	"message"
-	"server/common"
-	"server/world"
+	"gonet/message"
+	"gonet/server/common"
+	"gonet/server/world"
 )
 
 type(
@@ -59,7 +59,7 @@ func (this* Player) Init(num int){
 
 	//玩家登录到游戏
 	this.RegisterCall("C_W_Game_LoginRequset", func(packet *message.C_W_Game_LoginRequset) {
-		nPlayerId := *packet.PlayerId
+		nPlayerId := packet.GetPlayerId()
 		if !this.SetPlayerId(nPlayerId){
 			this.m_Log.Printf("帐号[%d]登入的玩家[%d]不存在", this.AccountId, nPlayerId)
 		}
@@ -79,7 +79,7 @@ func (this* Player) Init(num int){
 					err := rs.Row().Int("@err")
 					//register
 					if(err == 0) {
-						world.SERVER.GetAccountSocket().SendMsg("W_A_CreatePlayer", this.AccountId, *packet.PlayerName, *packet.Sex, this.GetSocketId())
+						world.SERVER.GetAccountSocket().SendMsg("W_A_CreatePlayer", this.AccountId, packet.GetPlayerName(), packet.GetSex(), this.GetSocketId())
 					}else{
 						this.m_Log.Printf("账号[%d]创建玩家上限", this.AccountId)
 						world.SendToClient(this.GetSocketId(), &message.W_C_CreatePlayerResponse{

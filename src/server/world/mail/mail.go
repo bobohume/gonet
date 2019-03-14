@@ -1,12 +1,12 @@
 package mail
 
 import (
-	"actor"
-	"base"
+	"gonet/actor"
+	"gonet/base"
 	"database/sql"
-	"db"
+	"gonet/db"
 	"fmt"
-	"server/world"
+	"gonet/server/world"
 )
 
 const(

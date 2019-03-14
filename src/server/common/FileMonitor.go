@@ -1,7 +1,7 @@
 package common
 
 import (
-	"actor"
+	"gonet/actor"
 	"fmt"
 	"os"
 	"time"

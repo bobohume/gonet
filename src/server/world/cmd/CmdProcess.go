@@ -1,12 +1,12 @@
 package cmd
 
 import (
-	"actor"
+	"gonet/actor"
 	"fmt"
 	"runtime"
 	"strconv"
-	"server/world/toprank"
-	"server/common"
+	"gonet/server/world/toprank"
+	"gonet/server/common"
 )
 
 type (

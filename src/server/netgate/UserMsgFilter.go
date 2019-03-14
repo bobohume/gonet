@@ -1,6 +1,6 @@
 package netgate
 
-import "base"
+import "gonet/base"
 
 //消息防火墙
 var(

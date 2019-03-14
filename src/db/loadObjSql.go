@@ -1,7 +1,7 @@
 package db
 
 import (
-	"base"
+	"gonet/base"
 	"fmt"
 	"log"
 	"reflect"
@@ -122,85 +122,90 @@ func getLoadObjSql(classField reflect.StructField, classVal reflect.Value, row I
 	case "struct":
 		parseLoadObjSql(classVal.Interface(), row)
 	case "[]float64":
-		if !classVal.CanSet() {
+		if classVal.CanSet() {
 			for i := 0; i < classVal.Len(); i++{
 				classVal.Index(i).SetFloat(row.Float64(fmt.Sprintf(load_obj_sqlarrayname, classType, i)))
 			}
 		}
 	case "[]float32":
-		if !classVal.CanSet() {
+		if classVal.CanSet() {
 			for i := 0; i < classVal.Len(); i++{
 				classVal.Index(i).SetFloat(row.Float64(fmt.Sprintf(load_obj_sqlarrayname, classType, i)))
 			}
 		}
 	case "[]bool":
-		if !classVal.CanSet() {
+		if classVal.CanSet() {
 			for i := 0; i < classVal.Len(); i++{
 				classVal.Index(i).SetBool(row.Bool(fmt.Sprintf(load_obj_sqlarrayname, classType, i)))
 			}
 		}
 	case "[]int8":
-		if !classVal.CanSet() {
+		if classVal.CanSet() {
 			for i := 0; i < classVal.Len(); i++{
 				classVal.Index(i).SetInt(row.Int64(fmt.Sprintf(load_obj_sqlarrayname, classType, i)))
 			}
 		}
 	case "[]uint8":
-		if !classVal.CanSet() {
-			for i := 0; i < classVal.Len(); i++{
-				classVal.Index(i).SetUint(uint64(row.Int64(fmt.Sprintf(load_obj_sqlarrayname, classType, i))))
+		classVal.SetBytes(row.Byte(classType)) //blo
+		if classVal.CanSet() {
+			if isBlob(classField){
+				classVal.SetBytes(row.Byte(classType)) //blob
+			}else{
+				for i := 0; i < classVal.Len(); i++{
+					classVal.Index(i).SetUint(uint64(row.Int64(fmt.Sprintf(load_obj_sqlarrayname, classType, i))))
+				}
 			}
 		}
 	case "[]int16":
-		if !classVal.CanSet() {
+		if classVal.CanSet() {
 			for i := 0; i < classVal.Len(); i++{
 				classVal.Index(i).SetInt(row.Int64(fmt.Sprintf(load_obj_sqlarrayname, classType, i)))
 			}
 		}
 	case "[]uint16":
-		if !classVal.CanSet() {
+		if classVal.CanSet() {
 			for i := 0; i < classVal.Len(); i++{
 				classVal.Index(i).SetUint(uint64(row.Int64(fmt.Sprintf(load_obj_sqlarrayname, classType, i))))
 			}
 		}
 	case "[]int32":
-		if !classVal.CanSet() {
+		if classVal.CanSet() {
 			for i := 0; i < classVal.Len(); i++{
 				classVal.Index(i).SetInt(row.Int64(fmt.Sprintf(load_obj_sqlarrayname, classType, i)))
 			}
 		}
 	case "[]uint32":
-		if !classVal.CanSet() {
+		if classVal.CanSet() {
 			for i := 0; i < classVal.Len(); i++{
 				classVal.Index(i).SetUint(uint64(row.Int64(fmt.Sprintf(load_obj_sqlarrayname, classType, i))))
 			}
 		}
 	case "[]int64":
-		if !classVal.CanSet() {
+		if classVal.CanSet() {
 			for i := 0; i < classVal.Len(); i++{
 				classVal.Index(i).SetInt(row.Int64(fmt.Sprintf(load_obj_sqlarrayname, classType, i)))
 			}
 		}
 	case "[]uint64":
-		if !classVal.CanSet() {
+		if classVal.CanSet() {
 			for i := 0; i < classVal.Len(); i++{
 				classVal.Index(i).SetUint(uint64(row.Int64(fmt.Sprintf(load_obj_sqlarrayname, classType, i))))
 			}
 		}
 	case "[]string":
-		if !classVal.CanSet() {
+		if classVal.CanSet() {
 			for i := 0; i < classVal.Len(); i++{
 				classVal.Index(i).SetString(row.String(fmt.Sprintf(load_obj_sqlarrayname, classType, i)))
 			}
 		}
 	case "[]int":
-		if !classVal.CanSet() {
+		if classVal.CanSet() {
 			for i := 0; i < classVal.Len(); i++{
 				classVal.Index(i).SetInt(row.Int64(fmt.Sprintf(load_obj_sqlarrayname, classType, i)))
 			}
 		}
 	case "[]uint":
-		if !classVal.CanSet() {
+		if classVal.CanSet() {
 			for i := 0; i < classVal.Len(); i++{
 				classVal.Index(i).SetUint(uint64(row.Int64(fmt.Sprintf(load_obj_sqlarrayname, classType, i))))
 			}

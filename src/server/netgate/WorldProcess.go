@@ -1,11 +1,11 @@
 package netgate
 
 import (
-	"actor"
-	"base"
+	"gonet/actor"
+	"gonet/base"
 	"fmt"
-	"message"
-	"server/common"
+	"gonet/message"
+	"gonet/server/common"
 	"strconv"
 )
 
@@ -26,7 +26,7 @@ type (
 )
 
 func (this * WorldProcess) RegisterServer(ServerType int, Ip string, Port int)  {
-	SERVER.GetDispatchMgr().SendMsg(this.m_SocketId, "COMMON_RegisterRequest",ServerType, Ip, Port)
+	SERVER.GetWorldSocketMgr().SendMsg(this.m_SocketId, "COMMON_RegisterRequest",ServerType, Ip, Port)
 }
 
 func (this * WorldProcess) SetSocketId(socketId int){
@@ -63,7 +63,7 @@ func (this *WorldProcess) Init(num int) {
 
 func (this* WorldProcess) Update(){
 	if this.m_LostTimer.CheckTimer(){
-		SERVER.GetDispatchMgr().GetSocket(this.m_SocketId).Start()
+		SERVER.GetWorldSocketMgr().GetSocket(this.m_SocketId).Start()
 	}
 }
 

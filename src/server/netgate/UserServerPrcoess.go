@@ -1,8 +1,8 @@
 package netgate
 
 import (
-	"actor"
-	"base"
+	"gonet/actor"
+	"gonet/base"
 	"strings"
 )
 

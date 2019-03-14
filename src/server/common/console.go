@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"bufio"
 	"os"
-	"actor"
+	"gonet/actor"
 	"strings"
 	"time"
 )

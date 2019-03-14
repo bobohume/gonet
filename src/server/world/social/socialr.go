@@ -1,14 +1,14 @@
 package social
 
 import (
-	"actor"
-	"base"
+	"gonet/actor"
+	"gonet/base"
 	"database/sql"
-	"db"
+	"gonet/db"
 	"fmt"
-	"rd"
-	"server/world"
-	"server/world/player"
+	"gonet/rd"
+	"gonet/server/world"
+	"gonet/server/world/player"
 )
 
 //分布式考虑直接数据库
