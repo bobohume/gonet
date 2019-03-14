@@ -11,7 +11,9 @@ websocket模式下，要在net，websocket注视掉如下代码：https://studyg
 
     前四位 protobuf name 的 crc，中间protobuf字节流， 尾部+结束标志#@
 
-1.配置golang的gopath和goroot
+1.支持go mod, gopath可以不需要设置
+
+//1.配置golang的gopath和goroot
 
 2.bin目录下的sxz_server.cfg配置数据库以及端口
 
