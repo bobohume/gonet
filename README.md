@@ -9,9 +9,10 @@ websocket模式下，要在net，websocket注视掉如下代码：https://studyg
 
 服务器之间rpc，客户端服务器之间protobuf + rpc，客户端tcp遵从如下消息包头
 
-    前四位 protobuf name 的 crc，中间protobuf字节流， 尾部+结束标志#@
+    前四位 protobuf name 的 crc，中间protobuf字节流， 尾部+结束标志💞♡ (结束标志也可以自己定义在base.TCP_END控制)
+    //另外支持包头大小- 前四位包体大小,再四位protobuf name 的 crc，中间protobuf字节流,代码注视掉,（搜索tcp粘包固定包头）
 
-1.支持go mod, gopath可以不需要设置
+1.支持go mod, gopath可以不需要设置。（也支持go vendor，下载三个基础库，mysql，protobuf，redis，bson）
 
 //1.配置golang的gopath和goroot
 
