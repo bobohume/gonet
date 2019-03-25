@@ -1,15 +1,14 @@
 FROM golang:latest
 
-RUN mkdir gonet
-COPY . /gonet/
+ADD . /go/
 
+WORKDIR /go/bin
+RUN ["/bin/sh", "./build.sh"]
+RUN chmod +x server
 EXPOSE 8081 31100 31200 31300 31700
-
-WORKDIR /gonet/src/server
-
-RUN go build
-
-CMD  ["/gonet/server netgate"]
+#ENTRYPOINT  ["/bin/sh", "./server"]
+#ENTRYPOINT  ["/bin/sh", "./server"]
+#ENTRYPOINT  ["/bin/sh", "./start.sh"]
 #USER root
 #FROM centos:latest
 #COPY ./bin /usr/local/bin

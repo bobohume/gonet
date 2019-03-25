@@ -1,9 +1,12 @@
-cd ./../src/server
+cd ./../src/gonet/server
 go build
-cp server ./../../bin
+copy /y server.exe .\..\..\..\bin
+del server.exe
 ::go install
 
 cd ./../client
 go build
-cp client ./../../bin
+copy /y client.exe .\..\..\..\bin
+::copy /y client.exe ./../../../bin
+del client.exe
 ::go install
