@@ -113,10 +113,13 @@ func (this *ClusterManager) BalanceCluster() int{
 }
 
 func (this *ClusterManager) RandomCluster() int{
+	nIndex := -1
 	this.m_ClusterLocker.RLock()
-	nLen := int(math.Max(float64(this.m_ClusterList.Len()-1), 0))
-	nRand := base.RAND().RandI(0, nLen)
-	nIndex := this.m_ClusterList.Get(nRand).(*ClusterInfo).SocketId
+	if this.m_ClusterList.Len() > 0{
+		nLen := int(math.Max(float64(this.m_ClusterList.Len()-1), 0))
+		nRand := base.RAND().RandI(0, nLen)
+		nIndex = this.m_ClusterList.Get(nRand).(*ClusterInfo).SocketId
+	}
 	this.m_ClusterLocker.RUnlock()
 	return nIndex
 }
