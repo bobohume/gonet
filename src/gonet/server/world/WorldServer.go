@@ -3,7 +3,6 @@
  import (
 	 "database/sql"
 	 "github.com/golang/protobuf/proto"
-	 "github.com/modern-go/reflect2"
 	 "gonet/base"
 	 "gonet/db"
 	 "gonet/message"
@@ -64,14 +63,7 @@ func (this *ServerMgr)Init() bool{
 	file.AddFile(data.SKILL_DATA_NAME, func() {
 		data.SKILLDATA.Read()
 	})*/
-
-    bb :=[4] int{10, 20, 30, 40}
-	value :=  reflect2.TypeOf(bb).(reflect2.ArrayType)
-	value.UnsafeSetIndex(reflect2.PtrOf(&bb), 2, reflect2.PtrOf(new(int)))
-
-	cc :=[] int{10, 20, 30, 40}
-	value1 :=  reflect2.TypeOf(cc).(reflect2.SliceType)
-	value1.SetIndex(&cc, 2, new(int))
+	
 	//初始化log文件
 	this.m_Log.Init("world")
 	//初始ini配置文件
