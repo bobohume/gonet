@@ -13,9 +13,13 @@ websocket模式下，要在net，websocket注视掉如下代码：https://studyg
     //另外支持包头大小- 前四位包体大小,再四位protobuf name 的 crc，中间protobuf字节流,代码注视掉,（搜索tcp粘包固定包头）
 
 1.支持go mod, gopath可以不需要设置。（也支持go vendor（删除项目下的go.mod文件），下载三个基础库，mysql，protobuf，redis）
+
 // go get github.com/golang/net
+
 // go get github.com/go-sql-driver/mysql
+
 // go get github.com/gomodule/redigo/redis
+
 2.bin目录下的sxz_server.cfg配置数据库以及端口
 
 3.数据库在sql文件目录下生产
