@@ -112,7 +112,7 @@ func GetMessagePacket(packet proto.Message, bitstream *base.BitStream) bool {
 		}
 		switch sType {
 		case "*message":
-			bitstream.WriteInt(base.RPC_PB, 8)
+			bitstream.WriteInt(base.RPC_MESSAGE, 8)
 			buf, _ :=proto.Marshal(packet)
 			nLen := len(buf)
 			bitstream.WriteInt(nLen, base.Bit32)

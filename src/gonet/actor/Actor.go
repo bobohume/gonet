@@ -3,7 +3,6 @@ package actor
 import (
 	"gonet/base"
 	"fmt"
-	"gonet/message/json3"
 	"log"
 	"gonet/message"
 	"reflect"
@@ -899,19 +898,13 @@ func (this *Actor) call(io CallIO) {
 				params[i] = val.Interface()
 
 
-			case base.RPC_PB://protobuf
+			case base.RPC_MESSAGE://protobuf
 				packet := message.GetPakcetByName(funcName)
 				nLen := bitstream.ReadInt(base.Bit32)
 				packetBuf := bitstream.ReadBits(nLen << 3)
 				message.UnmarshalText(packet, packetBuf)
 				params[i] = packet
 
-			case base.RPC_JSON://json
-				packet := json3.GetPakcetByName(funcName)
-				nLen := bitstream.ReadInt(base.Bit32)
-				packetBuf := bitstream.ReadBits(nLen << 3)
-				json3.UnmarshalText(packet, packetBuf)
-				params[i] = packet
 			default:
 				panic("func [%s] params type not supported")
 			}

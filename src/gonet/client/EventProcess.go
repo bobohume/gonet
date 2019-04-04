@@ -6,7 +6,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	"fmt"
 	"gonet/base"
-	"gonet/message/json3"
 	"gonet/network"
 )
 
@@ -41,12 +40,6 @@ func (this *EventProcess) SendPacket(packet proto.Message){
 	this.Client.Send(buff)
 }
 
-func (this *EventProcess) SendPacket1(packet json3.Message){
-	buff := json3.Encode(packet)
-	buff = base.SetTcpEnd(buff)
-	this.Client.Send(buff)
-}
-
 func (this *EventProcess) PacketFunc(socketid int, buff []byte) bool {
 	defer func() {
 		if err := recover(); err != nil {
@@ -74,35 +67,6 @@ func (this *EventProcess) PacketFunc(socketid int, buff []byte) bool {
 
 	return true
 }
-
-//解析json
-/*func (this *EventProcess) PacketFunc(socketid int, buff []byte) bool {
-	defer func() {
-		if err := recover(); err != nil {
-			fmt.Println("EventProcess PacketFunc", err)
-		}
-	}()
-
-	packetId, data := json3.Decode(buff)
-	packet := json3.GetPakcet(packetId)
-	if packet == nil{
-		return true
-	}
-	err := json3.UnmarshalText(packet, data)
-	if err == nil{
-		bitstream := base.NewBitStream(make([]byte, 1024), 1024)
-		if !json3.GetMessagePacket(packet, bitstream) {
-			return true
-		}
-		var io actor.CallIO
-		io.Buff = bitstream.GetBuffer()
-		io.SocketId = socketid
-		this.Send(io)
-		return true
-	}
-
-	return true
-}*/
 
 func (this *EventProcess) Init(num int) {
 	this.Actor.Init(num)
@@ -168,10 +132,6 @@ func (this *EventProcess)  LoginAccount() {
 	packet1 := &message.C_A_LoginRequest{PacketHead: message.BuildPacketHead(0, int(message.SERVICE_ACCOUNTSERVER)),
 		AccountName: proto.String(this.AccountName), BuildNo: proto.String(base.BUILD_NO), SocketId: proto.Int32(0)}
 	this.SendPacket(packet1)
-	//解析json
-	/*packet1 := &json3.C_A_LoginRequest{MessageBase: *json3.BuildMessageBase(0, int(message.SERVICE_ACCOUNTSERVER), "C_A_LoginRequest_json"),
-		AccountName: this.AccountName, BuildNo: base.BUILD_NO, SocketId: 0}
-	this.SendPacket1(packet1)*/
 }
 
 var(
