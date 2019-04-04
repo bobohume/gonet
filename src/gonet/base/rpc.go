@@ -10,7 +10,8 @@ const(
 	RPC_UInt64 		= 11
 	RPC_PInt64 		= 70
 	RPC_PUInt64 	= 71
-	RPC_Message 	= 120
+	RPC_PB 			= 120
+	RPC_JSON		= 121
 )
 
 func GetPacket(funcName string, params ...interface{})[]byte {

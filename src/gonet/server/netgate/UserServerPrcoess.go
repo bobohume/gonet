@@ -22,11 +22,6 @@ func (this *UserServerProcess) Init(num int) {
 }
 
 func (this *UserServerProcess) PacketFunc(id int, buff []byte) bool{
-	/*packetId,_ := message.Decode(buff)
-	packet := message.GetPakcet(packetId)
-	if packet != nil{
-		return false
-	}*/
 	var io actor.CallIO
 	io.Buff = buff
 	io.SocketId = id

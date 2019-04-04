@@ -19,7 +19,6 @@ type IServerSocketClient interface {
 
 type ServerSocketClient struct {
 	Socket
-	m_WriteChan   chan []byte
 	m_pServer     *ServerSocket
 }
 
@@ -39,13 +38,11 @@ func (this *ServerSocketClient) Start() bool {
 		return false
 	}
 
-	this.m_WriteChan = make(chan []byte, MAX_WRITE_CHAN)
 	this.m_nState = SSF_CONNECT
 	this.m_Conn.(*net.TCPConn).SetNoDelay(true)
 	//this.m_Conn.SetKeepAlive(true)
 	//this.m_Conn.SetKeepAlivePeriod(5*time.Second)
 	go serverclientRoutine(this)
-	//go serverclientWriteRoutine(this)
 	return true
 }
 
@@ -88,29 +85,9 @@ func (this *ServerSocketClient) OnNetFail(error int) {
 }
 
 func (this *ServerSocketClient) Close() {
-	close(this.m_WriteChan)
 	this.Socket.Close()
 	if this.m_pServer != nil {
 		this.m_pServer.DelClinet(this)
-	}
-}
-
-//防止消息过快
-func (this *ServerSocketClient) SendNoBlock(buff []byte) {
-	defer func() {
-		if err := recover(); err != nil {
-			fmt.Println("WriteBuf", err)
-		}
-	}()
-
-	if this.m_nConnectType == CLIENT_CONNECT{
-		select {
-		case this.m_WriteChan <- buff: //chan满后再写即阻塞，select进入default分支报错
-		default:
-			break
-		}
-	}else{
-		this.m_WriteChan <- buff
 	}
 }
 
@@ -150,21 +127,5 @@ func serverclientRoutine(pClient *ServerSocketClient) bool {
 
 	pClient.Close()
 	fmt.Printf("%s关闭连接", pClient.m_sIP)
-	return true
-}
-
-func serverclientWriteRoutine(pClient *ServerSocketClient) bool {
-	for {
-		select {
-		case buff := <-pClient.m_WriteChan :
-			pClient.Send(buff)
-		}
-
-		if pClient.m_bShuttingDown {
-			break
-		}
-	}
-
-	pClient.Close()
 	return true
 }

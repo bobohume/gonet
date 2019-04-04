@@ -1,14 +1,14 @@
  package account
 
  import (
-	 "gonet/base"
 	 "database/sql"
-	 "gonet/db"
 	 "github.com/golang/protobuf/proto"
-	 "log"
+	 "gonet/base"
+	 "gonet/db"
 	 "gonet/message"
 	 "gonet/network"
 	 "gonet/server/common"
+	 "log"
  )
 
 type(
@@ -116,30 +116,30 @@ func (this *ServerMgr)InitDB() bool{
 	return  err != nil
 }
 
- func (this *ServerMgr) GetDB() *sql.DB{
- 	return this.m_pActorDB
- }
+func (this *ServerMgr) GetDB() *sql.DB{
+	return this.m_pActorDB
+}
 
- func (this *ServerMgr) GetLog() *base.CLog{
-	 return &this.m_Log
- }
+func (this *ServerMgr) GetLog() *base.CLog{
+	return &this.m_Log
+}
 
- func (this *ServerMgr) GetServer() *network.ServerSocket{
-	 return this.m_pService
- }
+func (this *ServerMgr) GetServer() *network.ServerSocket{
+	return this.m_pService
+}
 
- func (this *ServerMgr) GetServerMgr() *ServerSocketManager{
-	 return this.m_pServerMgr
- }
+func (this *ServerMgr) GetServerMgr() *ServerSocketManager{
+	return this.m_pServerMgr
+}
 
- func (this *ServerMgr) GetAccountMgr() *AccountMgr{
-	 return this.m_AccountMgr
- }
+func (this *ServerMgr) GetAccountMgr() *AccountMgr{
+	return this.m_AccountMgr
+}
 
- func SendToClient(socketId int, packet proto.Message){
-	 bitstream := base.NewBitStream(make([]byte, 1024), 1024)
-	 if !message.GetProtoBufPacket(packet, bitstream) {
-		 return
-	 }
-	 SERVER.GetServer().SendByID(socketId, bitstream.GetBuffer())
- }
+func SendToClient(socketId int, packet proto.Message){
+	bitstream := base.NewBitStream(make([]byte, 1024), 1024)
+	if !message.GetMessagePacket(packet, bitstream) {
+		return
+	}
+	SERVER.GetServer().SendByID(socketId, bitstream.GetBuffer())
+}

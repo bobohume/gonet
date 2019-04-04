@@ -1,10 +1,11 @@
 package rd
 
 import (
+	"encoding/json"
+	"github.com/golang/protobuf/proto"
+	"github.com/gomodule/redigo/redis"
 	"gonet/base"
 	"gonet/db"
-	"github.com/gomodule/redigo/redis"
-	"gopkg.in/mgo.v2/bson"
 	"reflect"
 	"runtime"
 	"time"
@@ -15,6 +16,13 @@ var(
 )
 
 var POOL *redis.Pool
+
+type BYTES_TYPE int
+const(
+	BYTES_NONE BYTES_TYPE = iota
+	BYTES_PB BYTES_TYPE = iota
+	BYTES_JSON BYTES_TYPE = iota
+)
 
 //@title 启动redis, redispo.Pool（连接池）
 func OpenRedisPool(ip, pwd string) error {
@@ -103,39 +111,58 @@ func Expire(key string, time, database int) error {
 	return nil
 }
 
-func isJson(obj interface{}) bool{
+func BytesType(obj interface{}) BYTES_TYPE{
 	oTpye := reflect.TypeOf(obj)
 	for oTpye.Kind() == reflect.Ptr {
 		oTpye = oTpye.Elem()
 	}
 
 	if oTpye.Kind() == reflect.Struct{
-		return true
+		if oTpye.NumField() != 0{
+			sf := oTpye.Field(0)
+			if len(base.ParseTag(sf, "protobuf")) != 0{
+				return BYTES_PB
+			}else if len(base.ParseTag(sf, "josn")) != 0{
+				return BYTES_JSON
+			}
+		}
+		return BYTES_NONE
 	}
-	return false
+	return BYTES_NONE
 }
 
 //redis set
 func Exec(time int, database int, cmd, key string, args ...interface{}) error{
 	defer func() {
 		if err := recover(); err != nil{
-			base.TraceCode()
+			base.TraceCode(err)
 			//base.GLOG.Println("redis exec", err)
 		}
 	}()
 	c := POOL.Get()
 	defer c.Close()
-	bJson := false
+	nType := BYTES_NONE
 	if len(args) > 0{
-		bJson = isJson(args[0])
+		nType = BytesType(args[0])
 	}
 
 	c.Do("SELECT", database)
 	vargs := make([]interface{}, 0)
 	vargs = append(vargs, key)
-	if bJson{
+	if nType == BYTES_JSON{
 		for _, v := range args{
-			data, err := bson.Marshal(v)
+			data, err := json.Marshal(v)
+			if err == nil{
+				vargs = append(vargs, data)
+			}
+		}
+	}else if nType == BYTES_PB{
+		for _, v := range args{
+			val := reflect.ValueOf(v)
+			for val.Kind() == reflect.Ptr {
+				val = val.Elem()
+			}
+			data, err := proto.Marshal(val.Addr().Interface().(proto.Message))
 			if err == nil{
 				vargs = append(vargs, data)
 			}
@@ -154,25 +181,42 @@ func Exec(time int, database int, cmd, key string, args ...interface{}) error{
 func ExecKV(time int, database int, cmd, key string, args ...interface{}) error{
 	defer func() {
 		if err := recover(); err != nil{
-			base.TraceCode()
+			base.TraceCode(err)
 			//base.GLOG.Println("redis execkv", err)
 		}
 	}()
 
 	c := POOL.Get()
 	defer c.Close()
-	bJson := false
+	nType := BYTES_NONE
 	if len(args) > 1{
-		bJson = isJson(args[1])
+		nType = BytesType(args[1])
 	}
 
 	c.Do("SELECT", database)
 	vargs := make([]interface{}, 0)
 	vargs = append(vargs, key)
-	if bJson{
+	if nType == BYTES_JSON{
 		for i, v := range args{
 			if i % 2 != 0{
-				data, err := bson.Marshal(v)
+				data, err := json.Marshal(v)
+				if err == nil{
+					vargs = append(vargs, data)
+				}else{
+					vargs = append(vargs, "")
+				}
+			}else{
+				vargs = append(vargs, v)
+			}
+		}
+	} else if nType == BYTES_PB{
+		for i, v := range args{
+			if i % 2 != 0{
+				val := reflect.ValueOf(v)
+				for val.Kind() == reflect.Ptr {
+					val = val.Elem()
+				}
+				data, err := proto.Marshal(val.Addr().Interface().(proto.Message))
 				if err == nil{
 					vargs = append(vargs, data)
 				}else{
@@ -197,7 +241,7 @@ func ExecKV(time int, database int, cmd, key string, args ...interface{}) error{
 func Query(database int, cmd, key string, obj interface{}, args ...interface{}) error{
 	defer func() {
 		if err := recover(); err != nil{
-			base.TraceCode()
+			base.TraceCode(err)
 			//base.GLOG.Println("redis query", err)
 		}
 	}()
@@ -215,7 +259,7 @@ func Query(database int, cmd, key string, obj interface{}, args ...interface{}) 
 		return err
 	}
 
-	bJson := isJson(obj)
+	nType := BytesType(obj)
 
 	switch reply.(type) {
 	case int64:
@@ -251,15 +295,23 @@ func Query(database int, cmd, key string, obj interface{}, args ...interface{}) 
 			isPtr := false
 			if kind := r.Kind(); kind == reflect.Slice {
 				rType := r.Type().Elem()
-				if rType.Kind() == reflect.Ptr {
+				for rType.Kind() == reflect.Ptr {
 					isPtr = true
 					rType = rType.Elem()
 				}
 
 				for _, v := range aData{
 					elem := reflect.New(rType).Elem()
-					if bJson{
-						if bson.Unmarshal(v, elem.Addr().Interface()) == nil{
+					if nType == BYTES_JSON{
+						if json.Unmarshal(v, elem.Addr().Interface()) == nil{
+							if isPtr{
+								r.Set(reflect.Append(r, elem.Addr()))
+							}else{
+								r.Set(reflect.Append(r, elem))
+							}
+						}
+					} else if nType == BYTES_PB{
+						if proto.Unmarshal(v, elem.Addr().Interface().(proto.Message)) == nil{
 							if isPtr{
 								r.Set(reflect.Append(r, elem.Addr()))
 							}else{
@@ -278,11 +330,21 @@ func Query(database int, cmd, key string, obj interface{}, args ...interface{}) 
 			}
 		}
 	case interface{}:
-		if bJson{
+		if nType == BYTES_JSON{
 			var data []byte
 			data, err = redis.Bytes(reply, err)
 			if err == nil {
-				return bson.Unmarshal(data, obj)
+				return json.Unmarshal(data, obj)
+			}
+		} else if nType == BYTES_PB{
+			var data []byte
+			data, err = redis.Bytes(reply, err)
+			if err == nil {
+				val := reflect.ValueOf(obj)
+				for val.Kind() == reflect.Ptr {
+					val = val.Elem()
+				}
+				return proto.Unmarshal(data, val.Addr().Interface().(proto.Message))
 			}
 		}else{
 			var val string
@@ -299,7 +361,7 @@ func Query(database int, cmd, key string, obj interface{}, args ...interface{}) 
 func QueryKV(database int, cmd, key string, obj interface{}, args ...interface{}) error{
 	defer func() {
 		if err := recover(); err != nil{
-			base.TraceCode()
+			base.TraceCode(err)
 			//base.GLOG.Println("redis querykv", err)
 		}
 	}()
@@ -317,22 +379,32 @@ func QueryKV(database int, cmd, key string, obj interface{}, args ...interface{}
 		return err
 	}
 
-	bJson := false
+	nType := BYTES_NONE
 	var aData [][]byte
 	aData, err = redis.ByteSlices(reply, err)
 	if err == nil {
-		r := reflect.Indirect(reflect.ValueOf(obj))
+		r := reflect.ValueOf(obj)
+		for r.Kind() == reflect.Ptr {
+			r = r.Elem()
+		}
 		isPtr := false
 		if kind := r.Kind(); kind == reflect.Map{
 			rType := r.Type().Elem()
 			rkType := r.Type().Key()
-			if rType.Kind() == reflect.Ptr {
+			for rType.Kind() == reflect.Ptr {
 				isPtr = true
 				rType = rType.Elem()
 			}
 
 			if rType.Kind() == reflect.Struct{
-				bJson = true
+				if rType.NumField() != 0{
+					sf := rType.Field(0)
+					if len(base.ParseTag(sf, "protobuf")) != 0{
+						nType = BYTES_PB
+					}else if len(base.ParseTag(sf, "josn")) != 0 {
+						nType = BYTES_JSON
+					}
+				}
 			}
 
 			tKey := reflect.New(rkType)
@@ -359,8 +431,16 @@ func QueryKV(database int, cmd, key string, obj interface{}, args ...interface{}
 					}
 				}else{
 					elem := reflect.New(rType).Elem()
-					if bJson{
-						if bson.Unmarshal(v, elem.Addr().Interface()) == nil{
+					if nType == BYTES_JSON{
+						if json.Unmarshal(v, elem.Addr().Interface()) == nil{
+							if isPtr{
+								r.SetMapIndex(vKey, elem.Addr())
+							}else{
+								r.SetMapIndex(vKey, elem)
+							}
+						}
+					}else if nType == BYTES_PB{
+						if proto.Unmarshal(v, elem.Addr().Interface().(proto.Message)) == nil{
 							if isPtr{
 								r.SetMapIndex(vKey, elem.Addr())
 							}else{

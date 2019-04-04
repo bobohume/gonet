@@ -13,7 +13,6 @@ type IWebSocketClient interface {
 type WebSocketClient struct {
 	Socket
 	m_pServer     *WebSocket
-	m_WriteChan   chan []byte
 }
 
 func (this *WebSocketClient) Start() bool {
@@ -25,10 +24,8 @@ func (this *WebSocketClient) Start() bool {
 		return false
 	}
 
-	this.m_WriteChan = make(chan []byte, MAX_WRITE_CHAN)
 	this.m_nState = SSF_ACCEPT
 	go wserverclientRoutine(this)
-	//go wserverclientWriteRoutine(this)
 	return true
 }
 
@@ -78,25 +75,9 @@ func (this *WebSocketClient) Close() {
 		this.m_Conn.Close()
 	}
 	this.m_Conn = nil
-	close(this.m_WriteChan)
 	this.Socket.Close()
 	if this.m_pServer != nil {
 		this.m_pServer.DelClinet(this)
-	}
-}
-
-func (this *WebSocketClient) SendNoBlock(buff []byte) {
-	defer func() {
-		if err := recover(); err != nil {
-			fmt.Println("WriteBuf", err)
-		}
-	}()
-
-
-	select {
-	case this.m_WriteChan <- buff: //chan满后再写即阻塞，select进入default分支报错
-	default:
-		break
 	}
 }
 
@@ -129,21 +110,5 @@ func wserverclientRoutine(pClient *WebSocketClient) bool {
 
 	pClient.Close()
 	fmt.Printf("%s关闭连接", pClient.m_sIP)
-	return true
-}
-
-func wserverclientWriteRoutine(pClient *WebSocketClient) bool {
-	for {
-		select {
-		case buff := <-pClient.m_WriteChan :
-			pClient.Send(buff)
-		}
-
-		if pClient.m_bShuttingDown {
-			break
-		}
-	}
-
-	pClient.Close()
 	return true
 }

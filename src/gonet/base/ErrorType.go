@@ -12,8 +12,13 @@ const (
 )
 
 //输出错误，跟踪代码
-func TraceCode() {
+func TraceCode(code ...interface{}) {
 	var buf [4096]byte
 	n := runtime.Stack(buf[:], false)
-	fmt.Printf("==> %s\n", string(buf[:n]))
+	data := ""
+	for _, v := range code{
+		data += fmt.Sprintf("%v", v)
+	}
+	data += string(buf[:n])
+	fmt.Printf("==> %s\n", data)
 }

@@ -10,7 +10,7 @@ import (
 var(
 	m_pInBuffer []byte
 	m_pInBuffer1 []byte
-	nTimes = 10000000
+	nTimes = 1000000
 )
 
 const (
@@ -20,13 +20,16 @@ const (
 
 func Test66(t *testing.T)  {
 	t.Log("固定长度")
+	buff := []byte{}
+	for j := 0; j < 1; j++{
+		buff = append(buff, SetTcpEnd(base.GetPacket("test1",[100]int64{1,2,3,4,5,6}))...)
+	}
 	for i :=0;i < nTimes;i++{
-		buff := append([]byte{}, SetTcpEnd(base.GetPacket("test1",[10]int64{1,2,3,4,5,6}))...)
 		ReceivePacket(0,buff)
 	}
 }
 
-/*func Test2(t *testing.T)  {
+func Test2(t *testing.T)  {
 	t.Log("结束标志")
 	buff := []byte{}
 	for j := 0; j < 1; j++{
@@ -35,12 +38,15 @@ func Test66(t *testing.T)  {
 	for i :=0;i < nTimes;i++{
 		ReceivePacket1(0,buff)
 	}
-}*/
+}
 
 func Test3(t *testing.T)  {
 	t.Log("c语言结束标志", []byte(TCP_END1))
+	buff := []byte{}
+	for j := 0; j < 1; j++{
+		buff = append(buff, SetTcpEnd2(base.GetPacket("test1", [100]int64{1,2,3,4,5,6}))...)
+	}
 	for i :=0;i < nTimes;i++{
-		buff := append([]byte{}, SetTcpEnd2(base.GetPacket("test1", [10]int64{1,2,3,4,5,6}))...)
 		ReceivePacket2(0,buff)
 	}
 }

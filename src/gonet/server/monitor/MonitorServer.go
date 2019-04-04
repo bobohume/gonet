@@ -84,7 +84,7 @@ func (this *ServerMgr) GetServerMgr() *ServerSocketManager{
 
 func SendToClient(socketId int, packet proto.Message){
 	bitstream := base.NewBitStream(make([]byte, 1024), 1024)
-	if !message.GetProtoBufPacket(packet, bitstream) {
+	if !message.GetMessagePacket(packet, bitstream) {
 		return
 	}
 	SERVER.GetServer().SendByID(socketId, bitstream.GetBuffer())

@@ -5,6 +5,7 @@ import (
 	"gonet/db"
 	"fmt"
 	"gonet/base"
+	"gonet/message/json3"
 	"gonet/server/common"
 	"strings"
 	"database/sql"
@@ -199,13 +200,21 @@ func (this *PlayerMgr) PacketFunc(id int, buff []byte) bool{
 			if (nType == base.RPC_Int64 || nType == base.RPC_UInt64 || nType == base.RPC_PInt64 || nType == base.RPC_PUInt64){
 				nAccountId := bitstream.ReadInt64(base.Bit64)
 				SendToPlayer(nAccountId, io)
-			}else if (nType == base.RPC_Message){
+			}else if (nType == base.RPC_PB){
 				packet := message.GetPakcetByName(funcName)
 				nLen := bitstream.ReadInt(base.Bit32)
 				packetBuf := bitstream.ReadBits(nLen << 3)
 				message.UnmarshalText(packet, packetBuf)
 				packetHead := message.GetPakcetHead(packet)
 				nAccountId := int64(*packetHead.Id)
+				SendToPlayer(nAccountId, io)
+			}else if (nType == base.RPC_JSON){
+				packet := json3.GetPakcetByName(funcName)
+				nLen := bitstream.ReadInt(base.Bit32)
+				packetBuf := bitstream.ReadBits(nLen << 3)
+				json3.UnmarshalText(packet, packetBuf)
+				packetHead := json3.GetPakcetHead(packet)
+				nAccountId := packetHead.Id
 				SendToPlayer(nAccountId, io)
 			}
 		}

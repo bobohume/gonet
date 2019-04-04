@@ -2,8 +2,8 @@ package data
 
 import (
 	"gonet/base"
-	"sync"
 	"gonet/server/common"
+	"sync"
 )
 
 var(

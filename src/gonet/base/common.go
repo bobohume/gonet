@@ -278,6 +278,9 @@ func GetArrayTypeStringEx(sTypeName string) string{
 func ParseTag(sf reflect.StructField, tag string) map[string]string {
 	setting := map[string]string{}
 	for _, str := range []string{sf.Tag.Get(tag)} {
+		if str == ""{
+			continue
+		}
 		tags := strings.Split(str, ";")
 		for _, value := range tags {
 			v := strings.Split(value, ":")

@@ -2,22 +2,16 @@
 
  import (
 	 "database/sql"
-	 "github.com/golang/protobuf/proto"
 	 "gonet/base"
 	 "gonet/db"
-	 "gonet/message"
 	 "gonet/network"
-	 "gonet/rd"
-	 "gonet/server/common"
 	 "log"
  )
 
 type(
 	ServerMgr struct{
 		m_pService	*network.ServerSocket
-		m_pAccountClient *network.ClientSocket
-		m_pMonitorClient *common.MonitorClient
-		m_pServerMgr *ServerSocketManager
+		m_pWorldClient *network.ClientSocket
 		m_pActorDB *sql.DB
 		m_Inited bool
 		m_config base.Config
@@ -30,7 +24,7 @@ type(
 		GetDB() *sql.DB
 		GetLog() *base.CLog
 		GetServer() *network.ServerSocket
-		GetAccountSocket() *network.ClientSocket
+		GetWorldSocket() *network.ClientSocket
 	}
 
 	BitStream base.BitStream
@@ -39,16 +33,13 @@ type(
 var(
 	UserNetIP string
 	UserNetPort string
-	AccountServerIp string
-	AccountServerPort string
+	WorldServerIp string
+	WorldServerPort string
 	DB_Server string
 	DB_Name string
 	DB_UserId string
 	DB_Password string
-	Web_Url string
 	SERVER ServerMgr
-	RdID int
-	OpenRedis bool
 )
 
 func (this *ServerMgr)Init() bool{
@@ -68,20 +59,17 @@ func (this *ServerMgr)Init() bool{
 	this.m_Log.Init("world")
 	//初始ini配置文件
 	this.m_config.Read("SXZ_SERVER.CFG")
-	UserNetIP, UserNetPort 	= this.m_config.Get2("World_LANAddress", ":")
-	AccountServerIp, AccountServerPort 	= this.m_config.Get2("Account_LANAddress", ":")
+	UserNetIP, UserNetPort 	= this.m_config.Get2("Dd_LANAddress", ":")
+	WorldServerIp, WorldServerPort 	= this.m_config.Get2("World_LANAddress", ":")
 	DB_Server 	= this.m_config.Get("ActorDB_LANIP")
 	DB_Name		= this.m_config.Get("ActorDB_Name");
 	DB_UserId	= this.m_config.Get("ActorDB_UserId");
 	DB_Password	= this.m_config.Get("ActorDB_Password")
-	RdID 		= 0//this.m_config.Int("WorkID") / 10
-	OpenRedis	= this.m_config.Bool("Redis_Open")
-	Web_Url		= this.m_config.Get("World_Url")
 
 	ShowMessage := func(){
 		this.m_Log.Println("**********************************************************")
-		this.m_Log.Printf("\tWorldServer Version:\t%s",base.BUILD_NO)
-		this.m_Log.Printf("\tWorldServerIP(LAN):\t%s:%s", UserNetIP, UserNetPort)
+		this.m_Log.Printf("\tServer Version:\t%s",base.BUILD_NO)
+		this.m_Log.Printf("\tDbServerIP(LAN):\t%s:%s", UserNetIP, UserNetPort)
 		this.m_Log.Printf("\tActorDBServer(LAN):\t%s", DB_Server)
 		this.m_Log.Printf("\tActorDBName:\t\t%s", DB_Name)
 		this.m_Log.Println("**********************************************************");
@@ -96,15 +84,6 @@ func (this *ServerMgr)Init() bool{
 	}
 	this.m_Log.Printf("[%s]数据库初始化成功!", DB_Name)
 
-	if OpenRedis{
-		rd.OpenRedisPool(this.m_config.Get("Redis_Host"), this.m_config.Get("Redis_Pwd"))
-	}
-
-	//链接monitor
-	this.m_pMonitorClient = new(common.MonitorClient)
-	monitorIp, monitroPort := this.m_config.Get2("Monitor_LANAddress", ":")
-	this.m_pMonitorClient.Connect(int(message.SERVICE_WORLDSERVER), monitorIp, monitroPort, UserNetIP, UserNetPort)
-
 	//初始化socket
 	this.m_pService = new(network.ServerSocket)
 	port := base.Int(UserNetPort)
@@ -113,23 +92,18 @@ func (this *ServerMgr)Init() bool{
 	this.m_pService.SetMaxSendBufferSize(1024)
 	this.m_pService.Start()
 
-
-	//连接account
-	this.m_pAccountClient = new(network.ClientSocket)
-	port = base.Int(AccountServerPort)
-	this.m_pAccountClient.Init(AccountServerIp, port)
-	packet3 := new(AccountProcess)
+	//连接world
+	this.m_pWorldClient = new(network.ClientSocket)
+	port = base.Int(WorldServerPort)
+	this.m_pWorldClient.Init(WorldServerIp, port)
+	packet3 := new(WorldProcess)
 	packet3.Init(1000)
-	this.m_pAccountClient.BindPacketFunc(packet3.PacketFunc)
-	this.m_pAccountClient.Start()
-
-	this.m_pServerMgr = new(ServerSocketManager)
-	this.m_pServerMgr.Init(1000)
+	this.m_pWorldClient.BindPacketFunc(packet3.PacketFunc)
+	this.m_pWorldClient.Start()
 
 	var packet EventProcess
 	packet.Init(1000)
 	this.m_pService.BindPacketFunc(packet.PacketFunc)
-	this.m_pService.BindPacketFunc(this.m_pServerMgr.PacketFunc)
 
 	return  false
 }
@@ -144,34 +118,14 @@ func (this *ServerMgr) GetDB() *sql.DB{
 	return this.m_pActorDB
 }
 
+ func (this *ServerMgr) GetServer() *network.ServerSocket{
+	 return this.m_pService
+ }
+
 func (this *ServerMgr) GetLog() *base.CLog{
 	return &this.m_Log
 }
 
-func (this *ServerMgr) GetServer() *network.ServerSocket{
- 	return this.m_pService
-}
-
-func (this *ServerMgr) GetServerMgr() *ServerSocketManager{
-	return this.m_pServerMgr
-}
-
-func (this *ServerMgr) GetAccountSocket() *network.ClientSocket{
-	return this.m_pAccountClient
-}
-
-//发送给客户端
-func SendToClient(socketId int, packet proto.Message){
-	buff := message.Encode(packet)
-	nLen := len(buff) + 128
-	pakcetHead := message.GetPakcetHead(packet)
-	if pakcetHead != nil {
-		bitstream := base.NewBitStream(make([]byte, nLen), nLen)
-		bitstream.WriteString(message.GetMessageName(packet))
-		//服务器标示
-		bitstream.WriteInt(int(message.SERVICE_WORLDSERVER), 8)
-		bitstream.WriteInt64(*pakcetHead.Id, base.Bit64)
-		bitstream.WriteBits(len(buff)<<3, buff)
-		SERVER.GetServer().SendByID(socketId, bitstream.GetBuffer())
-	}
+func (this *ServerMgr) GetWorldSocket() *network.ClientSocket{
+	return this.m_pWorldClient
 }
