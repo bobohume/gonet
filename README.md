@@ -29,6 +29,7 @@ websocket模式下，要在net，websocket注视掉如下代码：https://studyg
 5.linux下执行build.sh,start.sh
 
 6.客户端目前有go 目录下client，新增支持lua client
+
 有问题可以加qq群：950288306
 
 
