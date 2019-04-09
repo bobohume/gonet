@@ -10,6 +10,16 @@ Socket={
 
 TCP_END = "💞♡"
 TCP_END_LENGTH = #(TCP_END)
+SERVICE_NONE          = 0
+SERVICE_CLIENT        = 1
+SERVICE_GATESERVER    = 2
+SERVICE_ACCOUNTSERVER = 3
+SERVICE_WORLDSERVER   = 4
+SERVICE_MONITORSERVER = 5
+BUILD_NO = "1,5,1,1"
+NONE_ERROR = 0
+VERSION_ERROR = 1		    -- 版本不正确
+ACCOUNT_NOEXIST = 2			--账号不存在
 
 function Socket:new(o, ip, port)
     o = o or {}
@@ -51,6 +61,9 @@ function Socket:Send(buf)
 	return  0
 end
 
+function Socket:Receive()
+end
+
 function Socket:ReceivePacket(Id, dat)
 	--找包结束
 	seekToTcpEnd = function(dat)
@@ -70,20 +83,20 @@ function Socket:ReceivePacket(Id, dat)
 	nBufferSize = #(buff1)
 	bFindFlag = false
 	bFindFlag, nPacketSize = seekToTcpEnd(buff1)
-	print(bFindFlag, nPacketSize, nBufferSize)
+	--print(bFindFlag, nPacketSize, nBufferSize)
 	if bFindFlag then
 		if nBufferSize == nPacketSize then --完整包
-		    print(string.sub(buff1, 0, nPacketSize - TCP_END_LENGTH))
+		    --print(string.sub(buff1, 0, nPacketSize - TCP_END_LENGTH))
 			HandlePacket(string.sub(buff1, 0, nPacketSize - TCP_END_LENGTH))
 			nCurSize =  nCurSize + nPacketSize
 		elseif (nBufferSize > nPacketSize) then
-		    print(string.sub(buff1, 0, nPacketSize - TCP_END_LENGTH))
+		    --print(string.sub(buff1, 0, nPacketSize - TCP_END_LENGTH))
 			HandlePacket(string.sub(buff1, 0, nPacketSize - TCP_END_LENGTH))
 			nCurSize =  nCurSize + nPacketSize
 			goto ParsePacekt
 		end
 	elseif nBufferSize < 128 * 1024 then
-		self.m_pInBuffer = buff[nCurSize]
+		self.m_pInBuffer = string.sub(buff, nCurSize+1)
 	else
 		fmt.Println("超出最大包限制，丢弃该包")
 	end

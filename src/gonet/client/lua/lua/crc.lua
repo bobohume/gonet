@@ -111,7 +111,7 @@ local function rshift(num, right)
     return math.floor(res)
 end
 
-local CRC32 = {}
+CRC32 = {}
 
 function CRC32.hash(str)
 	local count = string.len(str)
