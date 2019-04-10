@@ -14,7 +14,7 @@ dofile("account.lua")
 
 function main()
     CLIENTSOCKET:Connect()
-    Account:LoginAccount()
+    LoginAccount()
     CLIENTSOCKET:Receive()
 end
 

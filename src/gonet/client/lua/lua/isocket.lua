@@ -16,10 +16,6 @@ SERVICE_GATESERVER    = 2
 SERVICE_ACCOUNTSERVER = 3
 SERVICE_WORLDSERVER   = 4
 SERVICE_MONITORSERVER = 5
-BUILD_NO = "1,5,1,1"
-NONE_ERROR = 0
-VERSION_ERROR = 1		    -- 版本不正确
-ACCOUNT_NOEXIST = 2			--账号不存在
 
 function Socket:new(o, ip, port)
     o = o or {}

@@ -17,6 +17,8 @@ function ClientSocket:Connect()
     self.m_Conn = assert(socket.connect(self.m_sIp, self.m_nPort))
     self.m_nState = 1
     self.m_Conn:settimeout(0)
+    self.m_Conn:setoption("tcp-nodelay", true)
+    self.m_Conn:setstats(1024*1024,1024*1024)
     print("连接成功，请输入信息")
     return true
 end
@@ -29,11 +31,10 @@ function ClientSocket:Receive()
     local recvt, sendt, status
     recvt, sendt, status = socket.select({self.m_Conn}, nil, 1)
     while #recvt > 0 do
-        local dat, receive_status = self.m_Conn:receive(4)
+        local dat, receive_status = self.m_Conn:receive(1)
         if receive_status ~= "closed" then
             if dat then
                 self:ReceivePacket(0, dat)
-                --print(dat, receive_status)
                 recvt, sendt, status = socket.select({self.m_Conn}, nil, 1)
             end
         else
