@@ -133,7 +133,7 @@ func (this *Socket) SendMsgByID(int,string, ...interface{}){
 
 func (this *Socket) Clear() {
 	this.m_nState = SSF_SHUT_DOWN
-	this.m_nConnectType = CLIENT_CONNECT
+	//this.m_nConnectType = CLIENT_CONNECT
 	this.m_Conn = nil
 	//this.m_Reader = nil
 	//this.m_Writer = nil
@@ -183,20 +183,7 @@ func (this *Socket) BindPacketFunc(callfunc HandleFunc){
 
 func (this *Socket) CallMsg(funcName string, params ...interface{}){
 	buff := base.GetPacket(funcName, params...)
-	//buff = base.SetTcpEnd(buff)
-	if this.m_nConnectType == CLIENT_CONNECT && this.m_nState != SSF_SHUT_DOWN{
-		this.handlePacket(this.m_ClientId, buff)
-		return
-	}
 	this.HandlePacket(this.m_ClientId, buff)
-}
-
-func (this *Socket) handlePacket(Id int, buff []byte){
-	for i := this.m_PacketFuncList.Len() - 1; i >= 0; i--{
-		if (this.m_PacketFuncList.Get(i).(HandleFunc)(Id, buff)){
-			break
-		}
-	}
 }
 
 func (this *Socket) HandlePacket(Id int, buff []byte){
