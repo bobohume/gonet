@@ -20,6 +20,8 @@ websocket模式下，要在net，websocket注视掉如下代码：https://studyg
 
 // go get github.com/gomodule/redigo/redis
 
+// go get go.etcd.io/etcd/client
+
 2.bin目录下的sxz_server.cfg配置数据库以及端口
 
 3.数据库在sql文件目录下生产
