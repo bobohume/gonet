@@ -8,6 +8,7 @@
 	 "gonet/message"
 	 "gonet/network"
 	 "gonet/server/common"
+	 "gonet/server/common/cluster"
 	 "log"
  )
 
@@ -21,6 +22,7 @@ type(
 		m_config base.Config
 		m_Log	base.CLog
 		m_AccountMgr *AccountMgr
+		m_Cluster *cluster.Service
 	}
 
 	IServerMgr interface{
@@ -44,7 +46,7 @@ var(
 	DB_Name string
 	DB_UserId string
 	DB_Password string
-
+	EtcdEndpoints []string
 	SERVER ServerMgr
 )
 
@@ -57,6 +59,7 @@ func (this *ServerMgr)Init() bool{
 	this.m_Log.Init("account")
 	//初始ini配置文件
 	this.m_config.Read("SXZ_SERVER.CFG")
+	EtcdEndpoints = this.m_config.Get5("Etcd_Cluster", ",")
 	UserNetIP, UserNetPort = this.m_config.Get2("Account_LANAddress", ":")
 	DB_Server 	= this.m_config.Get("AccountDB_LANIP")
 	DB_Name		= this.m_config.Get("AccountDB_Name");
@@ -107,6 +110,7 @@ func (this *ServerMgr)Init() bool{
 	this.m_pService.BindPacketFunc(this.m_AccountMgr.PacketFunc)
 	this.m_pService.BindPacketFunc(this.m_pServerMgr.PacketFunc)
 
+	this.m_Cluster = cluster.NewService(int(message.SERVICE_ACCOUNTSERVER), UserNetIP, base.Int(UserNetPort), EtcdEndpoints)
 	return  false
 }
 

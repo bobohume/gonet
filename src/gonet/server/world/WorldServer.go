@@ -16,7 +16,6 @@
 type(
 	ServerMgr struct{
 		m_pService	*network.ServerSocket
-		m_pAccountClient *network.ClientSocket
 		m_pMonitorClient *common.MonitorClient
 		m_pServerMgr *ServerSocketManager
 		m_pActorDB *sql.DB
@@ -24,6 +23,7 @@ type(
 		m_config base.Config
 		m_Log	base.CLog
 		m_Cluster *cluster.Service
+		m_AccountCluster *cluster.Cluster
 	}
 
 	IServerMgr interface{
@@ -32,7 +32,7 @@ type(
 		GetDB() *sql.DB
 		GetLog() *base.CLog
 		GetServer() *network.ServerSocket
-		GetAccountSocket() *network.ClientSocket
+		GetAccountCluster() *cluster.Cluster
 	}
 
 	BitStream base.BitStream
@@ -117,15 +117,10 @@ func (this *ServerMgr)Init() bool{
 	this.m_pService.SetMaxSendBufferSize(1024)
 	this.m_pService.Start()
 
-
-	//连接account
-	this.m_pAccountClient = new(network.ClientSocket)
-	port = base.Int(AccountServerPort)
-	this.m_pAccountClient.Init(AccountServerIp, port)
-	packet3 := new(AccountProcess)
-	packet3.Init(1000)
-	this.m_pAccountClient.BindPacketFunc(packet3.PacketFunc)
-	this.m_pAccountClient.Start()
+	//账号服务器集群
+	this.m_AccountCluster = new(cluster.Cluster)
+	this.m_AccountCluster.Init(1000, int(message.SERVICE_GATESERVER), int(message.SERVICE_ACCOUNTSERVER), UserNetIP, base.Int(UserNetPort), EtcdEndpoints)
+	this.m_AccountCluster.BindPacket(&AccountProcess{})
 
 	this.m_pServerMgr = new(ServerSocketManager)
 	this.m_pServerMgr.Init(1000)
@@ -161,8 +156,8 @@ func (this *ServerMgr) GetServerMgr() *ServerSocketManager{
 	return this.m_pServerMgr
 }
 
-func (this *ServerMgr) GetAccountSocket() *network.ClientSocket{
-	return this.m_pAccountClient
+func (this *ServerMgr) GetAccountCluster() *cluster.Cluster{
+ 	return this.m_AccountCluster
 }
 
 //发送给客户端

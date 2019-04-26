@@ -67,7 +67,7 @@ func (this *UserPrcoess)SwtichSendToWorld(socketId int, packetName string, packe
 func (this *UserPrcoess) SwtichSendToAccount(socketId int, packetName string, packet interface{}, buff []byte){
 	if this.CheckClient(socketId, packetName, packet) == true {
 		buff = base.SetTcpEnd(buff)
-		SERVER.GetAccountSocket().Send(buff)
+		SERVER.GetAccountCluster().BalacaceSend(buff)
 	}
 }
 

@@ -11,17 +11,24 @@ type (
 	AccountProcess struct {
 		actor.Actor
 		m_LostTimer *common.SimpleTimer
+
+		m_Id uint32
 	}
 
 	IAccountProcess interface {
 		actor.IActor
 
 		RegisterServer(int, string, int)
+		SetSocketId(uint32)
 	}
 )
 
+func (this * AccountProcess) SetSocketId(socketId uint32){
+	this.m_Id = socketId
+}
+
 func (this * AccountProcess) RegisterServer(ServerType int, Ip string, Port int)  {
-	SERVER.GetAccountSocket().SendMsg("COMMON_RegisterRequest",ServerType, Ip, Port)
+	SERVER.GetAccountCluster().SendMsg(this.m_Id, "COMMON_RegisterRequest",ServerType, Ip, Port)
 }
 
 func (this *AccountProcess) Init(num int) {
@@ -41,6 +48,10 @@ func (this *AccountProcess) Init(num int) {
 		this.m_LostTimer.Start()
 	})
 
+	this.RegisterCall("STOP_ACTOR", func() {
+		this.Stop()
+	})
+
 	this.RegisterCall("G_ClientLost", func(accountId int64) {
 		SERVER.GetServer().CallMsg("G_ClientLost", accountId)
 	})
@@ -54,6 +65,6 @@ func (this *AccountProcess) Init(num int) {
 
 func (this* AccountProcess) Update(){
 	if this.m_LostTimer.CheckTimer(){
-		SERVER.GetAccountSocket().Start()
+		SERVER.GetAccountCluster().GetCluster(this.m_Id).Start()
 	}
 }

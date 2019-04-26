@@ -114,7 +114,7 @@ func (this *PlayerManager) Init(num int){
 	this.RegisterCall("DEL_ACCOUNT", func(socketid int) {
 		accountId := this.GetAccount(socketid)
 		this.ReleaseSocketMap(socketid, true)
-		SERVER.GetAccountSocket().SendMsg("G_ClientLost", accountId)
+		SERVER.GetAccountCluster().BoardCastMsg("G_ClientLost", accountId)
 	})
 
 	//重连世界服务器，账号重新登录

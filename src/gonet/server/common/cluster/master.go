@@ -19,6 +19,7 @@ type Master struct {
 	m_MasterType int
 }
 
+//监控服务器
 func NewMaster(Type int, Endpoints []string, pActor actor.IActor) *Master {
 	master := &Master{}
 	master.Init(Endpoints, pActor)
@@ -55,14 +56,14 @@ func (this *Master) BindActor(pActor actor.IActor) {
 func (this *Master) AddService(info *common.ClusterInfo) {
 	_, bEx := this.m_ServiceMap[info.Id()]
 	if !bEx{
-		this.m_Actor.SendMsg("Cluster_Socket_Add", info)
+		this.m_Actor.SendMsg("Cluster_Add", info)
 	}
 	this.m_ServiceMap[info.Id()] = info
 }
 
 func (this *Master) DelService(info *common.ClusterInfo) {
 	delete(this.m_ServiceMap, info.Id())
-	this.m_Actor.SendMsg("Cluster_Socket_Del", info)
+	this.m_Actor.SendMsg("Cluster_Del", info)
 }
 
 func (this *Master) InitService(info *common.ClusterInfo) {

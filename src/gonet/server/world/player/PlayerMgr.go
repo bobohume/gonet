@@ -87,7 +87,7 @@ func (this* PlayerMgr) Init(num int){
 						this.m_Log.Printf("账号[%d]创建玩家[%d]", accountId, playerId)
 					} else {
 						this.m_Log.Printf("账号[%d]创建玩家失败", accountId)
-						world.SERVER.GetAccountSocket().SendMsg("W_A_DeletePlayer", accountId, playerId)
+						world.SERVER.GetAccountCluster().BalacaceMsg("W_A_DeletePlayer", accountId, playerId)
 					}
 
 					//通知玩家`

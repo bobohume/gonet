@@ -63,7 +63,7 @@ func (this *WorldProcess) Init(num int) {
 
 func (this* WorldProcess) Update(){
 	if this.m_LostTimer.CheckTimer(){
-		SERVER.GetWorldCluster().GetSocket(this.m_Id).Start()
+		SERVER.GetWorldCluster().GetCluster(this.m_Id).Start()
 	}
 }
 

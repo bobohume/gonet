@@ -34,14 +34,17 @@ type(
 	ICluster interface{
 		//actor.IActor
 		Init(num int, Type int, MasterType int, IP string, Port int, Endpoints []string)
-		AddSocket(info *common.ClusterInfo)
-		DelSocket(info *common.ClusterInfo)
-		GetSocket(uint32) *network.ClientSocket
+		AddCluster(info *common.ClusterInfo)
+		DelCluster(info *common.ClusterInfo)
+		GetCluster(uint32) *network.ClientSocket
 
 		BindPacket(IClusterPacket)
 		BindPacketFunc(network.HandleFunc)
-		SendMsg(uint32, string, ...interface{})
+		SendMsg(uint32, string, ...interface{})//发送给集群特定服务器
+		BalacaceMsg(string, ...interface{})//负载给集群特定服务器
+		BoardCastMsg(string, ...interface{})//给集群广播
 		Send(uint32, []byte)
+		BalacaceSend([]byte)//负载给集群特定服务器
 
 		BalanceCluster()uint32//负载均衡
 		RandomCluster()uint32//随机分配
@@ -57,19 +60,19 @@ func (this *Cluster) Init(num int, Type int, MasterType int, IP string, Port int
 	this.m_Master = NewMaster(MasterType, Endpoints, &this.Actor)
 
 	//集群新加member
-	this.RegisterCall("Cluster_Socket_Add", func(info *common.ClusterInfo){
-		this.AddSocket(info)
+	this.RegisterCall("Cluster_Add", func(info *common.ClusterInfo){
+		this.AddCluster(info)
 	})
 
 	//集群删除member
-	this.RegisterCall("Cluster_Socket_Del", func(info *common.ClusterInfo){
-		this.DelSocket(info)
+	this.RegisterCall("Cluster_Del", func(info *common.ClusterInfo){
+		this.DelCluster(info)
 	})
 
 	this.Actor.Start()
 }
 
-func (this *Cluster) AddSocket(info *common.ClusterInfo){
+func (this *Cluster) AddCluster(info *common.ClusterInfo){
 	pClient := new(network.ClientSocket)
 	pClient.Init(info.Ip, info.Port)
 	packet :=  reflect.New(reflect.ValueOf(this.m_Packet).Elem().Type()).Interface().(IClusterPacket)
@@ -86,7 +89,7 @@ func (this *Cluster) AddSocket(info *common.ClusterInfo){
 	pClient.Start()
 }
 
-func (this *Cluster) DelSocket(info *common.ClusterInfo){
+func (this *Cluster) DelCluster(info *common.ClusterInfo){
 	this.m_ClusterLocker.RLock()
 	pClient, exist := this.m_ClusterMap[info.Id()]
 	this.m_ClusterLocker.RUnlock()
@@ -106,7 +109,7 @@ func (this *Cluster) DelSocket(info *common.ClusterInfo){
 	this.m_ClusterLocker.Unlock()
 }
 
-func (this *Cluster) GetSocket(socketId uint32) *network.ClientSocket{
+func (this *Cluster) GetCluster(socketId uint32) *network.ClientSocket{
 	this.m_ClusterLocker.RLock()
 	pClient, exist := this.m_ClusterMap[socketId]
 	this.m_ClusterLocker.RUnlock()
@@ -125,14 +128,40 @@ func (this *Cluster) BindPacketFunc(packetFunc network.HandleFunc){
 }
 
 func (this *Cluster) SendMsg(socketId uint32, funcName string, params  ...interface{}){
-	pClient := this.GetSocket(socketId)
+	pClient := this.GetCluster(socketId)
 	if pClient != nil{
 		pClient.SendMsg(funcName, params...)
 	}
 }
 
+func (this *Cluster) BalacaceMsg(funcName string, params  ...interface{}){
+	pClient := this.GetCluster(this.RandomCluster())
+	if pClient != nil{
+		pClient.SendMsg(funcName, params...)
+	}
+}
+
+func (this *Cluster) BoardCastMsg(funcName string, params  ...interface{}){
+	clusterList := []*network.ClientSocket{}
+	this.m_ClusterLocker.RLock()
+	for _ ,v := range this.m_ClusterMap{
+		clusterList = append(clusterList, v)
+	}
+	this.m_ClusterLocker.RUnlock()
+	for _, v := range clusterList{
+		v.SendMsg(funcName, params...)
+	}
+}
+
 func (this *Cluster) Send(socketId uint32, buff []byte){
-	pClient := this.GetSocket(socketId)
+	pClient := this.GetCluster(socketId)
+	if pClient != nil{
+		pClient.Send(buff)
+	}
+}
+
+func (this *Cluster) BalacaceSend(buff []byte){
+	pClient := this.GetCluster(this.RandomCluster())
 	if pClient != nil{
 		pClient.Send(buff)
 	}

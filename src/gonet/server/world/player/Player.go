@@ -80,7 +80,7 @@ func (this* Player) Init(num int){
 					err := rs.Row().Int("@err")
 					//register
 					if(err == 0) {
-						world.SERVER.GetAccountSocket().SendMsg("W_A_CreatePlayer", this.AccountId, packet.GetPlayerName(), packet.GetSex(), this.GetSocketId())
+						world.SERVER.GetAccountCluster().BalacaceMsg("W_A_CreatePlayer", this.AccountId, packet.GetPlayerName(), packet.GetSex(), this.GetSocketId())
 					}else{
 						this.m_Log.Printf("账号[%d]创建玩家上限", this.AccountId)
 						world.SendToClient(this.GetSocketId(), &message.W_C_CreatePlayerResponse{

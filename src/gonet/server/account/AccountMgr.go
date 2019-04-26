@@ -45,16 +45,17 @@ func (this* AccountMgr) Init(num int){
 			}
 		}
 
-		pAccount := this.GetAccount(accountId)
+		/*pAccount := this.GetAccount(accountId)
 		if pAccount != nil {
 			if pAccount.CheckLoginTime(){
 				return
 			}
 
 			this.RemoveAccount(accountId)
-		}
-
-		pAccount = this.AddAccount(accountId)
+		}*/
+		//踢出其他账号服务器
+		this.RemoveAccount(accountId)
+		pAccount := this.AddAccount(accountId)
 		LoginAccount(pAccount)
 	})
 
@@ -115,10 +116,10 @@ func (this *AccountMgr) RemoveAccount(accountId int64){
 		delete(this.m_AccountNameMap, pAccount.AccountName)
 		delete(this.m_AccountMap, accountId)
 		SERVER.GetLog().Printf("账号[%d]断开链接", accountId)
-		//假如账号服务器分布式，只要踢出world世界服务器即可
-		//这里要登录的时候就同步到踢人world
-		SERVER.GetServerMgr().KickWorldPlayer(accountId)
 	}
+	//假如账号服务器分布式，只要踢出world世界服务器即可
+	//这里要登录的时候就同步到踢人world
+	SERVER.GetServerMgr().KickWorldPlayer(accountId)
 }
 
 func (this *AccountMgr) KickAccount(accountId int64){
