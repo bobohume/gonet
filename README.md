@@ -22,7 +22,7 @@ websocket模式下，要在net，websocket注视掉如下代码：https://studyg
 
 // go get go.etcd.io/etcd/client
 
-2.下载etcd做服发现，（redis做排行榜，全局缓存，可选）
+2.下载etcd做服发现（new），（redis做排行榜，全局缓存，可选）
 
 3.bin目录下的sxz_server.cfg配置数据库以及端口
 
