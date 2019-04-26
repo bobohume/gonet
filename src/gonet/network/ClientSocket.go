@@ -108,6 +108,7 @@ func (this *ClientSocket) Connect() bool {
 
 func (this *ClientSocket) OnDisconnect() {
 }
+
 func (this *ClientSocket) OnNetFail(int) {
     this.Stop()
 	this.CallMsg("DISCONNECT", this.m_ClientId)

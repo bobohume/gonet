@@ -28,7 +28,7 @@ type(
 		AccountId int64
 		LastTime int64
 		SocketId int
-		WSocketId int
+		WSocketId uint32
 	}
 )
 
@@ -54,12 +54,12 @@ func (this *PlayerManager) ReleaseSocketMap(socketId int, bClose bool){
 	//}
 }
 
-func (this *PlayerManager) AddAccountMap(accountId int64, socketId int, wsocketId int) int {
+func (this *PlayerManager) AddAccountMap(accountId int64, socketId int) int {
 	Id := this.GetSocket(accountId)
 	this.ReleaseSocketMap(Id, Id != socketId)
 
 	accountInfo := NewAccountInfo(socketId, accountId)
-	accountInfo.WSocketId = wsocketId
+	accountInfo.WSocketId = SERVER.GetWorldCluster().RandomCluster()
 	this.m_Locker.Lock()
 	this.m_AccountMap[accountId] = accountInfo
 	this.m_SocketMap[socketId] = accountId
@@ -106,9 +106,9 @@ func (this *PlayerManager) Init(num int){
 	this.m_SocketMap = make(map[int] int64)
 	this.m_AccountMap = make(map[int64] *AccountInfo)
 	this.m_Locker = &sync.RWMutex{}
-	this.RegisterCall("ADD_ACCOUNT", func(accountId int64, socketId int, wsocketId int) {
-		SERVER.GetLog().Printf("login incoming  Socket:%d WSocket:%d Account:%d ",socketId, wsocketId, accountId)
-		this.AddAccountMap(accountId, socketId, wsocketId)
+	this.RegisterCall("ADD_ACCOUNT", func(accountId int64, socketId int) {
+		SERVER.GetLog().Printf("login incoming  Socket:%d Account:%d ",socketId, accountId)
+		this.AddAccountMap(accountId, socketId)
 	})
 
 	this.RegisterCall("DEL_ACCOUNT", func(socketid int) {
@@ -119,7 +119,7 @@ func (this *PlayerManager) Init(num int){
 
 	//重连世界服务器，账号重新登录
 	this.RegisterCall("Account_Relink", func() {
-		accountMap := make(map [int64] int)
+		accountMap := make(map [int64] uint32)
 		this.m_Locker.RLock()
 		for i, v := range this.m_AccountMap {
 			accountMap[i] = v.WSocketId

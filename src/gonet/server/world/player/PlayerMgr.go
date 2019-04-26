@@ -160,10 +160,6 @@ func (this *PlayerMgr) GetPlayerNum() int{
 }
 
 func (this* PlayerMgr) Update(){
-	//定时器通知集群状态
-	if this.m_PingTimer.CheckTimer(){
-		world.SERVER.GetAccountSocket().SendMsg("PING", this.GetPlayerNum())
-	}
 }
 
 func (this *PlayerMgr) PacketFunc(id int, buff []byte) bool{

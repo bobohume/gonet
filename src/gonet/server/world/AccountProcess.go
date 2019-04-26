@@ -20,7 +20,7 @@ type (
 	}
 )
 
-func (this * AccountProcess)RegisterServer(ServerType int, Ip string, Port int)  {
+func (this * AccountProcess) RegisterServer(ServerType int, Ip string, Port int)  {
 	SERVER.GetAccountSocket().SendMsg("COMMON_RegisterRequest",ServerType, Ip, Port)
 }
 

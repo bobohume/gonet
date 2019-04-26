@@ -2,7 +2,35 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="9a9cc911-e837-4b2a-91bc-b3147d14a966" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/src/gonet/message/json3/client.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/gonet/message/json3/client.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/Dockerfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bin/SXZ_SERVER.CFG" beforeDir="false" afterPath="$PROJECT_DIR$/bin/SXZ_SERVER.CFG" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gonet/base/config.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/gonet/base/config.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gonet/client/lua/lua/aa.lua" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gonet/client/lua/lua/account.lua" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gonet/client/lua/lua/clientsocket.lua" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gonet/client/lua/lua/crc.lua" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gonet/client/lua/lua/isocket.lua" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gonet/client/lua/lua/main.lua" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gonet/client/lua/lua/packet.lua" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gonet/client/lua/lua/readme.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gonet/client/lua/lua/serpent.lua" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gonet/go.mod" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gonet/go.mod2" beforeDir="false" afterPath="$PROJECT_DIR$/src/gonet/go.mod2" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gonet/network/ClientSocket.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/gonet/network/ClientSocket.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gonet/server/account/AccountMgr.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/gonet/server/account/AccountMgr.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gonet/server/account/ServerSocketMgr.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/gonet/server/account/ServerSocketMgr.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gonet/server/common/Common.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/gonet/server/common/Common.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gonet/server/common/cluster/Cluster.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/gonet/server/common/cluster/Cluster.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gonet/server/common/cluster/ClusterMgr.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gonet/server/netgate/AccountProcess.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/gonet/server/netgate/AccountProcess.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gonet/server/netgate/NetGateServer.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/gonet/server/netgate/NetGateServer.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gonet/server/netgate/PlayerMgr.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/gonet/server/netgate/PlayerMgr.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gonet/server/netgate/WorldProcess.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/gonet/server/netgate/WorldProcess.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gonet/server/server.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/gonet/server/server.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gonet/server/world/AccountProcess.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/gonet/server/world/AccountProcess.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gonet/server/world/WorldServer.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/gonet/server/world/WorldServer.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gonet/server/world/player/PlayerMgr.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/gonet/server/world/player/PlayerMgr.go" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -12,44 +40,51 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/gonet/server/world/player/PlayerMgr.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="94">
+              <caret line="106" selection-start-line="106" selection-end-line="106" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/gonet/server/world/WorldServer.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="369">
+              <caret line="73" column="57" selection-start-line="73" selection-start-column="57" selection-end-line="73" selection-end-column="57" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/gonet/server/netgate/WorldProcess.go">
+          <provider selected="true" editor-type-id="text-editor" />
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/gonet/server/netgate/NetGateServer.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="176">
+              <caret line="79" lean-forward="true" selection-start-line="79" selection-end-line="79" />
+            </state>
+          </provider>
+        </entry>
+      </file>
       <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/src/gonet/message/json3/client.go">
+        <entry file="file://$PROJECT_DIR$/bin/SXZ_SERVER.CFG">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="641">
-              <caret line="63" column="24" selection-start-line="63" selection-start-column="24" selection-end-line="63" selection-end-column="24" />
+            <state relative-caret-position="255">
+              <caret line="17" column="27" selection-start-line="17" selection-start-column="27" selection-end-line="17" selection-end-column="27" />
             </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/gonet/message/json3/Ipacket.go">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="783">
-              <caret line="180" lean-forward="true" selection-start-line="180" selection-end-line="180" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/gonet/message/client.pb.go">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="348">
-              <caret line="229" selection-start-line="229" selection-end-line="238" selection-end-column="1" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/gonet/message/game.pb.go">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-7294" />
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/gonet/message/message.pb.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-544">
+            <state relative-caret-position="4650">
               <caret line="312" selection-start-line="312" selection-end-line="319" />
             </state>
           </provider>
@@ -58,7 +93,7 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/gonet/client/cmd.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="360">
+            <state relative-caret-position="435">
               <caret line="29" column="6" selection-start-line="29" selection-start-column="6" selection-end-line="29" selection-end-column="6" />
               <folding>
                 <element signature="e#14#115#0" expanded="true" />
@@ -70,8 +105,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/gonet/client/EventProcess.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="15">
-              <caret line="99" column="21" selection-start-line="99" selection-start-column="21" selection-end-line="99" selection-end-column="21" />
+            <state relative-caret-position="1380">
+              <caret line="99" selection-start-line="99" selection-end-line="99" />
             </state>
           </provider>
         </entry>
@@ -97,6 +132,7 @@
       <list>
         <option value="$PROJECT_DIR$/src/gonet/message/json3/Ipacket.go" />
         <option value="$PROJECT_DIR$/src/gonet/message/json3/client.go" />
+        <option value="$PROJECT_DIR$/bin/SXZ_SERVER.CFG" />
       </list>
     </option>
   </component>
@@ -112,7 +148,6 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -123,6 +158,11 @@
             <path>
               <item name="gonet" type="b2602c69:ProjectViewProjectNode" />
               <item name="gonet" type="462c0819:PsiDirectoryNode" />
+              <item name="bin" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="gonet" type="b2602c69:ProjectViewProjectNode" />
+              <item name="gonet" type="462c0819:PsiDirectoryNode" />
               <item name="src" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
@@ -143,13 +183,38 @@
               <item name="gonet" type="462c0819:PsiDirectoryNode" />
               <item name="src" type="462c0819:PsiDirectoryNode" />
               <item name="gonet" type="462c0819:PsiDirectoryNode" />
-              <item name="message" type="462c0819:PsiDirectoryNode" />
-              <item name="json3" type="462c0819:PsiDirectoryNode" />
+              <item name="server" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="gonet" type="b2602c69:ProjectViewProjectNode" />
+              <item name="gonet" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="gonet" type="462c0819:PsiDirectoryNode" />
+              <item name="server" type="462c0819:PsiDirectoryNode" />
+              <item name="netgate" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="gonet" type="b2602c69:ProjectViewProjectNode" />
+              <item name="gonet" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="gonet" type="462c0819:PsiDirectoryNode" />
+              <item name="server" type="462c0819:PsiDirectoryNode" />
+              <item name="world" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="gonet" type="b2602c69:ProjectViewProjectNode" />
+              <item name="gonet" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="gonet" type="462c0819:PsiDirectoryNode" />
+              <item name="server" type="462c0819:PsiDirectoryNode" />
+              <item name="world" type="462c0819:PsiDirectoryNode" />
+              <item name="player" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
           <select />
         </subPane>
       </pane>
+      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -171,10 +236,10 @@
     </option>
   </component>
   <component name="ToolWindowManager">
-    <frame x="496" y="28" width="1358" height="993" extended-state="0" />
+    <frame x="482" y="23" width="1358" height="993" extended-state="0" />
     <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.25379938" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.26139817" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
@@ -227,7 +292,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/gonet/client/cmd.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="360">
+        <state relative-caret-position="435">
           <caret line="29" column="6" selection-start-line="29" selection-start-column="6" selection-end-line="29" selection-end-column="6" />
           <folding>
             <element signature="e#14#115#0" expanded="true" />
@@ -240,8 +305,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/gonet/client/EventProcess.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="15">
-          <caret line="99" column="21" selection-start-line="99" selection-start-column="21" selection-end-line="99" selection-end-column="21" />
+        <state relative-caret-position="1380">
+          <caret line="99" selection-start-line="99" selection-end-line="99" />
         </state>
       </provider>
     </entry>
@@ -279,22 +344,24 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/gonet/message/message.pb.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-544">
+        <state relative-caret-position="4650">
           <caret line="312" selection-start-line="312" selection-end-line="319" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/gonet/message/json3/Ipacket.go">
+    <entry file="file://$PROJECT_DIR$/src/gonet/message/json3/Ipacket.go" />
+    <entry file="file://$PROJECT_DIR$/src/gonet/message/json3/client.go" />
+    <entry file="file://$PROJECT_DIR$/src/gonet/server/netgate/NetGateServer.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="783">
-          <caret line="180" lean-forward="true" selection-start-line="180" selection-end-line="180" />
+        <state relative-caret-position="176">
+          <caret line="79" lean-forward="true" selection-start-line="79" selection-end-line="79" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/gonet/message/json3/client.go">
+    <entry file="file://$PROJECT_DIR$/bin/SXZ_SERVER.CFG">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="641">
-          <caret line="63" column="24" selection-start-line="63" selection-start-column="24" selection-end-line="63" selection-end-column="24" />
+        <state relative-caret-position="255">
+          <caret line="17" column="27" selection-start-line="17" selection-start-column="27" selection-end-line="17" selection-end-column="27" />
         </state>
       </provider>
     </entry>

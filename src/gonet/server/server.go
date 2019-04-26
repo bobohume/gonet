@@ -15,6 +15,7 @@ import (
 func main() {
 	args := os.Args
 	base.RegisterMessage(&common.ServerInfo{})
+	base.RegisterMessage(&common.ClusterInfo{})
 	if args[1] == "account"{
 		account.SERVER.Init()
 	}else if args[1] == "monitor"{

@@ -43,8 +43,8 @@ func (this *AccountProcess) Init(num int) {
 		this.m_LostTimer.Start()
 	})
 
-	this.RegisterCall("A_G_Account_Login", func(accountId int64, socketId int, wsocketId int) {
-		SERVER.GetPlayerMgr().SendMsg("ADD_ACCOUNT", accountId, socketId, wsocketId)
+	this.RegisterCall("A_G_Account_Login", func(accountId int64, socketId int) {
+		SERVER.GetPlayerMgr().SendMsg("ADD_ACCOUNT", accountId, socketId)
 	})
 
 	this.RegisterCall("A_C_RegisterResponse", func(packet *message.A_C_RegisterResponse) {

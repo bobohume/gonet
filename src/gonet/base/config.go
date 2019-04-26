@@ -41,7 +41,8 @@ type(
 		Read(string)
 		Get(key string) string//获取key
 		Get2(key string, sep string)(string, string)//获取ip
-		Get3(section string, key string, secitonId ...int) string//根据section, key, sectionid(从1开始)
+		Get3(section string, key string, secitonId ...int) string//根据section, key, sectionid(从0开始)
+		Get5(key string, sep string)[]string//获取数组
 		Int(key string) int
 		Int64(key string) int64
 		Float32(key string) float32
@@ -87,7 +88,7 @@ func (this *Config) Get2(key string, sep string) (string, string){
 
 func (this *Config) Get3(seciton string, key string, sectionid ...int) string{
 	//key = strings.ToLower(key)
-	id := 1
+	id := 0
 	if len(sectionid) >= 1{
 		id = sectionid[0]
 	}
@@ -100,6 +101,10 @@ func (this *Config) Get3(seciton string, key string, sectionid ...int) string{
 	}
 
 	return "";
+}
+
+func (this *Config)Get5(key string, sep string)[]string{
+	return  strings.Split(this.Get(key), sep)
 }
 
 func (this *Config) Int(key string) int{
@@ -199,7 +204,12 @@ func (this *Config) Read(path string)  {
 				if state == STATE_SECTION{
 					section, tokenBegin = Token(buffer, tokenBegin, i, false)
 					if section != ""{
-						secCount[section]++
+						_, bEx := secCount[section]
+						if !bEx{
+							secCount[section] = 0
+						}else{
+							secCount[section]++
+						}
 						this.m_cfgInfo[CfgKey{section, secCount[section]}] =  SectionInfo{}
 						state = STATE_NONE
 					}
@@ -218,8 +228,8 @@ func (this *Config) Read(path string)  {
 					}
 					state = STATE_NONE;
 				}
-			case '/':
-				if (i>1 && buffer[i-1]=='/' && state==STATE_VALUE) {
+			case '#'://注释模块
+				if state==STATE_VALUE{
 					if (section != ""){
 						//fmt.Println("111111", section)
 						InsertMap()
@@ -227,6 +237,15 @@ func (this *Config) Read(path string)  {
 						state = STATE_NONE;
 					}
 				}
+			/*case '/':
+				if (i>1 && buffer[i-1]=='/' && state==STATE_VALUE) {
+					if (section != ""){
+						//fmt.Println("111111", section)
+						InsertMap()
+						comment = true;
+						state = STATE_NONE;
+					}
+				}*/
 			}
 			i++
 		}

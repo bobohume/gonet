@@ -1,9 +1,11 @@
 package cluster
 
 import (
-	"fmt"
 	"gonet/actor"
+	"gonet/base"
 	"gonet/network"
+	"gonet/server/common"
+	"math"
 	"reflect"
 	"sync"
 )
@@ -14,107 +16,100 @@ type(
 		actor.IActor
 
 		RegisterServer(int, string, int)
-		SetSocketId(int)
+		SetSocketId(uint32)
 	}
 
 	//集群客户端
 	Cluster struct{
 		actor.Actor
-		m_pClients map[int] *network.ClientSocket
-		m_pLocker  *sync.RWMutex
+		m_ClusterMap map[uint32] *network.ClientSocket
+		m_ClusterList base.IVector
+		m_ClusterLocker *sync.RWMutex
 		m_Packet IClusterPacket
 		m_PacketFunc network.HandleFunc
+		m_Service *Service
+		m_Master  *Master
 	}
 
 	ICluster interface{
 		//actor.IActor
-		Init(num int, nType int)
-		InitSocket([]string, []int, []int)
-		AddSocket(string, int, int)
-		DelSocket(string, int, int)
-		GetSocket(int) *network.ClientSocket
+		Init(num int, Type int, MasterType int, IP string, Port int, Endpoints []string)
+		AddSocket(info *common.ClusterInfo)
+		DelSocket(info *common.ClusterInfo)
+		GetSocket(uint32) *network.ClientSocket
 
 		BindPacket(IClusterPacket)
 		BindPacketFunc(network.HandleFunc)
-		SendMsg(int, string, ...interface{})
-		Send(int, []byte)
+		SendMsg(uint32, string, ...interface{})
+		Send(uint32, []byte)
+
+		BalanceCluster()uint32//负载均衡
+		RandomCluster()uint32//随机分配
 	}
 )
 
-func GetClusterMsg(msg string, nType int) string{
-	return fmt.Sprintf("%s_%d", msg, nType)
-}
-
-func (this *Cluster) Init(num int, nType int) {
+func (this *Cluster) Init(num int, Type int, MasterType int, IP string, Port int, Endpoints []string) {
 	this.Actor.Init(num)
-	this.m_pLocker = &sync.RWMutex{}
-	this.m_pClients = make(map[int] *network.ClientSocket)
-
-	//集群初始化
-	this.RegisterCall(GetClusterMsg("Cluster_Socket_Init", nType), func(aIp []string, aPort []int, aSocketId []int){
-		this.InitSocket(aIp, aPort, aSocketId)
-	})
+	this.m_ClusterLocker = &sync.RWMutex{}
+	this.m_ClusterMap = make(map[uint32] *network.ClientSocket)
+	this.m_ClusterList = &base.Vector{}
+	this.m_Service = NewService(Type, IP, Port, Endpoints)
+	this.m_Master = NewMaster(MasterType, Endpoints, &this.Actor)
 
 	//集群新加member
-	this.RegisterCall(GetClusterMsg("Cluster_Socket_Add", nType), func(Ip string, Port int, Socket int){
-		this.AddSocket(Ip, Port, Socket)
+	this.RegisterCall("Cluster_Socket_Add", func(info *common.ClusterInfo){
+		this.AddSocket(info)
 	})
 
 	//集群删除member
-	this.RegisterCall(GetClusterMsg("Cluster_Socket_Del", nType), func(Ip string, Port int, Socket int){
-		this.DelSocket(Ip, Port, Socket)
+	this.RegisterCall("Cluster_Socket_Del", func(info *common.ClusterInfo){
+		this.DelSocket(info)
 	})
 
 	this.Actor.Start()
 }
 
-func (this *Cluster) InitSocket(aIp []string, aPort []int, aSocketId []int){
-	this.m_pLocker.Lock()
-	for _, v := range this.m_pClients{
-		v.CallMsg("STOP_ACTOR")
-		v.Stop()
-	}
-	this.m_pClients = make(map[int] *network.ClientSocket)
-	this.m_pLocker.Unlock()
-	for i, v := range aIp{
-		this.AddSocket(v, aPort[i], aSocketId[i])
-	}
-}
-
-func (this *Cluster) AddSocket(Ip string, Port, SocketId int){
+func (this *Cluster) AddSocket(info *common.ClusterInfo){
 	pClient := new(network.ClientSocket)
-	pClient.Init(Ip, Port)
+	pClient.Init(info.Ip, info.Port)
 	packet :=  reflect.New(reflect.ValueOf(this.m_Packet).Elem().Type()).Interface().(IClusterPacket)
 	packet.Init(1000)
-	packet.SetSocketId(SocketId)
+	packet.SetSocketId(info.Id())
 	pClient.BindPacketFunc(packet.PacketFunc)
 	if this.m_PacketFunc != nil{
 		pClient.BindPacketFunc(this.m_PacketFunc)
 	}
-	this.m_pLocker.Lock()
-	this.m_pClients[SocketId] = pClient
-	this.m_pLocker.Unlock()
+	this.m_ClusterLocker.Lock()
+	this.m_ClusterMap[info.Id()] = pClient
+	this.m_ClusterList.Push_back(info)
+	this.m_ClusterLocker.Unlock()
 	pClient.Start()
 }
 
-func (this *Cluster) DelSocket(Ip string, Port, SocketId int){
-	this.m_pLocker.RLock()
-	pClient, exist := this.m_pClients[SocketId]
-	this.m_pLocker.RUnlock()
+func (this *Cluster) DelSocket(info *common.ClusterInfo){
+	this.m_ClusterLocker.RLock()
+	pClient, exist := this.m_ClusterMap[info.Id()]
+	this.m_ClusterLocker.RUnlock()
 	if exist{
 		pClient.CallMsg("STOP_ACTOR")
 		pClient.Stop()
 	}
 
-	this.m_pLocker.Lock()
-	delete(this.m_pClients, SocketId)
-	this.m_pLocker.Unlock()
+	this.m_ClusterLocker.Lock()
+	delete(this.m_ClusterMap, info.Id())
+	for i, v := range this.m_ClusterList.Array(){
+		if v.(*common.ClusterInfo).Id() == info.Id(){
+			this.m_ClusterList.Erase(i)
+			break
+		}
+	}
+	this.m_ClusterLocker.Unlock()
 }
 
-func (this *Cluster) GetSocket(socketId int) *network.ClientSocket{
-	this.m_pLocker.RLock()
-	pClient, exist := this.m_pClients[socketId]
-	this.m_pLocker.RUnlock()
+func (this *Cluster) GetSocket(socketId uint32) *network.ClientSocket{
+	this.m_ClusterLocker.RLock()
+	pClient, exist := this.m_ClusterMap[socketId]
+	this.m_ClusterLocker.RUnlock()
 	if exist{
 		return pClient
 	}
@@ -129,18 +124,45 @@ func (this *Cluster) BindPacketFunc(packetFunc network.HandleFunc){
 	this.m_PacketFunc = packetFunc
 }
 
-func (this *Cluster) SendMsg(socketId int, funcName string, params  ...interface{}){
+func (this *Cluster) SendMsg(socketId uint32, funcName string, params  ...interface{}){
 	pClient := this.GetSocket(socketId)
 	if pClient != nil{
 		pClient.SendMsg(funcName, params...)
 	}
 }
 
-func (this *Cluster) Send(socketId int, buff []byte){
+func (this *Cluster) Send(socketId uint32, buff []byte){
 	pClient := this.GetSocket(socketId)
 	if pClient != nil{
 		pClient.Send(buff)
 	}
 }
 
+func (this *Cluster) BalanceCluster() uint32{
+	nIndex := uint32(0)
+	this.m_ClusterLocker.RLock()
+	for _, v := range this.m_ClusterList.Array(){
+		pClusterInfo := v.(*common.ClusterInfo)
+		if pClusterInfo.Weight <= 10000{
+			nIndex = pClusterInfo.Id()
+			break
+		}
+	}
+	this.m_ClusterLocker.RUnlock()
+	if nIndex == 0{
+		nIndex = this.RandomCluster()
+	}
+	return nIndex
+}
 
+func (this *Cluster) RandomCluster() uint32{
+	nIndex := uint32(0)
+	this.m_ClusterLocker.RLock()
+	if this.m_ClusterList.Len() > 0{
+		nLen := int(math.Max(float64(this.m_ClusterList.Len()-1), 0))
+		nRand := base.RAND().RandI(0, nLen)
+		nIndex = this.m_ClusterList.Get(nRand).(*common.ClusterInfo).Id()
+	}
+	this.m_ClusterLocker.RUnlock()
+	return nIndex
+}

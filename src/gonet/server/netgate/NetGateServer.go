@@ -44,6 +44,7 @@ var(
 	UserNetPort string
 	AccountServerIp string
 	AccountServerPort string
+	EtcdEndpoints []string
 
 	SERVER ServerMgr
 )
@@ -78,6 +79,7 @@ func (this *ServerMgr)Init() bool{
 	//初始ini配置文件
 	this.m_config.Read("SXZ_SERVER.CFG")
 
+	EtcdEndpoints = this.m_config.Get5("Etcd_Cluster", ";")
 	UserNetIP, UserNetPort 	= this.m_config.Get2("NetGate_WANAddress", ":")
 	AccountServerIp, AccountServerPort 	= this.m_config.Get2("Account_LANAddress", ":")
 	ShowMessage := func(){
@@ -91,7 +93,7 @@ func (this *ServerMgr)Init() bool{
 
 	//链接monitor
 	this.m_pMonitorClient = new(common.MonitorClient)
-	monitorIp, monitroPort := this.m_config.Get2("Monitor_LANAddress", ":")
+	monitorIp, monitroPort := this.m_config.Get2("Monitor_LANAddress", ",")
 	this.m_pMonitorClient.Connect(int(message.SERVICE_GATESERVER), monitorIp, monitroPort, UserNetIP, UserNetPort)
 
 	//初始化socket
@@ -123,7 +125,7 @@ func (this *ServerMgr)Init() bool{
 	this.m_pService.Start()*/
 
 	this.m_WorldCluster = new(cluster.Cluster)
-	this.m_WorldCluster.Init(1000, int(message.SERVICE_WORLDSERVER))
+	this.m_WorldCluster.Init(1000, int(message.SERVICE_GATESERVER), int(message.SERVICE_WORLDSERVER), UserNetIP, base.Int(UserNetPort), EtcdEndpoints)
 	this.m_WorldCluster.BindPacket(&WorldProcess{})
 	this.m_WorldCluster.BindPacketFunc(DispatchPacketToClient)
 
@@ -134,7 +136,6 @@ func (this *ServerMgr)Init() bool{
 	packet3 := new(AccountProcess)
 	packet3.Init(1000)
 	this.m_pAccountClient.BindPacketFunc(packet3.PacketFunc)
-	this.m_pAccountClient.BindPacketFunc(this.m_WorldCluster.PacketFunc)
 	this.m_pAccountClient.Start()
 
 

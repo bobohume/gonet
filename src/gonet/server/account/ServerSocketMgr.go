@@ -5,7 +5,6 @@ import (
 	"gonet/base"
 	"gonet/message"
 	"gonet/server/common"
-	"gonet/server/common/cluster"
 	"sync"
 )
 
@@ -20,8 +19,6 @@ type (
 		m_GateLocker	*sync.RWMutex
 		m_WorldMap		HashSocketMap
 		m_WorldLocker	*sync.RWMutex
-
-		m_WorldClusterMgr cluster.IClusterManager//方便代码清晰性
 	}
 
 	IServerSocketManager interface {
@@ -31,7 +28,6 @@ type (
 		GetAllGate(base.IVector)
 		GetAllWorld(base.IVector)
 		GetSeverInfo(int, int) *common.ServerInfo
-		GetWorldClusterMgr() cluster.IClusterManager
 		KickWorldPlayer(accountId int64)
 	}
 )
@@ -44,8 +40,6 @@ func (this *ServerSocketManager) Init(num int){
 	this.m_SocketLocker	= &sync.RWMutex{}
 	this.m_GateLocker	= &sync.RWMutex{}
 	this.m_WorldLocker	= &sync.RWMutex{}
-	this.m_WorldClusterMgr = &cluster.ClusterManager{}
-	this.m_WorldClusterMgr.Init()
 
 	this.RegisterCall("COMMON_RegisterRequest", func(nType int, Ip string, Port int) {
 		pServerInfo := new(common.ServerInfo)
@@ -69,11 +63,6 @@ func (this *ServerSocketManager) Init(num int){
 		this.ReleaseServerMap(socketId, false)
 	})
 
-	//集群负载
-	this.RegisterCall("PING", func(num int) {
-		this.m_WorldClusterMgr.UpdateCluster(this.GetSocketId(), num)
-	})
-
 	this.Actor.Start()
 }
 
@@ -88,21 +77,11 @@ func (this *ServerSocketManager) AddServerMap(pServerInfo *common.ServerInfo){
 		this.m_GateMap[pServerInfo.SocketId] = pServerInfo
 		this.m_GateLocker.Unlock()
 		SERVER.GetLog().Printf("ADD GATE SERVER: [%d]-[%s:%d]", pServerInfo.SocketId, pServerInfo.Ip, pServerInfo.Port)
-		SERVER.GetServer().SendByID(pServerInfo.SocketId, this.GetWorldClusterMgr().ClusterInitPacket(int(message.SERVICE_WORLDSERVER)))
 	case int(message.SERVICE_WORLDSERVER):
 		this.m_WorldLocker.Lock()
 		this.m_WorldMap[pServerInfo.SocketId] = pServerInfo
 		this.m_WorldLocker.Unlock()
-		this.m_WorldClusterMgr.AddCluster(pServerInfo)
 		SERVER.GetLog().Printf("ADD WORLD SERVER: [%d]-[%s:%d]", pServerInfo.SocketId, pServerInfo.Ip, pServerInfo.Port)
-		vec := base.NewVector()
-		this.GetAllGate(vec)
-		for _, v := range vec.Array(){
-			pInfo, bOk := v.(*common.ServerInfo)
-			if bOk && pInfo != nil{
-				SERVER.GetServer().SendByID(pInfo.SocketId, this.GetWorldClusterMgr().ClusterAddPacket(pServerInfo))
-			}
-		}
 	}
 }
 
@@ -126,15 +105,6 @@ func (this *ServerSocketManager) ReleaseServerMap(socketid int, bClose bool){
 		this.m_WorldLocker.Lock()
 		delete(this.m_WorldMap, pServerInfo.SocketId)
 		this.m_WorldLocker.Unlock()
-		this.m_WorldClusterMgr.DelCluster(pServerInfo)
-		vec := base.NewVector()
-		this.GetAllGate(vec)
-		for _, v := range vec.Array(){
-			pInfo, bOk := v.(*common.ServerInfo)
-			if bOk && pInfo != nil {
-				SERVER.GetServer().SendByID(pInfo.SocketId, this.GetWorldClusterMgr().ClusterDelPacket(pServerInfo))
-			}
-		}
 	}
 
 	this.m_SocketLocker.Lock()
@@ -175,10 +145,6 @@ func (this *ServerSocketManager) GetAllWorld(vec base.IVector){
 		vec.Push_back(v)
 	}
 	this.m_WorldLocker.RUnlock()
-}
-
-func (this *ServerSocketManager) GetWorldClusterMgr() cluster.IClusterManager{
-	return this.m_WorldClusterMgr
 }
 
 func (this *ServerSocketManager) KickWorldPlayer(accountId int64){
