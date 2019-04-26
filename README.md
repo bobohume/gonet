@@ -5,7 +5,7 @@ gonet 游戏服务器架构，mmo架构，分布式snowflake64为整形uuid,ai�
 
 websocket模式下，要在net，websocket注视掉如下代码：https://studygolang.com/articles/14842
 
-代码除了mysql，protobuf，redis这几个第三方库以外，其他都是自己写的，方便性能和修改，主动权在自己手里
+代码除了mysql，protobuf，redis, etcd这几个库以外，其他都是自己写的，方便性能和修改，主动权在自己手里
 
 服务器之间rpc，客户端服务器之间protobuf + rpc，客户端tcp遵从如下消息包头(支持json，考虑到性能，两种传输协议不兼容，请用项目中的json3替换到message，写同名的json替换pb的结构体，json继承messagebase类即可,再搜索//解析json)
 
