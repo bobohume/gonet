@@ -21,7 +21,7 @@ type (
 
 		GetAccount(int64) *Account
 		AddAccount(int64) *Account
-		RemoveAccount(int64)
+		RemoveAccount(int64, bool)
 		KickAccount(int64)
 	}
 )
@@ -54,7 +54,7 @@ func (this* AccountMgr) Init(num int){
 			this.RemoveAccount(accountId)
 		}*/
 		//踢出其他账号服务器
-		this.RemoveAccount(accountId)
+		this.RemoveAccount(accountId, true)
 		pAccount := this.AddAccount(accountId)
 		LoginAccount(pAccount)
 	})
@@ -62,7 +62,7 @@ func (this* AccountMgr) Init(num int){
 	//账号断开连接
 	this.RegisterCall("G_ClientLost", func(accountId int64) {
 		SERVER.GetLog().Printf("账号[%d] 断开链接", accountId)
-		this.RemoveAccount(accountId)
+		this.RemoveAccount(accountId, false)
 	})
 
 	this.Actor.Start()
@@ -110,7 +110,7 @@ func (this *AccountMgr) AddAccount(accountId int64) *Account{
 	return nil
 }
 
-func (this *AccountMgr) RemoveAccount(accountId int64){
+func (this *AccountMgr) RemoveAccount(accountId int64, bLogin bool){
 	pAccount := this.GetAccount(accountId)
 	if pAccount != nil{
 		delete(this.m_AccountNameMap, pAccount.AccountName)
@@ -119,7 +119,9 @@ func (this *AccountMgr) RemoveAccount(accountId int64){
 	}
 	//假如账号服务器分布式，只要踢出world世界服务器即可
 	//这里要登录的时候就同步到踢人world
-	SERVER.GetServerMgr().KickWorldPlayer(accountId)
+	if bLogin || pAccount != nil{
+		SERVER.GetServerMgr().KickWorldPlayer(accountId)
+	}
 }
 
 func (this *AccountMgr) KickAccount(accountId int64){
