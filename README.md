@@ -7,12 +7,12 @@ websocket模式下，要在net，websocket注视掉如下代码：https://studyg
 
 代码除了mysql，protobuf，redis, etcd这几个库以外，其他都是自己写的，方便性能和修改，主动权在自己手里
 
-服务器之间rpc，客户端服务器之间protobuf + rpc，客户端tcp遵从如下消息包头(支持json，考虑到性能，两种传输协议不兼容，请用项目中的json3替换到message，写同名的json替换pb的结构体，json继承messagebase类即可,再搜索//解析json)
+服务器之间rpc，客户端服务器之间protobuf + rpc，客户端tcp遵从如下消息包头(支持json，考虑到性能，两种传输协议不兼容，请切换json分支)
 
     前四位 protobuf name 的 crc，中间protobuf字节流， 尾部+结束标志💞♡ (结束标志也可以自己定义在base.TCP_END控制)
     //另外支持包头大小- 前四位包体大小,再四位protobuf name 的 crc，中间protobuf字节流,代码注视掉,（搜索tcp粘包固定包头）
 
-1.支持go mod, gopath可以不需要设置。（也支持go vendor（删除项目下的go.mod文件,注意go mod不成熟建议用vendor，go mod包管理会下载一个包的全部，vendor是用那个下那个，只有一部分），下载三个基础库，mysql，protobuf，redis）
+1.支持go mod, gopath可以不需要设置。（也支持go vendor（删除项目下的go.mod文件,注意go mod不成熟建议用vendor，go mod包管理会下载一个包的全部，vendor是用那个下那个，只有一部分），下载这几个基础库，mysql，protobuf，redis，etcd）
 
 // go get github.com/golang/net
 
