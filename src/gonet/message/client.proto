@@ -53,3 +53,7 @@ required string	RecverName = 5;
 required int32	MessageType = 6;
 required string	Message = 7;
 }
+
+message W_C_Test{
+repeated int32 Recv = 1;
+}
