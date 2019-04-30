@@ -161,7 +161,7 @@ actor消息队列为什么能知道,我传过来什么,解析什么呢？
     		
     那么问题来了,rpc字节流性能怎么样呢？
     
-        请单元测试下[rpc的性能代码](https://github.com/bobohume/gonet/blob/master/src/gonet/test/client_test.go)
+        请单元测试下 [rpc的性能代码](https://github.com/bobohume/gonet/blob/master/src/gonet/test/client_test.go)
        
         测试性能如下:测试100万次压一个长度为25的数组
         
