@@ -36,6 +36,11 @@ websocket模式下，要在net，[websocket注视掉如下代码](https://studyg
 
 有问题可以加qq群：950288306
 
+目前游戏库分类：1.actor核心库，actor模式的雏形。2.base基础库，分装rpc以及其他基础库。3.db库，mysql，支持简单orm，没有重度gorm，更加轻便，还在受gorm 0 nil “” 数据库更新就失败的痛苦吗。还在忍受重度gorm带来sql语句都不知道怎么写，没错这个是轻度的。4.message库，pb用于传输协议。5.nework库，网络库，tcp，websocket网络管理。rd库，redis库，做一些集群唯一缓存用。
+
+目前游戏模块：1.account账号服务，提供注册账号，登录校验，集群服务。2.natgate网关服务，所有对外都是通过网关转发，集群服务。3.world世界服务，所有逻辑，集群服务。4.monitor监控，snowflake生成workid，之后，每个微服务个字的workid，生成64位uuid，单点服务。第三方中间件：etcd分布式服发现，redis分布式缓存。
+
+最近会更新文档，方便大家阅读代码。之前可能认为大家看下就懂了，毕竟简单。
 
 服务器架构如下：
 ![image](https://github.com/bobohume/go-server/blob/master/框架.jpg)
