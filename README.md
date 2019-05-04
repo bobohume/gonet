@@ -37,6 +37,8 @@ websocket模式下，要在net，[websocket注视掉如下代码](https://studyg
 有问题可以加qq群：950288306
 
 
+
+
 目前游戏库分类：
 
 1.actor核心库，actor模式的雏形。
@@ -48,13 +50,16 @@ websocket模式下，要在net，[websocket注视掉如下代码](https://studyg
 4.message库，pb用于传输协议。5.nework库，网络库，tcp，websocket网络管理。rd库，redis库，做一些集群唯一缓存用。
 
 
+
 目前游戏模块：
 
 1.account账号服务，提供注册账号，登录校验，集群服务。
 
 2.natgate网关服务，所有对外都是通过网关转发，集群服务。
 
-3.world世界服务，所有逻辑，集群服务。4.monitor监控，snowflake生成workid，之后，每个微服务个字的workid，生成64位uuid，单点服务。第三方中间件：etcd分布式服发现，redis分布式缓存。
+3.world世界服务，所有逻辑，集群服务。
+
+4.monitor监控，snowflake生成workid，之后，每个微服务个字的workid，生成64位uuid，单点服务。第三方中间件：etcd分布式服发现，redis分布式缓存。
 
 服务器架构如下：
 ![image](https://github.com/bobohume/go-server/blob/master/框架.jpg)
