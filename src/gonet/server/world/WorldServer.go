@@ -1,4 +1,4 @@
- package world
+   package world
 
  import (
 	 "database/sql"
@@ -22,6 +22,7 @@ type(
 		m_Inited bool
 		m_config base.Config
 		m_Log	base.CLog
+		m_Cluster *cluster.Service
 		m_AccountCluster *cluster.Cluster
 	}
 
@@ -116,9 +117,12 @@ func (this *ServerMgr)Init() bool{
 	this.m_pService.SetMaxSendBufferSize(1024)
 	this.m_pService.Start()
 
+	//注册到集群
+	this.m_Cluster = cluster.NewService(int(message.SERVICE_WORLDSERVER), UserNetIP, base.Int(UserNetPort), EtcdEndpoints)
+
 	//账号服务器集群
 	this.m_AccountCluster = new(cluster.Cluster)
-	this.m_AccountCluster.Init(1000, int(message.SERVICE_WORLDSERVER), int(message.SERVICE_ACCOUNTSERVER), UserNetIP, base.Int(UserNetPort), EtcdEndpoints)
+	this.m_AccountCluster.Init(1000, int(message.SERVICE_ACCOUNTSERVER), UserNetIP, base.Int(UserNetPort), EtcdEndpoints)
 	this.m_AccountCluster.BindPacket(&AccountProcess{})
 
 	this.m_pServerMgr = new(ServerSocketManager)

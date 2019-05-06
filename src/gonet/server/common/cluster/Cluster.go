@@ -27,13 +27,12 @@ type(
 		m_ClusterLocker *sync.RWMutex
 		m_Packet IClusterPacket
 		m_PacketFunc network.HandleFunc
-		m_Service *Service
 		m_Master  *Master
 	}
 
 	ICluster interface{
 		//actor.IActor
-		Init(num int, Type int, MasterType int, IP string, Port int, Endpoints []string)
+		Init(num int, MasterType int, IP string, Port int, Endpoints []string)
 		AddCluster(info *common.ClusterInfo)
 		DelCluster(info *common.ClusterInfo)
 		GetCluster(uint32) *network.ClientSocket
@@ -51,12 +50,11 @@ type(
 	}
 )
 
-func (this *Cluster) Init(num int, Type int, MasterType int, IP string, Port int, Endpoints []string) {
+func (this *Cluster) Init(num int, MasterType int, IP string, Port int, Endpoints []string) {
 	this.Actor.Init(num)
 	this.m_ClusterLocker = &sync.RWMutex{}
 	this.m_ClusterMap = make(map[uint32] *network.ClientSocket)
 	this.m_ClusterList = &base.Vector{}
-	this.m_Service = NewService(Type, IP, Port, Endpoints)
 	this.m_Master = NewMaster(MasterType, Endpoints, &this.Actor)
 
 	//集群新加member

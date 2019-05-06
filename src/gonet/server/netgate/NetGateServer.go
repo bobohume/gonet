@@ -21,6 +21,7 @@ type(
 		m_PlayerMgr *PlayerManager
 		m_WorldCluster *cluster.Cluster
 		m_AccountCluster *cluster.Cluster
+		m_Cluster *cluster.Service
 	}
 
 	IServerMgr interface{
@@ -123,15 +124,18 @@ func (this *ServerMgr)Init() bool{
 	this.m_pService.BindPacketFunc(packet.PacketFunc)
 	this.m_pService.BindPacketFunc(packet1.PacketFunc)
 	this.m_pService.Start()*/
+	//注册到集群服务器
+	this.m_Cluster = cluster.NewService(int(message.SERVICE_GATESERVER), UserNetIP, base.Int(UserNetPort), EtcdEndpoints)
+
 	//世界服务器集群
 	this.m_WorldCluster = new(cluster.Cluster)
-	this.m_WorldCluster.Init(1000, int(message.SERVICE_GATESERVER), int(message.SERVICE_WORLDSERVER), UserNetIP, base.Int(UserNetPort), EtcdEndpoints)
+	this.m_WorldCluster.Init(1000, int(message.SERVICE_WORLDSERVER), UserNetIP, base.Int(UserNetPort), EtcdEndpoints)
 	this.m_WorldCluster.BindPacket(&WorldProcess{})
 	this.m_WorldCluster.BindPacketFunc(DispatchPacketToClient)
 
 	//账号服务器集群
 	this.m_AccountCluster = new(cluster.Cluster)
-	this.m_AccountCluster.Init(1000, int(message.SERVICE_GATESERVER), int(message.SERVICE_ACCOUNTSERVER), UserNetIP, base.Int(UserNetPort), EtcdEndpoints)
+	this.m_AccountCluster.Init(1000, int(message.SERVICE_ACCOUNTSERVER), UserNetIP, base.Int(UserNetPort), EtcdEndpoints)
 	this.m_AccountCluster.BindPacket(&AccountProcess{})
 
 	//初始玩家管理
