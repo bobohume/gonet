@@ -1,7 +1,7 @@
 # go-server
 gonet 游戏服务器架构，mmo架构，分布式snowflake64为整形uuid,ai行为树，配置data，游戏大部分都在内存运算,分布式缓存redis,增加db模块读取blob数据。
 
-设计之初，建立在actor模式下的；rpc，以及消息驱动，rpc无需注册，支持int，数据，struct（struct必须要注册结构题即可），[rpc性能测试如下](https://github.com/bobohume/gonet/blob/master/src/gonet/test/client_test.go)；sql封装简单的orm，具体看[demo](https://github.com/bobohume/gonet/blob/master/src/gonet/test/ylb.go)
+设计之初，建立在actor模式下的；rpc，以及消息驱动，rpc无需注册，支持通用数据(int,[]int,[3]int),map数据,以及struct数据，[rpc性能测试如下](https://github.com/bobohume/gonet/blob/master/src/gonet/test/client_test.go)；sql封装简单的orm，具体看[demo](https://github.com/bobohume/gonet/blob/master/src/gonet/test/ylb.go)
 
 websocket模式下，要在net，[websocket注视掉如下代码](https://studygolang.com/articles/14842),在netgateserver里面注释回//websocket这段
 
