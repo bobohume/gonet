@@ -318,12 +318,18 @@ func GetTypeString(param interface{}) string{
 	sType := ""
 	if paramType.Kind() == reflect.Ptr{
 		sType = "*" + paramType.Elem().Kind().String()
+		paramType = paramType.Elem()
 	}else if paramType.Kind() == reflect.Slice{
 		sType = GetSliceTypeString(paramType.String())
 	}else if paramType.Kind() == reflect.Array{
 		sType = GetArrayTypeString(paramType.String())
 	}else{
 		sType = paramType.Kind().String()
+	}
+
+	if paramType.Kind() == reflect.Struct || paramType.Kind() == reflect.Map || sType == "[]*struct" ||
+		sType == "[]struct" || sType == "[*]*struct" || sType == "[*]struct"{
+		sType = "*gob"
 	}
 	return sType
 }

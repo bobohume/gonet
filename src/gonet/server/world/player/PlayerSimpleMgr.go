@@ -51,8 +51,6 @@ func loadSimple(row db.IRow, s *SimplePlayerData){
 
 func (this *PlayerSimpleMgr) Init(num int) {
 	this.Actor.Init(num)
-	//注册结构体
-	base.RegisterMessage(&SimplePlayerData{})
 
 	this.m_Locker = &sync.RWMutex{}
 	this.m_db = world.SERVER.GetDB()

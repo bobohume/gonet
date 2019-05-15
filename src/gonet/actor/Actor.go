@@ -1,6 +1,8 @@
 package actor
 
 import (
+	"bytes"
+	"encoding/gob"
 	"gonet/base"
 	"fmt"
 	"log"
@@ -348,19 +350,7 @@ func (this *Actor) call(io CallIO) {
 					val[i] = uint(bitstream.ReadInt(32))
 				}
 				params[i] = val
-			case 35://[]struct
-				if k.In(i).Kind() != reflect.Slice{
-					log.Printf("func [%s] params no fit, func params [%s], params [%v]", funcName, strParams, params)
-					return
-				}
-				nLen := bitstream.ReadInt(16)
-				val := reflect.MakeSlice(k.In(i), nLen, nLen)
-				for i := 0; i < nLen; i++ {
-					packet:= base.GetMessage(bitstream.ReadString())
-					base.ReadData(packet, bitstream)
-					val.Index(i).Set(reflect.ValueOf(packet).Elem())
-				}
-				params[i] = val.Interface()
+
 
 
 			case 41:
@@ -489,24 +479,8 @@ func (this *Actor) call(io CallIO) {
 					val.Index(i).SetInt(int64(bitstream.ReadInt(32)))
 				}
 				params[i] = val.Interface()
-			/*case 55://[*]struct
-				if k.In(i).Kind() != reflect.Array{
-					log.Printf("func [%s] params no fit, func params [%s], params [%v]", funcName, strParams, params)
-					return
-				}
-				nLen := bitstream.ReadInt(16)
-				tVal := reflect.ArrayOf(nLen, reflect.TypeOf(k.In(i)))
-				val := reflect.New(tVal).Elem()
-				arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
-				for i := 0; i < nLen; i++ {
-					value :=  unsafe.Pointer(unsafe.Pointer(arrayPtr))
-					packet:= base.GetMessage(bitstream.ReadString())
-					base.ReadData(packet, bitstream)
-					arrayPtr = arrayPtr + unsafe.Sizeof(packet)
-					*(*unsafe.Pointer)(value) = unsafe.Pointer(reflect.ValueOf(packet).Pointer())
-				}
 
-				params[i] = val.Interface()*/
+
 
 			case 61:
 				val := new(bool)
@@ -564,10 +538,6 @@ func (this *Actor) call(io CallIO) {
 				val := new(uint)
 				*val = uint(bitstream.ReadInt(32))
 				params[i] = val
-			case 75://*struct
-				packet := base.GetMessage(bitstream.ReadString())
-				base.ReadData(packet, bitstream)
-				params[i] = packet
 
 
 
@@ -683,19 +653,7 @@ func (this *Actor) call(io CallIO) {
 					*val[i] = uint(bitstream.ReadInt(32))
 				}
 				params[i] = val
-			case 95://[]*struct
-				if k.In(i).Kind() != reflect.Slice{
-					log.Printf("func [%s] params no fit, func params [%s], params [%v]", funcName, strParams, params)
-					return
-				}
-				nLen := bitstream.ReadInt(16)
-				val := reflect.MakeSlice(k.In(i), nLen, nLen)
-				for i := 0; i < nLen; i++ {
-					packet:= base.GetMessage(bitstream.ReadString())
-					base.ReadData(packet, bitstream)
-					val.Index(i).Set(reflect.ValueOf(packet))
-				}
-				params[i] = val.Interface()
+
 
 
 			case 101:
@@ -880,22 +838,6 @@ func (this *Actor) call(io CallIO) {
 					*value = &val1
 				}
 				params[i] = val.Interface()
-			case 115:
-				if k.In(i).Kind() != reflect.Array{
-					log.Printf("func [%s] params no fit, func params [%s], params [%v]", funcName, strParams, params)
-					return
-				}
-				nLen := bitstream.ReadInt(16)
-				val := reflect.New(k.In(i)).Elem()
-				arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
-				for i := 0; i < nLen; i++ {
-					value :=  unsafe.Pointer(unsafe.Pointer(arrayPtr))
-					packet:= base.GetMessage(bitstream.ReadString())
-					base.ReadData(packet, bitstream)
-					arrayPtr = arrayPtr + base.SIZE_PTR
-					*(*unsafe.Pointer)(value) = unsafe.Pointer(reflect.ValueOf(packet).Pointer())
-				}
-				params[i] = val.Interface()
 
 
 			case base.RPC_MESSAGE://protobuf
@@ -904,6 +846,19 @@ func (this *Actor) call(io CallIO) {
 				packetBuf := bitstream.ReadBits(nLen << 3)
 				message.UnmarshalText(packet, packetBuf)
 				params[i] = packet
+
+			case base.RPC_GOB://gob
+				nLen := bitstream.ReadInt(base.Bit32)
+				packetBuf := bitstream.ReadBits(nLen << 3)
+				val := reflect.New(k.In(i))
+				buf := bytes.NewBuffer(packetBuf)
+				enc := gob.NewDecoder(buf)
+				err := enc.DecodeValue(val)
+				if err != nil{
+					log.Printf("func [%s] params no fit, func params [%s], params [%v], error[%s]", funcName, strParams, params, err)
+					return
+				}
+				params[i] = val.Elem().Interface()
 
 			default:
 				panic("func [%s] params type not supported")
@@ -916,24 +871,33 @@ func (this *Actor) call(io CallIO) {
 		}
 
 		//params no fit
-		for i := 0;  i< nCurLen; i++ {
+		/*for i := 0;  i< nCurLen; i++ {
 			if k.In(i).Kind() != reflect.TypeOf(params[i]).Kind() {
 				log.Println(k.In(i).Kind(), reflect.TypeOf(params[i]).Kind())
 				log.Printf("func [%s] params no fit, func params [%s], params [%v]", funcName, strParams, params)
 				return
 			}
-		}
+		}*/
 
 		//fmt.Printf("func [%s]",funcName)
-
 		if len(params) >= 1{
+			bParmasFit := true
 			in := make([]reflect.Value, len(params))
-			for k, param := range params {
-				in[k] = reflect.ValueOf(param)
+			for i, param := range params {
+				in[i] = reflect.ValueOf(param)
+				//params no fit
+				if k.In(i).Kind() != in[i].Kind(){
+					bParmasFit = false
+				}
 			}
-			f.Call(in)
+
+			if bParmasFit{
+				f.Call(in)
+			}else{
+				log.Printf("func [%s] params no fit, func params [%s], params [func(%v)]", funcName, strParams, in)
+			}
 		}else{
-			f.Call(nil);
+			f.Call(nil)
 		}
 	}
 }

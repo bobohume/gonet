@@ -352,24 +352,6 @@ func parse (buff []byte) {
 					val.Index(i).SetInt(int64(bitstream.ReadInt(32)))
 				}
 				params[i] = val.Interface()
-			/*case 55://[*]struct
-				if k.In(i).Kind() != reflect.Array{
-					log.Printf("func [%s] params no fit, func params [%s], params [%v]", funcName, strParams, params)
-					return
-				}
-				nLen := bitstream.ReadInt(16)
-				tVal := reflect.ArrayOf(nLen, reflect.TypeOf(k.In(i)))
-				val := reflect.New(tVal).Elem()
-				arrayPtr := uintptr(unsafe.Pointer(val.Addr().Pointer()))
-				for i := 0; i < nLen; i++ {
-					value :=  unsafe.Pointer(unsafe.Pointer(arrayPtr))
-					packet:= base.GetMessage(bitstream.ReadString())
-					base.ReadData(packet, bitstream)
-					arrayPtr = arrayPtr + unsafe.Sizeof(packet)
-					*(*unsafe.Pointer)(value) = unsafe.Pointer(reflect.ValueOf(packet).Pointer())
-				}
-
-				params[i] = val.Interface()*/
 
 			case 61:
 				val := new(bool)
@@ -427,10 +409,6 @@ func parse (buff []byte) {
 				val := new(uint)
 				*val = uint(bitstream.ReadInt(32))
 				params[i] = val
-			case 75://*struct
-				packet := base.GetMessage(bitstream.ReadString())
-				base.ReadData(packet, bitstream)
-				params[i] = packet
 
 
 

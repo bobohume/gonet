@@ -1,5 +1,6 @@
 package base
 
+/*
 import (
 	"reflect"
 	"strings"
@@ -1339,4 +1340,4 @@ func parseBType(bitstream *BitStream, classField reflect.StructField, val reflec
 		return false
 	}
 	return true
-}
+}*/

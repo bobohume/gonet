@@ -1,6 +1,8 @@
 package base
 
 import (
+	"bytes"
+	"encoding/gob"
 	"fmt"
 	"reflect"
 )
@@ -11,6 +13,7 @@ const(
 	RPC_PInt64 		= 70
 	RPC_PUInt64 	= 71
 	RPC_MESSAGE 	= 120
+	RPC_GOB			= 121
 )
 
 func GetPacket(funcName string, params ...interface{})[]byte {
@@ -169,7 +172,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 			for i := 0; i < nLen; i++ {
 				bitstream.WriteInt(int(param.([]uint)[i]), 32)
 			}
-		case "[]struct"://结构体必须重写WriteData and ReadData
+		/*case "[]struct"://结构体必须重写WriteData and ReadData
 			bitstream.WriteInt(35, 8)
 			val := reflect.ValueOf(param)
 			nLen := val.Len()
@@ -180,7 +183,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 				//val.Index(i).Addr().Interface().(Message).WriteData(bitstream)
 				//bitstream.WriteString(getMessageName(val.Index(i).Addr().Interface().(Message)))
 				//val.Index(i).Addr().Interface().(Message).WriteData(bitstream)
-			}
+			}*/
 
 
 		case "[*]bool":
@@ -418,10 +421,10 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 				bitstream.WriteInt(74, 8)
 				bitstream.WriteInt(0, 32)
 			}
-		case "*struct"://结构体必须重写WriteData and ReadData
+		/*case "*struct"://结构体必须重写WriteData and ReadData
 			bitstream.WriteInt(75, 8)
 			bitstream.WriteString(getMessageName(param))
-			WriteData(param, bitstream)
+			WriteData(param, bitstream)*/
 
 
 
@@ -580,7 +583,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 					bitstream.WriteInt(0, 32)
 				}
 			}
-		case "[]*struct"://结构体必须重写WriteData and ReadData
+		/*case "[]*struct"://结构体必须重写WriteData and ReadData
 			bitstream.WriteInt(95, 8)
 			val := reflect.ValueOf(param)
 			nLen := val.Len()
@@ -588,7 +591,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 			for i := 0; i < nLen; i++ {
 				bitstream.WriteString(getMessageName(val.Index(i).Interface()))
 				WriteData(val.Index(i).Interface(), bitstream)
-			}
+			}*/
 
 
 		case "[*]*bool":
@@ -759,7 +762,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 					bitstream.WriteInt(0, 32)
 				}
 			}
-		case "[*]*struct"://结构体必须重写WriteData and ReadData
+		/*case "[*]*struct"://结构体必须重写WriteData and ReadData
 			bitstream.WriteInt(115, 8)
 			val := reflect.ValueOf(param)
 			nLen := val.Len()
@@ -767,7 +770,16 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 			for i := 0; i < nLen; i++ {
 				bitstream.WriteString(getMessageName(val.Index(i).Interface()))
 				WriteData(val.Index(i).Interface(), bitstream)
-			}
+			}*/
+
+		case "*gob":
+			bitstream.WriteInt(121, 8)
+			buf := &bytes.Buffer{}
+			enc := gob.NewEncoder(buf)
+			enc.Encode(param)
+			nLen := buf.Len()
+			bitstream.WriteInt(nLen, Bit32)
+			bitstream.WriteBits(nLen << 3, buf.Bytes())
 
 		default:
 			fmt.Println("params type not supported", sType,  reflect.TypeOf(param))

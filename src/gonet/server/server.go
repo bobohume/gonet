@@ -1,21 +1,18 @@
 package main
 
 import (
-	"gonet/base"
 	"fmt"
-	"os"
-	"os/signal"
+	"gonet/base"
 	"gonet/server/account"
-	"gonet/server/common"
 	"gonet/server/monitor"
 	"gonet/server/netgate"
 	"gonet/server/world"
+	"os"
+	"os/signal"
 )
 
 func main() {
 	args := os.Args
-	base.RegisterMessage(&common.ServerInfo{})
-	base.RegisterMessage(&common.ClusterInfo{})
 	if args[1] == "account"{
 		account.SERVER.Init()
 	}else if args[1] == "monitor"{
