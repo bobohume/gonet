@@ -59,7 +59,7 @@ websocket模式下，要在net，[websocket注视掉如下代码](https://studyg
 
 3.world世界服务，所有逻辑，集群服务。
 
-4.monitor监控，snowflake生成workid，之后，每个微服务各自的workid，生成64位uuid，单点服务。第三方中间件：etcd分布式服发现，redis分布式缓存。
+4.第三方中间件：etcd分布式服发现，redis分布式缓存。
 
 服务器架构如下：
 ![image](https://github.com/bobohume/go-server/blob/master/框架.jpg)
