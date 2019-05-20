@@ -1,4 +1,4 @@
-package world
+package worlddb
 
 import (
 	"fmt"
@@ -30,7 +30,7 @@ type(
 		Init()//初始化
 		RegisterBlob(int, proto.Message)//注册blob，初始信息等
 		RegisterCoverBlob(v1 int, v2 int, pFunc CoverBlobFunc)//这里是blob转化
-		GetBlob(version int, blob proto.Message) (int, proto.Message)//获取blob
+		GetBlob(version int, blob proto.Message) (int, proto.Message)//获取blobx
 	}
 )
 

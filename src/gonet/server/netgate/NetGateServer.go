@@ -5,7 +5,6 @@
 	 "gonet/base"
 	 "gonet/message"
 	 "gonet/network"
-	 "gonet/server/common"
 	 "gonet/server/common/cluster"
 	 "time"
  )
@@ -13,7 +12,7 @@
 type(
 	ServerMgr struct{
 		m_pService	*network.ServerSocket
-		m_pMonitorClient *common.MonitorClient
+		//m_pMonitorClient *common.MonitorClient
 		m_Inited bool
 		m_config base.Config
 		m_Log	base.CLog
@@ -93,9 +92,9 @@ func (this *ServerMgr)Init() bool{
 	ShowMessage()
 
 	//链接monitor
-	this.m_pMonitorClient = new(common.MonitorClient)
+	/*this.m_pMonitorClient = new(common.MonitorClient)
 	monitorIp, monitroPort := this.m_config.Get2("Monitor_LANAddress", ":")
-	this.m_pMonitorClient.Connect(int(message.SERVICE_GATESERVER), monitorIp, monitroPort, UserNetIP, UserNetPort)
+	this.m_pMonitorClient.Connect(int(message.SERVICE_GATESERVER), monitorIp, monitroPort, UserNetIP, UserNetPort)*/
 
 	//初始化socket
 	this.m_pService = new(network.ServerSocket)

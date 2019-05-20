@@ -1,7 +1,5 @@
 package base
 
-import "fmt"
-
 //----------------bitsream---------------
 //for example
 //buf := make([]byte, 256)
@@ -136,7 +134,7 @@ func (this *BitStream) clear() {
 }
 
 func (this *BitStream) resize() bool{
-	fmt.Println("BitStream Resize")
+	//fmt.Println("BitStream Resize")
 	this.dataPtr = append(this.dataPtr, make([]byte, this.bitsLimite)...)
 	size := this.bitsLimite * 2
 	if size <= 0 && size >= MAX_PACKET * 10{
@@ -172,9 +170,10 @@ func (this *BitStream) WriteBits(bitCount int, bitPtr []byte) {
 		}
 	}
 
+	bitNum := this.bitNum >> 3
 	byteCount := (bitCount + 7) >> 3
 	for i, v := range bitPtr[:byteCount] {
-		this.dataPtr[(this.bitNum>>3)+i] = v
+		this.dataPtr[bitNum+i] = v
 	}
 	this.bitNum += bitCount
 }
@@ -203,7 +202,8 @@ func (this *BitStream) ReadBits(bitCount int) []byte{
 	}
 
 	byteCount := (bitCount + 7) >> 3
-	stPtr := this.dataPtr[(this.bitNum >> 3) : (this.bitNum>>3)+byteCount]
+	bitNum := this.bitNum >> 3
+	stPtr := this.dataPtr[bitNum : bitNum + byteCount]
 	this.bitNum += bitCount
 	return stPtr
 }
@@ -256,12 +256,12 @@ func (this *BitStream) WriteFlag(val bool) bool {
 		this.flagNum = this.bitNum
 
 		if this.bitNum+8 < this.maxWriteBitNum {
-			this.bitNum += 8 //Ray; 跳开8个用于写flag
+			this.bitNum += 8 //跳开8个用于写flag
 		} else {
 			if !this.resize(){
 				this.tailFlag = true
 			}else {
-				this.bitNum += 8 //Ray; 跳开8个用于写flag
+				this.bitNum += 8 //跳开8个用于写flag
 			}
 		}
 	}

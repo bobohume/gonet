@@ -12,9 +12,9 @@ import (
 	"gonet/server/world/toprank"
 )
 
+
 func InitMgr(serverName string){
 	if serverName == "account"{
-	}else if serverName == "monitor"{
 	}else if serverName == "netgate"{
 	}else if serverName == "world"{
 		cmd.Init()

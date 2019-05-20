@@ -93,10 +93,7 @@ func (this *TopMgr) loadDB() {
 	this.clearRank()
 	rows, err := this.m_db.Query(fmt.Sprintf("select * from %s order by `score` limit 0, %d", sqlTable, TOP_RANK_MAX));
 	//row, err := this.m_db.Query(db.LoadSql(pData, sqlTable, ""));
-	if err != nil{
-		common.DBERROR("toprank LoadDB", err)
-	}
-	rs := db.Query(rows)
+	rs := db.Query(rows, err)
 	for rs.Next(){
 		pData := &TopRank{}
 		loadTopRank(rs.Row(), pData)

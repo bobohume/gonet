@@ -76,7 +76,7 @@ func (this *CMailMgr) sendMail(sender int64, recver int64, money int, itemId int
 	rows, err := this.m_db.Query(fmt.Sprintf("call `sp_updatemail`(%d,%d,'%s',%d,%d,%d,%d,'%s',%d,'%s','%s')", base.UUID.UUID(), sender, "",money, itemId, itemNum, recver, "", isSystem, title, content))
 	if err == nil && rows != nil{
 		if rows.NextResultSet(){
-			rs := db.Query(rows)
+			rs := db.Query(rows, err)
 			if rs.Next(){
 				err := rs.Row().Int("@err")
 				m.Id = rs.Row().Int64("@mailid")
@@ -115,22 +115,20 @@ func loadMail(row db.IRow, m *MailItem){
 
 func (this *CMailMgr) loadMail(playerid int64, mailList []*MailItem, recvCount int, noReadCount int){
 	rows, err := this.m_db.Query(db.LoadSql(MailItem{}, "tbl_mail", fmt.Sprintf("recver=%d", playerid)))
-	if err == nil{
-		rs := db.Query(rows)
-		if rs.Next(){
-			m := &MailItem{}
-			loadMail(rs.Row(), m)
-			if err != nil{
-				world.SERVER.GetLog().Printf("load mail err[%s]", err.Error())
-			}else{
-				mailList = append(mailList, m)
-				recvCount++
-				if m.IsRead == 0{
-					noReadCount++
-				}
-				//fmt.Println(m)
-				world.SERVER.GetLog().Printf("读取玩家[%d]邮件成功", playerid)
+	rs := db.Query(rows, err)
+	if rs.Next(){
+		m := &MailItem{}
+		loadMail(rs.Row(), m)
+		if err != nil{
+			world.SERVER.GetLog().Printf("load mail err[%s]", err.Error())
+		}else{
+			mailList = append(mailList, m)
+			recvCount++
+			if m.IsRead == 0{
+				noReadCount++
 			}
+			//fmt.Println(m)
+			world.SERVER.GetLog().Printf("读取玩家[%d]邮件成功", playerid)
 		}
 	}
 }
@@ -138,8 +136,8 @@ func (this *CMailMgr) loadMail(playerid int64, mailList []*MailItem, recvCount i
 func (this *CMailMgr) loadMialById(mailid int64) *MailItem{
 	m := &MailItem{}
 	rows, err := this.m_db.Query(db.LoadSql(m, "tbl_mail", fmt.Sprintf("id=%d", mailid)))
-	rs := db.Query(rows)
-	if err == nil && rs.Next() {
+	rs := db.Query(rows, err)
+	if rs.Next() {
 		loadMail(rs.Row(), m)
 		return m
 	}

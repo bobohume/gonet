@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"gonet/base"
 	"gonet/server/account"
-	"gonet/server/monitor"
 	"gonet/server/netgate"
 	"gonet/server/world"
 	"os"
@@ -15,8 +14,6 @@ func main() {
 	args := os.Args
 	if args[1] == "account"{
 		account.SERVER.Init()
-	}else if args[1] == "monitor"{
-		monitor.SERVER.Init()
 	}else if args[1] == "netgate"{
 		netgate.SERVER.Init()
 	}else if args[1] == "world"{

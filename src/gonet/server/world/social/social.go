@@ -158,10 +158,7 @@ func (this *SocialMgr) loadSocialDB(PlayerId int64, Type int8) SOCIALITEMMAP{
 	SocialMap := make(SOCIALITEMMAP)
 	Item := &SocialItem{}
 	rows, err := this.m_db.Query(db.LoadSql(Item, sqlTable, fmt.Sprintf("player_id=%d and type=%d", PlayerId, Type)))
-	if err != nil{
-		return SocialMap
-	}
-	rs := db.Query(rows)
+	rs := db.Query(rows, err)
 	if rs.Next(){
 		loadSocialDB(rs.Row(), Item)
 		SocialMap[Item.TargetId] = Item
@@ -172,8 +169,8 @@ func (this *SocialMgr) loadSocialDB(PlayerId int64, Type int8) SOCIALITEMMAP{
 func (this *SocialMgr) loadSocialById(PlayerId, TargetId int64, Type int8) *SocialItem{
 	Item := &SocialItem{}
 	rows, err := this.m_db.Query(db.LoadSql(Item, sqlTable, fmt.Sprintf("player_id=%d and type=%d and target_id=%d", PlayerId, Type, TargetId)))
-	rs := db.Query(rows)
-	if err != nil && rs.Next(){
+	rs := db.Query(rows, err)
+	if rs.Next(){
 		loadSocialDB(rs.Row(), Item)
 		return Item
 	}

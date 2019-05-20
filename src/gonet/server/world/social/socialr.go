@@ -98,11 +98,7 @@ func (this *SocialMgrR) loadSocialDB(PlayerId int64, Type int8) SOCIALITEMMAP{
 	SocialMap := make(SOCIALITEMMAP)
 	Item := &SocialItem{}
 	rows, err := this.m_db.Query(db.LoadSql(Item, sqlTable, fmt.Sprintf("player_id=%d and type=%d", PlayerId, Type)))
-	if err != nil{
-		return SocialMap
-	}
-
-	rs := db.Query(rows)
+	rs := db.Query(rows, err)
 	if rs.Next(){
 		db.LoadObjSql(&Item, rs.Row())
 		SocialMap[Item.TargetId] = Item
@@ -113,8 +109,8 @@ func (this *SocialMgrR) loadSocialDB(PlayerId int64, Type int8) SOCIALITEMMAP{
 func (this *SocialMgrR) loadSocialById(PlayerId, TargetId int64, Type int8) *SocialItem{
 	Item := &SocialItem{}
 	rows, err := this.m_db.Query(db.LoadSql(Item, sqlTable, fmt.Sprintf("player_id=%d and type=%d and target_id=%d", PlayerId, Type, TargetId)))
-	rs := db.Query(rows)
-	if err != nil && rs.Next(){
+	rs := db.Query(rows, err)
+	if rs.Next(){
 		db.LoadObjSql(&Item, rs.Row())
 		return Item
 	}
@@ -135,7 +131,7 @@ func (this *SocialMgrR) makeLink(PlayerId, TargetId int64, Type int8) int{
 	}
 
 	SocialMap := SOCIALITEMMAP{}
-	if rd.QueryKV(world.RdID, "HGETALL", getRdKey(PlayerId), &SocialMap) == nil{
+	if rd.QueryKV(&SocialMap, world.RdID, "HGETALL", getRdKey(PlayerId)) == nil{
 
 	}else{
 		SocialMap = this.loadSocialDB(PlayerId, Type)

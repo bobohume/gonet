@@ -32,14 +32,14 @@ func getHRdKey(nType int) string{
 func (this *TopMgrR) loadDB(nType int) {
 	this.m_Log.Println("读取排行榜")
 	result := new(int64)
-	rd.Query(world.RdID, "ZCARD", getZRdKey(nType), result)
+	rd.Query(result, world.RdID, "ZCARD", getZRdKey(nType))
 	if *result == 0{
 		fmt.Println(db.LoadSql(&TopRank{}, sqlTable, fmt.Sprintf("type = %d order by `score` limit 0, %d", nType,TOP_RANK_MAX)))
 		rows, err := this.m_db.Query(db.LoadSql(&TopRank{}, sqlTable, fmt.Sprintf("type = %d order by `score` limit 0, %d", nType,TOP_RANK_MAX)));
 		if err != nil{
 			common.DBERROR("toprankr LoadDB", err)
 		}
-		rs := db.Query(rows)
+		rs := db.Query(rows, err)
 		topList := make([]*TopRank, 0)
 		rs.Obj(&topList)
 		sdata := []interface{}{}
@@ -109,7 +109,7 @@ func (this *TopMgrR) clearTop(nType int){
 
 func (this *TopMgrR) getRank(nType int, id int64) *TopRank{
 	pData := &TopRank{}
-	if rd.Query(world.RdID, "HGET", getHRdKey(nType), pData, id) == nil{
+	if rd.Query(pData, world.RdID, "HGET", getHRdKey(nType), id) == nil{
 		return pData
 	}
 	return nil
@@ -128,7 +128,7 @@ func (this *TopMgrR) createRank(nType int, id int64, name string, score,val0,val
 
 func (this* TopMgrR) getPlayerRank(nType int, playerId int64) int{
 	rank := new(int64)
-	if rd.Query(world.RdID, "ZREVRANK", getZRdKey(nType), rank, playerId) == nil{
+	if rd.Query(rank, world.RdID, "ZREVRANK", getZRdKey(nType), playerId) == nil{
 		return int(*rank)
 	}
 	return -1

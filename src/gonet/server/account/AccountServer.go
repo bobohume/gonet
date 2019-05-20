@@ -7,7 +7,6 @@
 	 "gonet/db"
 	 "gonet/message"
 	 "gonet/network"
-	 "gonet/server/common"
 	 "gonet/server/common/cluster"
 	 "log"
  )
@@ -16,13 +15,13 @@ type(
 	ServerMgr struct{
 		m_pService	*network.ServerSocket
 		m_pServerMgr *ServerSocketManager
-		m_pMonitorClient *common.MonitorClient
 		m_pActorDB *sql.DB
 		m_Inited bool
 		m_config base.Config
 		m_Log	base.CLog
 		m_AccountMgr *AccountMgr
 		m_Cluster *cluster.Service
+		m_SnowFlake *cluster.Snowflake
 	}
 
 	IServerMgr interface{
@@ -92,11 +91,6 @@ func (this *ServerMgr)Init() bool{
 	this.m_pServerMgr = new(ServerSocketManager)
 	this.m_pServerMgr.Init(1000)
 
-	//链接monitor
-	this.m_pMonitorClient = new(common.MonitorClient)
-	monitorIp, monitroPort := this.m_config.Get2("Monitor_LANAddress", ":")
-	this.m_pMonitorClient.Connect(int(message.SERVICE_ACCOUNTSERVER), monitorIp, monitroPort, UserNetIP, UserNetPort)
-
 	//初始化socket
 	this.m_pService = new(network.ServerSocket)
 	port := base.Int(UserNetPort)
@@ -110,6 +104,10 @@ func (this *ServerMgr)Init() bool{
 	this.m_pService.BindPacketFunc(this.m_AccountMgr.PacketFunc)
 	this.m_pService.BindPacketFunc(this.m_pServerMgr.PacketFunc)
 
+	//snowflake
+	this.m_SnowFlake = cluster.NewSnowflake(UserNetIP, base.Int(UserNetPort), EtcdEndpoints)
+
+	//注册account集群
 	this.m_Cluster = cluster.NewService(int(message.SERVICE_ACCOUNTSERVER), UserNetIP, base.Int(UserNetPort), EtcdEndpoints)
 	return  false
 }

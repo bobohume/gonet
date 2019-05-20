@@ -78,7 +78,7 @@ func (this* PlayerMgr) Init(num int){
 		rows, err := this.m_db.Query(fmt.Sprintf("call `sp_createplayer`(%d,'%s',%d, %d)", accountId, playername, sex, playerId))
 		if err == nil && rows != nil{
 			if rows.NextResultSet() && rows.NextResultSet(){
-				rs := db.Query(rows)
+				rs := db.Query(rows, err)
 				if rs.Next(){
 					err := rs.Row().Int("@err")
 					playerId := rs.Row().Int64("@playerId")
@@ -120,13 +120,11 @@ func (this *PlayerMgr) AddPlayer(accountId int64) *Player{
 		PlayerList := make([]int64, 0)
 		PlayerNum := 0
 		rows, err := this.m_db.Query(fmt.Sprintf("select player_id from tbl_player where account_id=%d", accountId))
-		rs := db.Query(rows)
-		if err == nil{
-			for rs.Next(){
-				PlayerId := rs.Row().Int64("player_id")
-				PlayerList = append(PlayerList, PlayerId)
-				PlayerNum++
-			}
+		rs := db.Query(rows, err)
+		for rs.Next(){
+			PlayerId := rs.Row().Int64("player_id")
+			PlayerList = append(PlayerList, PlayerId)
+			PlayerNum++
 		}
 		return PlayerList, PlayerNum
 	}

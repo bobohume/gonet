@@ -73,7 +73,6 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 			bitstream.WriteInt(14, 8)
 			bitstream.WriteInt(int(param.(uint)), 32)
 
-
 		case "[]bool":
 			bitstream.WriteInt(21, 8)
 			nLen := len(param.([]bool))
@@ -172,18 +171,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 			for i := 0; i < nLen; i++ {
 				bitstream.WriteInt(int(param.([]uint)[i]), 32)
 			}
-		/*case "[]struct"://结构体必须重写WriteData and ReadData
-			bitstream.WriteInt(35, 8)
-			val := reflect.ValueOf(param)
-			nLen := val.Len()
-			bitstream.WriteInt(nLen, 16)
-			for i := 0; i < nLen; i++ {
-				bitstream.WriteString(getMessageName(val.Index(i).Addr().Interface()))
-				WriteData(val.Index(i).Addr().Interface(), bitstream)
-				//val.Index(i).Addr().Interface().(Message).WriteData(bitstream)
-				//bitstream.WriteString(getMessageName(val.Index(i).Addr().Interface().(Message)))
-				//val.Index(i).Addr().Interface().(Message).WriteData(bitstream)
-			}*/
+
 
 
 		case "[*]bool":
@@ -298,15 +286,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 			for i := 0; i < nLen; i++ {
 				bitstream.WriteInt(int(val.Index(i).Uint()), 32)
 			}
-		/*case "[*]struct"://结构体必须重写WriteData and ReadData
-			bitstream.WriteInt(55, 8)
-			val := reflect.ValueOf(param)
-			nLen := val.Len()
-			bitstream.WriteInt(nLen, 16)
-			for i := 0; i < nLen; i++ {
-				bitstream.WriteString(getMessageName(val.Index(i).Interface()))
-				WriteData(val.Index(i), bitstream)
-			}*/
+
 
 
 		case "*bool":
@@ -421,10 +401,6 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 				bitstream.WriteInt(74, 8)
 				bitstream.WriteInt(0, 32)
 			}
-		/*case "*struct"://结构体必须重写WriteData and ReadData
-			bitstream.WriteInt(75, 8)
-			bitstream.WriteString(getMessageName(param))
-			WriteData(param, bitstream)*/
 
 
 
@@ -583,15 +559,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 					bitstream.WriteInt(0, 32)
 				}
 			}
-		/*case "[]*struct"://结构体必须重写WriteData and ReadData
-			bitstream.WriteInt(95, 8)
-			val := reflect.ValueOf(param)
-			nLen := val.Len()
-			bitstream.WriteInt(nLen, 16)
-			for i := 0; i < nLen; i++ {
-				bitstream.WriteString(getMessageName(val.Index(i).Interface()))
-				WriteData(val.Index(i).Interface(), bitstream)
-			}*/
+
 
 
 		case "[*]*bool":
@@ -762,15 +730,8 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 					bitstream.WriteInt(0, 32)
 				}
 			}
-		/*case "[*]*struct"://结构体必须重写WriteData and ReadData
-			bitstream.WriteInt(115, 8)
-			val := reflect.ValueOf(param)
-			nLen := val.Len()
-			bitstream.WriteInt(nLen, 16)
-			for i := 0; i < nLen; i++ {
-				bitstream.WriteString(getMessageName(val.Index(i).Interface()))
-				WriteData(val.Index(i).Interface(), bitstream)
-			}*/
+
+
 
 		case "*gob":
 			bitstream.WriteInt(121, 8)

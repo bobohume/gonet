@@ -37,7 +37,7 @@ func (this *EventProcess) Init(num int) {
 		rows, err := this.m_db.Query(fmt.Sprintf("call `usp_activeaccount`('%s', '%s', %d)", accountName, password, base.UUID.UUID()))
 		if err == nil && rows != nil{
 			if rows.NextResultSet(){
-				rs := db.Query(rows)
+				rs := db.Query(rows, err)
 				if rs.Next(){
 					accountId = rs.Row().Int64("@accountId")
 					result = rs.Row().String("@result")
@@ -74,7 +74,7 @@ func (this *EventProcess) Init(num int) {
 			rows, err := this.m_db.Query(fmt.Sprintf("call `usp_login`('%s', '%s')", accountName, password))
 			if err == nil && rows != nil{
 				if(rows.NextResultSet()){//存储过程反馈多个select的时候
-					rs := db.Query(rows)
+					rs := db.Query(rows, err)
 					if rs.Next(){
 						accountId := rs.Row().Int64("@accountId")
 						result := rs.Row().String("@result")
@@ -107,7 +107,7 @@ func (this *EventProcess) Init(num int) {
 	this.RegisterCall("W_A_CreatePlayer", func(accountId int64, playername string, sex int32, socketId int) {
 		rows, err := this.m_db.Query(fmt.Sprintf("call `usp_createplayer`(%d, '%s', %d)", accountId, playername, base.UUID.UUID()))
 		if err == nil && rows != nil{
-			rs := db.Query(rows)
+			rs := db.Query(rows, err)
 			if rs.Next(){
 				err := rs.Row().Int("@err")
 				playerId := rs.Row().Int64("@playerId")

@@ -3,6 +3,7 @@ package base
 import (
 	"bytes"
 	"encoding/gob"
+	"reflect"
 )
 
 // gobencode
@@ -46,6 +47,15 @@ func (this *GobList) UnMarsh(buf []byte, data interface{}) {
 	node.buf[1].Reset()
 	node.buf[1].Write(buf)
 	node.dec.Decode(data)
+	this.m_Chan <- n
+}
+
+func (this *GobList) UnMarshValue(buf []byte, data reflect.Value){
+	n := <- this.m_Chan
+	node := this.m_Gobs[n]
+	node.buf[1].Reset()
+	node.buf[1].Write(buf)
+	node.dec.DecodeValue(data)
 	this.m_Chan <- n
 }
 

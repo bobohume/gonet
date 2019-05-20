@@ -88,8 +88,8 @@ func loadAccount(row db.IRow, a *AccountDB){
 func (this *AccountMgr) AddAccount(accountId int64) *Account{
 	LoadAccountDB := func(accountId int64) *AccountDB {
 		rows, err := this.m_db.Query(fmt.Sprintf("select account_id, account_name, status, login_time, logout_time, login_ip from tbl_account where account_id=%d", accountId))
-		rs := db.Query(rows)
-		if err == nil && rs.Next() {
+		rs := db.Query(rows, err)
+		if rs.Next() {
 			pAccountDB := &AccountDB{}
 			pAccountDB.AccountId = accountId
 			loadAccount(rs.Row(), pAccountDB)

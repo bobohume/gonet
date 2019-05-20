@@ -224,10 +224,10 @@ func NewRow() *Row{
 	return row
 }
 
-func Query(rows *sql.Rows) *Rows{
+func Query(rows *sql.Rows, err error) *Rows{
 	rs := &Rows{}
 	rs.init()
-	if rows != nil{
+	if rows != nil && err == nil{
 		cloumns, err := rows.Columns()
 		cloumnsLen := len(cloumns)
 		if err == nil && cloumnsLen > 0{

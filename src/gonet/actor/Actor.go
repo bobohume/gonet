@@ -840,12 +840,15 @@ func (this *Actor) call(io CallIO) {
 				params[i] = val.Interface()
 
 
+
 			case base.RPC_MESSAGE://protobuf
 				packet := message.GetPakcetByName(funcName)
 				nLen := bitstream.ReadInt(base.Bit32)
 				packetBuf := bitstream.ReadBits(nLen << 3)
 				message.UnmarshalText(packet, packetBuf)
 				params[i] = packet
+
+
 
 			case base.RPC_GOB://gob
 				nLen := bitstream.ReadInt(base.Bit32)
@@ -878,8 +881,8 @@ func (this *Actor) call(io CallIO) {
 				return
 			}
 		}*/
-
 		//fmt.Printf("func [%s]",funcName)
+
 		if len(params) >= 1{
 			bParmasFit := true
 			in := make([]reflect.Value, len(params))

@@ -75,7 +75,7 @@ func (this* Player) Init(num int){
 		rows, err := this.m_db.Query(fmt.Sprintf("call `sp_checkcreatePlayer`(%d)", this.AccountId))
 		if err == nil && rows != nil{
 			if rows.NextResultSet(){
-				rs := db.Query(rows)
+				rs := db.Query(rows, err)
 				if rs.Next(){
 					err := rs.Row().Int("@err")
 					//register

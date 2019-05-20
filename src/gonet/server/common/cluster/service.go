@@ -11,7 +11,7 @@ import (
 )
 
 const(
-	ETCD_DIR =  "service/"
+	ETCD_DIR =  "server/"
 )
 
 type Service struct {
@@ -26,6 +26,7 @@ func (this *Service) Ping(){
 		this.m_KeysAPI.Set(context.Background(), key, string(data), &client.SetOptions{
 			TTL: time.Second * 10,
 		})
+
 		time.Sleep(time.Second * 3)
 	}
 }

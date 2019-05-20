@@ -51,7 +51,7 @@ func OpenRedisPool(ip, pwd string) error {
 }
 
 ///Get 获取一个值
-func Get(key string, database int) ([]byte, error){
+func Get(database int, key string) ([]byte, error){
 	c := POOL.Get()
 	defer c.Close()
 
@@ -61,7 +61,7 @@ func Get(key string, database int) ([]byte, error){
 }
 
 //Set 设置一个值
-func Set(key string, val interface{}, timeout int, database int) (err error) {
+func Set(database int, timeout int, key string, val interface{}) (err error) {
 	c := POOL.Get()
 	defer c.Close()
 
@@ -75,7 +75,7 @@ func Set(key string, val interface{}, timeout int, database int) (err error) {
 }
 
 //IsExist 判断key是否存在
-func Exist(key string, database int) bool {
+func Exist(database int, key string) bool {
 	c := POOL.Get()
 	defer c.Close()
 	c.Do("SELECT", database)
@@ -88,7 +88,7 @@ func Exist(key string, database int) bool {
 }
 
 //Delete 删除
-func Delete(key string, database int) error {
+func Delete(database int, key string) error {
 	c := POOL.Get()
 	defer c.Close()
 	c.Do("SELECT", database)
@@ -100,11 +100,11 @@ func Delete(key string, database int) error {
 }
 
 //Expire 超时
-func Expire(key string, time, database int) error {
+func Expire(database, timeout int, key string) error {
 	c := POOL.Get()
 	defer c.Close()
 	c.Do("SELECT", database)
-	if _, err := c.Do("EXPIRE", key, time); err != nil {
+	if _, err := c.Do("EXPIRE", key, timeout); err != nil {
 		return err
 	}
 
@@ -132,7 +132,7 @@ func BytesType(obj interface{}) BYTES_TYPE{
 }
 
 //redis set
-func Exec(time int, database int, cmd, key string, args ...interface{}) error{
+func Exec(database int, timeout int, cmd, key string, args ...interface{}) error{
 	defer func() {
 		if err := recover(); err != nil{
 			base.TraceCode(err)
@@ -171,14 +171,14 @@ func Exec(time int, database int, cmd, key string, args ...interface{}) error{
 		vargs = append(vargs, args...)
 	}
 	c.Send(cmd, vargs...)
-	if time != -1{
-		c.Send("EXPIRE", key, time)
+	if timeout != -1{
+		c.Send("EXPIRE", key, timeout)
 	}
 	c.Flush()
 	return nil
 }
 
-func ExecKV(time int, database int, cmd, key string, args ...interface{}) error{
+func ExecKV(database int, timeout int, cmd, key string, args ...interface{}) error{
 	defer func() {
 		if err := recover(); err != nil{
 			base.TraceCode(err)
@@ -230,15 +230,15 @@ func ExecKV(time int, database int, cmd, key string, args ...interface{}) error{
 		vargs = append(vargs, args...)
 	}
 	c.Send(cmd, vargs...)
-	if time != -1{
-		c.Send("EXPIRE", key, time)
+	if timeout != -1{
+		c.Send("EXPIRE", key, timeout)
 	}
 	c.Flush()
 	return nil
 }
 
 //redis get
-func Query(database int, cmd, key string, obj interface{}, args ...interface{}) error{
+func Query(obj interface{}, database int, cmd, key string, args ...interface{}) error{
 	defer func() {
 		if err := recover(); err != nil{
 			base.TraceCode(err)
@@ -358,7 +358,7 @@ func Query(database int, cmd, key string, obj interface{}, args ...interface{}) 
 }
 
 //redis get map
-func QueryKV(database int, cmd, key string, obj interface{}, args ...interface{}) error{
+func QueryKV(obj interface{}, database int, cmd, key string, args ...interface{}) error{
 	defer func() {
 		if err := recover(); err != nil{
 			base.TraceCode(err)

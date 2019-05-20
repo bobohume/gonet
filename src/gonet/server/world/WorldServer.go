@@ -1,22 +1,20 @@
-   package world
+package world
 
- import (
-	 "database/sql"
-	 "github.com/golang/protobuf/proto"
-	 "gonet/base"
-	 "gonet/db"
-	 "gonet/message"
-	 "gonet/network"
-	 "gonet/rd"
-	 "gonet/server/common"
-	 "gonet/server/common/cluster"
-	 "log"
- )
+import (
+	"database/sql"
+	"github.com/golang/protobuf/proto"
+	"gonet/base"
+	"gonet/db"
+	"gonet/message"
+	"gonet/network"
+	"gonet/rd"
+	"gonet/server/common/cluster"
+	"log"
+)
 
 type(
 	ServerMgr struct{
 		m_pService	*network.ServerSocket
-		m_pMonitorClient *common.MonitorClient
 		m_pServerMgr *ServerSocketManager
 		m_pActorDB *sql.DB
 		m_Inited bool
@@ -24,6 +22,7 @@ type(
 		m_Log	base.CLog
 		m_Cluster *cluster.Service
 		m_AccountCluster *cluster.Cluster
+		m_SnowFlake *cluster.Snowflake
 	}
 
 	IServerMgr interface{
@@ -104,11 +103,6 @@ func (this *ServerMgr)Init() bool{
 		rd.OpenRedisPool(this.m_config.Get("Redis_Host"), this.m_config.Get("Redis_Pwd"))
 	}
 
-	//链接monitor
-	this.m_pMonitorClient = new(common.MonitorClient)
-	monitorIp, monitroPort := this.m_config.Get2("Monitor_LANAddress", ":")
-	this.m_pMonitorClient.Connect(int(message.SERVICE_WORLDSERVER), monitorIp, monitroPort, UserNetIP, UserNetPort)
-
 	//初始化socket
 	this.m_pService = new(network.ServerSocket)
 	port := base.Int(UserNetPort)
@@ -116,6 +110,9 @@ func (this *ServerMgr)Init() bool{
 	this.m_pService.SetMaxReceiveBufferSize(1024)
 	this.m_pService.SetMaxSendBufferSize(1024)
 	this.m_pService.Start()
+
+	//snowflake
+	this.m_SnowFlake = cluster.NewSnowflake(UserNetIP, base.Int(UserNetPort), EtcdEndpoints)
 
 	//注册到集群
 	this.m_Cluster = cluster.NewService(int(message.SERVICE_WORLDSERVER), UserNetIP, base.Int(UserNetPort), EtcdEndpoints)

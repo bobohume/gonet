@@ -51,7 +51,6 @@ func loadSimple(row db.IRow, s *SimplePlayerData){
 
 func (this *PlayerSimpleMgr) Init(num int) {
 	this.Actor.Init(num)
-
 	this.m_Locker = &sync.RWMutex{}
 	this.m_db = world.SERVER.GetDB()
 	this.m_Log = world.SERVER.GetLog()
@@ -67,7 +66,7 @@ func (this *PlayerSimpleMgr) LoadSimplePlayerDatas() {
 	if err != nil{
 		common.DBERROR("LoadSimplePlayerDatas", err)
 	}
-	rs := db.Query(rows)
+	rs := db.Query(rows, err)
 	for rs.Next(){
 		pData := &SimplePlayerData{}
 		loadSimple(rs.Row(), pData)
@@ -132,7 +131,7 @@ func (this *PlayerSimpleMgr) GetPlayerName(playerId int64) string{
 func LoadSimplePlayerData(playerId int64) *SimplePlayerData{
 	pData := new(SimplePlayerData)
 	rows, err := world.SERVER.GetDB().Query(db.LoadSql(pData, "tbl_player", fmt.Sprintf("player_id =%d", playerId)))
-	rs := db.Query(rows)
+	rs := db.Query(rows, err)
 	if err == nil && rs.Next(){
 		loadSimple(rs.Row(), pData)
 		return pData
@@ -145,8 +144,8 @@ func LoadSimplePlayerData(playerId int64) *SimplePlayerData{
 func LoadSimplePlayerDataByName(name string) *SimplePlayerData{
 	pData := new(SimplePlayerData)
 	rows, err := world.SERVER.GetDB().Query(db.LoadSql(pData, "tbl_player", fmt.Sprintf("player_name='%s'", name)))
-	rs := db.Query(rows)
-	if err == nil && rs.Next(){
+	rs := db.Query(rows, err)
+	if rs.Next(){
 		loadSimple(rs.Row(), pData)
 		return pData
 	}
@@ -158,13 +157,11 @@ func LoadSimplePlayerDatas(accountId int64) []*SimplePlayerData{
 	nPlayerNum := 0
 	pData := new(SimplePlayerData)
 	rows, err := world.SERVER.GetDB().Query(db.LoadSql(pData, "tbl_player", fmt.Sprintf("account_id=%d", accountId)))
-	rs := db.Query(rows)
-	if err == nil{
-		for rs.Next(){
-			loadSimple(rs.Row(), pData)
-			pList = append(pList, pData)
-			nPlayerNum++
-		}
+	rs := db.Query(rows, err)
+	for rs.Next(){
+		loadSimple(rs.Row(), pData)
+		pList = append(pList, pData)
+		nPlayerNum++
 	}
 	return pList
 }

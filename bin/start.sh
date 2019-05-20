@@ -1,5 +1,5 @@
-nohup ./server "monitor" &
-sleep 1
+#nohup ./server "monitor" &
+#sleep 1
 nohup ./server "world" &
 sleep 1
 nohup ./server "account" &

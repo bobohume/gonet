@@ -1,6 +1,7 @@
 package base
 
 import (
+	"log"
 	"sync"
 	"time"
 )
@@ -26,6 +27,7 @@ const (
 	sequenceMask   = int64(-1 ^ (-1 << sequenceBits)) //
 	workeridShift  = sequenceBits                     //机器id左移位数
 	timestampShift = sequenceBits + workeridBits      //时间戳左移位数
+	WorkeridMax    = workeridMax					  //集群自增量
 )
 
 type(
@@ -56,11 +58,12 @@ type(
 
 func (this *Snowflake) Init(workerid int64){
 	if workerid < 0 || workerid > workeridMax {
-		GLOG.Fatalln("workerid must be between 0 and 1023")
+		log.Fatalln("workerid must be between 0 and 1023")
 		return
 	}
 
 	this.workerid = workerid
+	log.Println("snowflake [  workid : ", workerid, "]")
 }
 
 // Generate creates and returns a unique snowflake ID

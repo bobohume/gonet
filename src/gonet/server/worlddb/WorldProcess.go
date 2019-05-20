@@ -1,4 +1,4 @@
-package world
+package worlddb
 
 import (
 	"gonet/actor"

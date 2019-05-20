@@ -75,10 +75,6 @@ func GetMessageCode2(strName string) uint32 {
 	return DecryptName1(strName);
 }
 
-var(
-
-)
-
 func GetMessageCode1(strName string) uint32 {
 	return crc32.ChecksumIEEE([]byte(strName))
 	//return GetMessageCode2(strName)
