@@ -5,9 +5,8 @@ ADD . /go/
 WORKDIR /go/bin
 RUN ["/bin/sh", "./build.sh"]
 RUN chmod +x server
-EXPOSE 8081 31100 31200 31300 31700
+EXPOSE 8081 31200 31300 31700
 #ENTRYPOINT  ["./server", "netgate"]
-CMD ["./server", "monitor"]
 CMD ["./server", "account"]
 CMD ["./server", "world"]
 CMD ["./server", "netgate"]
