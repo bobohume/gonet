@@ -54,7 +54,7 @@ actor消息队列
     
     funcName为回调函数名字
     
-    params可以是基础类型:int,uint32,*int,*uint32,[]int,[]uint32,[6]int,[6]uint32,支持结构体,要提前注册(base.RegisterMessage)
+    params可以是基础类型:int,uint32,*int,*uint32,[]int,[]uint32,[6]int,[6]uint32,支持结构体不需要注册
      
         
 actor消息队列回调
