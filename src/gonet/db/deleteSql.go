@@ -1,8 +1,8 @@
 package db
 
 import (
-	"gonet/base"
 	"fmt"
+	"gonet/base"
 	"log"
 	"reflect"
 	"strconv"
@@ -31,6 +31,12 @@ func getDeleteSql(classField reflect.StructField, classVal reflect.Value) (bool,
 		strsql = &primarysql
 	}else{
 		strsql = &noramlsql
+	}
+	//过略json
+	if isJson(classField){
+		return true, noramlsql, primarysql
+	} else if isBlob(classField){
+		return true, noramlsql, primarysql
 	}
 	switch sType {
 	case "*float64":

@@ -1,6 +1,8 @@
 package db
 
 import (
+	"encoding/json"
+	"github.com/gogo/protobuf/proto"
 	"gonet/base"
 	"reflect"
 	"fmt"
@@ -31,6 +33,18 @@ func getUpdateSql(classField reflect.StructField, classVal reflect.Value) (bool,
 		strsql = &primarysql
 	}else{
 		strsql = &noramlsql
+	}
+	if isJson(classField){
+		data, _ := json.Marshal(classVal.Interface())
+		*strsql += fmt.Sprintf(update_sql, classType, data)
+		return true, noramlsql, primarysql
+	}else if isBlob(classField){
+		for classVal.Kind() == reflect.Ptr {
+			classVal = classVal.Elem()
+		}
+		data, _ := proto.Marshal(classVal.Addr().Interface().(proto.Message))
+		*strsql += fmt.Sprintf(update_sql, classType, data)
+		return true, noramlsql, primarysql
 	}
 	switch sType {
 	case "*float64":
@@ -201,12 +215,8 @@ func getUpdateSql(classField reflect.StructField, classVal reflect.Value) (bool,
 		if !classVal.IsNil() {
 			value = classVal.Interface().([]uint8)
 		}
-		if isBlob(classField){
-			*strsql += fmt.Sprintf(update_sql, classType, classVal.Bytes())
-		}else{
-			for i,v := range value{
-				*strsql += fmt.Sprintf(update_sqlarray, classType, i, strconv.FormatUint(uint64(v), 10))
-			}
+		for i,v := range value{
+			*strsql += fmt.Sprintf(update_sqlarray, classType, i, strconv.FormatUint(uint64(v), 10))
 		}
 	case "[]int16":
 		value := []int16{}
@@ -457,7 +467,7 @@ func UpdateSqlEx(obj interface{}, sqltable string, params ...string) string {
 
 		sf := protoType.Field(i)
 		_, exist := nameMap[getSqlName(sf)]
-		if exist{
+		if exist || isPrimary(sf){
 			bRight, name, value := getUpdateSql(sf, protoVal.Field(i))
 			if !bRight{
 				errorStr := fmt.Sprintf("UpdateSqlEx error %s", reflect.TypeOf(obj).Name())

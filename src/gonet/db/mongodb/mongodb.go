@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+// 支持map[int] string
+//github.com/globalsign/mgo
 // session
 type Session struct {
 	*mgo.Session

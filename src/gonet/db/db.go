@@ -46,12 +46,6 @@ type(
 	}
 )
 
-// BinaryData的类型是blob/longblob
-func addData(db *sql.DB, data []byte) error {
-	_, err := db.Exec("INSERT INTO MyTable(BinaryData) VALUES(?)", data)
-	return err
-}
-
 //---获取datetime时间
 func  GetDBTimeString(t int64)string{
 	tm := time.Unix(t, 0)
@@ -74,6 +68,7 @@ func getSqlName(sf reflect.StructField) string{
 	return strings.ToLower(sf.Name)
 }
 
+//主键 `sql:"primary"`
 func isPrimary(sf reflect.StructField) bool{
 	tagMap := base.ParseTag(sf, "sql")
 	if _, exist := tagMap["primary"];exist{
@@ -83,6 +78,7 @@ func isPrimary(sf reflect.StructField) bool{
 	return false
 }
 
+//日期 `sql:"datetime"`
 func isDatetime(sf reflect.StructField) bool{
 	tagMap := base.ParseTag(sf, "sql")
 	if _, exist := tagMap["datetime"];exist{
@@ -92,6 +88,7 @@ func isDatetime(sf reflect.StructField) bool{
 	return false
 }
 
+//二进制 `sql:"blob"`
 func isBlob(sf reflect.StructField) bool{
 	tagMap := base.ParseTag(sf, "sql")
 	if _, exist := tagMap["blob"];exist{
@@ -101,6 +98,17 @@ func isBlob(sf reflect.StructField) bool{
 	return false
 }
 
+//json `sql:"json"`
+func isJson(sf reflect.StructField) bool{
+	tagMap := base.ParseTag(sf, "sql")
+	if _, exist := tagMap["json"];exist{
+		return true
+	}
+
+	return false
+}
+
+//ignore `sql:"-"`
 func isIgnore(sf reflect.StructField) bool{
 	tagMap := base.ParseTag(sf, "sql")
 	if _, exist := tagMap["-"];exist{

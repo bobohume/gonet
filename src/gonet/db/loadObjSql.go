@@ -1,6 +1,8 @@
 package db
 
 import (
+	"encoding/json"
+	"github.com/gogo/protobuf/proto"
 	"gonet/base"
 	"fmt"
 	"log"
@@ -25,6 +27,16 @@ func getLoadObjSql(classField reflect.StructField, classVal reflect.Value, row I
 
 	sType := base.GetTypeStringEx(classField, classVal)
 	//fmt.Println(classVal, classType, sType, classVal.Type().String())
+	if isJson(classField){
+		json.Unmarshal(row.Byte(classType), classVal.Addr().Interface())
+		return true
+	}else if isBlob(classField){
+		for classVal.Kind() == reflect.Ptr {
+			classVal = classVal.Elem()
+		}
+		proto.Unmarshal(row.Byte(classType), classVal.Addr().Interface().(proto.Message))
+		return true
+	}
 	switch sType {
 	case "*float64":
 		value :=  (**float64)(unsafe.Pointer(uintptr(unsafe.Pointer(classVal.Addr().Pointer()))))
@@ -148,12 +160,8 @@ func getLoadObjSql(classField reflect.StructField, classVal reflect.Value, row I
 	case "[]uint8":
 		classVal.SetBytes(row.Byte(classType)) //blo
 		if classVal.CanSet() {
-			if isBlob(classField){
-				classVal.SetBytes(row.Byte(classType)) //blob
-			}else{
-				for i := 0; i < classVal.Len(); i++{
-					classVal.Index(i).SetUint(uint64(row.Int64(fmt.Sprintf(load_obj_sqlarrayname, classType, i))))
-				}
+			for i := 0; i < classVal.Len(); i++{
+				classVal.Index(i).SetUint(uint64(row.Int64(fmt.Sprintf(load_obj_sqlarrayname, classType, i))))
 			}
 		}
 	case "[]int16":

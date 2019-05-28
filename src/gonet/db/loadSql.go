@@ -1,5 +1,7 @@
 package db
 import (
+	"encoding/json"
+	"github.com/gogo/protobuf/proto"
 	"gonet/base"
 	"reflect"
 	"fmt"
@@ -27,6 +29,21 @@ func getLoadSql(classField reflect.StructField, classVal reflect.Value) (bool,st
 	//fmt.Println(classVal, classType, sType, classVal.Type().String())
 	sqlname := ""
 	sqlvalue := ""
+	if isJson(classField){
+		data, _ := json.Marshal(classVal.Interface())
+		sqlvalue += fmt.Sprintf(load_sql, data)
+		sqlname += fmt.Sprintf(load_sqlname, classType)
+		return true, sqlname,sqlvalue
+	}else if isBlob(classField){
+		for classVal.Kind() == reflect.Ptr {
+			classVal = classVal.Elem()
+		}
+		data, _ := proto.Marshal(classVal.Addr().Interface().(proto.Message))
+		sqlvalue += fmt.Sprintf(load_sql, data)
+		sqlname += fmt.Sprintf(load_sqlname, classType)
+		return true, sqlname,sqlvalue
+	}
+
 	switch sType {
 	case "*float64":
 		value := float64(0)
@@ -228,14 +245,9 @@ func getLoadSql(classField reflect.StructField, classVal reflect.Value) (bool,st
 		if !classVal.IsNil() {
 			value = classVal.Interface().([]uint8)
 		}
-		if isBlob(classField){
-			sqlvalue += fmt.Sprintf(load_sql, classVal.Bytes())
-			sqlname += fmt.Sprintf(load_sqlname, classType)
-		}else{
-			for i,v := range value{
-				sqlvalue += fmt.Sprintf(load_sqlarray, strconv.FormatUint(uint64(v), 10))
-				sqlname += fmt.Sprintf(load_sqlarrayname, classType, i)
-			}
+		for i,v := range value{
+			sqlvalue += fmt.Sprintf(load_sqlarray, strconv.FormatUint(uint64(v), 10))
+			sqlname += fmt.Sprintf(load_sqlarrayname, classType, i)
 		}
 	case "[]int16":
 		value := []int16{}
