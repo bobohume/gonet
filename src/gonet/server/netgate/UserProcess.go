@@ -5,6 +5,7 @@ import (
 	"gonet/actor"
 	"gonet/base"
 	"gonet/message"
+	"gonet/network"
 )
 
 type(
@@ -81,8 +82,15 @@ func (this *UserPrcoess) PacketFunc(socketid int, buff []byte) bool{
 	packetId, data := message.Decode(buff)
 	packet := message.GetPakcet(packetId)
 	if packet == nil{
-		//SERVER.GetLog().Printf("包解析错误1  socket=%d", socketid)
-		return false
+		//客户端主动断开
+		if packetId == network.DISCONNECTINT{
+			stream := base.NewBitStream(buff, len(buff))
+			stream.ReadInt(32)
+			SERVER.GetPlayerMgr().SendMsg("DEL_ACCOUNT", stream.ReadInt(32))
+		}else{
+			SERVER.GetLog().Printf("包解析错误1  socket=%d", socketid)
+		}
+		return true
 	}
 
 	err := message.UnmarshalText(packet, data)

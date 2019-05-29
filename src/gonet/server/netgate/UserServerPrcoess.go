@@ -1,6 +1,6 @@
 package netgate
 
-import (
+/*import (
 	"gonet/actor"
 	"gonet/base"
 	"strings"
@@ -36,4 +36,4 @@ func (this *UserServerProcess) PacketFunc(id int, buff []byte) bool{
 	}
 
 	return false
-}
+}*/

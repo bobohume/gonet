@@ -2,6 +2,8 @@ package network
 
 import (
 	"fmt"
+	"gonet/base"
+	"hash/crc32"
 	"io"
 	"log"
 	"net"
@@ -11,6 +13,10 @@ const (
 	IDLE_TIMEOUT    = iota
 	CONNECT_TIMEOUT = iota
 	CONNECT_TYPE    = iota
+)
+
+var(
+	DISCONNECTINT = crc32.ChecksumIEEE([]byte("DISCONNECT"))
 )
 
 type IServerSocketClient interface {
@@ -77,10 +83,21 @@ func (this *ServerSocketClient) ReceivePacket(Id int, buff []byte){
 
 func (this *ServerSocketClient) OnNetFail(error int) {
 	this.Stop()
-	if this.m_PacketFuncList.Len() > 0 {
-		this.CallMsg("DISCONNECT", this.m_ClientId)
-	}else if (this.m_pServer != nil && this.m_pServer.m_PacketFuncList.Len() > 0){
-		this.m_pServer.CallMsg("DISCONNECT", this.m_ClientId)
+	if this.m_nConnectType == SERVER_CONNECT{
+		if this.m_PacketFuncList.Len() > 0 {
+			this.CallMsg("DISCONNECT", this.m_ClientId)
+		}else if (this.m_pServer != nil && this.m_pServer.m_PacketFuncList.Len() > 0){
+			this.m_pServer.CallMsg("DISCONNECT", this.m_ClientId)
+		}
+	}else{//netgate对外格式统一
+		stream := base.NewBitStream(make([]byte, 32), 32)
+		stream.WriteInt(int(DISCONNECTINT), 32)
+		stream.WriteInt(this.m_ClientId, 32)
+		if this.m_PacketFuncList.Len() > 0 {
+			this.HandlePacket(this.m_ClientId, stream.GetBuffer())
+		}else if (this.m_pServer != nil && this.m_pServer.m_PacketFuncList.Len() > 0){
+			this.m_pServer.HandlePacket(this.m_ClientId, stream.GetBuffer())
+		}
 	}
 }
 

@@ -14,8 +14,8 @@ const (
 )
 
 const (
-	CLIENT_CONNECT = iota
-	SERVER_CONNECT = iota
+	CLIENT_CONNECT = iota//对外
+	SERVER_CONNECT = iota//对内
 )
 
 const (

@@ -104,10 +104,10 @@ func (this *ServerMgr)Init() bool{
 	//this.m_pService.Start()
 	packet := new(UserPrcoess)
 	packet.Init(1000)
-	packet1 := new(UserServerProcess)
-	packet1.Init(1000)
+	//packet1 := new(UserServerProcess)
+	//packet1.Init(1000)
 	this.m_pService.BindPacketFunc(packet.PacketFunc)
-	this.m_pService.BindPacketFunc(packet1.PacketFunc)
+	//this.m_pService.BindPacketFunc(packet1.PacketFunc)
 	this.m_pService.Start()
 
 	//websocket
