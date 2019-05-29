@@ -3,180 +3,175 @@ package db
 import (
 	"fmt"
 	"gonet/base"
-	"log"
 	"reflect"
 	"strconv"
 	"strings"
 )
 
-const(
-	delete_sql = "`%s`='%s',"
-	delete_sqlarray = "`%s%d`='%s',"
-)
+func deletesql(sqlData *SqlData, p *Properties, val string){
+	if p.IsPrimary(){
+		sqlData.SqlName += fmt.Sprintf("`%s`='%s',", p.Name, val)
+	}else{
+		//sqlData.SqlValue += fmt.Sprintf("`%s`='%s',", p.Name, val)
+	}
+}
 
-func getDeleteSql(classField reflect.StructField, classVal reflect.Value) (bool,string,string) {
-	classType := getSqlName(classField)
-	/*defer func() {
-		if err := recover(); err != nil {
-			fmt.Println("getDeleteSql", classType,  err)
-		}
-	}()*/
+func deletesqlarray(sqlData *SqlData, p *Properties, val string, i int){
+	if p.IsPrimary() {
+		sqlData.SqlName += fmt.Sprintf("`%s%d`='%s',", p.Name, i, val)
+	}else{
+		//sqlData.SqlValue += fmt.Sprintf("`%s%d`='%s',", p.Name, i, val)
+	}
+}
+
+func getDeleteSql(classField reflect.StructField, classVal reflect.Value, sqlData *SqlData) (bool) {
+	p := getProperties(classField)
 
 	sType := base.GetTypeStringEx(classField, classVal)
-	//fmt.Println(classVal, classType, sType, classVal.Type().String())
-	var strsql *string
-	primarysql := ""
-	noramlsql := ""
-	if isPrimary(classField){
-		strsql = &primarysql
-	}else{
-		strsql = &noramlsql
-	}
 	//过略json
-	if isJson(classField){
-		return true, noramlsql, primarysql
-	} else if isBlob(classField){
-		return true, noramlsql, primarysql
+	if p.IsJson(){
+		return true
+	} else if p.IsBlob(){
+		return true
+	} else if p.IsIgnore(){
+		return true
 	}
+
 	switch sType {
 	case "*float64":
 		value := float64(0)
 		if !classVal.IsNil() {
 			value = *classVal.Interface().(*float64)
 		}
-		*strsql += fmt.Sprintf(delete_sql, classType, strconv.FormatFloat(value, 'f', -1, 64))
+		deletesql(sqlData, p, strconv.FormatFloat(value, 'f', -1, 64))
 	case "*float32":
 		value := float32(0)
 		if !classVal.IsNil() {
 			value = *classVal.Interface().(*float32)
 		}
-		*strsql += fmt.Sprintf(delete_sql, classType, strconv.FormatFloat(float64(value), 'f', -1, 32))
+		deletesql(sqlData, p, strconv.FormatFloat(float64(value), 'f', -1, 32))
 	case "*bool":
 		value := bool(false)
 		if !classVal.IsNil() {
 			value = *classVal.Interface().(*bool)
 		}
-		*strsql += fmt.Sprintf("%s=%t", classType, value)
+		deletesql(sqlData, p, strconv.FormatBool(value))
 	case "*int8":
 		value := int8(0)
 		if !classVal.IsNil() {
 			value = *classVal.Interface().(*int8)
 		}
-		*strsql += fmt.Sprintf(delete_sql, classType, strconv.FormatInt(int64(value),10))
+		deletesql(sqlData, p, strconv.FormatInt(int64(value),10))
 	case "*uint8":
 		value := uint8(0)
 		if !classVal.IsNil() {
 			value = *classVal.Interface().(*uint8)
 		}
-		*strsql += fmt.Sprintf(delete_sql, classType, strconv.FormatUint(uint64(value),10))
+		deletesql(sqlData, p, strconv.FormatUint(uint64(value),10))
 	case "*int16":
 		value := int16(0)
 		if !classVal.IsNil() {
 			value = *classVal.Interface().(*int16)
 		}
-		*strsql += fmt.Sprintf(delete_sql, classType, strconv.FormatInt(int64(value),10))
+		deletesql(sqlData, p, strconv.FormatInt(int64(value),10))
 	case "*uint16":
 		value := uint16(0)
 		if !classVal.IsNil() {
 			value = *classVal.Interface().(*uint16)
 		}
-		*strsql += fmt.Sprintf(delete_sql, classType, strconv.FormatUint(uint64(value),10))
+		deletesql(sqlData, p, strconv.FormatUint(uint64(value),10))
 	case "*int32":
 		value := int32(0)
 		if !classVal.IsNil() {
 			value = *classVal.Interface().(*int32)
 		}
-		*strsql += fmt.Sprintf(delete_sql, classType, strconv.FormatInt(int64(value),10))
+		deletesql(sqlData, p, strconv.FormatInt(int64(value),10))
 	case "*uint32":
 		value := uint32(0)
 		if !classVal.IsNil() {
 			value = *classVal.Interface().(*uint32)
 		}
-		*strsql += fmt.Sprintf(delete_sql, classType, strconv.FormatUint(uint64(value),10))
+		deletesql(sqlData, p, strconv.FormatUint(uint64(value),10))
 	case "*int64":
 		value := int64(0)
 		if !classVal.IsNil() {
 			value = *classVal.Interface().(*int64)
 		}
-		if !isDatetime(classField){
-			*strsql += fmt.Sprintf(delete_sql, classType, strconv.FormatInt(int64(value),10))
+		if !p.IsDatetime(){
+			deletesql(sqlData, p, strconv.FormatInt(int64(value),10))
 		}else{
-			*strsql += fmt.Sprintf(delete_sql, classType, GetDBTimeString(int64(value)))
+			deletesql(sqlData, p, GetDBTimeString(int64(value)))
 		}
 	case "*uint64":
 		value := uint64(0)
 		if !classVal.IsNil() {
 			value = *classVal.Interface().(*uint64)
 		}
-		*strsql += fmt.Sprintf(delete_sql, classType, strconv.FormatUint(uint64(value),10))
+		deletesql(sqlData, p, strconv.FormatUint(uint64(value),10))
 	case "*string":
 		value := string("")
 		if !classVal.IsNil() {
 			value = *classVal.Interface().(*string)
 		}
-		*strsql += fmt.Sprintf(delete_sql, classType, value)
+		deletesql(sqlData, p, value)
 	case "*int":
 		value := int(0)
 		if !classVal.IsNil() {
 			value = *classVal.Interface().(*int)
 		}
-		*strsql += fmt.Sprintf(delete_sql, classType, strconv.FormatInt(int64(value),10))
+		deletesql(sqlData, p, strconv.FormatInt(int64(value),10))
 	case "*uint":
 		value := uint(0)
 		if !classVal.IsNil() {
 			value = *classVal.Interface().(*uint)
 		}
-		*strsql += fmt.Sprintf(delete_sql, classType, strconv.FormatUint(uint64(value),10))
+		deletesql(sqlData, p, strconv.FormatUint(uint64(value),10))
 	case "*struct":
 		if !classVal.IsNil() {
 			value := classVal.Elem().Interface()
-			n, p := parseDeleteSql(value)
-			noramlsql += n
-			primarysql += p
+			parseDeleteSql(value, sqlData)
 		}
 	case "float64":
-		*strsql += fmt.Sprintf(delete_sql, classType, strconv.FormatFloat(classVal.Float(), 'f', -1, 64))
+		deletesql(sqlData, p, strconv.FormatFloat(classVal.Float(), 'f', -1, 64))
 	case "float32":
-		*strsql += fmt.Sprintf(delete_sql, classType, strconv.FormatFloat(classVal.Float(), 'f', -1, 32))
+		deletesql(sqlData, p, strconv.FormatFloat(classVal.Float(), 'f', -1, 32))
 	case "bool":
-		*strsql += fmt.Sprintf("%s=%t", classType, classVal.Bool())
+		deletesql(sqlData, p, strconv.FormatBool(classVal.Bool()))
 	case "int8":
-		*strsql += fmt.Sprintf(delete_sql, classType, strconv.FormatInt(classVal.Int(),10))
+		deletesql(sqlData, p, strconv.FormatInt(classVal.Int(),10))
 	case "uint8":
-		*strsql += fmt.Sprintf(delete_sql, classType, strconv.FormatUint(classVal.Uint(),10))
+		deletesql(sqlData, p, strconv.FormatUint(classVal.Uint(),10))
 	case "int16":
-		*strsql += fmt.Sprintf(delete_sql, classType, strconv.FormatInt(classVal.Int(),10))
+		deletesql(sqlData, p, strconv.FormatInt(classVal.Int(),10))
 	case "uint16":
-		*strsql += fmt.Sprintf(delete_sql, classType, strconv.FormatUint(classVal.Uint(),10))
+		deletesql(sqlData, p, strconv.FormatUint(classVal.Uint(),10))
 	case "int32":
-		*strsql += fmt.Sprintf(delete_sql, classType, strconv.FormatInt(classVal.Int(),10))
+		deletesql(sqlData, p, strconv.FormatInt(classVal.Int(),10))
 	case "uint32":
-		*strsql += fmt.Sprintf(delete_sql, classType, strconv.FormatUint(classVal.Uint(), 10))
+		deletesql(sqlData, p, strconv.FormatUint(classVal.Uint(), 10))
 	case "int64":
-		if !isDatetime(classField){
-			*strsql += fmt.Sprintf(delete_sql, classType, strconv.FormatInt(classVal.Int(),10))
+		if !p.IsDatetime(){
+			deletesql(sqlData, p, strconv.FormatInt(classVal.Int(),10))
 		}else{
-			*strsql += fmt.Sprintf(delete_sql, classType, GetDBTimeString(classVal.Int()))
+			deletesql(sqlData, p, GetDBTimeString(classVal.Int()))
 		}
 	case "uint64":
-		*strsql += fmt.Sprintf(delete_sql, classType, strconv.FormatUint(classVal.Uint(),10))
+		deletesql(sqlData, p, strconv.FormatUint(classVal.Uint(),10))
 	case "string":
-		*strsql += fmt.Sprintf(delete_sql, classType, classVal.String())
+		deletesql(sqlData, p, classVal.String())
 	case "int":
-		*strsql += fmt.Sprintf(delete_sql, classType, strconv.FormatInt(classVal.Int(),10))
+		deletesql(sqlData, p, strconv.FormatInt(classVal.Int(),10))
 	case "uint":
-		*strsql += fmt.Sprintf(delete_sql, classType, strconv.FormatUint(classVal.Uint(),10))
+		deletesql(sqlData, p, strconv.FormatUint(classVal.Uint(),10))
 	case "struct":
-		n, p := parseDeleteSql(classVal.Interface())
-		noramlsql += n
-		primarysql += p
+		parseDeleteSql(classVal.Interface(), sqlData)
 	case "[]float64":
 		value := []float64{}
 		if !classVal.IsNil() {
 			value = classVal.Interface().([]float64)
 		}
 		for i,v := range value{
-			*strsql += fmt.Sprintf(delete_sqlarray, classType, i, strconv.FormatFloat(v, 'f', -1, 64))
+			deletesqlarray(sqlData, p, strconv.FormatFloat(v, 'f', -1, 64), i)
 		}
 	case "[]float32":
 		value := []float32{}
@@ -184,7 +179,7 @@ func getDeleteSql(classField reflect.StructField, classVal reflect.Value) (bool,
 			value = classVal.Interface().([]float32)
 		}
 		for i,v := range value{
-			*strsql += fmt.Sprintf(delete_sqlarray, classType, i, strconv.FormatFloat(float64(v), 'f', -1, 32))
+			deletesqlarray(sqlData, p, strconv.FormatFloat(float64(v), 'f', -1, 32), i)
 		}
 	case "[]bool":
 		value := []bool{}
@@ -192,7 +187,7 @@ func getDeleteSql(classField reflect.StructField, classVal reflect.Value) (bool,
 			value = classVal.Interface().([]bool)
 		}
 		for i,v := range value{
-			*strsql += fmt.Sprintf("%s%d=%t,", classType, i, v)
+			deletesqlarray(sqlData, p, strconv.FormatBool(v), i)
 		}
 	case "[]int8":
 		value := []int8{}
@@ -200,7 +195,7 @@ func getDeleteSql(classField reflect.StructField, classVal reflect.Value) (bool,
 			value = classVal.Interface().([]int8)
 		}
 		for i,v := range value{
-			*strsql += fmt.Sprintf(delete_sqlarray, classType, i, strconv.FormatInt(int64(v), 10))
+			deletesqlarray(sqlData, p, strconv.FormatInt(int64(v), 10), i)
 		}
 	case "[]uint8":
 		value := []uint8{}
@@ -208,7 +203,7 @@ func getDeleteSql(classField reflect.StructField, classVal reflect.Value) (bool,
 			value = classVal.Interface().([]uint8)
 		}
 		for i,v := range value{
-			*strsql += fmt.Sprintf(delete_sqlarray, classType, i, strconv.FormatUint(uint64(v), 10))
+			deletesqlarray(sqlData, p, strconv.FormatUint(uint64(v), 10), i)
 		}
 	case "[]int16":
 		value := []int16{}
@@ -216,7 +211,7 @@ func getDeleteSql(classField reflect.StructField, classVal reflect.Value) (bool,
 			value = classVal.Interface().([]int16)
 		}
 		for i,v := range value{
-			*strsql += fmt.Sprintf(delete_sqlarray, classType, i, strconv.FormatInt(int64(v), 10))
+			deletesqlarray(sqlData, p, strconv.FormatInt(int64(v), 10), i)
 		}
 	case "[]uint16":
 		value := []uint16{}
@@ -224,7 +219,7 @@ func getDeleteSql(classField reflect.StructField, classVal reflect.Value) (bool,
 			value = classVal.Interface().([]uint16)
 		}
 		for i,v := range value{
-			*strsql += fmt.Sprintf(delete_sqlarray, classType, i, strconv.FormatUint(uint64(v), 10))
+			deletesqlarray(sqlData, p, strconv.FormatUint(uint64(v), 10), i)
 		}
 	case "[]int32":
 		value := []int32{}
@@ -232,7 +227,7 @@ func getDeleteSql(classField reflect.StructField, classVal reflect.Value) (bool,
 			value = classVal.Interface().([]int32)
 		}
 		for i,v := range value{
-			*strsql += fmt.Sprintf(delete_sqlarray, classType, i, strconv.FormatInt(int64(v), 10))
+			deletesqlarray(sqlData, p, strconv.FormatInt(int64(v), 10), i)
 		}
 	case "[]uint32":
 		value := []uint32{}
@@ -240,7 +235,7 @@ func getDeleteSql(classField reflect.StructField, classVal reflect.Value) (bool,
 			value = classVal.Interface().([]uint32)
 		}
 		for i,v := range value{
-			*strsql += fmt.Sprintf(delete_sqlarray, classType, i, strconv.FormatUint(uint64(v), 10))
+			deletesqlarray(sqlData, p, strconv.FormatUint(uint64(v), 10), i)
 		}
 	case "[]int64":
 		value := []int64{}
@@ -248,10 +243,10 @@ func getDeleteSql(classField reflect.StructField, classVal reflect.Value) (bool,
 			value = classVal.Interface().([]int64)
 		}
 		for i,v := range value{
-			if !isDatetime(classField){
-				*strsql += fmt.Sprintf(delete_sqlarray, classType, i, strconv.FormatInt(int64(v), 10))
+			if !p.IsDatetime(){
+				deletesqlarray(sqlData, p, strconv.FormatInt(int64(v), 10), i)
 			}else{
-				*strsql += fmt.Sprintf(delete_sqlarray, classType, i, GetDBTimeString(v))
+				deletesqlarray(sqlData, p, GetDBTimeString(v), i)
 			}
 		}
 	case "[]uint64":
@@ -260,7 +255,7 @@ func getDeleteSql(classField reflect.StructField, classVal reflect.Value) (bool,
 			value = classVal.Interface().([]uint64)
 		}
 		for i,v := range value{
-			*strsql += fmt.Sprintf(delete_sqlarray, classType, i, strconv.FormatUint(uint64(v), 10))
+			deletesqlarray(sqlData, p, strconv.FormatUint(uint64(v), 10), i)
 		}
 	case "[]string":
 		value := []string{}
@@ -268,7 +263,7 @@ func getDeleteSql(classField reflect.StructField, classVal reflect.Value) (bool,
 			value = classVal.Interface().([]string)
 		}
 		for i,v := range value{
-			*strsql += fmt.Sprintf(delete_sqlarray, classType, i, v)
+			deletesqlarray(sqlData, p, v, i)
 		}
 	case "[]int":
 		value := []int{}
@@ -276,7 +271,7 @@ func getDeleteSql(classField reflect.StructField, classVal reflect.Value) (bool,
 			value = classVal.Interface().([]int)
 		}
 		for i,v := range value{
-			*strsql += fmt.Sprintf(delete_sqlarray, classType, i, strconv.FormatInt(int64(v), 10))
+			deletesqlarray(sqlData, p, strconv.FormatInt(int64(v), 10), i)
 		}
 	case "[]uint":
 		value := []uint{}
@@ -284,57 +279,55 @@ func getDeleteSql(classField reflect.StructField, classVal reflect.Value) (bool,
 			value = classVal.Interface().([]uint)
 		}
 		for i,v := range value{
-			*strsql += fmt.Sprintf(delete_sqlarray, classType, i, strconv.FormatUint(uint64(v), 10))
+			deletesqlarray(sqlData, p, strconv.FormatUint(uint64(v), 10), i)
 		}
 	case "[]struct":
 		for i := 0;  i < classVal.Len(); i++{
-			n, p := parseDeleteSql(classVal.Index(i).Interface())
-			noramlsql += n
-			primarysql += p
+			parseDeleteSql(classVal.Index(i).Interface(), sqlData)
 		}
 	case "[*]float64":
 		for i:= 0; i < classVal.Len(); i++{
-			*strsql += fmt.Sprintf(delete_sqlarray, classType, i, strconv.FormatFloat(classVal.Index(i).Float(), 'f', -1, 64))
+			deletesqlarray(sqlData, p, strconv.FormatFloat(classVal.Index(i).Float(), 'f', -1, 64), i)
 		}
 	case "[*]float32":
 		for i:= 0; i < classVal.Len(); i++{
-			*strsql += fmt.Sprintf(delete_sqlarray, classType, i, strconv.FormatFloat(classVal.Index(i).Float(), 'f', -1, 64))
+			deletesqlarray(sqlData, p, strconv.FormatFloat(classVal.Index(i).Float(), 'f', -1, 64), i)
 		}
 	case "[*]bool":
 		for i:= 0; i < classVal.Len(); i++{
-			*strsql += fmt.Sprintf("%s%d=%t,", classType, i, classVal.Index(i).Bool())
+			deletesqlarray(sqlData, p, strconv.FormatBool(classVal.Index(i).Bool()), i)
 		}
 	case "[*]int8":
 		for i:= 0; i < classVal.Len(); i++{
-			*strsql += fmt.Sprintf(delete_sqlarray, classType, i, strconv.FormatInt(classVal.Index(i).Int(), 10))
+			deletesqlarray(sqlData, p, strconv.FormatInt(classVal.Index(i).Int(), 10), i)
 		}
 	case "[*]uint8":
 		for i:= 0; i < classVal.Len(); i++{
-			*strsql += fmt.Sprintf(delete_sqlarray, classType, i, strconv.FormatUint(classVal.Index(i).Uint(), 10))
+			deletesqlarray(sqlData, p, strconv.FormatUint(classVal.Index(i).Uint(), 10), i)
 		}
 	case "[*]int16":
 		for i:= 0; i < classVal.Len(); i++{
-			*strsql += fmt.Sprintf(delete_sqlarray, classType, i, strconv.FormatInt(classVal.Index(i).Int(), 10))
+			deletesqlarray(sqlData, p, strconv.FormatInt(classVal.Index(i).Int(), 10), i)
 		}
 	case "[*]uint16":
 		for i:= 0; i < classVal.Len(); i++{
-			*strsql += fmt.Sprintf(delete_sqlarray, classType, i, strconv.FormatUint(classVal.Index(i).Uint(), 10))
+			deletesqlarray(sqlData, p, strconv.FormatUint(classVal.Index(i).Uint(), 10), i)
 		}
 	case "[*]int32":
 		for i:= 0; i < classVal.Len(); i++{
-			*strsql += fmt.Sprintf(delete_sqlarray, classType, i, strconv.FormatInt(classVal.Index(i).Int(), 10))
+			deletesqlarray(sqlData, p, strconv.FormatInt(classVal.Index(i).Int(), 10), i)
 		}
 	case "[*]uint32":
 		for i:= 0; i < classVal.Len(); i++{
-			*strsql += fmt.Sprintf(delete_sqlarray, classType, i, strconv.FormatUint(classVal.Index(i).Uint(), 10))
+			deletesqlarray(sqlData, p, strconv.FormatUint(classVal.Index(i).Uint(), 10), i)
 		}
 	case "[*]int64":
 		for i:= 0; i < classVal.Len(); i++{
-			*strsql += fmt.Sprintf(delete_sqlarray, classType, i, strconv.FormatInt(classVal.Index(i).Int(), 10))
+			deletesqlarray(sqlData, p, strconv.FormatInt(classVal.Index(i).Int(), 10), i)
 		}
 	case "[*]uint64":
 		for i:= 0; i < classVal.Len(); i++{
-			*strsql += fmt.Sprintf(delete_sqlarray, classType, i, strconv.FormatUint(classVal.Index(i).Uint(), 10))
+			deletesqlarray(sqlData, p, strconv.FormatUint(classVal.Index(i).Uint(), 10), i)
 		}
 	case "[*]string":
 		value := []string{}
@@ -342,66 +335,54 @@ func getDeleteSql(classField reflect.StructField, classVal reflect.Value) (bool,
 			value = classVal.Interface().([]string)
 		}
 		for i,v := range value{
-			*strsql += fmt.Sprintf(delete_sqlarray, classType, i, v)
+			deletesqlarray(sqlData, p, v, i)
 		}
 	case "[*]int":
 		for i:= 0; i < classVal.Len(); i++{
-			*strsql += fmt.Sprintf(delete_sqlarray, classType, i, strconv.FormatInt(classVal.Index(i).Int(), 10))
+			deletesqlarray(sqlData, p, strconv.FormatInt(classVal.Index(i).Int(), 10), i)
 		}
 	case "[*]uint":
 		for i:= 0; i < classVal.Len(); i++{
-			*strsql += fmt.Sprintf(delete_sqlarray, classType, i, strconv.FormatUint(classVal.Index(i).Uint(), 10))
+			deletesqlarray(sqlData, p, strconv.FormatUint(classVal.Index(i).Uint(), 10), i)
 		}
 	case "[*]struct":
 		for i := 0;  i < classVal.Len(); i++{
-			n, p := parseDeleteSql(classVal.Index(i).Interface())
-			noramlsql += n
-			primarysql += p
+			parseDeleteSql(classVal.Index(i).Interface(), sqlData)
 		}
 	default:
 		fmt.Println("getDeleteSql type not supported", sType,  classField.Type)
 		panic("getDeleteSql type not supported")
-		return false, "", ""
+		return false
 		//}
 	}
-	return true, noramlsql, primarysql
+	return true
 }
 
-func parseDeleteSql(obj interface{}) (string, string){
-	var protoVal reflect.Value
-	protoType := reflect.TypeOf(obj)
-	if protoType.Kind() == reflect.Ptr {
-		protoType = reflect.TypeOf(obj).Elem()
-		protoVal = reflect.ValueOf(obj).Elem()
-	}else if protoType.Kind() == reflect.Struct{
-		protoVal = reflect.ValueOf(obj)
-	}else{
-		errorStr := fmt.Sprintf("parseDeleteSql no support ptr %s", protoType.Name())
-		log.Println(errorStr)
-		panic(errorStr)
-		return "",""
+func parseDeleteSql(obj interface{}, sqlData *SqlData){
+	classVal := reflect.ValueOf(obj)
+	for classVal.Kind() == reflect.Ptr {
+		classVal = classVal.Elem()
 	}
+	classType := classVal.Type()
 
-	str := ""
-	primary := ""
-	for i := 0; i < protoType.NumField(); i++{
-		if !protoVal.Field(i).CanInterface(){
+	for i := 0; i < classType.NumField(); i++{
+		if !classVal.Field(i).CanInterface(){
 			continue
 		}
 
-		bRight, sqlstr, sqlprimary := getDeleteSql(protoType.Field(i), protoVal.Field(i))
+		bRight := getDeleteSql(classType.Field(i), classVal.Field(i), sqlData)
 		if !bRight{
-			errorStr := fmt.Sprintf("parseDeleteSql type not supported %s", protoType.Name())
+			errorStr := fmt.Sprintf("parseDeleteSql type not supported %s", classType.Name())
 			panic(errorStr)
-			return "",""//丢弃这个包
+			return//丢弃这个包
 		}
-		str += sqlstr
-		primary += sqlprimary
 	}
-	return str,primary
+	return
 }
 
-func deleteSqlStr(sqltable string, str string, primary string) string{
+func deleteSqlStr(sqltable string, sqlData *SqlData) string{
+	str := sqlData.SqlValue
+	primary := sqlData.SqlName
 	index := strings.LastIndex(str, ",")
 	if index!= -1{
 		str = str[:index]
@@ -422,8 +403,9 @@ func DeleteSql(obj interface{}, sqltable string)string{
 		}
 	}()
 
-	str, primary := parseDeleteSql(obj)
-	return  deleteSqlStr(sqltable, str, primary)
+	sqlData := &SqlData{}
+	parseDeleteSql(obj, sqlData)
+	return  deleteSqlStr(sqltable, sqlData)
 }
 
 func DeleteSqlEx(obj interface{}, sqltable string, params ...string) string {
@@ -433,39 +415,35 @@ func DeleteSqlEx(obj interface{}, sqltable string, params ...string) string {
 		}
 	}()
 
-	protoVal  := reflect.ValueOf(obj)
-	protoType := reflect.TypeOf(obj)
-	if protoType.Kind() == reflect.Ptr {
-		protoType = reflect.TypeOf(obj).Elem()
-		protoVal = reflect.ValueOf(obj).Elem()
+	classVal := reflect.ValueOf(obj)
+	for classVal.Kind() == reflect.Ptr {
+		classVal = classVal.Elem()
 	}
+	classType := classVal.Type()
 
-	str := ""
-	primary := ""
+	sqlData := &SqlData{}
 	nameMap := make(map[string] string)
 	for _,v := range params{
 		v1 := strings.ToLower(v)
 		nameMap[v1] = v1
 	}
-	for i := 0; i < protoType.NumField(); i++ {
-		if !protoVal.Field(i).CanInterface() {
+	for i := 0; i < classType.NumField(); i++ {
+		if !classVal.Field(i).CanInterface() {
 			continue
 		}
 
-		sf := protoType.Field(i)
-		_, exist := nameMap[getSqlName(sf)]
+		sf := classType.Field(i)
+		_, exist := nameMap[getProperties(sf).Name]
 		if exist{
-			bRight, name, value := getDeleteSql(sf, protoVal.Field(i))
+			bRight := getDeleteSql(sf, classVal.Field(i), sqlData)
 			if !bRight{
 				errorStr := fmt.Sprintf("DeleteSqlEx error %s", reflect.TypeOf(obj).Name())
 				panic(errorStr)
 				return ""//丢弃这个包
 			}
-			str += name
-			primary += value
 		}
 	}
 
-	return deleteSqlStr(sqltable, str, primary)
+	return deleteSqlStr(sqltable, sqlData)
 }
 

@@ -1,10 +1,10 @@
 package db
 
 import (
-	"gonet/base"
 	"database/sql"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
+	"gonet/base"
 	"reflect"
 	"strconv"
 	"strings"
@@ -44,7 +44,47 @@ type(
 		Row() *Row
 		Obj(obj interface{}) bool
 	}
+
+	Properties struct {
+		Name string
+		Primary bool
+		DateTime bool
+		Blob bool
+		Json bool
+		Ignore bool
+		tag string
+	}
+
+	SqlData struct {
+		SqlName string
+		SqlValue string
+	}
 )
+
+//主键 `sql:"primary"`
+func (this *Properties) IsPrimary ()bool{
+	return this.Primary
+}
+
+//日期 `sql:"datetime"`
+func (this *Properties) IsDatetime ()bool{
+	return this.DateTime
+}
+
+//二进制 `sql:"blob"`
+func (this *Properties) IsBlob ()bool{
+	return this.Blob
+}
+
+//json `sql:"json"`
+func (this *Properties) IsJson ()bool{
+	return this.Json
+}
+
+//ignore `sql:"-"`
+func (this *Properties) IsIgnore ()bool{
+	return this.Ignore
+}
 
 //---获取datetime时间
 func  GetDBTimeString(t int64)string{
@@ -59,63 +99,29 @@ func OpenDB(svr string, usr string, pwd string, db string) *sql.DB {
 	return mydb
 }
 
-func getSqlName(sf reflect.StructField) string{
-	tagMap := base.ParseTag(sf, "sql")
-	if name, exist := tagMap["name"];exist{
-		return name
+func getProperties(sf reflect.StructField) *Properties{
+	p := &Properties{}
+	p.tag = sf.Tag.Get("sql")
+	fields := strings.Split(p.tag, ";")
+	for _, v := range fields{
+		switch v {
+		case "primary" :
+			p.Primary = true
+		case "datetime":
+			p.DateTime = true
+		case "blob":
+			p.Blob = true
+		case "json":
+			p.Json = true
+		case "-":
+			p.Ignore = true
+		default:
+			if strings.Contains(v, "name:"){
+				p.Name = v[5:]
+			}
+		}
 	}
-
-	return strings.ToLower(sf.Name)
-}
-
-//主键 `sql:"primary"`
-func isPrimary(sf reflect.StructField) bool{
-	tagMap := base.ParseTag(sf, "sql")
-	if _, exist := tagMap["primary"];exist{
-		return true
-	}
-
-	return false
-}
-
-//日期 `sql:"datetime"`
-func isDatetime(sf reflect.StructField) bool{
-	tagMap := base.ParseTag(sf, "sql")
-	if _, exist := tagMap["datetime"];exist{
-		return true
-	}
-
-	return false
-}
-
-//二进制 `sql:"blob"`
-func isBlob(sf reflect.StructField) bool{
-	tagMap := base.ParseTag(sf, "sql")
-	if _, exist := tagMap["blob"];exist{
-		return true
-	}
-
-	return false
-}
-
-//json `sql:"json"`
-func isJson(sf reflect.StructField) bool{
-	tagMap := base.ParseTag(sf, "sql")
-	if _, exist := tagMap["json"];exist{
-		return true
-	}
-
-	return false
-}
-
-//ignore `sql:"-"`
-func isIgnore(sf reflect.StructField) bool{
-	tagMap := base.ParseTag(sf, "sql")
-	if _, exist := tagMap["-"];exist{
-		return true
-	}
-
-	return false
+	return p
 }
 
 func (this *Row) init() {

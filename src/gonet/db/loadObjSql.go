@@ -2,10 +2,9 @@ package db
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/gogo/protobuf/proto"
 	"gonet/base"
-	"fmt"
-	"log"
 	"reflect"
 	"unsafe"
 )
@@ -18,25 +17,23 @@ func getLoadObjSql(classField reflect.StructField, classVal reflect.Value, row I
 	if !classVal.CanSet(){
 		return true
 	}
-	classType := getSqlName(classField)
-	/*defer func() {
-		if err := recover(); err != nil {
-			fmt.Println("getLoadObjSql", classType,  err)
-		}
-	}()*/
+	p := getProperties(classField)
+	classType := p.Name
 
 	sType := base.GetTypeStringEx(classField, classVal)
-	//fmt.Println(classVal, classType, sType, classVal.Type().String())
-	if isJson(classField){
+	if p.IsJson(){
 		json.Unmarshal(row.Byte(classType), classVal.Addr().Interface())
 		return true
-	}else if isBlob(classField){
+	}else if p.IsBlob(){
 		for classVal.Kind() == reflect.Ptr {
 			classVal = classVal.Elem()
 		}
 		proto.Unmarshal(row.Byte(classType), classVal.Addr().Interface().(proto.Message))
 		return true
+	}else if p.IsIgnore(){
+		return true
 	}
+
 	switch sType {
 	case "*float64":
 		value :=  (**float64)(unsafe.Pointer(uintptr(unsafe.Pointer(classVal.Addr().Pointer()))))
@@ -76,8 +73,13 @@ func getLoadObjSql(classField reflect.StructField, classVal reflect.Value, row I
 		*value = &val1
 	case "*int64":
 		value :=  (**int64)(unsafe.Pointer(uintptr(unsafe.Pointer(classVal.Addr().Pointer()))))
-		val1 := int64(row.Int64(classType))
-		*value = &val1
+		if !p.IsDatetime() {
+			val1 := int64(row.Int64(classType))
+			*value = &val1
+		}else{
+			val1 := int64(row.Time(classType))
+			*value = &val1
+		}
 	case "*uint64":
 		value :=  (**uint64)(unsafe.Pointer(uintptr(unsafe.Pointer(classVal.Addr().Pointer()))))
 		val1 := uint64(row.Int64(classType))
@@ -118,7 +120,7 @@ func getLoadObjSql(classField reflect.StructField, classVal reflect.Value, row I
 	case "uint32":
 		classVal.SetUint(uint64(row.Int64(classType)))
 	case "int64":
-		if !isDatetime(classField){
+		if !p.IsDatetime(){
 			classVal.SetInt(row.Int64(classType))
 		}else{
 			classVal.SetInt(row.Time(classType))
@@ -191,7 +193,11 @@ func getLoadObjSql(classField reflect.StructField, classVal reflect.Value, row I
 	case "[]int64":
 		if classVal.CanSet() {
 			for i := 0; i < classVal.Len(); i++{
-				classVal.Index(i).SetInt(row.Int64(fmt.Sprintf(load_obj_sqlarrayname, classType, i)))
+				if !p.IsDatetime(){
+					classVal.Index(i).SetInt(row.Int64(fmt.Sprintf(load_obj_sqlarrayname, classType, i)))
+				}else{
+					classVal.Index(i).SetInt(row.Time(fmt.Sprintf(load_obj_sqlarrayname, classType, i)))
+				}
 			}
 		}
 	case "[]uint64":
@@ -292,31 +298,20 @@ func getLoadObjSql(classField reflect.StructField, classVal reflect.Value, row I
 }
 
 func parseLoadObjSql(obj interface{}, row IRow) (bool){
-	var protoVal reflect.Value
-	protoType := reflect.TypeOf(obj)
-	if protoType.Kind() == reflect.Ptr {
-		protoType = reflect.TypeOf(obj).Elem()
-		protoVal = reflect.ValueOf(obj).Elem()
-	}else if protoType.Kind() == reflect.Struct{
-		errorStr := fmt.Sprintf("parseLoadObjSql no support struct %s", protoType.Name())
-		log.Println(errorStr)
-		panic(errorStr)
-		return false
-	} else{
-		errorStr := fmt.Sprintf("parseLoadObjSql no support %s", protoType.Name())
-		log.Println(errorStr)
-		panic(errorStr)
-		return false
+	classVal := reflect.ValueOf(obj)
+	for classVal.Kind() == reflect.Ptr {
+		classVal = classVal.Elem()
 	}
+	classType := classVal.Type()
 
-	for i := 0; i < protoType.NumField(); i++{
-		if !protoVal.Field(i).CanInterface(){
+	for i := 0; i < classType.NumField(); i++{
+		if !classVal.Field(i).CanInterface(){
 			continue
 		}
 
-		bRight := getLoadObjSql(protoType.Field(i), protoVal.Field(i), row)
+		bRight := getLoadObjSql(classType.Field(i), classVal.Field(i), row)
 		if !bRight{
-			errorStr := fmt.Sprintf("parseLoadObjSql type not supported %s", protoType.Name())
+			errorStr := fmt.Sprintf("parseLoadObjSql type not supported %s", classType.Name())
 			panic(errorStr)
 			return false//丢弃这个包
 		}

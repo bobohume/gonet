@@ -1,47 +1,41 @@
 package db
+
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/gogo/protobuf/proto"
 	"gonet/base"
 	"reflect"
-	"fmt"
-	"strings"
 	"strconv"
-	"log"
+	"strings"
 )
 
-const(
-	load_sql = "'%s',"
-	load_sqlarray = "'%s',"
-	load_sqlname = "`%s`,"
-	load_sqlarrayname = "`%s%d`,"
-)
+func loadsql(sqlData *SqlData, p *Properties, val string){
+	//sqlData.SqlValue += fmt.Sprintf("'%s',", val)
+	sqlData.SqlName += fmt.Sprintf("`%s`,", p.Name)
+}
 
-func getLoadSql(classField reflect.StructField, classVal reflect.Value) (bool,string,string) {
-	classType := getSqlName(classField)
-	/*defer func() {
-		if err := recover(); err != nil {
-			fmt.Println("getLoadSql", classType,  err)
-		}
-	}()*/
+func loadsqlarray(sqlData *SqlData, p *Properties, val string, i int){
+	//sqlData.SqlValue += fmt.Sprintf("'%s',", val)
+	sqlData.SqlName += fmt.Sprintf("`%s%d`,", p.Name, i)
+}
 
+func getLoadSql(classField reflect.StructField, classVal reflect.Value, sqlData *SqlData) (bool) {
+	p := getProperties(classField)
 	sType := base.GetTypeStringEx(classField, classVal)
-	//fmt.Println(classVal, classType, sType, classVal.Type().String())
-	sqlname := ""
-	sqlvalue := ""
-	if isJson(classField){
+	if p.IsJson(){
 		data, _ := json.Marshal(classVal.Interface())
-		sqlvalue += fmt.Sprintf(load_sql, data)
-		sqlname += fmt.Sprintf(load_sqlname, classType)
-		return true, sqlname,sqlvalue
-	}else if isBlob(classField){
+		loadsql(sqlData, p, string(data))
+		return true
+	}else if p.IsBlob(){
 		for classVal.Kind() == reflect.Ptr {
 			classVal = classVal.Elem()
 		}
 		data, _ := proto.Marshal(classVal.Addr().Interface().(proto.Message))
-		sqlvalue += fmt.Sprintf(load_sql, data)
-		sqlname += fmt.Sprintf(load_sqlname, classType)
-		return true, sqlname,sqlvalue
+		loadsql(sqlData, p, string(data))
+		return true
+	}else if p.IsIgnore(){
+		return true
 	}
 
 	switch sType {
@@ -50,168 +44,135 @@ func getLoadSql(classField reflect.StructField, classVal reflect.Value) (bool,st
 		if !classVal.IsNil() {
 			value = *classVal.Interface().(*float64)
 		}
-		sqlvalue += fmt.Sprintf(load_sql, strconv.FormatFloat(value, 'f', -1, 64))
-		sqlname += fmt.Sprintf(load_sqlname, classType)
+		loadsql(sqlData, p, strconv.FormatFloat(value, 'f', -1, 64))
 	case "*float32":
 		value := float32(0)
 		if !classVal.IsNil() {
 			value = *classVal.Interface().(*float32)
 		}
-		sqlvalue += fmt.Sprintf(load_sql, strconv.FormatFloat(float64(value), 'f', -1, 32))
-		sqlname += fmt.Sprintf(load_sqlname, classType)
+		loadsql(sqlData, p, strconv.FormatFloat(float64(value), 'f', -1, 32))
 	case "*bool":
 		value := bool(false)
 		if !classVal.IsNil() {
 			value = *classVal.Interface().(*bool)
 		}
-		sqlvalue += fmt.Sprintf("%t", value)
-		sqlname += fmt.Sprintf(load_sqlname, classType)
+		loadsql(sqlData, p, strconv.FormatBool(value))
 	case "*int8":
 		value := int8(0)
 		if !classVal.IsNil() {
 			value = *classVal.Interface().(*int8)
 		}
-		sqlvalue += fmt.Sprintf(load_sql, strconv.FormatInt(int64(value),10))
-		sqlname += fmt.Sprintf(load_sqlname, classType)
+		loadsql(sqlData, p, strconv.FormatInt(int64(value),10))
 	case "*uint8":
 		value := uint8(0)
 		if !classVal.IsNil() {
 			value = *classVal.Interface().(*uint8)
 		}
-		sqlvalue += fmt.Sprintf(load_sql, strconv.FormatUint(uint64(value),10))
-		sqlname += fmt.Sprintf(load_sqlname, classType)
+		loadsql(sqlData, p, strconv.FormatUint(uint64(value),10))
 	case "*int16":
 		value := int16(0)
 		if !classVal.IsNil() {
 			value = *classVal.Interface().(*int16)
 		}
-		sqlvalue += fmt.Sprintf(load_sql, strconv.FormatInt(int64(value),10))
-		sqlname += fmt.Sprintf(load_sqlname, classType)
+		loadsql(sqlData, p, strconv.FormatInt(int64(value),10))
 	case "*uint16":
 		value := uint16(0)
 		if !classVal.IsNil() {
 			value = *classVal.Interface().(*uint16)
 		}
-		sqlvalue += fmt.Sprintf(load_sql, strconv.FormatUint(uint64(value),10))
-		sqlname += fmt.Sprintf(load_sqlname, classType)
+		loadsql(sqlData, p, strconv.FormatUint(uint64(value),10))
 	case "*int32":
 		value := int32(0)
 		if !classVal.IsNil() {
 			value = *classVal.Interface().(*int32)
 		}
-		sqlvalue += fmt.Sprintf(load_sql, strconv.FormatInt(int64(value),10))
-		sqlname += fmt.Sprintf(load_sqlname, classType)
+		loadsql(sqlData, p, strconv.FormatInt(int64(value),10))
 	case "*uint32":
 		value := uint32(0)
 		if !classVal.IsNil() {
 			value = *classVal.Interface().(*uint32)
 		}
-		sqlvalue += fmt.Sprintf(load_sql, strconv.FormatUint(uint64(value),10))
-		sqlname += fmt.Sprintf(load_sqlname, classType)
+		loadsql(sqlData, p, strconv.FormatUint(uint64(value),10))
 	case "*int64":
 		value := int64(0)
 		if !classVal.IsNil() {
 			value = *classVal.Interface().(*int64)
 		}
-		if !isDatetime(classField){
-			sqlvalue += fmt.Sprintf(load_sql, strconv.FormatInt(int64(value),10))
+		if !p.IsDatetime(){
+			loadsql(sqlData, p, strconv.FormatInt(int64(value),10))
 		}else{
-			sqlvalue += fmt.Sprintf(load_sql, GetDBTimeString(int64(value)))
+			loadsql(sqlData, p, GetDBTimeString(int64(value)))
 		}
-		sqlname += fmt.Sprintf(load_sqlname, classType)
 	case "*uint64":
 		value := uint64(0)
 		if !classVal.IsNil() {
 			value = *classVal.Interface().(*uint64)
 		}
-		sqlvalue += fmt.Sprintf(load_sql, strconv.FormatUint(uint64(value),10))
-		sqlname += fmt.Sprintf(load_sqlname, classType)
+		loadsql(sqlData, p, strconv.FormatUint(uint64(value),10))
 	case "*string":
 		value := string("")
 		if !classVal.IsNil() {
 			value = *classVal.Interface().(*string)
 		}
-		sqlvalue += fmt.Sprintf(load_sql, value)
-		sqlname += fmt.Sprintf(load_sqlname, classType)
+		loadsql(sqlData, p, value)
 	case "*int":
 		value := int(0)
 		if !classVal.IsNil() {
 			value = *classVal.Interface().(*int)
 		}
-		sqlvalue += fmt.Sprintf(load_sql, strconv.FormatInt(int64(value),10))
-		sqlname += fmt.Sprintf(load_sqlname, classType)
+		loadsql(sqlData, p, strconv.FormatInt(int64(value),10))
 	case "*uint":
 		value := uint(0)
 		if !classVal.IsNil() {
 			value = *classVal.Interface().(*uint)
 		}
-		sqlvalue += fmt.Sprintf(load_sql, strconv.FormatUint(uint64(value),10))
-		sqlname += fmt.Sprintf(load_sqlname, classType)
+		loadsql(sqlData, p, strconv.FormatUint(uint64(value),10))
 	case "*struct":
 		if !classVal.IsNil() {
 			value := classVal.Elem().Interface()
-			n, p := parseLoadSql(value)
-			sqlname += n
-			sqlvalue += p
+			parseLoadSql(value, sqlData)
 		}
 	case "float64":
-		sqlvalue += fmt.Sprintf(load_sql, strconv.FormatFloat(classVal.Float(), 'f', -1, 64))
-		sqlname += fmt.Sprintf(load_sqlname, classType)
+		loadsql(sqlData, p, strconv.FormatFloat(classVal.Float(), 'f', -1, 64))
 	case "float32":
-		sqlvalue += fmt.Sprintf(load_sql, strconv.FormatFloat(classVal.Float(), 'f', -1, 32))
-		sqlname += fmt.Sprintf(load_sqlname, classType)
+		loadsql(sqlData, p, strconv.FormatFloat(classVal.Float(), 'f', -1, 32))
 	case "bool":
-		sqlvalue += fmt.Sprintf("%t", classVal.Bool())
-		sqlname += fmt.Sprintf(load_sqlname, classType)
+		loadsql(sqlData, p, strconv.FormatBool(classVal.Bool()))
 	case "int8":
-		sqlvalue += fmt.Sprintf(load_sql, strconv.FormatInt(classVal.Int(),10))
-		sqlname += fmt.Sprintf(load_sqlname, classType)
+		loadsql(sqlData, p, strconv.FormatInt(classVal.Int(),10))
 	case "uint8":
-		sqlvalue += fmt.Sprintf(load_sql, strconv.FormatUint(classVal.Uint(),10))
-		sqlname += fmt.Sprintf(load_sqlname, classType)
+		loadsql(sqlData, p, strconv.FormatUint(classVal.Uint(),10))
 	case "int16":
-		sqlvalue += fmt.Sprintf(load_sql, strconv.FormatInt(classVal.Int(),10))
-		sqlname += fmt.Sprintf(load_sqlname, classType)
+		loadsql(sqlData, p, strconv.FormatInt(classVal.Int(),10))
 	case "uint16":
-		sqlvalue += fmt.Sprintf(load_sql, strconv.FormatUint(classVal.Uint(),10))
-		sqlname += fmt.Sprintf(load_sqlname, classType)
+		loadsql(sqlData, p, strconv.FormatUint(classVal.Uint(),10))
 	case "int32":
-		sqlvalue += fmt.Sprintf(load_sql, strconv.FormatInt(classVal.Int(),10))
-		sqlname += fmt.Sprintf(load_sqlname, classType)
+		loadsql(sqlData, p, strconv.FormatInt(classVal.Int(),10))
 	case "uint32":
-		sqlvalue += fmt.Sprintf(load_sql, strconv.FormatUint(classVal.Uint(), 10))
-		sqlname += fmt.Sprintf(load_sqlname, classType)
+		loadsql(sqlData, p, strconv.FormatUint(classVal.Uint(), 10))
 	case "int64":
-		if !isDatetime(classField){
-			sqlvalue += fmt.Sprintf(load_sql, strconv.FormatInt(classVal.Int(),10))
+		if !p.IsDatetime(){
+			loadsql(sqlData, p, strconv.FormatInt(classVal.Int(),10))
 		}else{
-			sqlvalue += fmt.Sprintf(load_sql, GetDBTimeString(classVal.Int()))
+			loadsql(sqlData, p, GetDBTimeString(classVal.Int()))
 		}
-		sqlname += fmt.Sprintf(load_sqlname, classType)
 	case "uint64":
-		sqlvalue += fmt.Sprintf(load_sql, strconv.FormatUint(classVal.Uint(),10))
-		sqlname += fmt.Sprintf(load_sqlname, classType)
+		loadsql(sqlData, p, strconv.FormatUint(classVal.Uint(),10))
 	case "string":
-		sqlvalue += fmt.Sprintf(load_sql, classVal.String())
-		sqlname += fmt.Sprintf(load_sqlname, classType)
+		loadsql(sqlData, p, classVal.String())
 	case "int":
-		sqlvalue += fmt.Sprintf(load_sql, strconv.FormatInt(classVal.Int(),10))
-		sqlname += fmt.Sprintf(load_sqlname, classType)
+		loadsql(sqlData, p, strconv.FormatInt(classVal.Int(),10))
 	case "uint":
-		sqlvalue += fmt.Sprintf(load_sql, strconv.FormatUint(classVal.Uint(),10))
-		sqlname += fmt.Sprintf(load_sqlname, classType)
+		loadsql(sqlData, p, strconv.FormatUint(classVal.Uint(),10))
 	case "struct":
-		n, p := parseLoadSql(classVal.Interface())
-		sqlname += n
-		sqlvalue += p
+		parseLoadSql(classVal.Interface(), sqlData)
 	case "[]float64":
 		value := []float64{}
 		if !classVal.IsNil() {
 			value = classVal.Interface().([]float64)
 		}
 		for i,v := range value{
-			sqlvalue += fmt.Sprintf(load_sqlarray, strconv.FormatFloat(v, 'f', -1, 64))
-			sqlname += fmt.Sprintf(load_sqlarrayname, classType, i)
+			loadsqlarray(sqlData, p, strconv.FormatFloat(v, 'f', -1, 64), i)
 		}
 	case "[]float32":
 		value := []float32{}
@@ -219,8 +180,7 @@ func getLoadSql(classField reflect.StructField, classVal reflect.Value) (bool,st
 			value = classVal.Interface().([]float32)
 		}
 		for i,v := range value{
-			sqlvalue += fmt.Sprintf(load_sqlarray, strconv.FormatFloat(float64(v), 'f', -1, 32))
-			sqlname += fmt.Sprintf(load_sqlarrayname, classType, i)
+			loadsqlarray(sqlData, p, strconv.FormatFloat(float64(v), 'f', -1, 32), i)
 		}
 	case "[]bool":
 		value := []bool{}
@@ -228,8 +188,7 @@ func getLoadSql(classField reflect.StructField, classVal reflect.Value) (bool,st
 			value = classVal.Interface().([]bool)
 		}
 		for i,v := range value{
-			sqlvalue += fmt.Sprintf("%t,", v)
-			sqlname += fmt.Sprintf(load_sqlarrayname, classType, i)
+			loadsqlarray(sqlData, p, strconv.FormatBool(v), i)
 		}
 	case "[]int8":
 		value := []int8{}
@@ -237,8 +196,7 @@ func getLoadSql(classField reflect.StructField, classVal reflect.Value) (bool,st
 			value = classVal.Interface().([]int8)
 		}
 		for i,v := range value{
-			sqlvalue += fmt.Sprintf(load_sqlarray, strconv.FormatInt(int64(v), 10))
-			sqlname += fmt.Sprintf(load_sqlarrayname, classType, i)
+			loadsqlarray(sqlData, p, strconv.FormatInt(int64(v), 10), i)
 		}
 	case "[]uint8":
 		value := []uint8{}
@@ -246,8 +204,7 @@ func getLoadSql(classField reflect.StructField, classVal reflect.Value) (bool,st
 			value = classVal.Interface().([]uint8)
 		}
 		for i,v := range value{
-			sqlvalue += fmt.Sprintf(load_sqlarray, strconv.FormatUint(uint64(v), 10))
-			sqlname += fmt.Sprintf(load_sqlarrayname, classType, i)
+			loadsqlarray(sqlData, p, strconv.FormatUint(uint64(v), 10), i)
 		}
 	case "[]int16":
 		value := []int16{}
@@ -255,8 +212,7 @@ func getLoadSql(classField reflect.StructField, classVal reflect.Value) (bool,st
 			value = classVal.Interface().([]int16)
 		}
 		for i,v := range value{
-			sqlvalue += fmt.Sprintf(load_sqlarray, strconv.FormatInt(int64(v), 10))
-			sqlname += fmt.Sprintf(load_sqlarrayname, classType, i)
+			loadsqlarray(sqlData, p, strconv.FormatInt(int64(v), 10), i)
 		}
 	case "[]uint16":
 		value := []uint16{}
@@ -264,8 +220,7 @@ func getLoadSql(classField reflect.StructField, classVal reflect.Value) (bool,st
 			value = classVal.Interface().([]uint16)
 		}
 		for i,v := range value{
-			sqlvalue += fmt.Sprintf(load_sqlarray, strconv.FormatUint(uint64(v), 10))
-			sqlname += fmt.Sprintf(load_sqlarrayname, classType, i)
+			loadsqlarray(sqlData, p, strconv.FormatUint(uint64(v), 10), i)
 		}
 	case "[]int32":
 		value := []int32{}
@@ -273,8 +228,7 @@ func getLoadSql(classField reflect.StructField, classVal reflect.Value) (bool,st
 			value = classVal.Interface().([]int32)
 		}
 		for i,v := range value{
-			sqlvalue += fmt.Sprintf(load_sqlarray, strconv.FormatInt(int64(v), 10))
-			sqlname += fmt.Sprintf(load_sqlarrayname, classType, i)
+			loadsqlarray(sqlData, p, strconv.FormatInt(int64(v), 10), i)
 		}
 	case "[]uint32":
 		value := []uint32{}
@@ -282,8 +236,7 @@ func getLoadSql(classField reflect.StructField, classVal reflect.Value) (bool,st
 			value = classVal.Interface().([]uint32)
 		}
 		for i,v := range value{
-			sqlvalue += fmt.Sprintf(load_sqlarray, strconv.FormatUint(uint64(v), 10))
-			sqlname += fmt.Sprintf(load_sqlarrayname, classType, i)
+			loadsqlarray(sqlData, p, strconv.FormatUint(uint64(v), 10), i)
 		}
 	case "[]int64":
 		value := []int64{}
@@ -291,12 +244,11 @@ func getLoadSql(classField reflect.StructField, classVal reflect.Value) (bool,st
 			value = classVal.Interface().([]int64)
 		}
 		for i,v := range value{
-			if !isDatetime(classField){
-				sqlvalue += fmt.Sprintf(load_sqlarray, strconv.FormatInt(int64(v), 10))
+			if !p.IsDatetime(){
+				loadsqlarray(sqlData, p, strconv.FormatInt(int64(v), 10), i)
 			}else{
-				sqlvalue += fmt.Sprintf(load_sqlarray, GetDBTimeString(v))
+				loadsqlarray(sqlData, p, GetDBTimeString(v), i)
 			}
-			sqlname += fmt.Sprintf(load_sqlarrayname, classType, i)
 		}
 	case "[]uint64":
 		value := []uint64{}
@@ -304,8 +256,7 @@ func getLoadSql(classField reflect.StructField, classVal reflect.Value) (bool,st
 			value = classVal.Interface().([]uint64)
 		}
 		for i,v := range value{
-			sqlvalue += fmt.Sprintf(load_sqlarray, strconv.FormatUint(uint64(v), 10))
-			sqlname += fmt.Sprintf(load_sqlarrayname, classType, i)
+			loadsqlarray(sqlData, p, strconv.FormatUint(uint64(v), 10), i)
 		}
 	case "[]string":
 		value := []string{}
@@ -313,8 +264,7 @@ func getLoadSql(classField reflect.StructField, classVal reflect.Value) (bool,st
 			value = classVal.Interface().([]string)
 		}
 		for i,v := range value{
-			sqlvalue += fmt.Sprintf(load_sqlarray, v)
-			sqlname += fmt.Sprintf(load_sqlarrayname, classType, i)
+			loadsqlarray(sqlData, p, v, i)
 		}
 	case "[]int":
 		value := []int{}
@@ -322,8 +272,7 @@ func getLoadSql(classField reflect.StructField, classVal reflect.Value) (bool,st
 			value = classVal.Interface().([]int)
 		}
 		for i,v := range value{
-			sqlvalue += fmt.Sprintf(load_sqlarray, strconv.FormatInt(int64(v), 10))
-			sqlname += fmt.Sprintf(load_sqlarrayname, classType, i)
+			loadsqlarray(sqlData, p, strconv.FormatInt(int64(v), 10), i)
 		}
 	case "[]uint":
 		value := []uint{}
@@ -331,135 +280,106 @@ func getLoadSql(classField reflect.StructField, classVal reflect.Value) (bool,st
 			value = classVal.Interface().([]uint)
 		}
 		for i,v := range value{
-			sqlvalue += fmt.Sprintf(load_sqlarray, strconv.FormatUint(uint64(v), 10))
-			sqlname += fmt.Sprintf(load_sqlarrayname, classType, i)
+			loadsqlarray(sqlData, p, strconv.FormatUint(uint64(v), 10), i)
 		}
 	case "[]struct":
 		for i := 0;  i < classVal.Len(); i++{
-			n, p := parseLoadSql(classVal.Index(i).Interface())
-			sqlname += n
-			sqlvalue += p
+			parseLoadSql(classVal.Index(i).Interface(), sqlData)
 		}
 	case "[*]float64":
 		for i := 0; i < classVal.Len(); i++{
-			sqlvalue += fmt.Sprintf(load_sqlarray, strconv.FormatFloat(classVal.Index(i).Float(), 'f', -1, 64))
-			sqlname += fmt.Sprintf(load_sqlarrayname, classType, i)
+			loadsqlarray(sqlData, p, strconv.FormatFloat(classVal.Index(i).Float(), 'f', -1, 64), i)
 		}
 	case "[*]float32":
 		for i := 0; i < classVal.Len(); i++{
-			sqlvalue += fmt.Sprintf(load_sqlarray, strconv.FormatFloat(classVal.Index(i).Float(), 'f', -1, 64))
-			sqlname += fmt.Sprintf(load_sqlarrayname, classType, i)
+			loadsqlarray(sqlData, p, strconv.FormatFloat(classVal.Index(i).Float(), 'f', -1, 64), i)
 		}
 	case "[*]bool":
 		for i := 0; i < classVal.Len(); i++{
-			sqlvalue += fmt.Sprintf("%t,", classVal.Index(i).Bool())
-			sqlname += fmt.Sprintf(load_sqlarrayname, classType, i)
+			loadsqlarray(sqlData, p, strconv.FormatBool(classVal.Index(i).Bool()), i)
 		}
 	case "[*]int8":
 		for i := 0; i < classVal.Len(); i++{
-			sqlvalue += fmt.Sprintf(load_sqlarray, strconv.FormatInt(classVal.Index(i).Int(), 10))
-			sqlname += fmt.Sprintf(load_sqlarrayname, classType, i)
+			loadsqlarray(sqlData, p, strconv.FormatInt(classVal.Index(i).Int(), 10), i)
 		}
 	case "[*]uint8":
 		for i := 0; i < classVal.Len(); i++{
-			sqlvalue += fmt.Sprintf(load_sqlarray, strconv.FormatUint(classVal.Index(i).Uint(), 10))
-			sqlname += fmt.Sprintf(load_sqlarrayname, classType, i)
+			loadsqlarray(sqlData, p, strconv.FormatUint(classVal.Index(i).Uint(), 10), i)
 		}
 	case "[*]int16":
 		for i := 0; i < classVal.Len(); i++{
-			sqlvalue += fmt.Sprintf(load_sqlarray, strconv.FormatInt(classVal.Index(i).Int(), 10))
-			sqlname += fmt.Sprintf(load_sqlarrayname, classType, i)
+			loadsqlarray(sqlData, p, strconv.FormatInt(classVal.Index(i).Int(), 10), i)
 		}
 	case "[*]uint16":
 		for i := 0; i < classVal.Len(); i++{
-			sqlvalue += fmt.Sprintf(load_sqlarray, strconv.FormatUint(classVal.Index(i).Uint(), 10))
-			sqlname += fmt.Sprintf(load_sqlarrayname, classType, i)
+			loadsqlarray(sqlData, p, strconv.FormatUint(classVal.Index(i).Uint(), 10), i)
 		}
 	case "[*]int32":
 		for i := 0; i < classVal.Len(); i++{
-			sqlvalue += fmt.Sprintf(load_sqlarray, strconv.FormatInt(classVal.Index(i).Int(), 10))
-			sqlname += fmt.Sprintf(load_sqlarrayname, classType, i)
+			loadsqlarray(sqlData, p, strconv.FormatInt(classVal.Index(i).Int(), 10), i)
 		}
 	case "[*]uint32":
 		for i := 0; i < classVal.Len(); i++{
-			sqlvalue += fmt.Sprintf(load_sqlarray, strconv.FormatUint(classVal.Index(i).Uint(), 10))
-			sqlname += fmt.Sprintf(load_sqlarrayname, classType, i)
+			loadsqlarray(sqlData, p, strconv.FormatUint(classVal.Index(i).Uint(), 10), i)
 		}
 	case "[*]int64":
 		for i := 0; i < classVal.Len(); i++{
-			sqlvalue += fmt.Sprintf(load_sqlarray, strconv.FormatInt(classVal.Index(i).Int(), 10))
-			sqlname += fmt.Sprintf(load_sqlarrayname, classType, i)
+			loadsqlarray(sqlData, p, strconv.FormatInt(classVal.Index(i).Int(), 10), i)
 		}
 	case "[*]uint64":
 		for i := 0; i < classVal.Len(); i++{
-			sqlvalue += fmt.Sprintf(load_sqlarray, strconv.FormatUint(classVal.Index(i).Uint(), 10))
-			sqlname += fmt.Sprintf(load_sqlarrayname, classType, i)
+			loadsqlarray(sqlData, p, strconv.FormatUint(classVal.Index(i).Uint(), 10), i)
 		}
 	case "[*]string":
 		for i := 0; i < classVal.Len(); i++{
-			sqlvalue += fmt.Sprintf(load_sqlarray, classVal.Index(i).String())
-			sqlname += fmt.Sprintf(load_sqlarrayname, classType, i)
+			loadsqlarray(sqlData, p, classVal.Index(i).String(), i)
 		}
 	case "[*]int":
 		for i := 0; i < classVal.Len(); i++{
-			sqlvalue += fmt.Sprintf(load_sqlarray, strconv.FormatInt(classVal.Index(i).Int(), 10))
-			sqlname += fmt.Sprintf(load_sqlarrayname, classType, i)
+			loadsqlarray(sqlData, p, strconv.FormatInt(classVal.Index(i).Int(), 10), i)
 		}
 	case "[*]uint":
 		for i := 0; i < classVal.Len(); i++{
-			sqlvalue += fmt.Sprintf(load_sqlarray, strconv.FormatUint(classVal.Index(i).Uint(), 10))
-			sqlname += fmt.Sprintf(load_sqlarrayname, classType, i)
+			loadsqlarray(sqlData, p, strconv.FormatUint(classVal.Index(i).Uint(), 10), i)
 		}
 	case "[*]struct":
 		for i := 0;  i < classVal.Len(); i++{
-			n, p := parseLoadSql(classVal.Index(i).Interface())
-			sqlname += n
-			sqlvalue += p
+			parseLoadSql(classVal.Index(i).Interface(), sqlData)
 		}
 	default:
 		fmt.Println("getLoadSql type not supported", sType,  classField.Type)
 		panic("getLoadSql type not supported")
-		return false, "", ""
+		return false
 		//}
 	}
-	return true, sqlname, sqlvalue
+	return true
 }
 
-func parseLoadSql(obj interface{}) (string, string){
-	var protoVal reflect.Value
-	protoType := reflect.TypeOf(obj)
-	if protoType.Kind() == reflect.Ptr {
-		protoType = reflect.TypeOf(obj).Elem()
-		protoVal = reflect.ValueOf(obj).Elem()
-	}else if protoType.Kind() == reflect.Struct{
-		protoVal = reflect.ValueOf(obj)
-	} else{
-		errorStr := fmt.Sprintf("parseLoadSql no support %s", protoType.Name())
-		log.Println(errorStr)
-		panic(errorStr)
-		return "",""
+func parseLoadSql(obj interface{}, sqlData *SqlData) (){
+	classVal := reflect.ValueOf(obj)
+	for classVal.Kind() == reflect.Ptr {
+		classVal = classVal.Elem()
 	}
+	classType := classVal.Type()
 
-	sqlname := ""
-	sqlvalue := ""
-	for i := 0; i < protoType.NumField(); i++{
-		if !protoVal.Field(i).CanInterface(){
+	for i := 0; i < classType.NumField(); i++{
+		if !classVal.Field(i).CanInterface(){
 			continue
 		}
 
-		bRight, name, value := getLoadSql(protoType.Field(i), protoVal.Field(i))
+		bRight := getLoadSql(classType.Field(i), classVal.Field(i), sqlData)
 		if !bRight{
-			errorStr := fmt.Sprintf("parseLoadSql type not supported %s", protoType.Name())
+			errorStr := fmt.Sprintf("parseLoadSql type not supported %s", classType.Name())
 			panic(errorStr)
-			return "",""//丢弃这个包
+			return//丢弃这个包
 		}
-		sqlname += name
-		sqlvalue += value
 	}
-	return sqlname,sqlvalue
+	return
 }
 
-func loadSqlStr(sqltable string, sqlname string, sqlvalue string) string{
+func loadSqlStr(sqltable string, sqlData *SqlData) string{
+	sqlname := sqlData.SqlName
+	sqlvalue := sqlData.SqlValue
 	index := strings.LastIndex(sqlname, ",")
 	if index!= -1{
 		sqlname = sqlname[:index]
@@ -484,8 +404,9 @@ func LoadSql(obj interface{}, sqltable string, key string)string{
 		key = "where " + key;
 	}
 
-	sqlname, sqlvalue := parseLoadSql(obj)
-	return  loadSqlStr(sqltable, sqlname, sqlvalue) + " " +  key
+	sqlData := &SqlData{}
+	parseLoadSql(obj, sqlData)
+	return  loadSqlStr(sqltable, sqlData) + " " +  key
 }
 
 func LoadSqlEx(obj interface{}, sqltable string, key string, params ...string) string {
@@ -495,43 +416,39 @@ func LoadSqlEx(obj interface{}, sqltable string, key string, params ...string) s
 		}
 	}()
 
-	protoVal  := reflect.ValueOf(obj)
-	protoType := reflect.TypeOf(obj)
-	if protoType.Kind() == reflect.Ptr {
-		protoType = reflect.TypeOf(obj).Elem()
-		protoVal = reflect.ValueOf(obj).Elem()
+	classVal := reflect.ValueOf(obj)
+	for classVal.Kind() == reflect.Ptr {
+		classVal = classVal.Elem()
 	}
+	classType := classVal.Type()
 
 	if key != ""{
 		key = "where " + key;
 	}
 
-	sqlname := ""
-	sqlvalue := ""
+	sqlData := &SqlData{}
 	nameMap := make(map[string] string)
 	for _,v := range params{
 		v1 := strings.ToLower(v)
 		nameMap[v1] = v1
 	}
-	for i := 0; i < protoType.NumField(); i++ {
-		if !protoVal.Field(i).CanInterface() {//private成员不能读取
+	for i := 0; i < classType.NumField(); i++ {
+		if !classVal.Field(i).CanInterface() {//private成员不能读取
 			continue
 		}
 
-		sf := protoType.Field(i)
-		_, exist := nameMap[getSqlName(sf)]
+		sf := classType.Field(i)
+		_, exist := nameMap[getProperties(sf).Name]
 		if exist{
-			bRight, name, value := getLoadSql(sf, protoVal.Field(i))
+			bRight := getLoadSql(sf, classVal.Field(i), sqlData)
 			if !bRight{
 				errorStr := fmt.Sprintf("LoadSqlEx error %s", reflect.TypeOf(obj).Name())
 				panic(errorStr)
 				return ""//丢弃这个包
 			}
-			sqlname += name
-			sqlvalue += value
 		}
 	}
-	return loadSqlStr(sqltable, sqlname, sqlvalue) + " " + key
+	return loadSqlStr(sqltable, sqlData) + " " + key
 }
 
 
