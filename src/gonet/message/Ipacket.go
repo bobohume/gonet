@@ -12,7 +12,6 @@ import (
 var(
 	Packet_CreateFactorStringMap map[string] func()proto.Message
 	Packet_CreateFactorMap map[uint32] func()proto.Message
-	Packet_CreateFactorInit bool
 )
 
 func parseTypeElem(val reflect.Value, packetHead **Ipacket) {
@@ -137,31 +136,6 @@ func RegisterPacket(packet proto.Message) {
 }
 
 func GetPakcet(packetId uint32) proto.Message{
-	if !Packet_CreateFactorInit{
-		Packet_CreateFactorStringMap = make(map[string] func()proto.Message)
-		Packet_CreateFactorMap 		 = make(map[uint32] func()proto.Message)
-
-		//注册消息
-		RegisterPacket(&C_A_LoginRequest{})
-		RegisterPacket(&C_A_RegisterRequest{})
-		RegisterPacket(&C_G_LogoutResponse{})
-		RegisterPacket(&C_W_CreatePlayerRequest{})
-		RegisterPacket(&C_W_Game_LoginRequset{})
-		RegisterPacket(&C_W_LoginCopyMap{})
-		RegisterPacket(&C_W_Move{})
-		RegisterPacket(&C_W_ChatMessage{})
-		// test for client
-		RegisterPacket(&W_C_SelectPlayerResponse{})
-		RegisterPacket(&W_C_CreatePlayerResponse{})
-		RegisterPacket(&W_C_LoginMap{})
-		RegisterPacket(&W_C_Move{})
-		RegisterPacket(&W_C_ADD_SIMOBJ{})
-		RegisterPacket(&A_C_LoginRequest{})
-		RegisterPacket(&A_C_RegisterResponse{})
-		RegisterPacket(&W_C_ChatMessage{})
-		Packet_CreateFactorInit = true
-	}
-
 	packetFunc,exist := Packet_CreateFactorMap[packetId]
 	if exist{
 		return packetFunc()
@@ -176,4 +150,30 @@ func GetPakcetByName(packetName string) proto.Message{
 
 func UnmarshalText(packet proto.Message, packetBuf []byte) error{
 	return proto.Unmarshal(packetBuf, packet)
+}
+
+func init(){
+	Packet_CreateFactorStringMap = make(map[string] func()proto.Message)
+	Packet_CreateFactorMap 		 = make(map[uint32] func()proto.Message)
+}
+
+func Init(){
+	//注册消息
+	RegisterPacket(&C_A_LoginRequest{})
+	RegisterPacket(&C_A_RegisterRequest{})
+	RegisterPacket(&C_G_LogoutResponse{})
+	RegisterPacket(&C_W_CreatePlayerRequest{})
+	RegisterPacket(&C_W_Game_LoginRequset{})
+	RegisterPacket(&C_W_LoginCopyMap{})
+	RegisterPacket(&C_W_Move{})
+	RegisterPacket(&C_W_ChatMessage{})
+	// test for client
+	RegisterPacket(&W_C_SelectPlayerResponse{})
+	RegisterPacket(&W_C_CreatePlayerResponse{})
+	RegisterPacket(&W_C_LoginMap{})
+	RegisterPacket(&W_C_Move{})
+	RegisterPacket(&W_C_ADD_SIMOBJ{})
+	RegisterPacket(&A_C_LoginRequest{})
+	RegisterPacket(&A_C_RegisterResponse{})
+	RegisterPacket(&W_C_ChatMessage{})
 }

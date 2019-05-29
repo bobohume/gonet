@@ -2,6 +2,7 @@ package main
 
 import (
 	"gonet/actor"
+	"gonet/server/common"
 	"gonet/server/world"
 	"gonet/server/world/chat"
 	"gonet/server/world/cmd"
@@ -14,6 +15,8 @@ import (
 
 
 func InitMgr(serverName string){
+	//一些共有数据量初始化
+	common.Init()
 	if serverName == "account"{
 	}else if serverName == "netgate"{
 	}else if serverName == "world"{
@@ -25,6 +28,6 @@ func InitMgr(serverName string){
 		toprank.MGR().Init(1000)
 		player.PLAYERSIMPLEMGR.Init(1000)
 		social.MGR().Init(1000)
-		actor.MGR().InitActorHandle(world.SERVER.GetServer())
+		actor.MGR.InitActorHandle(world.SERVER.GetServer())
 	}
 }

@@ -7,6 +7,8 @@ import (
 	"strings"
 )
 
+//一些全局的actor,不可删除的,不用锁考虑性能
+//不是全局的actor,请使用actor pool
 type (
 	ActorMgr struct{
 		m_ActorMap 	map[string] IActor
@@ -18,15 +20,6 @@ type (
 		InitActorHandle(network.ISocket)
 		SendMsg(string, string, ...interface{})
 	}
-
-	ActorChan struct {
-		pActor IActor
-		state int
-	}
-)
-
-var(
-	pAcotrMgr *ActorMgr
 )
 
 func (this *ActorMgr) Init() {
@@ -64,14 +57,14 @@ func (this *ActorMgr) SendMsg(name, funcName string, params  ...interface{}){
 }
 
 func SendMsg(name, funcName string, params  ...interface{}){
-	MGR().SendMsg(name, funcName, params...)
+	MGR.SendMsg(name, funcName, params...)
 }
 
-func MGR() IActorMgr{
-	if pAcotrMgr == nil{
-		pAcotrMgr = &ActorMgr{}
-		pAcotrMgr.Init()
-	}
+var(
+	MGR *ActorMgr
+)
 
-	return pAcotrMgr
+func init(){
+	MGR = &ActorMgr{}
+	MGR.Init()
 }

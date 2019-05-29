@@ -60,13 +60,10 @@ func (this *GobList) UnMarshValue(buf []byte, data reflect.Value){
 }
 
 var(
-	pGob *GobList
+	GOB *GobList
 )
 
-func GOB() *GobList{
-	if pGob == nil{
-		pGob = new(GobList)
-		pGob.Init(10)
-	}
-	return  pGob
+func init(){
+	GOB = new(GobList)
+	GOB.Init(10)
 }

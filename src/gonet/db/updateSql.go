@@ -26,8 +26,6 @@ func updatesqlarray(sqlData *SqlData, p *Properties, val string, i int){
 	}
 }
 
-
-
 func getUpdateSql(classField reflect.StructField, classVal reflect.Value, sqlData *SqlData) (bool) {
 	p := getProperties(classField)
 	sType := base.GetTypeStringEx(classField, classVal)

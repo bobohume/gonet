@@ -70,7 +70,7 @@ func (this *TopMgrR) Init(num int){
 	this.m_Log = world.SERVER.GetLog()
 	this.m_topRankTimer = common.NewSimpleTimer(TOP_RANK_SYNC_TIME)
 	this.Actor.Init(num)
-	actor.MGR().AddActor(this)
+	actor.MGR.AddActor(this)
 
 	this.RegisterTimer(1000 * 1000 * 1000, this.update)//定时器
 	this.RegisterCall("InTopRank", func(nType int, id int64, name string, score,val0,val1 int) {

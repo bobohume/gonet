@@ -155,7 +155,7 @@ func Uuid() int64{
 	atomic.AddInt32(&g_SeedId,1)
 	curTime := 122192928000000000 / 1000000 + uint64(time.Now().UnixNano()/1000000)
 	uid |= int64((curTime) << 20) & (0x7FFFFFFFFFF00000) //时间
-	uid |= int64(uint64(RAND().RandI(0, 0xF)) << 16) & (0x00000000000F0000) //随机数
+	uid |= int64(uint64(RAND.RandI(0, 0xF)) << 16) & (0x00000000000F0000) //随机数
 	uid |= int64(uint64(g_SeedId % 0xFFFF)) & (0x000000000000FFFF)//自增ID
 	return uid
 }*/

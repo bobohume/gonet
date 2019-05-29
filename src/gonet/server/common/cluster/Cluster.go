@@ -187,7 +187,7 @@ func (this *Cluster) RandomCluster() uint32{
 	this.m_ClusterLocker.RLock()
 	if this.m_ClusterList.Len() > 0{
 		nLen := int(math.Max(float64(this.m_ClusterList.Len()-1), 0))
-		nRand := base.RAND().RandI(0, nLen)
+		nRand := base.RAND.RandI(0, nLen)
 		nIndex = this.m_ClusterList.Get(nRand).(*common.ClusterInfo).Id()
 	}
 	this.m_ClusterLocker.RUnlock()

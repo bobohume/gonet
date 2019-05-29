@@ -69,7 +69,7 @@ func (this *EventProcess) Init(num int) {
 		socketId := int(packet.GetSocketId())
 		error := base.NONE_ERROR
 
-		if base.CVERSION().IsAcceptableBuildVersion(buildVersion) {
+		if base.VERSION.IsAcceptableBuildVersion(buildVersion) {
 			log.Printf("账号[%s]登陆账号服务器", accountName)
 			rows, err := this.m_db.Query(fmt.Sprintf("call `usp_login`('%s', '%s')", accountName, password))
 			if err == nil && rows != nil{

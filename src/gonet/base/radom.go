@@ -89,13 +89,10 @@ func generateSeed() int{
 }
 
 var (
-	pRadomMgr *MRadomLCG
+	RAND *MRadomLCG
 )
 
-func RAND() *MRadomLCG{
-	if pRadomMgr == nil {
-		pRadomMgr = new(MRadomLCG)
-		pRadomMgr.Init()
-	}
-	return  pRadomMgr
+func init() {
+	RAND = new(MRadomLCG)
+	RAND.Init()
 }

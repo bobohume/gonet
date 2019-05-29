@@ -65,7 +65,7 @@ func (this *ChatMgr) Init(num int) {
 	this.Actor.Init(num)
 
 	this.m_playerChatMap = make(map[int64] *stPlayerChatRecord)
-	actor.MGR().AddActor(this)
+	actor.MGR.AddActor(this)
 	this.m_channelManager.Init()
 	//聊天信息
 	this.RegisterCall("C_W_ChatMessage", func(packet *message.C_W_ChatMessage){

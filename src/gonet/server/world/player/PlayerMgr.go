@@ -1,17 +1,14 @@
 package player
 
 import (
-	"gonet/actor"
-	"gonet/db"
-	"fmt"
-	"gonet/base"
-	"gonet/server/common"
-	"strings"
 	"database/sql"
-	"gonet/message"
-	"gonet/server/world"
-	"sync"
+	"fmt"
 	"github.com/golang/protobuf/proto"
+	"gonet/actor"
+	"gonet/base"
+	"gonet/db"
+	"gonet/server/common"
+	"gonet/server/world"
 )
 //********************************************************
 // 玩家管理
@@ -22,19 +19,18 @@ var(
 )
 type(
 	PlayerMgr struct{
-		actor.Actor
-		m_PlayerMap map[int64] *Player
+		actor.ActorPool
+
 		m_db *sql.DB
 		m_Log *base.CLog
-		m_Lock *sync.RWMutex
 		m_PingTimer common.ISimpleTimer
 	}
 
 	IPlayerMgr interface {
-		actor.IActor
+		actor.IActorPool
 
-		GetPlayer(accountId int64) *Player
-		AddPlayer(accountId int64) *Player
+		GetPlayer(accountId int64) actor.IActor
+		AddPlayer(accountId int64) actor.IActor
 		RemovePlayer(accountId int64)
 		GetPlayerNum() int//获取在线人数
 		Update()
@@ -44,12 +40,10 @@ type(
 func (this* PlayerMgr) Init(num int){
 	this.m_db = world.SERVER.GetDB()
 	this.m_Log = world.SERVER.GetLog()
-	this.m_PlayerMap = make(map[int64] *Player)
-	this.m_Lock = &sync.RWMutex{}
-	this.Actor.Init(num)
+	this.ActorPool.Init(num)
 	this.m_PingTimer = common.NewSimpleTimer(120)
 	this.m_PingTimer.Start()
-	actor.MGR().AddActor(this)
+	actor.MGR.AddActor(this)
 	this.RegisterTimer(1000 * 1000 * 1000, this.Update)//定时器
 	//玩家登录
 	this.RegisterCall("G_W_CLoginRequest", func(accountId int64) {
@@ -105,17 +99,11 @@ func (this* PlayerMgr) Init(num int){
 	this.Actor.Start()
 }
 
-func (this *PlayerMgr) GetPlayer(accountId int64) *Player{
-	this.m_Lock.RLock()
-	pPlayer, exist := this.m_PlayerMap[accountId]
-	this.m_Lock.RUnlock()
-	if exist{
-		return pPlayer
-	}
-	return nil
+func (this *PlayerMgr) GetPlayer(accountId int64) actor.IActor{
+	return this.GetActor(accountId)
 }
 
-func (this *PlayerMgr) AddPlayer(accountId int64) *Player{
+func (this *PlayerMgr) AddPlayer(accountId int64)  actor.IActor{
 	LoadPlayerDB := func(accountId int64) ([]int64, int){
 		PlayerList := make([]int64, 0)
 		PlayerNum := 0
@@ -135,83 +123,23 @@ func (this *PlayerMgr) AddPlayer(accountId int64) *Player{
 	pPlayer.AccountId = accountId
 	pPlayer.PlayerIdList = PlayerList
 	pPlayer.PlayerNum = PlayerNum
-	this.m_Lock.Lock()
-	this.m_PlayerMap[accountId] = pPlayer
-	this.m_Lock.Unlock()
+	this.AddActor(accountId, pPlayer)
 	pPlayer.Init(MAX_PLAYER_CHAN)
 	return pPlayer
 }
 
 func (this *PlayerMgr) RemovePlayer(accountId int64){
 	this.m_Log.Printf("移除帐号数据[%d]", accountId)
-	this.m_Lock.Lock()
-	delete(this.m_PlayerMap, accountId)
-	this.m_Lock.Unlock()
-}
-
-func (this *PlayerMgr) GetPlayerNum() int{
-	nLen := 0
-	this.m_Lock.Lock()
-	nLen = len(this.m_PlayerMap)
-	this.m_Lock.Unlock()
-	return nLen
+	this.DelActor(accountId)
 }
 
 func (this* PlayerMgr) Update(){
-}
-
-func (this *PlayerMgr) PacketFunc(id int, buff []byte) bool{
-	defer func() {
-		if err := recover(); err != nil {
-			fmt.Println("PlayerMgr PacketFunc", err)
-		}
-	}()
-
-	SendToPlayer := func(AccountId int64, io actor.CallIO) {
-		pPlayer := this.GetPlayer(AccountId)
-		if pPlayer != nil{
-			pPlayer.Send(io)
-		}
-	}
-
-	var io actor.CallIO
-	io.Buff = buff
-	io.SocketId = id
-
-	bitstream := base.NewBitStream(io.Buff, len(io.Buff))
-	funcName := bitstream.ReadString()
-	funcName = strings.ToLower(funcName)
-	pFunc := this.FindCall(funcName)
-	if pFunc != nil{
-		this.Send(io)
-		return true
-	}else{
-		pFunc := PLAYER.FindCall(funcName)
-		if pFunc != nil{
-			bitstream.ReadInt(base.Bit8)
-			nType := bitstream.ReadInt(base.Bit8)
-			if (nType == base.RPC_Int64 || nType == base.RPC_UInt64 || nType == base.RPC_PInt64 || nType == base.RPC_PUInt64){
-				nAccountId := bitstream.ReadInt64(base.Bit64)
-				SendToPlayer(nAccountId, io)
-			}else if (nType == base.RPC_MESSAGE){
-				packet := message.GetPakcetByName(funcName)
-				nLen := bitstream.ReadInt(base.Bit32)
-				packetBuf := bitstream.ReadBits(nLen << 3)
-				message.UnmarshalText(packet, packetBuf)
-				packetHead := message.GetPakcetHead(packet)
-				nAccountId := int64(*packetHead.Id)
-				SendToPlayer(nAccountId, io)
-			}
-		}
-	}
-
-	return false
 }
 
 //--------------发送给客户端----------------------//
 func SendToClient(AccountId int64, packet proto.Message){
 	pPlayer := PLAYERMGR.GetPlayer(AccountId)
 	if pPlayer != nil{
-		 world.SendToClient(pPlayer.SocketId, packet)
+		 world.SendToClient(pPlayer.GetSocketId(), packet)
 	}
 }

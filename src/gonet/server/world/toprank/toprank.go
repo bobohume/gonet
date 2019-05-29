@@ -109,7 +109,7 @@ func (this *TopMgr) Init(num int){
 	this.m_Log = world.SERVER.GetLog()
 	this.m_topRankTimer = common.NewSimpleTimer(TOP_RANK_SYNC_TIME)
 	this.Actor.Init(num)
-	actor.MGR().AddActor(this)
+	actor.MGR.AddActor(this)
 	this.clearRank()
 
 	this.RegisterTimer(1000 * 1000 * 1000, this.update)//定时器

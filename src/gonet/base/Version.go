@@ -8,14 +8,9 @@ const(
 	BUILD_NO = "1,5,1,1"
 )
 
-var(
-	g_Version CVersion
-)
-
 type (
 	CVersion struct{
 		m_sBuildVer	int64
-		m_bInit		bool
 	}
 
 	ICVersion interface {
@@ -38,10 +33,10 @@ func (this *CVersion)IsAcceptableBuildVersion(version string) bool{
 	return  sClient >= this.m_sBuildVer
 }
 
-func CVERSION() *CVersion{
-	if (g_Version.m_bInit == false){
-		g_Version.Init();
-	}
-	return &g_Version
-}
+var(
+	VERSION CVersion
+)
 
+func init(){
+	VERSION.Init()
+}

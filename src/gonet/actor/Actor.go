@@ -17,6 +17,10 @@ import (
 var(
 	g_IdSeed int64
 )
+
+//********************************************************
+// actor 核心actor模式
+//********************************************************
 type (
 	Actor struct {
 		m_CallChan  chan CallIO//rpc chan

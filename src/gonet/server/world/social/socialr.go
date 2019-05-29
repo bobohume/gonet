@@ -46,7 +46,7 @@ func (this *SocialMgrR) Init(num int) {
 	this.m_db = world.SERVER.GetDB()
 	this.m_Log = world.SERVER.GetLog()
 	this.Actor.Init(num)
-	actor.MGR().AddActor(this)
+	actor.MGR.AddActor(this)
 
 	this.RegisterCall("C_W_MakeLinkRequest", func(PlayerId, TargetId int64, Type int8) {
 		pPlayer := player.PLAYERSIMPLEMGR.GetPlayerDataById(PlayerId)

@@ -120,9 +120,9 @@ func BytesType(obj interface{}) BYTES_TYPE{
 	if oTpye.Kind() == reflect.Struct{
 		if oTpye.NumField() != 0{
 			sf := oTpye.Field(0)
-			if len(base.ParseTag(sf, "protobuf")) != 0{
+			if len(sf.Tag.Get("protobuf")) > 0{
 				return BYTES_PB
-			}else if len(base.ParseTag(sf, "josn")) != 0{
+			}else if len(sf.Tag.Get("josn")) > 0{
 				return BYTES_JSON
 			}
 		}
@@ -399,9 +399,9 @@ func QueryKV(obj interface{}, database int, cmd, key string, args ...interface{}
 			if rType.Kind() == reflect.Struct{
 				if rType.NumField() != 0{
 					sf := rType.Field(0)
-					if len(base.ParseTag(sf, "protobuf")) != 0{
+					if len(sf.Tag.Get("protobuf")) > 0{
 						nType = BYTES_PB
-					}else if len(base.ParseTag(sf, "josn")) != 0 {
+					}else if len(sf.Tag.Get("json")) > 0{
 						nType = BYTES_JSON
 					}
 				}
