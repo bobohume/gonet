@@ -46,9 +46,11 @@ websocket模式下，要在net，[websocket注视掉如下代码](https://studyg
 
 3.db库，mysql，支持简单orm，没有重度gorm，更加轻便，还在受gorm 0 nil “” 数据库更新就失败的痛苦吗。还在忍受重度gorm带来sql语句都不知道怎么写，没错这个是轻度的。
 
-4.message库，pb用于传输协议。5.nework库，网络库，tcp，websocket网络管理。rd库，redis库，做一些集群唯一缓存用。
+4.message库，pb用于传输协议。
 
-5.client，测试客户端源码，包括go和lua的源码
+5.nework库，网络库，tcp，websocket网络管理。rd库，redis库，做一些集群唯一缓存用。
+
+6.client，测试客户端源码，包括go和lua的源码
 
 
 
