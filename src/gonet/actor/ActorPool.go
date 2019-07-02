@@ -26,6 +26,7 @@ type(
 		AddActor(Id int64, pActor IActor)//添加actor
 		DelActor(Id int64)//删除actor
 		SendActor(Id int64, io CallIO, funcName string) bool//发送到actor
+		BoardCastActor(funcName string, params ...interface{})//广播actor
 		GetActorNum() int
 	}
 )
@@ -71,9 +72,9 @@ func (this *ActorPool) DelActor(Id int64){
 
 func (this *ActorPool) GetActorNum() int{
 	nLen := 0
-	this.m_ActorLock.Lock()
+	this.m_ActorLock.RLock()
 	nLen = len(this.m_ActorMap)
-	this.m_ActorLock.Unlock()
+	this.m_ActorLock.RUnlock()
 	return nLen
 }
 
@@ -84,6 +85,14 @@ func (this *ActorPool) SendActor(Id int64, io CallIO, funcName string) bool{
 		return true
 	}
 	return false
+}
+
+func (this *ActorPool) BoardCastActor(funcName string, params ...interface{}){
+	this.m_ActorLock.RLock()
+	for _, v := range this.m_ActorMap{
+		v.SendMsg(funcName, params...)
+	}
+	this.m_ActorLock.RUnlock()
 }
 
 func (this *ActorPool) PacketFunc(id int, buff []byte) bool{

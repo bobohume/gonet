@@ -31,3 +31,11 @@ func InitMgr(serverName string){
 		actor.MGR.InitActorHandle(world.SERVER.GetServer())
 	}
 }
+
+//程序退出后执行
+func ExitMgr(serverName string){
+	if serverName == "account"{
+	}else if serverName == "netgate"{
+	}else if serverName == "world"{
+	}
+}

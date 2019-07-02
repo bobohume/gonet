@@ -118,7 +118,7 @@ func (this *PlayerManager) Init(num int){
 	})
 
 	//重连世界服务器，账号重新登录
-	this.RegisterCall("Account_Relink", func() {
+	this.RegisterCall("World_Relogin", func() {
 		accountMap := make(map [int64] uint32)
 		this.m_Locker.RLock()
 		for i, v := range this.m_AccountMap {
@@ -128,7 +128,7 @@ func (this *PlayerManager) Init(num int){
 
 		if len(accountMap) != 0{
 			for i, v := range accountMap {
-				SERVER.GetWorldCluster().SendMsg(v, "G_W_CLoginRequest", i)
+				SERVER.GetWorldCluster().SendMsg(v, "G_W_Relogin", i)
 			}
 		}
 	})

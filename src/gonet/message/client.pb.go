@@ -12,45 +12,18 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
-// This is a compile-time assertion to ensure that this generated file
-// is compatible with the proto package it is being compiled against.
-// A compilation error at this line likely means your copy of the
-// proto package needs to be updated.
-const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
-
 type C_A_LoginRequest struct {
-	PacketHead           *Ipacket `protobuf:"bytes,1,req,name=PacketHead" json:"PacketHead,omitempty"`
-	AccountName          *string  `protobuf:"bytes,2,req,name=AccountName" json:"AccountName,omitempty"`
-	BuildNo              *string  `protobuf:"bytes,3,req,name=BuildNo" json:"BuildNo,omitempty"`
-	SocketId             *int32   `protobuf:"varint,4,req,name=SocketId" json:"SocketId,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	PacketHead       *Ipacket `protobuf:"bytes,1,req,name=PacketHead" json:"PacketHead,omitempty"`
+	AccountName      *string  `protobuf:"bytes,2,req,name=AccountName" json:"AccountName,omitempty"`
+	BuildNo          *string  `protobuf:"bytes,3,req,name=BuildNo" json:"BuildNo,omitempty"`
+	SocketId         *int32   `protobuf:"varint,4,req,name=SocketId" json:"SocketId,omitempty"`
+	XXX_unrecognized []byte   `json:"-"`
 }
 
-func (m *C_A_LoginRequest) Reset()         { *m = C_A_LoginRequest{} }
-func (m *C_A_LoginRequest) String() string { return proto.CompactTextString(m) }
-func (*C_A_LoginRequest) ProtoMessage()    {}
-func (*C_A_LoginRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_client_847e00738f02fccc, []int{0}
-}
-func (m *C_A_LoginRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_C_A_LoginRequest.Unmarshal(m, b)
-}
-func (m *C_A_LoginRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_C_A_LoginRequest.Marshal(b, m, deterministic)
-}
-func (dst *C_A_LoginRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_C_A_LoginRequest.Merge(dst, src)
-}
-func (m *C_A_LoginRequest) XXX_Size() int {
-	return xxx_messageInfo_C_A_LoginRequest.Size(m)
-}
-func (m *C_A_LoginRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_C_A_LoginRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_C_A_LoginRequest proto.InternalMessageInfo
+func (m *C_A_LoginRequest) Reset()                    { *m = C_A_LoginRequest{} }
+func (m *C_A_LoginRequest) String() string            { return proto.CompactTextString(m) }
+func (*C_A_LoginRequest) ProtoMessage()               {}
+func (*C_A_LoginRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
 
 func (m *C_A_LoginRequest) GetPacketHead() *Ipacket {
 	if m != nil {
@@ -81,35 +54,14 @@ func (m *C_A_LoginRequest) GetSocketId() int32 {
 }
 
 type C_A_LoginRequest1 struct {
-	Login                *C_A_LoginRequest `protobuf:"bytes,1,req,name=Login" json:"Login,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
-	XXX_unrecognized     []byte            `json:"-"`
-	XXX_sizecache        int32             `json:"-"`
+	Login            *C_A_LoginRequest `protobuf:"bytes,1,req,name=Login" json:"Login,omitempty"`
+	XXX_unrecognized []byte            `json:"-"`
 }
 
-func (m *C_A_LoginRequest1) Reset()         { *m = C_A_LoginRequest1{} }
-func (m *C_A_LoginRequest1) String() string { return proto.CompactTextString(m) }
-func (*C_A_LoginRequest1) ProtoMessage()    {}
-func (*C_A_LoginRequest1) Descriptor() ([]byte, []int) {
-	return fileDescriptor_client_847e00738f02fccc, []int{1}
-}
-func (m *C_A_LoginRequest1) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_C_A_LoginRequest1.Unmarshal(m, b)
-}
-func (m *C_A_LoginRequest1) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_C_A_LoginRequest1.Marshal(b, m, deterministic)
-}
-func (dst *C_A_LoginRequest1) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_C_A_LoginRequest1.Merge(dst, src)
-}
-func (m *C_A_LoginRequest1) XXX_Size() int {
-	return xxx_messageInfo_C_A_LoginRequest1.Size(m)
-}
-func (m *C_A_LoginRequest1) XXX_DiscardUnknown() {
-	xxx_messageInfo_C_A_LoginRequest1.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_C_A_LoginRequest1 proto.InternalMessageInfo
+func (m *C_A_LoginRequest1) Reset()                    { *m = C_A_LoginRequest1{} }
+func (m *C_A_LoginRequest1) String() string            { return proto.CompactTextString(m) }
+func (*C_A_LoginRequest1) ProtoMessage()               {}
+func (*C_A_LoginRequest1) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1} }
 
 func (m *C_A_LoginRequest1) GetLogin() *C_A_LoginRequest {
 	if m != nil {
@@ -119,37 +71,16 @@ func (m *C_A_LoginRequest1) GetLogin() *C_A_LoginRequest {
 }
 
 type C_A_RegisterRequest struct {
-	PacketHead           *Ipacket `protobuf:"bytes,1,req,name=PacketHead" json:"PacketHead,omitempty"`
-	AccountName          *string  `protobuf:"bytes,2,req,name=AccountName" json:"AccountName,omitempty"`
-	SocketId             *int32   `protobuf:"varint,3,req,name=SocketId" json:"SocketId,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	PacketHead       *Ipacket `protobuf:"bytes,1,req,name=PacketHead" json:"PacketHead,omitempty"`
+	AccountName      *string  `protobuf:"bytes,2,req,name=AccountName" json:"AccountName,omitempty"`
+	SocketId         *int32   `protobuf:"varint,3,req,name=SocketId" json:"SocketId,omitempty"`
+	XXX_unrecognized []byte   `json:"-"`
 }
 
-func (m *C_A_RegisterRequest) Reset()         { *m = C_A_RegisterRequest{} }
-func (m *C_A_RegisterRequest) String() string { return proto.CompactTextString(m) }
-func (*C_A_RegisterRequest) ProtoMessage()    {}
-func (*C_A_RegisterRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_client_847e00738f02fccc, []int{2}
-}
-func (m *C_A_RegisterRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_C_A_RegisterRequest.Unmarshal(m, b)
-}
-func (m *C_A_RegisterRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_C_A_RegisterRequest.Marshal(b, m, deterministic)
-}
-func (dst *C_A_RegisterRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_C_A_RegisterRequest.Merge(dst, src)
-}
-func (m *C_A_RegisterRequest) XXX_Size() int {
-	return xxx_messageInfo_C_A_RegisterRequest.Size(m)
-}
-func (m *C_A_RegisterRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_C_A_RegisterRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_C_A_RegisterRequest proto.InternalMessageInfo
+func (m *C_A_RegisterRequest) Reset()                    { *m = C_A_RegisterRequest{} }
+func (m *C_A_RegisterRequest) String() string            { return proto.CompactTextString(m) }
+func (*C_A_RegisterRequest) ProtoMessage()               {}
+func (*C_A_RegisterRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{2} }
 
 func (m *C_A_RegisterRequest) GetPacketHead() *Ipacket {
 	if m != nil {
@@ -173,37 +104,16 @@ func (m *C_A_RegisterRequest) GetSocketId() int32 {
 }
 
 type C_W_CreatePlayerRequest struct {
-	PacketHead           *Ipacket `protobuf:"bytes,1,req,name=PacketHead" json:"PacketHead,omitempty"`
-	PlayerName           *string  `protobuf:"bytes,2,req,name=PlayerName" json:"PlayerName,omitempty"`
-	Sex                  *int32   `protobuf:"varint,3,req,name=Sex" json:"Sex,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	PacketHead       *Ipacket `protobuf:"bytes,1,req,name=PacketHead" json:"PacketHead,omitempty"`
+	PlayerName       *string  `protobuf:"bytes,2,req,name=PlayerName" json:"PlayerName,omitempty"`
+	Sex              *int32   `protobuf:"varint,3,req,name=Sex" json:"Sex,omitempty"`
+	XXX_unrecognized []byte   `json:"-"`
 }
 
-func (m *C_W_CreatePlayerRequest) Reset()         { *m = C_W_CreatePlayerRequest{} }
-func (m *C_W_CreatePlayerRequest) String() string { return proto.CompactTextString(m) }
-func (*C_W_CreatePlayerRequest) ProtoMessage()    {}
-func (*C_W_CreatePlayerRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_client_847e00738f02fccc, []int{3}
-}
-func (m *C_W_CreatePlayerRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_C_W_CreatePlayerRequest.Unmarshal(m, b)
-}
-func (m *C_W_CreatePlayerRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_C_W_CreatePlayerRequest.Marshal(b, m, deterministic)
-}
-func (dst *C_W_CreatePlayerRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_C_W_CreatePlayerRequest.Merge(dst, src)
-}
-func (m *C_W_CreatePlayerRequest) XXX_Size() int {
-	return xxx_messageInfo_C_W_CreatePlayerRequest.Size(m)
-}
-func (m *C_W_CreatePlayerRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_C_W_CreatePlayerRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_C_W_CreatePlayerRequest proto.InternalMessageInfo
+func (m *C_W_CreatePlayerRequest) Reset()                    { *m = C_W_CreatePlayerRequest{} }
+func (m *C_W_CreatePlayerRequest) String() string            { return proto.CompactTextString(m) }
+func (*C_W_CreatePlayerRequest) ProtoMessage()               {}
+func (*C_W_CreatePlayerRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{3} }
 
 func (m *C_W_CreatePlayerRequest) GetPacketHead() *Ipacket {
 	if m != nil {
@@ -227,36 +137,15 @@ func (m *C_W_CreatePlayerRequest) GetSex() int32 {
 }
 
 type C_W_Game_LoginRequset struct {
-	PacketHead           *Ipacket `protobuf:"bytes,1,req,name=PacketHead" json:"PacketHead,omitempty"`
-	PlayerId             *int64   `protobuf:"varint,2,req,name=PlayerId" json:"PlayerId,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	PacketHead       *Ipacket `protobuf:"bytes,1,req,name=PacketHead" json:"PacketHead,omitempty"`
+	PlayerId         *int64   `protobuf:"varint,2,req,name=PlayerId" json:"PlayerId,omitempty"`
+	XXX_unrecognized []byte   `json:"-"`
 }
 
-func (m *C_W_Game_LoginRequset) Reset()         { *m = C_W_Game_LoginRequset{} }
-func (m *C_W_Game_LoginRequset) String() string { return proto.CompactTextString(m) }
-func (*C_W_Game_LoginRequset) ProtoMessage()    {}
-func (*C_W_Game_LoginRequset) Descriptor() ([]byte, []int) {
-	return fileDescriptor_client_847e00738f02fccc, []int{4}
-}
-func (m *C_W_Game_LoginRequset) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_C_W_Game_LoginRequset.Unmarshal(m, b)
-}
-func (m *C_W_Game_LoginRequset) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_C_W_Game_LoginRequset.Marshal(b, m, deterministic)
-}
-func (dst *C_W_Game_LoginRequset) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_C_W_Game_LoginRequset.Merge(dst, src)
-}
-func (m *C_W_Game_LoginRequset) XXX_Size() int {
-	return xxx_messageInfo_C_W_Game_LoginRequset.Size(m)
-}
-func (m *C_W_Game_LoginRequset) XXX_DiscardUnknown() {
-	xxx_messageInfo_C_W_Game_LoginRequset.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_C_W_Game_LoginRequset proto.InternalMessageInfo
+func (m *C_W_Game_LoginRequset) Reset()                    { *m = C_W_Game_LoginRequset{} }
+func (m *C_W_Game_LoginRequset) String() string            { return proto.CompactTextString(m) }
+func (*C_W_Game_LoginRequset) ProtoMessage()               {}
+func (*C_W_Game_LoginRequset) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{4} }
 
 func (m *C_W_Game_LoginRequset) GetPacketHead() *Ipacket {
 	if m != nil {
@@ -273,35 +162,14 @@ func (m *C_W_Game_LoginRequset) GetPlayerId() int64 {
 }
 
 type C_G_LogoutResponse struct {
-	PacketHead           *Ipacket `protobuf:"bytes,1,req,name=PacketHead" json:"PacketHead,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	PacketHead       *Ipacket `protobuf:"bytes,1,req,name=PacketHead" json:"PacketHead,omitempty"`
+	XXX_unrecognized []byte   `json:"-"`
 }
 
-func (m *C_G_LogoutResponse) Reset()         { *m = C_G_LogoutResponse{} }
-func (m *C_G_LogoutResponse) String() string { return proto.CompactTextString(m) }
-func (*C_G_LogoutResponse) ProtoMessage()    {}
-func (*C_G_LogoutResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_client_847e00738f02fccc, []int{5}
-}
-func (m *C_G_LogoutResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_C_G_LogoutResponse.Unmarshal(m, b)
-}
-func (m *C_G_LogoutResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_C_G_LogoutResponse.Marshal(b, m, deterministic)
-}
-func (dst *C_G_LogoutResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_C_G_LogoutResponse.Merge(dst, src)
-}
-func (m *C_G_LogoutResponse) XXX_Size() int {
-	return xxx_messageInfo_C_G_LogoutResponse.Size(m)
-}
-func (m *C_G_LogoutResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_C_G_LogoutResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_C_G_LogoutResponse proto.InternalMessageInfo
+func (m *C_G_LogoutResponse) Reset()                    { *m = C_G_LogoutResponse{} }
+func (m *C_G_LogoutResponse) String() string            { return proto.CompactTextString(m) }
+func (*C_G_LogoutResponse) ProtoMessage()               {}
+func (*C_G_LogoutResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{5} }
 
 func (m *C_G_LogoutResponse) GetPacketHead() *Ipacket {
 	if m != nil {
@@ -311,39 +179,18 @@ func (m *C_G_LogoutResponse) GetPacketHead() *Ipacket {
 }
 
 type C_W_ChatMessage struct {
-	PacketHead           *Ipacket `protobuf:"bytes,1,req,name=PacketHead" json:"PacketHead,omitempty"`
-	Sender               *int64   `protobuf:"varint,2,req,name=Sender" json:"Sender,omitempty"`
-	Recver               *int64   `protobuf:"varint,3,req,name=Recver" json:"Recver,omitempty"`
-	MessageType          *int32   `protobuf:"varint,4,req,name=MessageType" json:"MessageType,omitempty"`
-	Message              *string  `protobuf:"bytes,5,req,name=Message" json:"Message,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	PacketHead       *Ipacket `protobuf:"bytes,1,req,name=PacketHead" json:"PacketHead,omitempty"`
+	Sender           *int64   `protobuf:"varint,2,req,name=Sender" json:"Sender,omitempty"`
+	Recver           *int64   `protobuf:"varint,3,req,name=Recver" json:"Recver,omitempty"`
+	MessageType      *int32   `protobuf:"varint,4,req,name=MessageType" json:"MessageType,omitempty"`
+	Message          *string  `protobuf:"bytes,5,req,name=Message" json:"Message,omitempty"`
+	XXX_unrecognized []byte   `json:"-"`
 }
 
-func (m *C_W_ChatMessage) Reset()         { *m = C_W_ChatMessage{} }
-func (m *C_W_ChatMessage) String() string { return proto.CompactTextString(m) }
-func (*C_W_ChatMessage) ProtoMessage()    {}
-func (*C_W_ChatMessage) Descriptor() ([]byte, []int) {
-	return fileDescriptor_client_847e00738f02fccc, []int{6}
-}
-func (m *C_W_ChatMessage) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_C_W_ChatMessage.Unmarshal(m, b)
-}
-func (m *C_W_ChatMessage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_C_W_ChatMessage.Marshal(b, m, deterministic)
-}
-func (dst *C_W_ChatMessage) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_C_W_ChatMessage.Merge(dst, src)
-}
-func (m *C_W_ChatMessage) XXX_Size() int {
-	return xxx_messageInfo_C_W_ChatMessage.Size(m)
-}
-func (m *C_W_ChatMessage) XXX_DiscardUnknown() {
-	xxx_messageInfo_C_W_ChatMessage.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_C_W_ChatMessage proto.InternalMessageInfo
+func (m *C_W_ChatMessage) Reset()                    { *m = C_W_ChatMessage{} }
+func (m *C_W_ChatMessage) String() string            { return proto.CompactTextString(m) }
+func (*C_W_ChatMessage) ProtoMessage()               {}
+func (*C_W_ChatMessage) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{6} }
 
 func (m *C_W_ChatMessage) GetPacketHead() *Ipacket {
 	if m != nil {
@@ -381,41 +228,20 @@ func (m *C_W_ChatMessage) GetMessage() string {
 }
 
 type W_C_ChatMessage struct {
-	PacketHead           *Ipacket `protobuf:"bytes,1,req,name=PacketHead" json:"PacketHead,omitempty"`
-	Sender               *int64   `protobuf:"varint,2,req,name=Sender" json:"Sender,omitempty"`
-	SenderName           *string  `protobuf:"bytes,3,req,name=SenderName" json:"SenderName,omitempty"`
-	Recver               *int64   `protobuf:"varint,4,req,name=Recver" json:"Recver,omitempty"`
-	RecverName           *string  `protobuf:"bytes,5,req,name=RecverName" json:"RecverName,omitempty"`
-	MessageType          *int32   `protobuf:"varint,6,req,name=MessageType" json:"MessageType,omitempty"`
-	Message              *string  `protobuf:"bytes,7,req,name=Message" json:"Message,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	PacketHead       *Ipacket `protobuf:"bytes,1,req,name=PacketHead" json:"PacketHead,omitempty"`
+	Sender           *int64   `protobuf:"varint,2,req,name=Sender" json:"Sender,omitempty"`
+	SenderName       *string  `protobuf:"bytes,3,req,name=SenderName" json:"SenderName,omitempty"`
+	Recver           *int64   `protobuf:"varint,4,req,name=Recver" json:"Recver,omitempty"`
+	RecverName       *string  `protobuf:"bytes,5,req,name=RecverName" json:"RecverName,omitempty"`
+	MessageType      *int32   `protobuf:"varint,6,req,name=MessageType" json:"MessageType,omitempty"`
+	Message          *string  `protobuf:"bytes,7,req,name=Message" json:"Message,omitempty"`
+	XXX_unrecognized []byte   `json:"-"`
 }
 
-func (m *W_C_ChatMessage) Reset()         { *m = W_C_ChatMessage{} }
-func (m *W_C_ChatMessage) String() string { return proto.CompactTextString(m) }
-func (*W_C_ChatMessage) ProtoMessage()    {}
-func (*W_C_ChatMessage) Descriptor() ([]byte, []int) {
-	return fileDescriptor_client_847e00738f02fccc, []int{7}
-}
-func (m *W_C_ChatMessage) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_W_C_ChatMessage.Unmarshal(m, b)
-}
-func (m *W_C_ChatMessage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_W_C_ChatMessage.Marshal(b, m, deterministic)
-}
-func (dst *W_C_ChatMessage) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_W_C_ChatMessage.Merge(dst, src)
-}
-func (m *W_C_ChatMessage) XXX_Size() int {
-	return xxx_messageInfo_W_C_ChatMessage.Size(m)
-}
-func (m *W_C_ChatMessage) XXX_DiscardUnknown() {
-	xxx_messageInfo_W_C_ChatMessage.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_W_C_ChatMessage proto.InternalMessageInfo
+func (m *W_C_ChatMessage) Reset()                    { *m = W_C_ChatMessage{} }
+func (m *W_C_ChatMessage) String() string            { return proto.CompactTextString(m) }
+func (*W_C_ChatMessage) ProtoMessage()               {}
+func (*W_C_ChatMessage) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{7} }
 
 func (m *W_C_ChatMessage) GetPacketHead() *Ipacket {
 	if m != nil {
@@ -467,35 +293,14 @@ func (m *W_C_ChatMessage) GetMessage() string {
 }
 
 type W_C_Test struct {
-	Recv                 []int32  `protobuf:"varint,1,rep,name=Recv" json:"Recv,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	Recv             []int32 `protobuf:"varint,1,rep,name=Recv" json:"Recv,omitempty"`
+	XXX_unrecognized []byte  `json:"-"`
 }
 
-func (m *W_C_Test) Reset()         { *m = W_C_Test{} }
-func (m *W_C_Test) String() string { return proto.CompactTextString(m) }
-func (*W_C_Test) ProtoMessage()    {}
-func (*W_C_Test) Descriptor() ([]byte, []int) {
-	return fileDescriptor_client_847e00738f02fccc, []int{8}
-}
-func (m *W_C_Test) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_W_C_Test.Unmarshal(m, b)
-}
-func (m *W_C_Test) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_W_C_Test.Marshal(b, m, deterministic)
-}
-func (dst *W_C_Test) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_W_C_Test.Merge(dst, src)
-}
-func (m *W_C_Test) XXX_Size() int {
-	return xxx_messageInfo_W_C_Test.Size(m)
-}
-func (m *W_C_Test) XXX_DiscardUnknown() {
-	xxx_messageInfo_W_C_Test.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_W_C_Test proto.InternalMessageInfo
+func (m *W_C_Test) Reset()                    { *m = W_C_Test{} }
+func (m *W_C_Test) String() string            { return proto.CompactTextString(m) }
+func (*W_C_Test) ProtoMessage()               {}
+func (*W_C_Test) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{8} }
 
 func (m *W_C_Test) GetRecv() []int32 {
 	if m != nil {
@@ -516,9 +321,9 @@ func init() {
 	proto.RegisterType((*W_C_Test)(nil), "message.W_C_Test")
 }
 
-func init() { proto.RegisterFile("client.proto", fileDescriptor_client_847e00738f02fccc) }
+func init() { proto.RegisterFile("client.proto", fileDescriptor1) }
 
-var fileDescriptor_client_847e00738f02fccc = []byte{
+var fileDescriptor1 = []byte{
 	// 420 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x53, 0xcb, 0xae, 0xd3, 0x30,
 	0x10, 0x55, 0x92, 0xe6, 0xb6, 0xcc, 0x05, 0xdd, 0x62, 0x04, 0x84, 0x2e, 0xa2, 0x28, 0xab, 0xac,

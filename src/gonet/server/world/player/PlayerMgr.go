@@ -32,15 +32,14 @@ type(
 		GetPlayer(accountId int64) actor.IActor
 		AddPlayer(accountId int64) actor.IActor
 		RemovePlayer(accountId int64)
-		GetPlayerNum() int//获取在线人数
 		Update()
 	}
 )
 
 func (this* PlayerMgr) Init(num int){
+	this.ActorPool.Init(num)
 	this.m_db = world.SERVER.GetDB()
 	this.m_Log = world.SERVER.GetLog()
-	this.ActorPool.Init(num)
 	this.m_PingTimer = common.NewSimpleTimer(120)
 	this.m_PingTimer.Start()
 	actor.MGR.AddActor(this)
@@ -91,6 +90,9 @@ func (this* PlayerMgr) Init(num int){
 					}
 				}
 			}
+		}else{
+			this.m_Log.Printf("账号[%d]创建玩家失败", accountId)
+			world.SERVER.GetAccountCluster().BalacaceMsg("W_A_DeletePlayer", accountId, playerId)
 		}
 	})
 
@@ -103,7 +105,7 @@ func (this *PlayerMgr) GetPlayer(accountId int64) actor.IActor{
 	return this.GetActor(accountId)
 }
 
-func (this *PlayerMgr) AddPlayer(accountId int64)  actor.IActor{
+func (this *PlayerMgr) AddPlayer(accountId int64) actor.IActor{
 	LoadPlayerDB := func(accountId int64) ([]int64, int){
 		PlayerList := make([]int64, 0)
 		PlayerNum := 0

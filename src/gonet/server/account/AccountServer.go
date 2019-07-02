@@ -60,10 +60,10 @@ func (this *ServerMgr)Init() bool{
 	this.m_config.Read("SXZ_SERVER.CFG")
 	EtcdEndpoints = this.m_config.Get5("Etcd_Cluster", ",")
 	UserNetIP, UserNetPort = this.m_config.Get2("Account_LANAddress", ":")
-	DB_Server 	= this.m_config.Get("AccountDB_LANIP")
-	DB_Name		= this.m_config.Get("AccountDB_Name");
-	DB_UserId	= this.m_config.Get("AccountDB_UserId");
-	DB_Password	= this.m_config.Get("AccountDB_Password")
+	DB_Server 	= this.m_config.Get3("AccountDB", "DB_LANIP")
+	DB_Name		= this.m_config.Get3("AccountDB","DB_Name");
+	DB_UserId	= this.m_config.Get3("AccountDB", "DB_UserId");
+	DB_Password	= this.m_config.Get3("AccountDB", "DB_Password")
 
 	ShowMessage := func(){
 		this.m_Log.Println("**********************************************************")
@@ -105,7 +105,7 @@ func (this *ServerMgr)Init() bool{
 	this.m_pService.BindPacketFunc(this.m_pServerMgr.PacketFunc)
 
 	//snowflake
-	this.m_SnowFlake = cluster.NewSnowflake(UserNetIP, base.Int(UserNetPort), EtcdEndpoints)
+	this.m_SnowFlake = cluster.NewSnowflake(UserNetIP, base.Int(UserNetPort), this.m_config.Get5("Etcd_SnowFlake_Cluster", ","))
 
 	//注册account集群
 	this.m_Cluster = cluster.NewService(int(message.SERVICE_ACCOUNTSERVER), UserNetIP, base.Int(UserNetPort), EtcdEndpoints)
@@ -115,6 +115,8 @@ func (this *ServerMgr)Init() bool{
 func (this *ServerMgr)InitDB() bool{
 	this.m_pActorDB = db.OpenDB(DB_Server, DB_UserId, DB_Password, DB_Name)
 	err := this.m_pActorDB.Ping()
+	this.m_pActorDB.SetMaxOpenConns(base.Int(this.m_config.Get3("AccountDB", "DB_MaxOpenConns")))
+	this.m_pActorDB.SetMaxIdleConns(base.Int(this.m_config.Get3("AccountDB", "DB_MaxIdleConns")))
 	return  err != nil
 }
 

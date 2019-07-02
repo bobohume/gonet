@@ -119,6 +119,14 @@ func (this* Player) Init(num int){
 		this.LeaveMap()
 	})
 
+	//断线重连
+	this.RegisterCall("G_W_Relogin", func(accountId int64) {
+		this.SocketId = this.GetSocketId()
+		this.ReloginMap(this.GetSocketId())
+		//添加到世界频道
+		actor.MGR.SendMsg("chatmgr", "AddPlayerToChannel", this.AccountId, this.GetPlayerId(), int64(-3000), this.GetPlayerName(), this.SocketId)
+	})
+
 	this.Actor.Start()
 }
 

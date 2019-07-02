@@ -35,7 +35,7 @@ func (this * WorldProcess) SetSocketId(socketId uint32){
 
 func (this *WorldProcess) Init(num int) {
 	this.Actor.Init(num)
-	this.m_LostTimer = common.NewSimpleTimer(10)
+	this.m_LostTimer = common.NewSimpleTimer(3)
 	this.m_LostTimer.Start()
 	this.m_Id = 0
 	this.RegisterTimer(1 * 1000 * 1000 * 1000, this.Update)
@@ -45,9 +45,10 @@ func (this *WorldProcess) Init(num int) {
 	})
 
 	this.RegisterCall("COMMON_RegisterResponse", func() {
-			//收到worldserver对自己注册的反馈
-			this.m_LostTimer.Stop()
-			SERVER.GetLog().Println("收到world对自己注册的反馈")
+		//收到worldserver对自己注册的反馈
+		this.m_LostTimer.Stop()
+		SERVER.GetLog().Println("收到world对自己注册的反馈")
+		SERVER.GetPlayerMgr().SendMsg("World_Relogin")
 	})
 
 	this.RegisterCall("STOP_ACTOR", func() {

@@ -3,7 +3,7 @@ package db
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"gonet/base"
 	"reflect"
 	"strconv"
@@ -15,6 +15,14 @@ func updatesql(sqlData *SqlData, p *Properties, val string){
 		sqlData.SqlName += fmt.Sprintf("`%s`='%s',", p.Name, val)
 	}else{
 		sqlData.SqlValue += fmt.Sprintf("`%s`='%s',", p.Name, val)
+	}
+}
+
+func updatesqlblob(sqlData *SqlData, p *Properties, val []byte){
+	if p.IsPrimary(){
+		sqlData.SqlName += fmt.Sprintf("`%s`='0x%s',", p.Name, val)
+	}else{
+		sqlData.SqlValue += fmt.Sprintf("`%s`='0x%s',", p.Name, val)
 	}
 }
 
@@ -38,7 +46,7 @@ func getUpdateSql(classField reflect.StructField, classVal reflect.Value, sqlDat
 			classVal = classVal.Elem()
 		}
 		data, _ := proto.Marshal(classVal.Addr().Interface().(proto.Message))
-		updatesql(sqlData, p, string(data))
+		updatesqlblob(sqlData, p, data)
 		return true
 	}else if p.IsIgnore(){
 		return true

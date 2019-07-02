@@ -1,7 +1,7 @@
 cd ../src/gonet/message
-proto -o client.pb  client.proto
-proto -o game.pb game.proto
-proto -o message.pb message.proto
+protoc -o client.pb  client.proto
+protoc -o game.pb game.proto
+protoc -o message.pb message.proto
 cp client.pb ./pb/
 cp game.pb ./pb/
 cp message.pb ./pb/

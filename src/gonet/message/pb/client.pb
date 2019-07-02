@@ -1,6 +1,5 @@
 
-š
-
+…	
 client.protomessagemessage.proto"œ
 C_A_LoginRequest0
 
@@ -55,12 +54,6 @@ SenderName
 RecverName (	R
 RecverName 
 MessageType (RMessageType
-Message (	RMessage"=
-Phone
-name (	Rname 
-phonenumber (Rphonenumber"t
-Person
-name (	Rname
-age (Rage
-address (	Raddress*
-contacts (2.message.PhoneRcontacts
+Message (	RMessage"
+W_C_Test
+Recv (RRecv

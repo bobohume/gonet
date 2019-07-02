@@ -96,7 +96,7 @@ func (this *Master) WatchService() {
 		res, err := watcher.Next(context.Background())
 		if err != nil {
 			log.Println("Error watch service:", err)
-			break
+			continue
 		}
 		if res.Action == "expire" {
 			info := NodeToService(res.PrevNode)

@@ -1,3 +1,4 @@
+#!/bin/sh
 cd ../src/gonet/server
 go build
 cp server ./../../../bin

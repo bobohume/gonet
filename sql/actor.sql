@@ -5,7 +5,7 @@ MySQL - 5.7.17-log : Database - md_actor
 */
 
 
-/*!40101 SET NAMES utf8 */;
+/*!40101 SET NAMES utf8mb4 */;
 
 /*!40101 SET SQL_MODE=''*/;
 
@@ -13,7 +13,7 @@ MySQL - 5.7.17-log : Database - md_actor
 /*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
-CREATE DATABASE /*!32312 IF NOT EXISTS*/`md_actor` /*!40100 DEFAULT CHARACTER SET utf8 */;
+CREATE DATABASE /*!32312 IF NOT EXISTS*/`md_actor` /*!40100 DEFAULT CHARACTER SET utf8mb4 */;
 
 USE `md_actor`;
 
@@ -38,7 +38,7 @@ CREATE TABLE `tbl_mail` (
   `send_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '发送时间',
   PRIMARY KEY (`id`),
   KEY `idx_tbl_mail_recver` (`recver`)
-) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4;
 
 /*Table structure for table `tbl_mail_deleted` */
 
@@ -62,7 +62,7 @@ CREATE TABLE `tbl_mail_deleted` (
   `delete_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '删除时间',
   PRIMARY KEY (`id`),
   KEY `idx_tbl_mail_deleted_recver` (`recver`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 /*Data for the table `tbl_mail_deleted` */
 
@@ -81,12 +81,12 @@ CREATE TABLE `tbl_player` (
   `vip` int(11) NOT NULL DEFAULT '0' COMMENT 'Vip等级',
   `last_login_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '登录时间',
   `last_logout_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '登出时间',
-  `last_update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '更新时间',
+  `update_time` timestamp ON UPDATE CURRENT_TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '更新时间',
   `delete_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '删除时间',
   PRIMARY KEY (`player_id`),
   KEY `idx_tbl_player_accountId` (`account_id`),
   KEY `idx_tbl_player_playerName` (`player_name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 /*Table structure for table `tbl_social` */
 
@@ -98,7 +98,7 @@ CREATE TABLE `tbl_social` (
   `type` tinyint(4) NOT NULL DEFAULT '0' COMMENT '关系类型',
   `friend_value` int(11) NOT NULL DEFAULT '0' COMMENT '好友度',
   PRIMARY KEY (`player_id`, `target_id`, `type`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 /*Data for the table `tbl_social` */
 
@@ -116,7 +116,7 @@ CREATE TABLE `tbl_toprank` (
   `last_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '修改时间',
   PRIMARY KEY (`id`),
   KEY `idx_tbl_toprank_type` (`type`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 /* Procedure structure for procedure `sp_checkcreateplayer` */
 

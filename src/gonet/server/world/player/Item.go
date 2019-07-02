@@ -116,9 +116,9 @@ func (this *ItemMgr) DelEquip(pEquip *Equip) bool{
 	if pEquip != nil{
 		pItem, exist := this.m_ItemMap[pEquip.Id]
 		if exist{
-			this.m_db.Exec(db.InsertSql(pItem, "tbl_item"))
+			this.m_db.Exec(db.DeleteSql(pItem, "tbl_item"))
 		}
-		this.m_db.Exec(db.InsertSql(pEquip, "tbl_equip"))
+		this.m_db.Exec(db.DeleteSql(pEquip, "tbl_equip"))
 		delete(this.m_ItemMap, pEquip.Id)
 		delete(this.m_EquipMap, pEquip.Id)
 		return true

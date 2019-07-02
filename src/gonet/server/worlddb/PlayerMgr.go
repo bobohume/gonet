@@ -64,7 +64,6 @@ func (this* PlayerMgr) Init(num int){
 			pPlayer.PlayerBlob = playerBlob
 			pPlayer.UpdateTTLTime = time.Now().Unix()
 			//设置redis ttl
-			//_, err := world.SERVER.GetDB().Exec("update tbl_player set `player_blob` = ? where player_id = ?", playerBlob, playerId)
 		}
 	})
 
@@ -79,7 +78,9 @@ func (this *PlayerMgr) Update(){
 		//更新到数据库
 		if nTime > v.UpdateTime + int64(3 * time.Minute){
 			world.SERVER.GetDB().Exec("update tbl_player set `player_blob` = ? where player_id = ?", v.PlayerBlob, i)
+			v.UpdateTime = nTime
 		}
+
 		//更新redis ttl时间
 		if nTime > v.UpdateTTLTime + int64(3 * time.Minute){
 			DeletePlayers = append(DeletePlayers, i)

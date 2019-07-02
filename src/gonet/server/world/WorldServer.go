@@ -73,10 +73,10 @@ func (this *ServerMgr)Init() bool{
 	EtcdEndpoints = this.m_config.Get5("Etcd_Cluster", ",")
 	UserNetIP, UserNetPort 	= this.m_config.Get2("World_LANAddress", ":")
 	AccountServerIp, AccountServerPort 	= this.m_config.Get2("Account_LANAddress", ":")
-	DB_Server 	= this.m_config.Get("ActorDB_LANIP")
-	DB_Name		= this.m_config.Get("ActorDB_Name");
-	DB_UserId	= this.m_config.Get("ActorDB_UserId");
-	DB_Password	= this.m_config.Get("ActorDB_Password")
+	DB_Server 	= this.m_config.Get3("WorldDB", "DB_LANIP")
+	DB_Name		= this.m_config.Get3("WorldDB","DB_Name");
+	DB_UserId	= this.m_config.Get3("WorldDB", "DB_UserId");
+	DB_Password	= this.m_config.Get3("WorldDB", "DB_Password")
 	RdID 		= 0//this.m_config.Int("WorkID") / 10
 	OpenRedis	= this.m_config.Bool("Redis_Open")
 	Web_Url		= this.m_config.Get("World_Url")
@@ -112,7 +112,7 @@ func (this *ServerMgr)Init() bool{
 	this.m_pService.Start()
 
 	//snowflake
-	this.m_SnowFlake = cluster.NewSnowflake(UserNetIP, base.Int(UserNetPort), EtcdEndpoints)
+	this.m_SnowFlake = cluster.NewSnowflake(UserNetIP, base.Int(UserNetPort), this.m_config.Get5("Etcd_SnowFlake_Cluster", ","))
 
 	//注册到集群
 	this.m_Cluster = cluster.NewService(int(message.SERVICE_WORLDSERVER), UserNetIP, base.Int(UserNetPort), EtcdEndpoints)
@@ -136,6 +136,8 @@ func (this *ServerMgr)Init() bool{
 func (this *ServerMgr)InitDB() bool{
 	this.m_pActorDB = db.OpenDB(DB_Server, DB_UserId, DB_Password, DB_Name)
 	err := this.m_pActorDB.Ping()
+	this.m_pActorDB.SetMaxOpenConns(base.Int(this.m_config.Get3("WorldDB", "DB_MaxOpenConns")))
+	this.m_pActorDB.SetMaxIdleConns(base.Int(this.m_config.Get3("WorldDB", "DB_MaxIdleConns")))
 	return  err != nil
 }
 

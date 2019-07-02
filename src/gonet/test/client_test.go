@@ -1,8 +1,11 @@
 package main_test
 
 import (
+	"bytes"
+	"encoding/gob"
 	"encoding/json"
 	"github.com/golang/protobuf/proto"
+	"github.com/json-iterator/go"
 	"gonet/base"
 	"gonet/message"
 	"reflect"
@@ -18,8 +21,8 @@ type(
 )
 
 var(
-	ntimes = 1000000
-	nArraySize = 25
+	ntimes = 100000
+	nArraySize = 10
 	nValue = 0x7fffffff
 )
 
@@ -34,6 +37,29 @@ func TestJson(t *testing.T){
 }
 
 func TestUJson(t *testing.T){
+	data := &TopRank{}
+	for i := 0; i < nArraySize; i++{
+		data.Value = append(data.Value, nValue)
+	}
+	buff, _ := json.Marshal(data)
+	for i := 0; i < ntimes; i++{
+		json.Unmarshal(buff, &TopRank{})
+	}
+}
+
+func TestIJson(t *testing.T){
+	var json = jsoniter.ConfigCompatibleWithStandardLibrary
+	data := &TopRank{}
+	for i := 0; i < nArraySize; i++{
+		data.Value = append(data.Value, nValue)
+	}
+	for i := 0; i < ntimes; i++{
+		json.Marshal(data)
+	}
+}
+
+func TestUIJson(t *testing.T){
+	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	data := &TopRank{}
 	for i := 0; i < nArraySize; i++{
 		data.Value = append(data.Value, nValue)
@@ -65,10 +91,39 @@ func TestUPB(t *testing.T){
 	}
 }
 
-func TestRpc(t *testing.T){
-	aa := []int{}
+func TestGob(t *testing.T){
+	data := &TopRank{}
 	for i := 0; i < nArraySize; i++{
-		aa = append(aa, nValue)
+		data.Value = append(data.Value, nValue)
+	}
+	for i := 0; i < ntimes; i++{
+		buf := &bytes.Buffer{}
+		enc := gob.NewEncoder(buf)
+		enc.Encode(int(0))
+		//enc.Encode(data)
+	}
+}
+
+func TestUGob(t *testing.T){
+	data := &TopRank{}
+	for i := 0; i < nArraySize; i++{
+		data.Value = append(data.Value, nValue)
+	}
+	buf := bytes.NewBuffer([]byte{})
+	enc := gob.NewEncoder(buf)
+	enc.Encode(data)
+	//fmt.Println(buf.Bytes(), len(buf.Bytes()))
+	for i := 0; i < ntimes; i++{
+		dec := gob.NewDecoder(buf)
+		aa1 := &TopRank{}
+		dec.Decode(aa1)
+	}
+}
+
+func TestRpc(t *testing.T){
+	aa := []int32{}
+	for i := 0; i < nArraySize; i++{
+		aa = append(aa, int32(nValue))
 	}
 	for i := 0; i < ntimes; i++{
 		base.GetPacket("test", aa)
@@ -76,9 +131,9 @@ func TestRpc(t *testing.T){
 }
 
 func TestURpc(t *testing.T){
-	aa := []int{}
+	aa := []int32{}
 	for i := 0; i < nArraySize; i++{
-		aa = append(aa, nValue)
+		aa = append(aa, int32(nValue))
 	}
 	buff := base.GetPacket("test", aa)
 	for i := 0; i < ntimes; i++{
@@ -409,8 +464,6 @@ func parse (buff []byte) {
 				val := new(uint)
 				*val = uint(bitstream.ReadInt(32))
 				params[i] = val
-
-
 
 			case 81:
 				nLen := bitstream.ReadInt(16)

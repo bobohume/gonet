@@ -93,7 +93,7 @@ func  GetDBTimeString(t int64)string{
 }
 
 func OpenDB(svr string, usr string, pwd string, db string) *sql.DB {
-	sqlstr := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8", usr, pwd, svr, db)
+	sqlstr := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4", usr, pwd, svr, db)
 	mydb, err := sql.Open("mysql", sqlstr)
 	base.ChechErr(err)
 	return mydb

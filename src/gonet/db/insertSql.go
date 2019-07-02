@@ -3,7 +3,7 @@ package db
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"gonet/base"
 	"reflect"
 	"strconv"
@@ -12,6 +12,11 @@ import (
 
 func insertsql(sqlData *SqlData, p *Properties, val string){
 	sqlData.SqlValue += fmt.Sprintf("'%s',", val)
+	sqlData.SqlName += fmt.Sprintf("`%s`,", p.Name)
+}
+
+func insertsqlblob(sqlData *SqlData, p *Properties, val []byte){
+	sqlData.SqlValue += fmt.Sprintf("'0x%s',", val)
 	sqlData.SqlName += fmt.Sprintf("`%s`,", p.Name)
 }
 
@@ -32,7 +37,7 @@ func getInsertSql(classField reflect.StructField, classVal reflect.Value, sqlDat
 			classVal = classVal.Elem()
 		}
 		data, _ := proto.Marshal(classVal.Addr().Interface().(proto.Message))
-		insertsql(sqlData, p, string(data))
+		insertsqlblob(sqlData, p, data)
 		return true
 	}else if p.IsIgnore(){
 		return true

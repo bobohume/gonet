@@ -12,45 +12,18 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
-// This is a compile-time assertion to ensure that this generated file
-// is compatible with the proto package it is being compiled against.
-// A compilation error at this line likely means your copy of the
-// proto package needs to be updated.
-const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
-
 // point3F
 type Point3F struct {
-	X                    *float32 `protobuf:"fixed32,1,req,name=X" json:"X,omitempty"`
-	Y                    *float32 `protobuf:"fixed32,2,req,name=Y" json:"Y,omitempty"`
-	Z                    *float32 `protobuf:"fixed32,3,req,name=Z" json:"Z,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	X                *float32 `protobuf:"fixed32,1,req,name=X" json:"X,omitempty"`
+	Y                *float32 `protobuf:"fixed32,2,req,name=Y" json:"Y,omitempty"`
+	Z                *float32 `protobuf:"fixed32,3,req,name=Z" json:"Z,omitempty"`
+	XXX_unrecognized []byte   `json:"-"`
 }
 
-func (m *Point3F) Reset()         { *m = Point3F{} }
-func (m *Point3F) String() string { return proto.CompactTextString(m) }
-func (*Point3F) ProtoMessage()    {}
-func (*Point3F) Descriptor() ([]byte, []int) {
-	return fileDescriptor_game_deefcbb63486a9bd, []int{0}
-}
-func (m *Point3F) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Point3F.Unmarshal(m, b)
-}
-func (m *Point3F) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Point3F.Marshal(b, m, deterministic)
-}
-func (dst *Point3F) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Point3F.Merge(dst, src)
-}
-func (m *Point3F) XXX_Size() int {
-	return xxx_messageInfo_Point3F.Size(m)
-}
-func (m *Point3F) XXX_DiscardUnknown() {
-	xxx_messageInfo_Point3F.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_Point3F proto.InternalMessageInfo
+func (m *Point3F) Reset()                    { *m = Point3F{} }
+func (m *Point3F) String() string            { return proto.CompactTextString(m) }
+func (*Point3F) ProtoMessage()               {}
+func (*Point3F) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
 
 func (m *Point3F) GetX() float32 {
 	if m != nil && m.X != nil {
@@ -75,36 +48,15 @@ func (m *Point3F) GetZ() float32 {
 
 // 移动包
 type C_W_Move struct {
-	PacketHead           *Ipacket       `protobuf:"bytes,1,req,name=PacketHead" json:"PacketHead,omitempty"`
-	Move                 *C_W_Move_Move `protobuf:"bytes,2,req,name=move" json:"move,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}       `json:"-"`
-	XXX_unrecognized     []byte         `json:"-"`
-	XXX_sizecache        int32          `json:"-"`
+	PacketHead       *Ipacket       `protobuf:"bytes,1,req,name=PacketHead" json:"PacketHead,omitempty"`
+	Move             *C_W_Move_Move `protobuf:"bytes,2,req,name=move" json:"move,omitempty"`
+	XXX_unrecognized []byte         `json:"-"`
 }
 
-func (m *C_W_Move) Reset()         { *m = C_W_Move{} }
-func (m *C_W_Move) String() string { return proto.CompactTextString(m) }
-func (*C_W_Move) ProtoMessage()    {}
-func (*C_W_Move) Descriptor() ([]byte, []int) {
-	return fileDescriptor_game_deefcbb63486a9bd, []int{1}
-}
-func (m *C_W_Move) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_C_W_Move.Unmarshal(m, b)
-}
-func (m *C_W_Move) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_C_W_Move.Marshal(b, m, deterministic)
-}
-func (dst *C_W_Move) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_C_W_Move.Merge(dst, src)
-}
-func (m *C_W_Move) XXX_Size() int {
-	return xxx_messageInfo_C_W_Move.Size(m)
-}
-func (m *C_W_Move) XXX_DiscardUnknown() {
-	xxx_messageInfo_C_W_Move.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_C_W_Move proto.InternalMessageInfo
+func (m *C_W_Move) Reset()                    { *m = C_W_Move{} }
+func (m *C_W_Move) String() string            { return proto.CompactTextString(m) }
+func (*C_W_Move) ProtoMessage()               {}
+func (*C_W_Move) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{1} }
 
 func (m *C_W_Move) GetPacketHead() *Ipacket {
 	if m != nil {
@@ -121,40 +73,19 @@ func (m *C_W_Move) GetMove() *C_W_Move_Move {
 }
 
 type C_W_Move_Move struct {
-	Mode                 *int32                `protobuf:"varint,1,req,name=Mode" json:"Mode,omitempty"`
-	Normal               *C_W_Move_Move_Normal `protobuf:"bytes,2,opt,name=normal" json:"normal,omitempty"`
-	Path                 *C_W_Move_Move_Path   `protobuf:"bytes,3,opt,name=path" json:"path,omitempty"`
-	Link                 *C_W_Move_Move_Blink  `protobuf:"bytes,4,opt,name=link" json:"link,omitempty"`
-	Jump                 *C_W_Move_Move_Jump   `protobuf:"bytes,5,opt,name=jump" json:"jump,omitempty"`
-	Line                 *C_W_Move_Move_Line   `protobuf:"bytes,6,opt,name=line" json:"line,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
-	XXX_unrecognized     []byte                `json:"-"`
-	XXX_sizecache        int32                 `json:"-"`
+	Mode             *int32                `protobuf:"varint,1,req,name=Mode" json:"Mode,omitempty"`
+	Normal           *C_W_Move_Move_Normal `protobuf:"bytes,2,opt,name=normal" json:"normal,omitempty"`
+	Path             *C_W_Move_Move_Path   `protobuf:"bytes,3,opt,name=path" json:"path,omitempty"`
+	Link             *C_W_Move_Move_Blink  `protobuf:"bytes,4,opt,name=link" json:"link,omitempty"`
+	Jump             *C_W_Move_Move_Jump   `protobuf:"bytes,5,opt,name=jump" json:"jump,omitempty"`
+	Line             *C_W_Move_Move_Line   `protobuf:"bytes,6,opt,name=line" json:"line,omitempty"`
+	XXX_unrecognized []byte                `json:"-"`
 }
 
-func (m *C_W_Move_Move) Reset()         { *m = C_W_Move_Move{} }
-func (m *C_W_Move_Move) String() string { return proto.CompactTextString(m) }
-func (*C_W_Move_Move) ProtoMessage()    {}
-func (*C_W_Move_Move) Descriptor() ([]byte, []int) {
-	return fileDescriptor_game_deefcbb63486a9bd, []int{1, 0}
-}
-func (m *C_W_Move_Move) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_C_W_Move_Move.Unmarshal(m, b)
-}
-func (m *C_W_Move_Move) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_C_W_Move_Move.Marshal(b, m, deterministic)
-}
-func (dst *C_W_Move_Move) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_C_W_Move_Move.Merge(dst, src)
-}
-func (m *C_W_Move_Move) XXX_Size() int {
-	return xxx_messageInfo_C_W_Move_Move.Size(m)
-}
-func (m *C_W_Move_Move) XXX_DiscardUnknown() {
-	xxx_messageInfo_C_W_Move_Move.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_C_W_Move_Move proto.InternalMessageInfo
+func (m *C_W_Move_Move) Reset()                    { *m = C_W_Move_Move{} }
+func (m *C_W_Move_Move) String() string            { return proto.CompactTextString(m) }
+func (*C_W_Move_Move) ProtoMessage()               {}
+func (*C_W_Move_Move) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{1, 0} }
 
 func (m *C_W_Move_Move) GetMode() int32 {
 	if m != nil && m.Mode != nil {
@@ -199,37 +130,16 @@ func (m *C_W_Move_Move) GetLine() *C_W_Move_Move_Line {
 }
 
 type C_W_Move_Move_Normal struct {
-	Pos                  *Point3F `protobuf:"bytes,1,req,name=Pos" json:"Pos,omitempty"`
-	Yaw                  *float32 `protobuf:"fixed32,2,req,name=Yaw" json:"Yaw,omitempty"`
-	Duration             *float32 `protobuf:"fixed32,3,req,name=Duration" json:"Duration,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	Pos              *Point3F `protobuf:"bytes,1,req,name=Pos" json:"Pos,omitempty"`
+	Yaw              *float32 `protobuf:"fixed32,2,req,name=Yaw" json:"Yaw,omitempty"`
+	Duration         *float32 `protobuf:"fixed32,3,req,name=Duration" json:"Duration,omitempty"`
+	XXX_unrecognized []byte   `json:"-"`
 }
 
-func (m *C_W_Move_Move_Normal) Reset()         { *m = C_W_Move_Move_Normal{} }
-func (m *C_W_Move_Move_Normal) String() string { return proto.CompactTextString(m) }
-func (*C_W_Move_Move_Normal) ProtoMessage()    {}
-func (*C_W_Move_Move_Normal) Descriptor() ([]byte, []int) {
-	return fileDescriptor_game_deefcbb63486a9bd, []int{1, 0, 0}
-}
-func (m *C_W_Move_Move_Normal) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_C_W_Move_Move_Normal.Unmarshal(m, b)
-}
-func (m *C_W_Move_Move_Normal) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_C_W_Move_Move_Normal.Marshal(b, m, deterministic)
-}
-func (dst *C_W_Move_Move_Normal) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_C_W_Move_Move_Normal.Merge(dst, src)
-}
-func (m *C_W_Move_Move_Normal) XXX_Size() int {
-	return xxx_messageInfo_C_W_Move_Move_Normal.Size(m)
-}
-func (m *C_W_Move_Move_Normal) XXX_DiscardUnknown() {
-	xxx_messageInfo_C_W_Move_Move_Normal.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_C_W_Move_Move_Normal proto.InternalMessageInfo
+func (m *C_W_Move_Move_Normal) Reset()                    { *m = C_W_Move_Move_Normal{} }
+func (m *C_W_Move_Move_Normal) String() string            { return proto.CompactTextString(m) }
+func (*C_W_Move_Move_Normal) ProtoMessage()               {}
+func (*C_W_Move_Move_Normal) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{1, 0, 0} }
 
 func (m *C_W_Move_Move_Normal) GetPos() *Point3F {
 	if m != nil {
@@ -253,37 +163,16 @@ func (m *C_W_Move_Move_Normal) GetDuration() float32 {
 }
 
 type C_W_Move_Move_Path struct {
-	PathId               *int32   `protobuf:"varint,1,req,name=PathId" json:"PathId,omitempty"`
-	TimePos              *int32   `protobuf:"varint,2,req,name=TimePos" json:"TimePos,omitempty"`
-	MountId              *int32   `protobuf:"varint,3,req,name=MountId" json:"MountId,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	PathId           *int32 `protobuf:"varint,1,req,name=PathId" json:"PathId,omitempty"`
+	TimePos          *int32 `protobuf:"varint,2,req,name=TimePos" json:"TimePos,omitempty"`
+	MountId          *int32 `protobuf:"varint,3,req,name=MountId" json:"MountId,omitempty"`
+	XXX_unrecognized []byte `json:"-"`
 }
 
-func (m *C_W_Move_Move_Path) Reset()         { *m = C_W_Move_Move_Path{} }
-func (m *C_W_Move_Move_Path) String() string { return proto.CompactTextString(m) }
-func (*C_W_Move_Move_Path) ProtoMessage()    {}
-func (*C_W_Move_Move_Path) Descriptor() ([]byte, []int) {
-	return fileDescriptor_game_deefcbb63486a9bd, []int{1, 0, 1}
-}
-func (m *C_W_Move_Move_Path) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_C_W_Move_Move_Path.Unmarshal(m, b)
-}
-func (m *C_W_Move_Move_Path) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_C_W_Move_Move_Path.Marshal(b, m, deterministic)
-}
-func (dst *C_W_Move_Move_Path) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_C_W_Move_Move_Path.Merge(dst, src)
-}
-func (m *C_W_Move_Move_Path) XXX_Size() int {
-	return xxx_messageInfo_C_W_Move_Move_Path.Size(m)
-}
-func (m *C_W_Move_Move_Path) XXX_DiscardUnknown() {
-	xxx_messageInfo_C_W_Move_Move_Path.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_C_W_Move_Move_Path proto.InternalMessageInfo
+func (m *C_W_Move_Move_Path) Reset()                    { *m = C_W_Move_Move_Path{} }
+func (m *C_W_Move_Move_Path) String() string            { return proto.CompactTextString(m) }
+func (*C_W_Move_Move_Path) ProtoMessage()               {}
+func (*C_W_Move_Move_Path) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{1, 0, 1} }
 
 func (m *C_W_Move_Move_Path) GetPathId() int32 {
 	if m != nil && m.PathId != nil {
@@ -307,36 +196,15 @@ func (m *C_W_Move_Move_Path) GetMountId() int32 {
 }
 
 type C_W_Move_Move_Blink struct {
-	Pos                  *Point3F `protobuf:"bytes,1,req,name=Pos" json:"Pos,omitempty"`
-	RPos                 *Point3F `protobuf:"bytes,2,req,name=RPos" json:"RPos,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	Pos              *Point3F `protobuf:"bytes,1,req,name=Pos" json:"Pos,omitempty"`
+	RPos             *Point3F `protobuf:"bytes,2,req,name=RPos" json:"RPos,omitempty"`
+	XXX_unrecognized []byte   `json:"-"`
 }
 
-func (m *C_W_Move_Move_Blink) Reset()         { *m = C_W_Move_Move_Blink{} }
-func (m *C_W_Move_Move_Blink) String() string { return proto.CompactTextString(m) }
-func (*C_W_Move_Move_Blink) ProtoMessage()    {}
-func (*C_W_Move_Move_Blink) Descriptor() ([]byte, []int) {
-	return fileDescriptor_game_deefcbb63486a9bd, []int{1, 0, 2}
-}
-func (m *C_W_Move_Move_Blink) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_C_W_Move_Move_Blink.Unmarshal(m, b)
-}
-func (m *C_W_Move_Move_Blink) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_C_W_Move_Move_Blink.Marshal(b, m, deterministic)
-}
-func (dst *C_W_Move_Move_Blink) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_C_W_Move_Move_Blink.Merge(dst, src)
-}
-func (m *C_W_Move_Move_Blink) XXX_Size() int {
-	return xxx_messageInfo_C_W_Move_Move_Blink.Size(m)
-}
-func (m *C_W_Move_Move_Blink) XXX_DiscardUnknown() {
-	xxx_messageInfo_C_W_Move_Move_Blink.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_C_W_Move_Move_Blink proto.InternalMessageInfo
+func (m *C_W_Move_Move_Blink) Reset()                    { *m = C_W_Move_Move_Blink{} }
+func (m *C_W_Move_Move_Blink) String() string            { return proto.CompactTextString(m) }
+func (*C_W_Move_Move_Blink) ProtoMessage()               {}
+func (*C_W_Move_Move_Blink) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{1, 0, 2} }
 
 func (m *C_W_Move_Move_Blink) GetPos() *Point3F {
 	if m != nil {
@@ -353,42 +221,21 @@ func (m *C_W_Move_Move_Blink) GetRPos() *Point3F {
 }
 
 type C_W_Move_Move_Jump struct {
-	BPos                 *Point3F `protobuf:"bytes,1,req,name=BPos" json:"BPos,omitempty"`
-	EPos                 *Point3F `protobuf:"bytes,2,req,name=EPos" json:"EPos,omitempty"`
-	Duration             *int32   `protobuf:"varint,3,req,name=Duration" json:"Duration,omitempty"`
-	TimePos              *int32   `protobuf:"varint,4,req,name=TimePos" json:"TimePos,omitempty"`
-	UpExDur              *int32   `protobuf:"varint,5,req,name=UpExDur" json:"UpExDur,omitempty"`
-	DownExDur            *int32   `protobuf:"varint,6,req,name=DownExDur" json:"DownExDur,omitempty"`
-	A                    *int32   `protobuf:"varint,7,req,name=A" json:"A,omitempty"`
-	B                    *int32   `protobuf:"varint,8,req,name=B" json:"B,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	BPos             *Point3F `protobuf:"bytes,1,req,name=BPos" json:"BPos,omitempty"`
+	EPos             *Point3F `protobuf:"bytes,2,req,name=EPos" json:"EPos,omitempty"`
+	Duration         *int32   `protobuf:"varint,3,req,name=Duration" json:"Duration,omitempty"`
+	TimePos          *int32   `protobuf:"varint,4,req,name=TimePos" json:"TimePos,omitempty"`
+	UpExDur          *int32   `protobuf:"varint,5,req,name=UpExDur" json:"UpExDur,omitempty"`
+	DownExDur        *int32   `protobuf:"varint,6,req,name=DownExDur" json:"DownExDur,omitempty"`
+	A                *int32   `protobuf:"varint,7,req,name=A" json:"A,omitempty"`
+	B                *int32   `protobuf:"varint,8,req,name=B" json:"B,omitempty"`
+	XXX_unrecognized []byte   `json:"-"`
 }
 
-func (m *C_W_Move_Move_Jump) Reset()         { *m = C_W_Move_Move_Jump{} }
-func (m *C_W_Move_Move_Jump) String() string { return proto.CompactTextString(m) }
-func (*C_W_Move_Move_Jump) ProtoMessage()    {}
-func (*C_W_Move_Move_Jump) Descriptor() ([]byte, []int) {
-	return fileDescriptor_game_deefcbb63486a9bd, []int{1, 0, 3}
-}
-func (m *C_W_Move_Move_Jump) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_C_W_Move_Move_Jump.Unmarshal(m, b)
-}
-func (m *C_W_Move_Move_Jump) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_C_W_Move_Move_Jump.Marshal(b, m, deterministic)
-}
-func (dst *C_W_Move_Move_Jump) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_C_W_Move_Move_Jump.Merge(dst, src)
-}
-func (m *C_W_Move_Move_Jump) XXX_Size() int {
-	return xxx_messageInfo_C_W_Move_Move_Jump.Size(m)
-}
-func (m *C_W_Move_Move_Jump) XXX_DiscardUnknown() {
-	xxx_messageInfo_C_W_Move_Move_Jump.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_C_W_Move_Move_Jump proto.InternalMessageInfo
+func (m *C_W_Move_Move_Jump) Reset()                    { *m = C_W_Move_Move_Jump{} }
+func (m *C_W_Move_Move_Jump) String() string            { return proto.CompactTextString(m) }
+func (*C_W_Move_Move_Jump) ProtoMessage()               {}
+func (*C_W_Move_Move_Jump) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{1, 0, 3} }
 
 func (m *C_W_Move_Move_Jump) GetBPos() *Point3F {
 	if m != nil {
@@ -447,38 +294,17 @@ func (m *C_W_Move_Move_Jump) GetB() int32 {
 }
 
 type C_W_Move_Move_Line struct {
-	BPos                 *Point3F `protobuf:"bytes,1,req,name=BPos" json:"BPos,omitempty"`
-	EPos                 *Point3F `protobuf:"bytes,2,req,name=EPos" json:"EPos,omitempty"`
-	Duration             *int32   `protobuf:"varint,3,req,name=Duration" json:"Duration,omitempty"`
-	TimePos              *int32   `protobuf:"varint,4,req,name=TimePos" json:"TimePos,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	BPos             *Point3F `protobuf:"bytes,1,req,name=BPos" json:"BPos,omitempty"`
+	EPos             *Point3F `protobuf:"bytes,2,req,name=EPos" json:"EPos,omitempty"`
+	Duration         *int32   `protobuf:"varint,3,req,name=Duration" json:"Duration,omitempty"`
+	TimePos          *int32   `protobuf:"varint,4,req,name=TimePos" json:"TimePos,omitempty"`
+	XXX_unrecognized []byte   `json:"-"`
 }
 
-func (m *C_W_Move_Move_Line) Reset()         { *m = C_W_Move_Move_Line{} }
-func (m *C_W_Move_Move_Line) String() string { return proto.CompactTextString(m) }
-func (*C_W_Move_Move_Line) ProtoMessage()    {}
-func (*C_W_Move_Move_Line) Descriptor() ([]byte, []int) {
-	return fileDescriptor_game_deefcbb63486a9bd, []int{1, 0, 4}
-}
-func (m *C_W_Move_Move_Line) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_C_W_Move_Move_Line.Unmarshal(m, b)
-}
-func (m *C_W_Move_Move_Line) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_C_W_Move_Move_Line.Marshal(b, m, deterministic)
-}
-func (dst *C_W_Move_Move_Line) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_C_W_Move_Move_Line.Merge(dst, src)
-}
-func (m *C_W_Move_Move_Line) XXX_Size() int {
-	return xxx_messageInfo_C_W_Move_Move_Line.Size(m)
-}
-func (m *C_W_Move_Move_Line) XXX_DiscardUnknown() {
-	xxx_messageInfo_C_W_Move_Move_Line.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_C_W_Move_Move_Line proto.InternalMessageInfo
+func (m *C_W_Move_Move_Line) Reset()                    { *m = C_W_Move_Move_Line{} }
+func (m *C_W_Move_Move_Line) String() string            { return proto.CompactTextString(m) }
+func (*C_W_Move_Move_Line) ProtoMessage()               {}
+func (*C_W_Move_Move_Line) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{1, 0, 4} }
 
 func (m *C_W_Move_Move_Line) GetBPos() *Point3F {
 	if m != nil {
@@ -509,38 +335,17 @@ func (m *C_W_Move_Move_Line) GetTimePos() int32 {
 }
 
 type W_C_LoginMap struct {
-	PacketHead           *Ipacket `protobuf:"bytes,1,req,name=PacketHead" json:"PacketHead,omitempty"`
-	Id                   *int64   `protobuf:"varint,2,req,name=Id" json:"Id,omitempty"`
-	Pos                  *Point3F `protobuf:"bytes,3,req,name=Pos" json:"Pos,omitempty"`
-	Rotation             *float32 `protobuf:"fixed32,4,req,name=Rotation" json:"Rotation,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	PacketHead       *Ipacket `protobuf:"bytes,1,req,name=PacketHead" json:"PacketHead,omitempty"`
+	Id               *int64   `protobuf:"varint,2,req,name=Id" json:"Id,omitempty"`
+	Pos              *Point3F `protobuf:"bytes,3,req,name=Pos" json:"Pos,omitempty"`
+	Rotation         *float32 `protobuf:"fixed32,4,req,name=Rotation" json:"Rotation,omitempty"`
+	XXX_unrecognized []byte   `json:"-"`
 }
 
-func (m *W_C_LoginMap) Reset()         { *m = W_C_LoginMap{} }
-func (m *W_C_LoginMap) String() string { return proto.CompactTextString(m) }
-func (*W_C_LoginMap) ProtoMessage()    {}
-func (*W_C_LoginMap) Descriptor() ([]byte, []int) {
-	return fileDescriptor_game_deefcbb63486a9bd, []int{2}
-}
-func (m *W_C_LoginMap) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_W_C_LoginMap.Unmarshal(m, b)
-}
-func (m *W_C_LoginMap) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_W_C_LoginMap.Marshal(b, m, deterministic)
-}
-func (dst *W_C_LoginMap) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_W_C_LoginMap.Merge(dst, src)
-}
-func (m *W_C_LoginMap) XXX_Size() int {
-	return xxx_messageInfo_W_C_LoginMap.Size(m)
-}
-func (m *W_C_LoginMap) XXX_DiscardUnknown() {
-	xxx_messageInfo_W_C_LoginMap.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_W_C_LoginMap proto.InternalMessageInfo
+func (m *W_C_LoginMap) Reset()                    { *m = W_C_LoginMap{} }
+func (m *W_C_LoginMap) String() string            { return proto.CompactTextString(m) }
+func (*W_C_LoginMap) ProtoMessage()               {}
+func (*W_C_LoginMap) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{2} }
 
 func (m *W_C_LoginMap) GetPacketHead() *Ipacket {
 	if m != nil {
@@ -571,38 +376,17 @@ func (m *W_C_LoginMap) GetRotation() float32 {
 }
 
 type W_C_Move struct {
-	PacketHead           *Ipacket `protobuf:"bytes,1,req,name=PacketHead" json:"PacketHead,omitempty"`
-	Id                   *int64   `protobuf:"varint,2,req,name=Id" json:"Id,omitempty"`
-	Pos                  *Point3F `protobuf:"bytes,3,req,name=Pos" json:"Pos,omitempty"`
-	Rotation             *float32 `protobuf:"fixed32,4,req,name=Rotation" json:"Rotation,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	PacketHead       *Ipacket `protobuf:"bytes,1,req,name=PacketHead" json:"PacketHead,omitempty"`
+	Id               *int64   `protobuf:"varint,2,req,name=Id" json:"Id,omitempty"`
+	Pos              *Point3F `protobuf:"bytes,3,req,name=Pos" json:"Pos,omitempty"`
+	Rotation         *float32 `protobuf:"fixed32,4,req,name=Rotation" json:"Rotation,omitempty"`
+	XXX_unrecognized []byte   `json:"-"`
 }
 
-func (m *W_C_Move) Reset()         { *m = W_C_Move{} }
-func (m *W_C_Move) String() string { return proto.CompactTextString(m) }
-func (*W_C_Move) ProtoMessage()    {}
-func (*W_C_Move) Descriptor() ([]byte, []int) {
-	return fileDescriptor_game_deefcbb63486a9bd, []int{3}
-}
-func (m *W_C_Move) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_W_C_Move.Unmarshal(m, b)
-}
-func (m *W_C_Move) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_W_C_Move.Marshal(b, m, deterministic)
-}
-func (dst *W_C_Move) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_W_C_Move.Merge(dst, src)
-}
-func (m *W_C_Move) XXX_Size() int {
-	return xxx_messageInfo_W_C_Move.Size(m)
-}
-func (m *W_C_Move) XXX_DiscardUnknown() {
-	xxx_messageInfo_W_C_Move.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_W_C_Move proto.InternalMessageInfo
+func (m *W_C_Move) Reset()                    { *m = W_C_Move{} }
+func (m *W_C_Move) String() string            { return proto.CompactTextString(m) }
+func (*W_C_Move) ProtoMessage()               {}
+func (*W_C_Move) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{3} }
 
 func (m *W_C_Move) GetPacketHead() *Ipacket {
 	if m != nil {
@@ -633,38 +417,17 @@ func (m *W_C_Move) GetRotation() float32 {
 }
 
 type W_C_ADD_SIMOBJ struct {
-	PacketHead           *Ipacket `protobuf:"bytes,1,req,name=PacketHead" json:"PacketHead,omitempty"`
-	Id                   *int64   `protobuf:"varint,2,req,name=Id" json:"Id,omitempty"`
-	Pos                  *Point3F `protobuf:"bytes,3,req,name=Pos" json:"Pos,omitempty"`
-	Rotation             *float32 `protobuf:"fixed32,4,req,name=Rotation" json:"Rotation,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	PacketHead       *Ipacket `protobuf:"bytes,1,req,name=PacketHead" json:"PacketHead,omitempty"`
+	Id               *int64   `protobuf:"varint,2,req,name=Id" json:"Id,omitempty"`
+	Pos              *Point3F `protobuf:"bytes,3,req,name=Pos" json:"Pos,omitempty"`
+	Rotation         *float32 `protobuf:"fixed32,4,req,name=Rotation" json:"Rotation,omitempty"`
+	XXX_unrecognized []byte   `json:"-"`
 }
 
-func (m *W_C_ADD_SIMOBJ) Reset()         { *m = W_C_ADD_SIMOBJ{} }
-func (m *W_C_ADD_SIMOBJ) String() string { return proto.CompactTextString(m) }
-func (*W_C_ADD_SIMOBJ) ProtoMessage()    {}
-func (*W_C_ADD_SIMOBJ) Descriptor() ([]byte, []int) {
-	return fileDescriptor_game_deefcbb63486a9bd, []int{4}
-}
-func (m *W_C_ADD_SIMOBJ) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_W_C_ADD_SIMOBJ.Unmarshal(m, b)
-}
-func (m *W_C_ADD_SIMOBJ) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_W_C_ADD_SIMOBJ.Marshal(b, m, deterministic)
-}
-func (dst *W_C_ADD_SIMOBJ) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_W_C_ADD_SIMOBJ.Merge(dst, src)
-}
-func (m *W_C_ADD_SIMOBJ) XXX_Size() int {
-	return xxx_messageInfo_W_C_ADD_SIMOBJ.Size(m)
-}
-func (m *W_C_ADD_SIMOBJ) XXX_DiscardUnknown() {
-	xxx_messageInfo_W_C_ADD_SIMOBJ.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_W_C_ADD_SIMOBJ proto.InternalMessageInfo
+func (m *W_C_ADD_SIMOBJ) Reset()                    { *m = W_C_ADD_SIMOBJ{} }
+func (m *W_C_ADD_SIMOBJ) String() string            { return proto.CompactTextString(m) }
+func (*W_C_ADD_SIMOBJ) ProtoMessage()               {}
+func (*W_C_ADD_SIMOBJ) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{4} }
 
 func (m *W_C_ADD_SIMOBJ) GetPacketHead() *Ipacket {
 	if m != nil {
@@ -695,36 +458,15 @@ func (m *W_C_ADD_SIMOBJ) GetRotation() float32 {
 }
 
 type C_W_LoginCopyMap struct {
-	PacketHead           *Ipacket `protobuf:"bytes,1,req,name=PacketHead" json:"PacketHead,omitempty"`
-	DataId               *int32   `protobuf:"varint,2,req,name=DataId" json:"DataId,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	PacketHead       *Ipacket `protobuf:"bytes,1,req,name=PacketHead" json:"PacketHead,omitempty"`
+	DataId           *int32   `protobuf:"varint,2,req,name=DataId" json:"DataId,omitempty"`
+	XXX_unrecognized []byte   `json:"-"`
 }
 
-func (m *C_W_LoginCopyMap) Reset()         { *m = C_W_LoginCopyMap{} }
-func (m *C_W_LoginCopyMap) String() string { return proto.CompactTextString(m) }
-func (*C_W_LoginCopyMap) ProtoMessage()    {}
-func (*C_W_LoginCopyMap) Descriptor() ([]byte, []int) {
-	return fileDescriptor_game_deefcbb63486a9bd, []int{5}
-}
-func (m *C_W_LoginCopyMap) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_C_W_LoginCopyMap.Unmarshal(m, b)
-}
-func (m *C_W_LoginCopyMap) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_C_W_LoginCopyMap.Marshal(b, m, deterministic)
-}
-func (dst *C_W_LoginCopyMap) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_C_W_LoginCopyMap.Merge(dst, src)
-}
-func (m *C_W_LoginCopyMap) XXX_Size() int {
-	return xxx_messageInfo_C_W_LoginCopyMap.Size(m)
-}
-func (m *C_W_LoginCopyMap) XXX_DiscardUnknown() {
-	xxx_messageInfo_C_W_LoginCopyMap.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_C_W_LoginCopyMap proto.InternalMessageInfo
+func (m *C_W_LoginCopyMap) Reset()                    { *m = C_W_LoginCopyMap{} }
+func (m *C_W_LoginCopyMap) String() string            { return proto.CompactTextString(m) }
+func (*C_W_LoginCopyMap) ProtoMessage()               {}
+func (*C_W_LoginCopyMap) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{5} }
 
 func (m *C_W_LoginCopyMap) GetPacketHead() *Ipacket {
 	if m != nil {
@@ -755,9 +497,9 @@ func init() {
 	proto.RegisterType((*C_W_LoginCopyMap)(nil), "message.C_W_LoginCopyMap")
 }
 
-func init() { proto.RegisterFile("game.proto", fileDescriptor_game_deefcbb63486a9bd) }
+func init() { proto.RegisterFile("game.proto", fileDescriptor2) }
 
-var fileDescriptor_game_deefcbb63486a9bd = []byte{
+var fileDescriptor2 = []byte{
 	// 554 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xcc, 0x54, 0x4d, 0x6b, 0x13, 0x41,
 	0x18, 0x66, 0xbf, 0xe3, 0x9b, 0x5a, 0xc2, 0x1c, 0xc2, 0xb0, 0x56, 0x28, 0xc1, 0x43, 0xf1, 0x10,

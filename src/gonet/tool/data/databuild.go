@@ -28,6 +28,7 @@ func main(){
 				waitGroup.Add(1)
 				go func(name string) {
 					OpenExcel(name)
+					OpenExceLua(name)
 					waitGroup.Done()
 				}(v)
 			}

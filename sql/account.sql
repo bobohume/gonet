@@ -5,7 +5,7 @@ MySQL - 5.7.17-log : Database - md_account
 */
 
 
-/*!40101 SET NAMES utf8 */;
+/*!40101 SET NAMES utf8mb4 */;
 
 /*!40101 SET SQL_MODE=''*/;
 
@@ -13,7 +13,7 @@ MySQL - 5.7.17-log : Database - md_account
 /*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
-CREATE DATABASE /*!32312 IF NOT EXISTS*/`md_account` /*!40100 DEFAULT CHARACTER SET utf8 */;
+CREATE DATABASE /*!32312 IF NOT EXISTS*/`md_account` /*!40100 DEFAULT CHARACTER SET utf8mb4 */;
 
 USE `md_account`;
 
@@ -31,7 +31,7 @@ CREATE TABLE `tbl_account` (
   `login_ip` varchar(20) NOT NULL DEFAULT '' COMMENT '登录ip',
   PRIMARY KEY (`account_id`),
   KEY `idx_tbl_account_account_name` (`account_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=234 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=234 DEFAULT CHARSET=utf8mb4;
 
 
 /*Table structure for table `tbl_player` */
@@ -45,7 +45,7 @@ CREATE TABLE `tbl_player` (
   `delete_flag` tinyint(4) NOT NULL DEFAULT '0' COMMENT '删除标志',
   PRIMARY KEY (`player_id`),
   KEY `idx_tbl_player_account_id` (`account_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=237 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=237 DEFAULT CHARSET=utf8mb4;
 
 /* Procedure structure for procedure `usp_activeaccount` */
 
