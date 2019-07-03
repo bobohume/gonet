@@ -40,10 +40,9 @@ function HandlePacket(dat)
 end
 
 --发送包函数
-function SendPacket(name, packet)
-    name = string.lower(name)
-    id = CRC32.hash(name)
-    packetName = m_PacketCreateMap[id]
+function SendPacket(name, packet
+    id = crc32.Gen(string.lower(name))
+    packetName = "message." .. name
     if packetName ~= nil then
         local bytes = pb.encode(packetName, packet)
         bytes = int_to_bytes(id) .. bytes .. TCP_END

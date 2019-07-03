@@ -25,10 +25,10 @@ function LoginGame()
 end
 
 --注册消息
-RegisterPacket("C_A_LoginRequest", nil)
-RegisterPacket("C_A_RegisterRequest", nil)
-RegisterPacket("C_W_CreatePlayerRequest", nil)
-RegisterPacket("C_W_Game_LoginRequset", nil)
+--RegisterPacket("C_A_LoginRequest", nil)
+--RegisterPacket("C_A_RegisterRequest", nil)
+--RegisterPacket("C_W_CreatePlayerRequest", nil)
+--RegisterPacket("C_W_Game_LoginRequset", nil)
 --登录回调
 RegisterPacket("A_C_LoginRequest", function(packet)
     if packet.Error == ACCOUNT_NOEXIST then
