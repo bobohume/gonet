@@ -14,6 +14,11 @@ var(
 	Packet_CreateFactorMap map[uint32] func()proto.Message
 )
 
+const(
+	Default_Ipacket_Stx int32 = 0x27
+	Default_Ipacket_Ckx int32 = 0x72
+)
+
 func parseTypeElem(val reflect.Value, packetHead **Ipacket) {
 	sType := strings.ToLower(val.Type().String())
 	index := strings.Index(sType, ".")
@@ -71,10 +76,10 @@ func GetPakcetHead(message interface{}) *Ipacket{
 
 func BuildPacketHead(id int64, destservertype int) *Ipacket{
 	ipacket := &Ipacket{
-		Stx:	proto.Int32(Default_Ipacket_Stx),
-		DestServerType:	proto.Int32(int32(destservertype)),
-		Ckx:	proto.Int32(Default_Ipacket_Ckx),
-		Id:	proto.Int64(id),
+		Stx:	Default_Ipacket_Stx,
+		DestServerType:	int32(destservertype),
+		Ckx:	Default_Ipacket_Ckx,
+		Id:	id,
 	}
 	return ipacket
 }

@@ -30,7 +30,7 @@ func (this *WorldProcess) Init(num int) {
 	this.m_LostTimer.Start()
 	this.RegisterTimer(1 * 1000 * 1000 * 1000, this.Update)
 	this.RegisterCall("COMMON_RegisterRequest", func() {
-		this.RegisterServer(int(message.SERVICE_WORLDSERVER), UserNetIP, base.Int(UserNetPort))
+		this.RegisterServer(int(message.SERVICE_WORLDDBSERVER), UserNetIP, base.Int(UserNetPort))
 	})
 
 	this.RegisterCall("COMMON_RegisterResponse", func() {

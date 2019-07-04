@@ -125,7 +125,7 @@ func (this *ActorPool) PacketFunc(id int, buff []byte) bool{
 			packetBuf := bitstream.ReadBits(nLen << 3)
 			message.UnmarshalText(packet, packetBuf)
 			packetHead := message.GetPakcetHead(packet)
-			nId := int64(*packetHead.Id)
+			nId := packetHead.Id
 			return this.m_Self.(IActorPool).SendActor(nId, io, funcName)
 		}
 	}

@@ -1,11 +1,10 @@
 package player
 
 import (
-	"gonet/actor"
 	"database/sql"
-	"gonet/db"
 	"fmt"
-	"github.com/golang/protobuf/proto"
+	"gonet/actor"
+	"gonet/db"
 	"gonet/message"
 	"gonet/server/common"
 	"gonet/server/world"
@@ -45,14 +44,14 @@ func (this* Player) Init(num int){
 		PlayerDataList := make([]*message.PlayerData, len(PlayerSimpleList))
 		this.PlayerIdList = []int64{}
 		for i, v := range PlayerSimpleList{
-			PlayerDataList[i] = &message.PlayerData{PlayerID:proto.Int64(v.PlayerId), PlayerName:proto.String(v.PlayerName),PlayerGold:proto.Int32(int32(v.Gold))}
+			PlayerDataList[i] = &message.PlayerData{PlayerID:v.PlayerId, PlayerName:v.PlayerName,PlayerGold:int32(v.Gold)}
 			this.PlayerIdList = append(this.PlayerIdList, v.PlayerId)
 		}
 
 		this.m_Log.Println("玩家登录成功")
 		this.SocketId = socketId
 		world.SendToClient(socketId, &message.W_C_SelectPlayerResponse{PacketHead: message.BuildPacketHead( this.AccountId,  int(message.SERVICE_CLIENT)),
-			AccountId:proto.Int64(this.AccountId),
+			AccountId:this.AccountId,
 			PlayerData:PlayerDataList,
 		})
 	})
@@ -85,8 +84,8 @@ func (this* Player) Init(num int){
 						this.m_Log.Printf("账号[%d]创建玩家上限", this.AccountId)
 						world.SendToClient(this.GetSocketId(), &message.W_C_CreatePlayerResponse{
 							PacketHead:message.BuildPacketHead(this.AccountId, 0 ),
-							Error:proto.Int32(int32(err)),
-							PlayerId:proto.Int64(0),
+							Error:int32(err),
+							PlayerId:0,
 						})
 					}
 				}
@@ -106,8 +105,8 @@ func (this* Player) Init(num int){
 
 		world.SendToClient(socketId, &message.W_C_CreatePlayerResponse{
 			PacketHead:message.BuildPacketHead(this.AccountId, 0 ),
-			Error:proto.Int32(int32(err)),
-			PlayerId:proto.Int64(playerId),
+			Error:int32(err),
+			PlayerId:playerId,
 		})
 	})
 

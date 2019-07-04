@@ -1,83 +1,83 @@
-syntax = "proto2";
+syntax = "proto3";
 package message;
 import "message.proto";
 
 //point3F
 message Point3F{
-    required float  X = 1;
-    required float  Y = 2;
-    required float  Z = 3;	
+    float  X = 1;
+    float  Y = 2;
+    float  Z = 3;
 }
 
 //移动包
 message C_W_Move{
-    required Ipacket PacketHead = 1;
+    Ipacket PacketHead = 1;
 
     message Move{//正常走
         message Normal{
-	    required Point3F Pos = 1;
-            required float  Yaw = 2;
-	        required float  Duration = 3;
+	       Point3F Pos = 1;
+           float  Yaw = 2;
+	       float  Duration = 3;
         }
         message Path{//飞行
-            required int32  PathId = 1;
-            required int32  TimePos = 2;
-            required int32  MountId = 3;
+            int32  PathId = 1;
+            int32  TimePos = 2;
+            int32  MountId = 3;
         }
         message Blink{//闪现
-       	    required Point3F Pos = 1;
-  	        required Point3F RPos = 2;
+       	    Point3F Pos = 1;
+  	        Point3F RPos = 2;
         }
         message Jump{//Jump//BeatFly//Skip//跳跃
-    	    required Point3F BPos = 1;
-            required Point3F EPos = 2;
-            required int32  Duration = 3;
-            required int32  TimePos = 4;
-            required int32  UpExDur = 5;
-            required int32  DownExDur = 6;
-            required int32  A = 7;
-            required int32  B = 8;
+    	    Point3F BPos = 1;
+            Point3F EPos = 2;
+            int32  Duration = 3;
+            int32  TimePos = 4;
+            int32  UpExDur = 5;
+            int32  DownExDur = 6;
+            int32  A = 7;
+            int32  B = 8;
         }
         message Line{//Line//Charge//BeatBack//击退
-            required Point3F BPos = 1;
-            required Point3F EPos = 2;
-            required int32  Duration = 3;
-            required int32  TimePos = 4;
+            Point3F BPos = 1;
+            Point3F EPos = 2;
+            int32  Duration = 3;
+            int32  TimePos = 4;
         }
 
-        required int32  Mode = 1;
-        optional Normal normal = 2;
-        optional Path path = 3;
-        optional Blink link = 4;
-        optional Jump jump = 5;
-        optional Line line = 6;
+        int32  Mode = 1;
+        Normal normal = 2;
+        Path path = 3;
+        Blink link = 4;
+        Jump jump = 5;
+        Line line = 6;
     }
 
-    required Move move = 2;
+    Move move = 2;
 }
 
 message W_C_LoginMap{
-    required Ipacket PacketHead = 1;
-    required int64 Id = 2;
-    required Point3F Pos = 3;
-    required float Rotation = 4;
+    Ipacket PacketHead = 1;
+    int64 Id = 2;
+    Point3F Pos = 3;
+    float Rotation = 4;
 }
 
 message W_C_Move{
-    required Ipacket PacketHead = 1;
-    required int64 Id = 2;
-    required Point3F Pos = 3;
-    required float Rotation = 4;
+    Ipacket PacketHead = 1;
+    int64 Id = 2;
+    Point3F Pos = 3;
+    float Rotation = 4;
 }
 
 message W_C_ADD_SIMOBJ{
-    required Ipacket PacketHead = 1;
-    required int64 Id = 2;
-    required Point3F Pos = 3;
-    required float Rotation = 4;
+    Ipacket PacketHead = 1;
+    int64 Id = 2;
+    Point3F Pos = 3;
+    float Rotation = 4;
 }
 
 message C_W_LoginCopyMap{
-    required Ipacket PacketHead = 1;
-    required int32	DataId = 2;
+    Ipacket PacketHead = 1;
+    int32	DataId = 2;
 }

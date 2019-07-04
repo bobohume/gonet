@@ -2,7 +2,6 @@ package chat
 
 import (
 	"gonet/actor"
-	"github.com/golang/protobuf/proto"
 	"gonet/message"
 	"gonet/server/world"
 	player2 "gonet/server/world/player"
@@ -158,12 +157,12 @@ func (this *ChatMgr) SendMessageTo(chat *ChatMessage, playerId int64){
 func SendMessage(chat *ChatMessage, player *player){
 	world.SendToClient(player.sockeId, &message.W_C_ChatMessage{
 		PacketHead:message.BuildPacketHead(player.accountId, int(message.SERVICE_CLIENT)),
-		Sender:proto.Int64(chat.Sender),
-		SenderName:proto.String(chat.SenderName),
-		Recver:proto.Int64(chat.Recver),
-		RecverName:proto.String(chat.RecverName),
-		MessageType:proto.Int32(int32(chat.MessageType)),
-		Message:proto.String(chat.Message),
+		Sender:chat.Sender,
+		SenderName:chat.SenderName,
+		Recver:chat.Recver,
+		RecverName:chat.RecverName,
+		MessageType:int32(chat.MessageType),
+		Message:chat.Message,
 	})
 }
 

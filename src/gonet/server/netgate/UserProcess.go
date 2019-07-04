@@ -1,7 +1,6 @@
 package netgate
 
 import (
-	"github.com/golang/protobuf/proto"
 	"gonet/actor"
 	"gonet/base"
 	"gonet/message"
@@ -31,7 +30,7 @@ func (this *UserPrcoess) CheckClient(sockId int, packetName string, packet inter
 		}
 
 		accountId := SERVER.GetPlayerMgr().GetAccount(sockId)
-		if accountId <= 0 || accountId != (*packetHead.Id) {
+		if accountId <= 0 || accountId != packetHead.Id {
 			SERVER.GetLog().Fatalf("Old socket communication or viciousness[%d].", sockId)
 			return false
 		}
@@ -48,7 +47,7 @@ func (this *UserPrcoess) CheckClientEx(sockId int, packetName string, packet int
 		}
 
 		pAccountInfo := SERVER.GetPlayerMgr().GetAccountInfo(sockId)
-		if pAccountInfo != nil && (pAccountInfo.AccountId <= 0 || pAccountInfo.AccountId != (*packetHead.Id)){
+		if pAccountInfo != nil && (pAccountInfo.AccountId <= 0 || pAccountInfo.AccountId != packetHead.Id){
 			SERVER.GetLog().Fatalf("Old socket communication or viciousness[%d].", sockId)
 			return nil
 		}
@@ -100,16 +99,16 @@ func (this *UserPrcoess) PacketFunc(socketid int, buff []byte) bool{
 	}
 
 	packetHead := message.GetPakcetHead(packet)
-	if packetHead == nil || *packetHead.Ckx != message.Default_Ipacket_Ckx || *packetHead.Stx != message.Default_Ipacket_Stx {
+	if packetHead == nil || packetHead.Ckx != message.Default_Ipacket_Ckx || packetHead.Stx != message.Default_Ipacket_Stx {
 		SERVER.GetLog().Printf("(A)致命的越界包,已经被忽略 socket=%d", socketid)
 		return true
 	}
 
 	packetName := message.GetMessageName(packet)
 	if packetName  == base.ToLower("C_A_LoginRequest") {
-		packet.(*message.C_A_LoginRequest).SocketId = proto.Int32(int32(socketid))
+		packet.(*message.C_A_LoginRequest).SocketId = int32(socketid)
 	}else if packetName  == base.ToLower("C_A_RegisterRequest") {
-		packet.(*message.C_A_RegisterRequest).SocketId = proto.Int32(int32(socketid))
+		packet.(*message.C_A_RegisterRequest).SocketId = int32(socketid)
 	}
 
 	//解析整个包
@@ -119,9 +118,9 @@ func (this *UserPrcoess) PacketFunc(socketid int, buff []byte) bool{
 		return true
 	}
 
-	if *packetHead.DestServerType == int32(message.SERVICE_WORLDSERVER){
+	if packetHead.DestServerType == int32(message.SERVICE_WORLDSERVER){
 		this.SwtichSendToWorld(socketid, packetName, packetHead, bitstream.GetBuffer())
-	}else if *packetHead.DestServerType == int32(message.SERVICE_ACCOUNTSERVER){
+	}else if packetHead.DestServerType == int32(message.SERVICE_ACCOUNTSERVER){
 		this.SwtichSendToAccount(socketid, packetName, packetHead, bitstream.GetBuffer())
 	}else{
 		this.Actor.PacketFunc(socketid,bitstream.GetBuffer())

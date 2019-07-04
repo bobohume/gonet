@@ -1,4 +1,4 @@
-syntax = "proto2";
+syntax = "proto3";
 package message;
 
 enum SERVICE{
@@ -7,7 +7,8 @@ enum SERVICE{
     GATESERVER= 2;
     ACCOUNTSERVER=3;
     WORLDSERVER=4;
-    MONITORSERVER=5;
+    ZONESERVER=5;
+    WORLDDBSERVER=6;
 };
 
 enum CHAT{
@@ -18,40 +19,40 @@ enum CHAT{
 };
 
 message Ipacket{
-required int32  Stx = 1 [default=0x27];
-required int32  DestServerType = 2;
-required int32  Ckx = 3 [default=0x72];
-required int64  Id = 4;
+int32  Stx = 1;
+int32  DestServerType = 2;
+int32  Ckx = 3;
+int64  Id = 4;
 }
 
 message PlayerData{
-required int64 PlayerID = 1;
-required string PlayerName = 2;
-required int32 PlayerGold = 3;
+int64 PlayerID = 1;
+string PlayerName = 2;
+int32 PlayerGold = 3;
 }
 
 message W_C_CreatePlayerResponse{
-required Ipacket PacketHead = 1;
-required int32 Error = 2;
-required int64 PlayerId = 3;
+Ipacket PacketHead = 1;
+int32 Error = 2;
+int64 PlayerId = 3;
 }
 
 message W_C_SelectPlayerResponse{
-required Ipacket PacketHead = 1;
-required int64	AccountId = 2;
+Ipacket PacketHead = 1;
+int64	AccountId = 2;
 repeated PlayerData PlayerData = 3;
 }
 
 message A_C_RegisterResponse{
-required Ipacket PacketHead = 1;
-required int32	Error = 2;
-required int32  SocketId = 3;
+Ipacket PacketHead = 1;
+int32	Error = 2;
+int32  SocketId = 3;
 }
 
 message A_C_LoginRequest{
-required Ipacket PacketHead = 1;
-required int32  Error = 2;
-required int32  SocketId = 3;
-required string AccountName = 4;
-//required string Password = 5;
+Ipacket PacketHead = 1;
+int32  Error = 2;
+int32  SocketId = 3;
+string AccountName = 4;
+//string Password = 5;
 }

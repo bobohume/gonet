@@ -76,8 +76,8 @@ func (this *EventProcess) Init(num int) {
 		//fmt.Println(len(packet.PlayerData), this.AccountId, packet.PlayerData)
 		if nLen == 0{
 			packet1 := &message.C_W_CreatePlayerRequest{PacketHead:message.BuildPacketHead( this.AccountId, int(message.SERVICE_WORLDSERVER)),
-				PlayerName:proto.String("我是大坏蛋"),
-				Sex:proto.Int32(int32(0)),}
+				PlayerName:"我是大坏蛋",
+				Sex:int32(0),}
 			this.SendPacket(packet1)
 		}else{
 			this.PlayerId = packet.GetPlayerData()[0].GetPlayerID()
@@ -97,7 +97,7 @@ func (this *EventProcess) Init(num int) {
 	this.RegisterCall("A_C_LoginRequest", func(packet *message.A_C_LoginRequest) {
 		if packet.GetError() == base.ACCOUNT_NOEXIST {
 			packet1 := &message.C_A_RegisterRequest{PacketHead:message.BuildPacketHead( 0, int(message.SERVICE_ACCOUNTSERVER)),
-				AccountName: packet.AccountName, SocketId: proto.Int32(0)}
+				AccountName: packet.AccountName, SocketId: 0}
 			this.SendPacket(packet1)
 		}
 	})
@@ -117,7 +117,7 @@ func (this *EventProcess) Init(num int) {
 
 func (this *EventProcess)  LoginGame(){
 	packet1 := &message.C_W_Game_LoginRequset{PacketHead:message.BuildPacketHead( this.AccountId, int(message.SERVICE_WORLDSERVER)),
-		PlayerId:proto.Int64(this.PlayerId),}
+		PlayerId:this.PlayerId,}
 	this.SendPacket(packet1)
 }
 
@@ -128,9 +128,9 @@ var(
 func (this *EventProcess)  LoginAccount() {
 	id++
 	this.AccountName = fmt.Sprintf("test%d", id)
-	//this.AccountName = fmt.Sprintf("test%d", base.RAND().RandI(0, 7000))
+	//this.AccountName = fmt.Sprintf("test%d", base.RAND.RandI(0, 7000))
 	packet1 := &message.C_A_LoginRequest{PacketHead: message.BuildPacketHead(0, int(message.SERVICE_ACCOUNTSERVER)),
-		AccountName: proto.String(this.AccountName), BuildNo: proto.String(base.BUILD_NO), SocketId: proto.Int32(0)}
+		AccountName: this.AccountName, BuildNo: base.BUILD_NO, SocketId: 0}
 	this.SendPacket(packet1)
 }
 

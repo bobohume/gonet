@@ -51,15 +51,15 @@ func (this *Composite) GetChild(name string) IBaseNode {
 
 func (this *Composite) AddChild(name string, child IBaseNode) {
 	this.children[name] = child
-	this.childrenNameList.List.Push_front(name)
+	this.childrenNameList.Push_front(name)
 	sort.Sort(&this.childrenNameList)
 }
 
 func (this *Composite) DelChild(name string) {
 	delete(this.children, name)
-	for i,v := range this.childrenNameList.List.Array(){
+	for i,v := range this.childrenNameList.Array(){
 		if v.(string) == name{
-			this.childrenNameList.List.Erase(i)
+			this.childrenNameList.Erase(i)
 			break
 		}
 	}
@@ -70,8 +70,8 @@ func (this *Composite) DelChild(name string) {
 //    本Node向自己的Parent Node也返回True；否则所有Child Node都返回False，
 //    那本Node向自己的Parent Node返回False。
 func (this *Sequence) OnExec(tick int64) bool {
-	for i := 0; i < this.childrenNameList.List.Len(); i++{
-		if this.children[this.childrenNameList.List.Get(i).(string)].OnExec(tick){
+	for i := 0; i < this.childrenNameList.Len(); i++{
+		if this.children[this.childrenNameList.Get(i).(string)].OnExec(tick){
 			return true
 		}
 	}
@@ -89,8 +89,8 @@ func (this *Sequence) OnExec(tick int64) bool {
 //    本Node向自己的Parent Node也返回False；否则所有Child Node都返回True，
 //    那本Node向自己的Parent Node返回True。
 func (this *Selector) OnExec(tick int64) bool {
-	for i := 0; i < this.childrenNameList.List.Len(); i++{
-		if !this.children[this.childrenNameList.List.Get(i).(string)].OnExec(tick){
+	for i := 0; i < this.childrenNameList.Len(); i++{
+		if !this.children[this.childrenNameList.Get(i).(string)].OnExec(tick){
 			return false
 		}
 	}
