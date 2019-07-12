@@ -77,15 +77,10 @@ func DispatchPacketToClient(id int, buff []byte) bool{
 
 	bitstream := base.NewBitStream(buff, len(buff))
 	bitstream.ReadString()//统一格式包头名字
-	//服务器标示
-	if bitstream.ReadInt(base.Bit8) == int(message.SERVICE_WORLDSERVER){
-		accountId := bitstream.ReadInt64(base.Bit64)
-		socketId := SERVER.GetPlayerMgr().GetSocket(accountId)
-		SERVER.GetServer().SendByID(socketId, bitstream.GetBytePtr())
-		return true
-	}
-
-	return false
+	accountId := bitstream.ReadInt64(base.Bit64)
+	socketId := SERVER.GetPlayerMgr().GetSocket(accountId)
+	SERVER.GetServer().SendByID(socketId, bitstream.GetBytePtr())
+	return true
 }
 
 
