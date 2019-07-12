@@ -169,8 +169,6 @@ func SendToClient(socketId int, packet proto.Message){
 	if pakcetHead != nil {
 		bitstream := base.NewBitStream(make([]byte, nLen), nLen)
 		bitstream.WriteString(message.GetMessageName(packet))
-		//服务器标示
-		bitstream.WriteInt(int(message.SERVICE_WORLDSERVER), 8)
 		bitstream.WriteInt64(pakcetHead.Id, base.Bit64)
 		bitstream.WriteBits(len(buff)<<3, buff)
 		SERVER.GetServer().SendByID(socketId, bitstream.GetBuffer())
