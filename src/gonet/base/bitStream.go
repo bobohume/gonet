@@ -162,7 +162,7 @@ func (this *BitStream) WriteBits(bitCount int, bitPtr []byte) {
 		bitCount = (bitCount & ^0x7) + 8
 	}
 
-	if bitCount+this.bitNum > this.maxWriteBitNum {
+	for bitCount+this.bitNum > this.maxWriteBitNum {
 		if !this.resize(){
 			this.error = true
 			Assert(false, "Out of range write")
@@ -193,7 +193,7 @@ func (this *BitStream) ReadBits(bitCount int) []byte{
 		bitCount = (bitCount & ^0x7) + 8
 	}
 
-	if bitCount+this.bitNum > this.maxReadBitNum {
+	for bitCount+this.bitNum > this.maxReadBitNum {
 		if !this.resize(){
 			this.error = true
 			Assert(false, "Out of range read")
