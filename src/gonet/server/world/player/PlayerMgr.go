@@ -15,7 +15,6 @@ import (
 //********************************************************
 var(
 	PLAYERMGR PlayerMgr
-	PLAYER Player
 )
 type(
 	PlayerMgr struct{
@@ -97,7 +96,6 @@ func (this* PlayerMgr) Init(num int){
 	})
 
 	//this.RegisterTimer(1000 * 1000 * 1000, this.Update)//定时器
-	PLAYER.Init(1)
 	this.Actor.Start()
 }
 
