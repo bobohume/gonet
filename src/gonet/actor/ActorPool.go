@@ -20,7 +20,7 @@ type(
 		DelActor(Id int64)//删除actor
 		BoardCast(funcName string, params ...interface{})//广播actor
 		Send(Id int64, funcName string, io CallIO) bool//发送到actor
-		SendMsg(Id int64, funcName string, params  ...interface{})//发送到actor
+		SendMsg(Id int64, funcName string, params  ...interface{}) bool//发送到actor
 		GetActorNum() int
 	}
 )
@@ -80,11 +80,13 @@ func (this *ActorPool) Send(Id int64, funcName string, io CallIO) bool{
 	return false
 }
 
-func (this *ActorPool) SendMsg(Id int64, funcName string, params  ...interface{}){
+func (this *ActorPool) SendMsg(Id int64, funcName string, params  ...interface{}) bool{
 	pActor := this.GetActor(Id)
-	if pActor != nil{
+	if pActor != nil && pActor.FindCall(funcName) != nil{
 		pActor.SendMsg(funcName, params...)
+		return true
 	}
+	return false
 }
 
 //actor pool must rewrite PacketFunc
