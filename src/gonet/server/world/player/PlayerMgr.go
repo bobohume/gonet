@@ -35,6 +35,7 @@ type(
 		AddPlayer(accountId int64) actor.IActor
 		RemovePlayer(accountId int64)
 		Update()
+		SendPlayer(Id int64, funcName string, params  ...interface{}) bool
 	}
 )
 
@@ -163,7 +164,7 @@ func (this *PlayerMgr) PacketFunc(id int, buff []byte) bool{
 		nType := bitstream.ReadInt(base.Bit8)
 		if (nType == base.RPC_Int64 || nType == base.RPC_UInt64 || nType == base.RPC_PInt64 || nType == base.RPC_PUInt64){
 			nId := bitstream.ReadInt64(base.Bit64)
-			return this.m_PlayerPool.Send(nId, io, funcName)
+			return this.m_PlayerPool.Send(nId, funcName, io)
 		}else if (nType == base.RPC_MESSAGE){
 			packet := message.GetPakcetByName(funcName)
 			nLen := bitstream.ReadInt(base.Bit32)
@@ -171,8 +172,18 @@ func (this *PlayerMgr) PacketFunc(id int, buff []byte) bool{
 			message.UnmarshalText(packet, packetBuf)
 			packetHead := message.GetPakcetHead(packet)
 			nId := packetHead.Id
-			return this.m_PlayerPool.Send(nId, io, funcName)
+			return this.m_PlayerPool.Send(nId, funcName, io)
 		}
+	}
+
+	return false
+}
+
+func (this *PlayerMgr) SendPlayer(Id int64, funcName string, params  ...interface{}) bool{
+	pActor := this.GetPlayer(Id)
+	if pActor != nil && pActor.FindCall(funcName) != nil {
+		pActor.SendMsg(funcName, params...)
+		return true
 	}
 
 	return false

@@ -19,7 +19,7 @@ type(
 		AddActor(Id int64, pActor IActor)//添加actor
 		DelActor(Id int64)//删除actor
 		BoardCast(funcName string, params ...interface{})//广播actor
-		Send(Id int64, io CallIO, funcName string) bool//发送到actor
+		Send(Id int64, funcName string, io CallIO) bool//发送到actor
 		SendMsg(Id int64, funcName string, params  ...interface{})//发送到actor
 		GetActorNum() int
 	}
@@ -71,7 +71,7 @@ func (this *ActorPool) BoardCast(funcName string, params ...interface{}){
 	this.m_ActorLock.RUnlock()
 }
 
-func (this *ActorPool) Send(Id int64, io CallIO, funcName string) bool{
+func (this *ActorPool) Send(Id int64, funcName string, io CallIO) bool{
 	pActor := this.GetActor(Id)
 	if pActor != nil && pActor.FindCall(funcName) != nil{
 		pActor.Send(io)
