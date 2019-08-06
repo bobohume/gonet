@@ -7,8 +7,10 @@ import (
 	"gonet/actor"
 	"gonet/base"
 	"gonet/db"
+	"gonet/message"
 	"gonet/server/common"
 	"gonet/server/world"
+	"strings"
 )
 //********************************************************
 // 玩家管理
@@ -18,15 +20,16 @@ var(
 )
 type(
 	PlayerMgr struct{
-		actor.ActorPool
+		actor.Actor
 
 		m_db *sql.DB
 		m_Log *base.CLog
 		m_PingTimer common.ISimpleTimer
+		m_PlayerPool actor.ActorPool//玩家actor线城池
 	}
 
 	IPlayerMgr interface {
-		actor.IActorPool
+		actor.IActor
 
 		GetPlayer(accountId int64) actor.IActor
 		AddPlayer(accountId int64) actor.IActor
@@ -36,7 +39,8 @@ type(
 )
 
 func (this* PlayerMgr) Init(num int){
-	this.ActorPool.Init(num)
+	this.Actor.Init(num)
+	this.m_PlayerPool.Init()
 	this.m_db = world.SERVER.GetDB()
 	this.m_Log = world.SERVER.GetLog()
 	this.m_PingTimer = common.NewSimpleTimer(120)
@@ -100,7 +104,7 @@ func (this* PlayerMgr) Init(num int){
 }
 
 func (this *PlayerMgr) GetPlayer(accountId int64) actor.IActor{
-	return this.GetActor(accountId)
+	return this.m_PlayerPool.GetActor(accountId)
 }
 
 func (this *PlayerMgr) AddPlayer(accountId int64) actor.IActor{
@@ -123,17 +127,55 @@ func (this *PlayerMgr) AddPlayer(accountId int64) actor.IActor{
 	pPlayer.AccountId = accountId
 	pPlayer.PlayerIdList = PlayerList
 	pPlayer.PlayerNum = PlayerNum
-	this.AddActor(accountId, pPlayer)
+	this.m_PlayerPool.AddActor(accountId, pPlayer)
 	pPlayer.Init(MAX_PLAYER_CHAN)
 	return pPlayer
 }
 
 func (this *PlayerMgr) RemovePlayer(accountId int64){
 	this.m_Log.Printf("移除帐号数据[%d]", accountId)
-	this.DelActor(accountId)
+	this.m_PlayerPool.DelActor(accountId)
 }
 
 func (this* PlayerMgr) Update(){
+}
+
+func (this *PlayerMgr) PacketFunc(id int, buff []byte) bool{
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Println("PlayerMgr PacketFunc", err)
+		}
+	}()
+
+	var io actor.CallIO
+	io.Buff = buff
+	io.SocketId = id
+
+	bitstream := base.NewBitStream(io.Buff, len(io.Buff))
+	funcName := bitstream.ReadString()
+	funcName = strings.ToLower(funcName)
+	pFunc := this.FindCall(funcName)
+	if pFunc != nil{
+		this.Send(io)
+		return true
+	}else{
+		bitstream.ReadInt(base.Bit8)
+		nType := bitstream.ReadInt(base.Bit8)
+		if (nType == base.RPC_Int64 || nType == base.RPC_UInt64 || nType == base.RPC_PInt64 || nType == base.RPC_PUInt64){
+			nId := bitstream.ReadInt64(base.Bit64)
+			return this.m_PlayerPool.Send(nId, io, funcName)
+		}else if (nType == base.RPC_MESSAGE){
+			packet := message.GetPakcetByName(funcName)
+			nLen := bitstream.ReadInt(base.Bit32)
+			packetBuf := bitstream.ReadBits(nLen << 3)
+			message.UnmarshalText(packet, packetBuf)
+			packetHead := message.GetPakcetHead(packet)
+			nId := packetHead.Id
+			return this.m_PlayerPool.Send(nId, io, funcName)
+		}
+	}
+
+	return false
 }
 
 //--------------发送给客户端----------------------//

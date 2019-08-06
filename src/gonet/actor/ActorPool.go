@@ -1,10 +1,6 @@
 package actor
 
 import (
-	"fmt"
-	"gonet/base"
-	"gonet/message"
-	"strings"
 	"sync"
 )
 
@@ -13,36 +9,25 @@ import (
 //********************************************************
 type(
 	ActorPool struct{
-		Actor
 		m_ActorMap  map[int64] IActor
 		m_ActorLock *sync.RWMutex
-		m_Self IActorPool//类型c++的虚函数,由于go是组合继承
 		//m_ActorMap sync.Map
 	}
 
 	IActorPool interface {
-		IActor
 		GetActor(Id int64) IActor//获取actor
 		AddActor(Id int64, pActor IActor)//添加actor
 		DelActor(Id int64)//删除actor
-		SendActor(Id int64, io CallIO, funcName string) bool//发送到actor
-		BoardCastActor(funcName string, params ...interface{})//广播actor
+		BoardCast(funcName string, params ...interface{})//广播actor
+		Send(Id int64, io CallIO, funcName string) bool//发送到actor
+		SendMsg(Id int64, funcName string, params  ...interface{})//发送到actor
 		GetActorNum() int
 	}
 )
 
-func (this *ActorPool) Init(num int){
+func (this *ActorPool) Init(){
 	this.m_ActorMap = make(map[int64] IActor)
 	this.m_ActorLock = &sync.RWMutex{}
-	this.RegisterVirtual(this)
-	this.Actor.Init(num)
-}
-
-//like c++ virtual func
-func (this *ActorPool) RegisterVirtual(pActor IActorPool){
-	if this.m_Self == nil{
-		this.m_Self = pActor
-	}
 }
 
 func (this *ActorPool) GetActor(Id int64) IActor{
@@ -78,7 +63,15 @@ func (this *ActorPool) GetActorNum() int{
 	return nLen
 }
 
-func (this *ActorPool) SendActor(Id int64, io CallIO, funcName string) bool{
+func (this *ActorPool) BoardCast(funcName string, params ...interface{}){
+	this.m_ActorLock.RLock()
+	for _, v := range this.m_ActorMap{
+		v.SendMsg(funcName, params...)
+	}
+	this.m_ActorLock.RUnlock()
+}
+
+func (this *ActorPool) Send(Id int64, io CallIO, funcName string) bool{
 	pActor := this.GetActor(Id)
 	if pActor != nil && pActor.FindCall(funcName) != nil{
 		pActor.Send(io)
@@ -87,15 +80,15 @@ func (this *ActorPool) SendActor(Id int64, io CallIO, funcName string) bool{
 	return false
 }
 
-func (this *ActorPool) BoardCastActor(funcName string, params ...interface{}){
-	this.m_ActorLock.RLock()
-	for _, v := range this.m_ActorMap{
-		v.SendMsg(funcName, params...)
+func (this *ActorPool) SendMsg(Id int64, funcName string, params  ...interface{}){
+	pActor := this.GetActor(Id)
+	if pActor != nil{
+		pActor.SendMsg(funcName, params...)
 	}
-	this.m_ActorLock.RUnlock()
 }
 
-func (this *ActorPool) PacketFunc(id int, buff []byte) bool{
+//actor pool must rewrite PacketFunc
+/*func (this *ActorPool) PacketFunc(id int, buff []byte) bool{
 	defer func() {
 		if err := recover(); err != nil {
 			fmt.Println("PlayerMgr PacketFunc", err)
@@ -131,4 +124,4 @@ func (this *ActorPool) PacketFunc(id int, buff []byte) bool{
 	}
 
 	return false
-}
+}*/
