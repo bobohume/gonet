@@ -135,7 +135,7 @@ func AOI(node* GameNode, xLen, yLen float32) {
 
 	// 往前找
 	for cur := node.xPrev; cur != nil; cur = cur.xPrev{
-		if float64(cur.X - node.X) > float64(xLen){
+		if float64(node.X - cur.X) > float64(xLen){
 			break
 		}else{
 			if math.Abs(float64(cur.Y - node.Y)) <= float64(yLen) {
