@@ -193,12 +193,12 @@ func OpenExceLua(filename string){
 		stream.WriteString(fmt.Sprintf("%s %s%s\n","return", filenames[0],"Data" ))
 	}
 
-	stream.WriteString(fmt.Sprintf("%s %s%s","local", filenames[0],"DataName = {\n" ))
+	/*stream.WriteString(fmt.Sprintf("%s %s%s","local", filenames[0],"DataName = {\n" ))
 	for _, v := range dataNames{
 		stream.WriteString(fmt.Sprintf("\t%s,\n", v))
 	}
 	stream.WriteString("}\n")
-	stream.WriteString(fmt.Sprintf("%s %s%s\n","return", filenames[0],"DataName" ))
+	stream.WriteString(fmt.Sprintf("%s %s%s\n","return", filenames[0],"DataName" ))*/
 	//other sheet
 	file, err := os.Create(filenames[0] + ".lua")
 	if err == nil{
