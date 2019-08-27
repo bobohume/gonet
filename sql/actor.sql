@@ -75,7 +75,7 @@ CREATE TABLE `tbl_player` (
   `player_id` bigint(20) NOT NULL COMMENT '玩家ID',
   `player_name` varchar(32) DEFAULT '' COMMENT '玩家名字',
   `sex` int(11) NOT NULL DEFAULT '0' COMMENT '性别',
-  `level` int(11) NOT NULL DEFAULT '0' COMMENT '等级',
+  `level` int(11) NOT NULL DEFAULT '1' COMMENT '等级',
   `gold` int(11) NOT NULL DEFAULT '0' COMMENT '元宝',
   `draw_gold` int(11) NOT NULL DEFAULT '0' COMMENT '充值元宝',
   `vip` int(11) NOT NULL DEFAULT '0' COMMENT 'Vip等级',
