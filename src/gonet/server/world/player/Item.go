@@ -163,7 +163,7 @@ func (this *ItemMgr) addItem(ItemId, PlayerId, Quantity int) bool{
 
 		if iLeftQuantity > 0 {
 			pItem, pEquip := this.CreateItem(ItemId, PlayerId, pItemData.MaxDie)
-			if pItem != nil && pEquip != nil{
+			if pItem != nil{
 				CreateMap[pItem.Id] = &ItemEquipPair{pItem, pEquip}
 			} else {
 				bEnough = true
@@ -171,7 +171,7 @@ func (this *ItemMgr) addItem(ItemId, PlayerId, Quantity int) bool{
 			}
 		} else{
 			pItem, pEquip := this.CreateItem(ItemId, PlayerId, iNeedQuantity)
-			if pItem != nil && pEquip != nil{
+			if pItem != nil{
 				CreateMap[pItem.Id] = &ItemEquipPair{pItem, pEquip}
 			} else {
 				bEnough = true
