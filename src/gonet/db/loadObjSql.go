@@ -134,7 +134,7 @@ func getLoadObjSql(classField reflect.StructField, classVal reflect.Value, row I
 	case "uint":
 		classVal.SetUint((uint64(row.Int64(classType))))
 	case "struct":
-		parseLoadObjSql(classVal.Interface(), row)
+		parseLoadObjSql(classVal.Addr().Interface(), row)
 	case "[]float64":
 		if classVal.CanSet() {
 			for i := 0; i < classVal.Len(); i++{
@@ -226,7 +226,7 @@ func getLoadObjSql(classField reflect.StructField, classVal reflect.Value, row I
 		}
 	case "[]struct":
 		for i := 0;  i < classVal.Len(); i++{
-			parseLoadObjSql(classVal.Index(i).Interface(), row)
+			parseLoadObjSql(classVal.Index(i).Addr().Interface(), row)
 		}
 	case "[*]float64":
 		for i := 0; i < classVal.Len(); i++{
@@ -286,7 +286,7 @@ func getLoadObjSql(classField reflect.StructField, classVal reflect.Value, row I
 		}
 	case "[*]struct":
 		for i := 0;  i < classVal.Len(); i++{
-			parseLoadObjSql(classVal.Index(i).Interface(), row)
+			parseLoadObjSql(classVal.Addr().Interface(), row)
 		}
 	default:
 		fmt.Println("getLoadObjSql type not supported", sType,  classField.Type)
