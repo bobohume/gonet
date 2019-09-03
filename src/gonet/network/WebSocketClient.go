@@ -40,15 +40,6 @@ func (this *WebSocketClient) Send(buff []byte) int {
 		}
 	}()
 
-	if this.m_Conn == nil{
-		return 0
-	}
-
-	if len(buff) > this.m_MaxSendBufferSize{
-		log.Print(" SendError size",len(buff))
-		return  0
-	}
-
 	n, err := this.m_Conn.Write(buff)
 	handleError(err)
 	if n > 0 {
