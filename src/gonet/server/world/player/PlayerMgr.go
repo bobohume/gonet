@@ -3,7 +3,6 @@ package player
 import (
 	"database/sql"
 	"fmt"
-	"github.com/golang/protobuf/proto"
 	"gonet/actor"
 	"gonet/base"
 	"gonet/db"

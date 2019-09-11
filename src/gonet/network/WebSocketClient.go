@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"gonet/base"
 	"io"
-	"log"
 )
 
 type IWebSocketClient interface {
