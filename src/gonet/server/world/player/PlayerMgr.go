@@ -188,11 +188,3 @@ func (this *PlayerMgr) SendPlayer(Id int64, funcName string, params  ...interfac
 
 	return false
 }
-
-//--------------发送给客户端----------------------//
-func SendToClient(AccountId int64, packet proto.Message){
-	pPlayer := PLAYERMGR.GetPlayer(AccountId)
-	if pPlayer != nil{
-		 world.SendToClient(pPlayer.GetSocketId(), packet)
-	}
-}

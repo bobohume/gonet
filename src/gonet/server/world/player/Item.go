@@ -154,6 +154,7 @@ func (this *ItemMgr) addItem(ItemId, PlayerId, Quantity int) bool{
 			BatMap[pItem.Id] = pItemData.MaxDie - pItem.Quantity
 		}else{
 			BatMap[pItem.Id] = iNeedQuantity
+			break
 		}
 	}
 
@@ -224,6 +225,7 @@ func (this *ItemMgr) reduceItem(ItemId, PlayerId, Quantity int) bool{
 				BatMap[pItem.Id] = pItem.Quantity
 			}else{
 				BatMap[pItem.Id] = iNeedQuantity
+				break
 			}
 		}
 	}

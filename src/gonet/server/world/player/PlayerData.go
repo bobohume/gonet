@@ -44,6 +44,7 @@ type (
 
 	IPlayerData interface {
 		Init()
+		GetGateSocketId() int
 		GetPlayerId() int64
 		GetPlayerCount() int
 		SetPlayerId(int64) bool
@@ -56,6 +57,10 @@ func (this *PlayerData) Init(){
 	this.m_Log = world.SERVER.GetLog()
 	//this.PlayerIdList = make([]int, 0)
 	//this.PlayerSimpleDataList = make([]*SimplePlayerData, 0)
+}
+
+func (this *PlayerData) GetGateSocketId() int{
+	return this.SocketId
 }
 
 func (this *PlayerData) GetPlayerId()int64{
