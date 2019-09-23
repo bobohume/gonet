@@ -12,7 +12,6 @@
 type(
 	ServerMgr struct{
 		m_pService	*network.ServerSocket
-		//m_pMonitorClient *common.MonitorClient
 		m_Inited bool
 		m_config base.Config
 		m_Log	base.CLog
@@ -91,11 +90,6 @@ func (this *ServerMgr)Init() bool{
 	}
 	ShowMessage()
 
-	//链接monitor
-	/*this.m_pMonitorClient = new(common.MonitorClient)
-	monitorIp, monitroPort := this.m_config.Get2("Monitor_LANAddress", ":")
-	this.m_pMonitorClient.Connect(int(message.SERVICE_GATESERVER), monitorIp, monitroPort, UserNetIP, UserNetPort)*/
-
 	//初始化socket
 	this.m_pService = new(network.ServerSocket)
 	port := base.Int(UserNetPort)
@@ -104,8 +98,6 @@ func (this *ServerMgr)Init() bool{
 	//this.m_pService.Start()
 	packet := new(UserPrcoess)
 	packet.Init(1000)
-	//packet1 := new(UserServerProcess)
-	//packet1.Init(1000)
 	this.m_pService.BindPacketFunc(packet.PacketFunc)
 	//this.m_pService.BindPacketFunc(packet1.PacketFunc)
 	this.m_pService.Start()
@@ -118,10 +110,7 @@ func (this *ServerMgr)Init() bool{
 	//this.m_pService.Start()
 	packet := new(UserPrcoess)
 	packet.Init(1000)
-	packet1 := new(UserServerProcess)
-	packet1.Init(1000)
 	this.m_pService.BindPacketFunc(packet.PacketFunc)
-	this.m_pService.BindPacketFunc(packet1.PacketFunc)
 	this.m_pService.Start()*/
 	//注册到集群服务器
 	this.m_Cluster = cluster.NewService(int(message.SERVICE_GATESERVER), UserNetIP, base.Int(UserNetPort), EtcdEndpoints)
