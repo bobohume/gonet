@@ -3,7 +3,7 @@ gonet 游戏服务器架构，mmo架构，分布式snowflake64为整形uuid,ai�
 
 设计之初，建立在actor模式下的；rpc，以及消息驱动，rpc无需注册，支持通用数据(int,[]int,[3]int),map数据,以及struct数据，[rpc性能测试如下](https://github.com/bobohume/gonet/blob/master/src/gonet/test/client_test.go)；sql封装简单的orm(orm支持pb结构体做mysql blob,orm支持结构体做mysql json类型)具体看[demo](https://github.com/bobohume/gonet/blob/master/src/gonet/db/db_test.go)
 
-websocket模式下，在netgateserver里面注释回//websocket这段
+websocket模式下，要在net，[websocket注视掉如下代码](https://studygolang.com/articles/14842),在netgateserver里面注释回//websocket这段
 
 代码除了mysql，protobuf，redis, etcd这几个库以外，其他都是自己写的，方便性能和修改，主动权在自己手里
 
@@ -33,6 +33,8 @@ websocket模式下，在netgateserver里面注释回//websocket这段
 5.win下执行build.bat,start.bat
 
 6.linux下执行build.sh,start.sh
+
+有问题可以加qq群：950288306
 
 
 
