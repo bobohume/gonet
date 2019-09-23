@@ -232,6 +232,7 @@ func whandleConn(server *WebSocket, tcpConn *websocket.Conn, addr string) bool {
 		return false
 	}
 
+	tcpConn.PayloadType = websocket.BinaryFrame
 	pClient := server.AddClinet(tcpConn, addr, server.m_nConnectType)
 	if pClient == nil {
 		return false
