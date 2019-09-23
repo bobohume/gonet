@@ -28,7 +28,11 @@ func (this *WebSocketClient) Start() bool {
 		this.m_PacketFuncList = this.m_pServer.m_PacketFuncList
 	}
 	this.m_nState = SSF_ACCEPT
-	go wserverclientRoutine(this)
+	//x/net/websocket
+	//if it return weboskcet rw buffer will close, this can not return
+	//so it must do not let websocket.Handle return
+	//go wserverclientRoutine(this)
+	wserverclientRoutine(this)
 	return true
 }
 
@@ -38,6 +42,10 @@ func (this *WebSocketClient) Send(buff []byte) int {
 			fmt.Println("WebSocketClient Send", err)
 		}
 	}()
+
+	if this.m_Conn == nil{
+		return 0
+	}
 
 	n, err := this.m_Conn.Write(buff)
 	handleError(err)
@@ -49,7 +57,7 @@ func (this *WebSocketClient) Send(buff []byte) int {
 
 func (this *WebSocketClient) OnNetFail(error int) {
 	this.Stop()
-
+	
 	if this.m_nConnectType == SERVER_CONNECT{
 		this.CallMsg("DISCONNECT", this.m_ClientId)
 	}else{//netgate对外格式统一

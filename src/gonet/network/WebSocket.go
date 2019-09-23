@@ -112,7 +112,8 @@ func (this *WebSocket) AddClinet(tcpConn *websocket.Conn, addr string, connectTy
 		this.m_ClientList[pClient.m_ClientId] = pClient
 		this.m_ClientLocker.Unlock()
 		//this.NotifyActor(pClient, ADD_CLIENT)
-		pClient.Start()
+		//x/net/websocket
+		//pClient.Start()
 		this.m_nClientCount++
 		return pClient
 	} else {
@@ -202,7 +203,7 @@ func (this *WebSocket) Close() {
 	//this.m_Pool.Put(this)
 }
 
-func (this *WebSocket)wserverRoutine(conn *websocket.Conn){
+func (this *WebSocket) wserverRoutine(conn *websocket.Conn){
 	fmt.Printf("客户端：%s已连接！\n", conn.RemoteAddr().String())
 	whandleConn(this, conn, conn.RemoteAddr().String())
 }
@@ -238,5 +239,7 @@ func whandleConn(server *WebSocket, tcpConn *websocket.Conn, addr string) bool {
 		return false
 	}
 
+	//x/net/websocket
+	pClient.Start()
 	return true
 }
