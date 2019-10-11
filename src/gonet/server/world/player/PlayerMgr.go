@@ -87,7 +87,7 @@ func (this* PlayerMgr) Init(num int){
 							this.m_Log.Printf("账号[%d]创建玩家数量上限", accountId)
 						}else{//创建玩家
 							_, err = this.m_db.Exec(fmt.Sprintf("insert into tbl_player (account_id, player_id, player_name, sex, level, gold, draw_gold)" +
-								"values(%d, %d, '%s', %d, 0, 0,	0)", accountId, playerId, playername, sex))
+								"values(%d, %d, '%s', %d, 1, 0,	0)", accountId, playerId, playername, sex))
 							if err == nil{
 								this.m_Log.Printf("账号[%d]创建玩家[%d]", accountId, playerId)
 								error = 0
