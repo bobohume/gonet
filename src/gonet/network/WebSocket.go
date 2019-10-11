@@ -84,8 +84,7 @@ func (this *WebSocket) Start() bool {
 }
 
 func (this *WebSocket) AssignClientId() int {
-	atomic.AddInt32(&this.m_nIdSeed, 1)
-	return int(this.m_nIdSeed)
+	return int(atomic.AddInt32(&this.m_nIdSeed, 1))
 }
 
 func (this *WebSocket) GetClientById(id int) *WebSocketClient {

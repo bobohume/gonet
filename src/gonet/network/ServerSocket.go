@@ -90,8 +90,7 @@ func (this *ServerSocket) Start() bool {
 }
 
 func (this *ServerSocket) AssignClientId() int {
-	atomic.AddInt32(&this.m_nIdSeed, 1)
-	return int(this.m_nIdSeed)
+	return int(atomic.AddInt32(&this.m_nIdSeed, 1))
 }
 
 func (this *ServerSocket) GetClientById(id int) *ServerSocketClient {
