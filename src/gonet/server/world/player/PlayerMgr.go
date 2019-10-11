@@ -71,30 +71,41 @@ func (this* PlayerMgr) Init(num int){
 
 	//account创建玩家反馈， 考虑到在创建角色的时候退出的情况
 	this.RegisterCall("A_W_CreatePlayer", func(accountId int64, playerId int64, playername string, sex int32, socketId int) {
-		rows, err := this.m_db.Query(fmt.Sprintf("call `sp_createplayer`(%d,'%s',%d, %d)", accountId, playername, sex, playerId))
-		if err == nil && rows != nil{
-			if rows.NextResultSet() && rows.NextResultSet(){
-				rs := db.Query(rows, err)
-				if rs.Next(){
-					err := rs.Row().Int("@err")
-					playerId := rs.Row().Int64("@playerId")
-					//register
-					if (err == 0) {
-						this.m_Log.Printf("账号[%d]创建玩家[%d]", accountId, playerId)
-					} else {
-						this.m_Log.Printf("账号[%d]创建玩家失败", accountId)
-						world.SERVER.GetAccountCluster().BalacaceMsg("W_A_DeletePlayer", accountId, playerId)
-					}
+		//查询playerid是否唯一
+		error := 1
+		rows, err := this.m_db.Query(fmt.Sprintf("select 1 from tbl_player where player_id = %d", playerId))
+		if err == nil{
+			rs := db.Query(rows, err)
+			if !rs.Next(){
+				//查找账号玩家数量
+				rows, err = this.m_db.Query(fmt.Sprintf("select count(player_id) as player_count from tbl_player where account_id = %d", accountId))
+				if err == nil {
+					rs = db.Query(rows, err)
+					if rs.Next(){
+						player_count := rs.Row().Int("player_count")
+						if player_count >= 1{//创建玩家上限
+							this.m_Log.Printf("账号[%d]创建玩家数量上限", accountId)
+						}else{//创建玩家
+							_, err = this.m_db.Exec(fmt.Sprintf("insert into tbl_player (account_id, player_id, player_name, sex, level, gold, draw_gold)" +
+								"values(%d, %d, '%s', %d, 0, 0,	0)", accountId, playerId, playername, sex))
+							if err == nil{
+								this.m_Log.Printf("账号[%d]创建玩家[%d]", accountId, playerId)
+								error = 0
+							}
 
-					//通知玩家`
-					pPlayer := this.GetPlayer(accountId)
-					if pPlayer != nil {
-						pPlayer.SendMsg("CreatePlayer", playerId, socketId, err)
+							//通知玩家`
+							pPlayer := this.GetPlayer(accountId)
+							if pPlayer != nil {
+								pPlayer.SendMsg("CreatePlayer", playerId, socketId, error)
+							}
+						}
 					}
 				}
 			}
-		}else{
-			this.m_Log.Printf("账号[%d]创建玩家失败", accountId)
+		}
+
+		if error == 1 {//创建失败通知accout删除player
+			this.m_Log.Printf("账号[%d]创建玩家[%d]失败", accountId, playerId)
 			world.SERVER.GetAccountCluster().BalacaceMsg("W_A_DeletePlayer", accountId, playerId)
 		}
 	})

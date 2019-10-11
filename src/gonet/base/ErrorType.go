@@ -8,7 +8,8 @@ import (
 const (
 	NONE_ERROR = iota
 	VERSION_ERROR = iota				//版本不正确
-	ACCOUNT_NOEXIST = iota			//账号不存在
+	ACCOUNT_NOEXIST = iota				//账号不存在
+	PASSWORD_ERROR = iota				//账号不存在
 )
 
 //输出错误，跟踪代码

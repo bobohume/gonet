@@ -63,6 +63,7 @@ func (this *CMailMgr) Init(num int) {
 
 func (this *CMailMgr) sendMail(sender int64, recver int64, money int, itemId int, itemNum int, title string, content string, isSystem int8){
 	m := &MailItem{}
+	m.Id = base.UUID.UUID()
 	m.Sender = sender
 	m.Recver = recver
 	m.ItemId = itemId
@@ -72,29 +73,13 @@ func (this *CMailMgr) sendMail(sender int64, recver int64, money int, itemId int
 	m.Title = title
 	m.Content = content
 
-
-	rows, err := this.m_db.Query(fmt.Sprintf("call `sp_updatemail`(%d,%d,'%s',%d,%d,%d,%d,'%s',%d,'%s','%s')", base.UUID.UUID(), sender, "",money, itemId, itemNum, recver, "", isSystem, title, content))
-	if err == nil && rows != nil{
-		if rows.NextResultSet(){
-			rs := db.Query(rows, err)
-			if rs.Next(){
-				err := rs.Row().Int("@err")
-				m.Id = rs.Row().Int64("@mailid")
-				m.Recver = rs.Row().Int64("@recver")
-				//register
-				if(err == 0) {
-					world.SERVER.GetLog().Printf("邮件发送给[%d]玩家成功", recver)
-				}else{
-					world.SERVER.GetLog().Printf("玩家[%d]邮件发送给失败", recver)
-				}
-				/*world.SendToClient(caller.SocketId, &message.W_C_CreatePlayerResponse{
-					PacketHead:message.BuildPacketHead(this.AccountId, 0 ),
-					Error:proto.Int32(int32(err)),
-					PlayerId:proto.Int32(int32(playerId)),
-				})*/
-			}
-		}
-	}
+	this.m_db.Exec(db.InsertSql(m, sqlTable))
+	world.SERVER.GetLog().Printf("邮件发送给[%d]玩家成功", recver)
+	/*world.SendToClient(caller.SocketId, &message.W_C_CreatePlayerResponse{
+		PacketHead:message.BuildPacketHead(this.AccountId, 0 ),
+		Error:proto.Int32(int32(err)),
+		PlayerId:proto.Int32(int32(playerId)),
+	})*/
 }
 
 func loadMail(row db.IRow, m *MailItem){

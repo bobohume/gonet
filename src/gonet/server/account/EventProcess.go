@@ -31,22 +31,22 @@ func (this *EventProcess) Init(num int) {
 		password := "123456"
 		socketId := int(packet.GetSocketId())
 		Error := 1
-		var result string
-		var accountId int64
-		rows, err := this.m_db.Query(fmt.Sprintf("call `usp_activeaccount`('%s', '%s', %d)", accountName, password, base.UUID.UUID()))
-		if err == nil && rows != nil{
-			if rows.NextResultSet(){
-				rs := db.Query(rows, err)
-				if rs.Next(){
-					accountId = rs.Row().Int64("@accountId")
-					result = rs.Row().String("@result")
-					if (result == "0000") {
-						SERVER.GetLog().Printf("帐号[%s]创建成功", accountName)
-						//登录账号
-						SERVER.GetAccountMgr().SendMsg( "Account_Login", accountName, accountId, socketId, this.GetSocketId())
-						Error = 0
-					}
+		accountId := base.UUID.UUID()
+		//查找账号存在
+		rows, err := this.m_db.Query(fmt.Sprintf("select 1 from tbl_account A where A.account_name = '%s'", accountName))
+		if err == nil {
+			rs := db.Query(rows, err)
+			if !rs.Next() {
+				//创建账号
+				_, err := this.m_db.Exec(fmt.Sprintf("insert into tbl_account (account_name, password, account_id) values('%s', '%s', %d)", accountName, base.MD5(password), accountId))
+				if (err == nil) {
+					SERVER.GetLog().Printf("帐号[%s]创建成功", accountName)
+					//登录账号
+					SERVER.GetAccountMgr().SendMsg("Account_Login", accountName, accountId, socketId, this.GetSocketId())
+					Error = 0
 				}
+			} else { //账号存在
+				SERVER.GetLog().Printf("帐号[%s]已存在", accountName)
 			}
 		}
 
@@ -69,22 +69,20 @@ func (this *EventProcess) Init(num int) {
 		error := base.NONE_ERROR
 
 		if base.VERSION.IsAcceptableBuildVersion(buildVersion) {
-			log.Printf("账号[%s]登陆账号服务器", accountName)
-			rows, err := this.m_db.Query(fmt.Sprintf("call `usp_login`('%s', '%s')", accountName, password))
-			if err == nil && rows != nil{
-				if(rows.NextResultSet()){//存储过程反馈多个select的时候
-					rs := db.Query(rows, err)
-					if rs.Next(){
-						accountId := rs.Row().Int64("@accountId")
-						result := rs.Row().String("@result")
-						//register account
-						if result == "0001" {
-							error = base.ACCOUNT_NOEXIST
-						} else if (result == "0000") {
-							error = base.NONE_ERROR
-							SERVER.GetAccountMgr().SendMsg("Account_Login", accountName, accountId, socketId, this.GetSocketId())
-						}
+			rows, err := this.m_db.Query(fmt.Sprintf("select account_id, password from tbl_account where account_name = '%s'", accountName))
+			if err == nil {
+				rs := db.Query(rows, err)
+				if rs.Next() {
+					accountId := rs.Row().Int64("account_id")
+					passWd := rs.Row().String("password")
+					if base.MD5(password) == passWd {
+						error = base.NONE_ERROR
+						SERVER.GetAccountMgr().SendMsg("Account_Login", accountName, accountId, socketId, this.GetSocketId())
+					} else { //密码错误
+						error = base.PASSWORD_ERROR
 					}
+				} else {
+					error = base.ACCOUNT_NOEXIST
 				}
 			}
 		} else {
@@ -104,16 +102,10 @@ func (this *EventProcess) Init(num int) {
 
 	//创建玩家
 	this.RegisterCall("W_A_CreatePlayer", func(accountId int64, playername string, sex int32, socketId int) {
-		rows, err := this.m_db.Query(fmt.Sprintf("call `usp_createplayer`(%d, '%s', %d)", accountId, playername, base.UUID.UUID()))
-		if err == nil && rows != nil{
-			rs := db.Query(rows, err)
-			if rs.Next(){
-				err := rs.Row().Int("@err")
-				playerId := rs.Row().Int64("@playerId")
-				if err == 0 && playerId > 0 {
-					SERVER.GetServer().SendMsgByID(this.GetSocketId(), "A_W_CreatePlayer", accountId, playerId, playername, sex, socketId)
-				}
-			}
+		playerId := base.UUID.UUID()
+		_, err := this.m_db.Exec(fmt.Sprintf("insert into tbl_player (account_id, player_name, player_id) values (%d, '%s', %d)", accountId, playername, playerId))
+		if err == nil {
+			SERVER.GetServer().SendMsgByID(this.GetSocketId(), "A_W_CreatePlayer", accountId, playerId, playername, sex, socketId)
 		}
 	})
 

@@ -71,23 +71,20 @@ func (this* Player) Init(num int){
 
 	//创建玩家
 	this.RegisterCall("C_W_CreatePlayerRequest", func(packet *message.C_W_CreatePlayerRequest){
-		rows, err := this.m_db.Query(fmt.Sprintf("call `sp_checkcreatePlayer`(%d)", this.AccountId))
-		if err == nil && rows != nil{
-			if rows.NextResultSet(){
-				rs := db.Query(rows, err)
-				if rs.Next(){
-					err := rs.Row().Int("@err")
-					//register
-					if(err == 0) {
-						world.SERVER.GetAccountCluster().BalacaceMsg("W_A_CreatePlayer", this.AccountId, packet.GetPlayerName(), packet.GetSex(), this.GetSocketId())
-					}else{
-						this.m_Log.Printf("账号[%d]创建玩家上限", this.AccountId)
-						world.SendToClient(this.GetSocketId(), &message.W_C_CreatePlayerResponse{
-							PacketHead:message.BuildPacketHead(this.AccountId, 0 ),
-							Error:int32(err),
-							PlayerId:0,
-						})
-					}
+		rows, err := this.m_db.Query(fmt.Sprintf("select count(player_id) as player_count from tbl_player where account_id = %d", this.AccountId))
+		if err == nil {
+			rs := db.Query(rows, err)
+			if rs.Next() {
+				player_count := rs.Row().Int("player_count")
+				if player_count >= 1 {
+					this.m_Log.Printf("账号[%d]创建玩家上限", this.AccountId)
+					world.SendToClient(this.GetSocketId(), &message.W_C_CreatePlayerResponse{
+						PacketHead:message.BuildPacketHead(this.AccountId, 0 ),
+						Error:int32(1),
+						PlayerId:0,
+					})
+				}else{
+					world.SERVER.GetAccountCluster().BalacaceMsg("W_A_CreatePlayer", this.AccountId, packet.GetPlayerName(), packet.GetSex(), this.GetSocketId())
 				}
 			}
 		}
