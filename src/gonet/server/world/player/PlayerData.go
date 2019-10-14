@@ -45,6 +45,7 @@ type (
 	IPlayerData interface {
 		Init()
 		GetGateSocketId() int
+		GetAccountId() int64
 		GetPlayerId() int64
 		GetPlayerCount() int
 		SetPlayerId(int64) bool
@@ -61,6 +62,10 @@ func (this *PlayerData) Init(){
 
 func (this *PlayerData) GetGateSocketId() int{
 	return this.SocketId
+}
+
+func (this *PlayerData) GetAccountId() int64{
+	return this.AccountId
 }
 
 func (this *PlayerData) GetPlayerId()int64{

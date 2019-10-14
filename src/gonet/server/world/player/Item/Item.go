@@ -1,12 +1,11 @@
-package player
+package Item
 
 import (
-	"gonet/server/world/data"
 	"gonet/base"
-	"math"
 	"gonet/db"
-	"gonet/server/world"
-	"database/sql"
+	"gonet/server/world/common"
+	"gonet/server/world/data"
+	"math"
 )
 
 type(
@@ -31,30 +30,33 @@ type(
 	}
 
 	ItemMgr struct {
+		common.IPlayer
 		m_ItemMap map[int64] *Item
 		m_EquipMap map[int64] *Equip
-		m_Player *Player
-		m_db *sql.DB
-		m_Log *base.CLog
 	}
 
 	IItemMgr interface {
-		Init(*Player)
+		Init(iPlayer common.IPlayer)
 		CreateItem(int, int, int) (*Item, *Equip)		//创建物品
 		AddItem(int, int, int)	bool					//物品操作
 		//SortItem(int) bool							//排序物品
 		CanReduceItem(int, int, int) bool				//能否扣除
 		addItem(int, int, int)	bool					//添加物品
 		reduceItem(int, int, int) bool					//删除物品
-		DelEquipById(uint64, int) bool					//删除装备
+		DelEquipById(int64, int) bool					//删除装备
 		DelEquip(*Equip) bool							//删除装备
 	}
 )
 
-func (this *ItemMgr) Init(pPlayer *Player){
-	this.m_Player = pPlayer
-	this.m_db = world.SERVER.GetDB()
-	this.m_Log = world.SERVER.GetLog()
+func (this *ItemMgr) Init(pPlayer common.IPlayer){
+	this.IPlayer = pPlayer
+
+	//test
+	/*this.RegisterCall("C_W_AddEquipAttrRequest", func(packet *message.C_W_ChatMessage) {
+		world.SendToClient(this.GetSocketId(), &message.W_C_ChatMessage{
+			PacketHead:message.BuildPacketHead(this.GetAccountId(), 0 ),
+		})
+	})*/
 }
 
 func (this *ItemMgr) CreateItem(ItemId, PlayerId, Quantity int) (*Item, *Equip) {
@@ -116,9 +118,9 @@ func (this *ItemMgr) DelEquip(pEquip *Equip) bool{
 	if pEquip != nil{
 		pItem, exist := this.m_ItemMap[pEquip.Id]
 		if exist{
-			this.m_db.Exec(db.DeleteSql(pItem, "tbl_item"))
+			this.GetDB().Exec(db.DeleteSql(pItem, "tbl_item"))
 		}
-		this.m_db.Exec(db.DeleteSql(pEquip, "tbl_equip"))
+		this.GetDB().Exec(db.DeleteSql(pEquip, "tbl_equip"))
 		delete(this.m_ItemMap, pEquip.Id)
 		delete(this.m_EquipMap, pEquip.Id)
 		return true
@@ -186,19 +188,19 @@ func (this *ItemMgr) addItem(ItemId, PlayerId, Quantity int) bool{
 			pItem, exist := this.m_ItemMap[i]
 			if exist{
 				pItem.Quantity += v
-				this.m_db.Exec(db.UpdateSqlEx(pItem, "tbl_item", "quantity"))
+				this.GetDB().Exec(db.UpdateSqlEx(pItem, "tbl_item", "quantity"))
 			}
 		}
 
 		for _, v := range CreateMap{
 			if v.Item != nil{
 				this.m_ItemMap[v.Item.Id] = v.Item
-				this.m_db.Exec(db.InsertSql(v.Item, "tbl_item"))
+				this.GetDB().Exec(db.InsertSql(v.Item, "tbl_item"))
 			}
 
 			if v.Equip != nil{
 				this.m_EquipMap[v.Equip.Id] = v.Equip
-				this.m_db.Exec(db.InsertSql(v.Equip, "tbl_equip"))
+				this.GetDB().Exec(db.InsertSql(v.Equip, "tbl_equip"))
 			}
 		}
 	}
@@ -241,9 +243,9 @@ func (this *ItemMgr) reduceItem(ItemId, PlayerId, Quantity int) bool{
 				pItem.Quantity -= v
 				if pItem.Quantity == 0{
 					delete(this.m_ItemMap, i)
-					this.m_db.Exec(db.DeleteSql(pItem, "tbl_item"))
+					this.GetDB().Exec(db.DeleteSql(pItem, "tbl_item"))
 				}else{
-					this.m_db.Exec(db.UpdateSqlEx(pItem, "tbl_item", "quantity"))
+					this.GetDB().Exec(db.UpdateSqlEx(pItem, "tbl_item", "quantity"))
 				}
 			}
 
@@ -251,7 +253,7 @@ func (this *ItemMgr) reduceItem(ItemId, PlayerId, Quantity int) bool{
 				pEquip, exist := this.m_EquipMap[i]
 				if exist{
 					delete(this.m_EquipMap, i)
-					this.m_db.Exec(db.DeleteSql(pEquip, "tbl_equip"))
+					this.GetDB().Exec(db.DeleteSql(pEquip, "tbl_equip"))
 				}
 			}
 		}

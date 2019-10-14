@@ -4,10 +4,12 @@ import (
 	"database/sql"
 	"fmt"
 	"gonet/actor"
+	"gonet/base"
 	"gonet/db"
 	"gonet/message"
 	"gonet/server/common"
 	"gonet/server/world"
+	"gonet/server/world/player/Item"
 )
 
 type(
@@ -15,8 +17,10 @@ type(
 		actor.Actor
 
 		PlayerData
-		m_db *sql.DB
-		m_offlineTimer *common.SimpleTimer
+		m_ItemMgr      Item.IItemMgr
+		m_db 			*sql.DB
+		m_Log           *base.CLog
+		m_offlineTimer  *common.SimpleTimer
 	}
 
 	IPlayer interface {
@@ -35,6 +39,9 @@ func (this* Player) Init(num int){
 	this.RegisterTimer(1000 * 1000 * 1000, this.Update)//定时器
 	this.m_offlineTimer = common.NewSimpleTimer(5 *60)
 	this.m_db = world.SERVER.GetDB()
+	this.m_Log = world.SERVER.GetLog()
+	this.m_ItemMgr = &Item.ItemMgr{}
+	this.m_ItemMgr.Init(this)
 
 	//玩家登录
 	this.RegisterCall("Login", func(socketId int) {
@@ -124,6 +131,14 @@ func (this* Player) Init(num int){
 	})
 
 	this.Actor.Start()
+}
+
+func (this* Player)GetDB() *sql.DB{
+	return this.m_db
+}
+
+func (this* Player) GetLog() *base.CLog{
+	return this.m_Log
 }
 
 func (this* Player) Update(){
