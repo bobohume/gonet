@@ -102,6 +102,20 @@ CREATE TABLE `tbl_social` (
 
 /*Data for the table `tbl_social` */
 
+/*Table structure for table `tbl_player_kv` */
+
+DROP TABLE IF EXISTS `tbl_player_kv`;
+
+CREATE TABLE `tbl_player_kv` (
+  `player_id` bigint(20) NOT NULL DEFAULT '0' COMMENT '角色id',
+  `key` int(11) NOT NULL DEFAULT '0' COMMENT '记录类型',
+  `value` bigint(20) NOT NULL DEFAULT '0' COMMENT '记录值',
+  PRIMARY KEY (`player_id`,`key`),
+  KEY `idx_tbl_player_kv_player_id` (`player_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+/*Data for the table `tbl_player_kv` */
+
 /*Table structure for table `tbl_toprank` */
 
 DROP TABLE IF EXISTS `tbl_toprank`;
@@ -117,6 +131,8 @@ CREATE TABLE `tbl_toprank` (
   PRIMARY KEY (`id`),
   KEY `idx_tbl_toprank_type` (`type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+/*Data for the table `tbl_toprank` */
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;

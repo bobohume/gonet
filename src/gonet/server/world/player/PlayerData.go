@@ -2,7 +2,9 @@ package player
 
 import (
 	"database/sql"
+	"fmt"
 	"gonet/base"
+	"gonet/db"
 	"gonet/server/world"
 )
 
@@ -38,6 +40,7 @@ type (
 		PlayerNum int
 		PlayerIdList []int64
 		PlayerSimpleDataList []*SimplePlayerData
+		m_PlayerKVMap map[int] *PlayerKvData
 		m_db *sql.DB
 		m_Log *base.CLog
 	}
@@ -50,12 +53,21 @@ type (
 		GetPlayerCount() int
 		SetPlayerId(int64) bool
 		GetPlayerName() string
+
+		LoadPlayerData()//加载其他数据
+		//----KV---//
+		LoadKV()//加载kv
+		SetKV(key int, value int64)//设置kv
+		DelKV(key int)//删除key
+		GetKV(key int) int64//获取key
+		//----KV---//
 	}
 )
 
 func (this *PlayerData) Init(){
 	this.m_db = world.SERVER.GetDB()
 	this.m_Log = world.SERVER.GetLog()
+	this.m_PlayerKVMap = map[int]*PlayerKvData{}
 	//this.PlayerIdList = make([]int, 0)
 	//this.PlayerSimpleDataList = make([]*SimplePlayerData, 0)
 }
@@ -98,5 +110,48 @@ func (this *PlayerData) SetPlayerId(PlayerId int64) bool{
 		}
 	}
 	return  false
+}
+
+func (this *PlayerData) LoadPlayerData() {
+	//加载kv数据
+	this.LoadKV()
+}
+//-------------kv--------------//
+func (this *PlayerData) LoadKV() {
+	pData := &PlayerKvData{}
+	rows, err := world.SERVER.GetDB().Query(db.LoadSql(pData, "tbl_player_kv", fmt.Sprintf("player_id = %d", this.GetPlayerId())))
+	rs := db.Query(rows, err)
+	for rs.Next(){
+		pData := &PlayerKvData{}
+		db.LoadObjSql(pData, rs.Row())
+		this.m_PlayerKVMap[pData.Key] = pData
+	}
+}
+
+func (this *PlayerData) SetKV(key int, value int64){
+	pDdata, bEx := this.m_PlayerKVMap[key]
+	if bEx && pDdata != nil{
+		pDdata.Value = value
+		this.m_db.Exec(db.UpdateSqlEx(pDdata, "tbl_player_kv", "value"))
+	}else{
+		pDdata = &PlayerKvData{PlayerId:this.GetPlayerId(), Key:key, Value:value}
+		this.m_PlayerKVMap[key] = pDdata
+		this.m_db.Exec(db.InsertSql(pDdata, "tbl_player_kv"))
+	}
+}
+
+func (this *PlayerData) DelKV(key int){
+	pDdata, bEx := this.m_PlayerKVMap[key]
+	if bEx && pDdata != nil{
+		this.m_db.Exec(db.DeleteSql(pDdata, "tbl_player_kv"))
+	}
+}
+
+func (this *PlayerData) GetKV(key int) int64{
+	pDdata, bEx := this.m_PlayerKVMap[key]
+	if bEx && pDdata != nil{
+		return pDdata.Value
+	}
+	return 0
 }
 

@@ -13,6 +13,12 @@ type (
 		LastLogoutTime int64 `sql:"datetime;name:last_logout_time"`
 		LastLoginTime int64	`sql:"datetime;name:last_login_time"`
 	}
+
+	PlayerKvData struct {
+		PlayerId int64 `sql:"primary;name:player_id"`
+		Key int `sql:"primary;name:key"`
+		Value int64 `sql:"name:value"`
+	}
 )
 
 //-----load blob---//
