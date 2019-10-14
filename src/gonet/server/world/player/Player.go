@@ -22,15 +22,6 @@ type(
 		m_Log           *base.CLog
 		m_offlineTimer  *common.SimpleTimer
 	}
-
-	IPlayer interface {
-		actor.IActor
-
-		Update()
-		//IsOffline() bool
-		//IsLogout() bool
-		//IsInGame() bool
-	}
 )
 
 func (this* Player) Init(num int){
