@@ -63,6 +63,8 @@ func (this* Player) Init(num int){
 
 		//读取玩家数据
 		this.LoadPlayerData()
+		//加载到地图
+		this.AddMap()
 		//添加到世界频道
 		actor.MGR.SendMsg("chatmgr", "AddPlayerToChannel", this.AccountId, this.GetPlayerId(), int64(-3000), this.GetPlayerName(), this.SocketId)
 	})
