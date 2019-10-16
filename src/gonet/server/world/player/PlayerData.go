@@ -119,7 +119,7 @@ func (this *PlayerData) LoadPlayerData() {
 //-------------kv--------------//
 func (this *PlayerData) LoadKV() {
 	pData := &PlayerKvData{}
-	rows, err := world.SERVER.GetDB().Query(db.LoadSql(pData, "tbl_player_kv", fmt.Sprintf("player_id = %d", this.GetPlayerId())))
+	rows, err := this.m_db.Query(db.LoadSql(pData, "tbl_player_kv", fmt.Sprintf("player_id = %d", this.GetPlayerId())))
 	rs := db.Query(rows, err)
 	for rs.Next(){
 		pData := &PlayerKvData{}

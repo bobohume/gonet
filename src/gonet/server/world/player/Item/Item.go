@@ -53,7 +53,7 @@ func (this *ItemMgr) Init(pPlayer common.IPlayer){
 
 	//test
 	/*this.RegisterCall("C_W_AddEquipAttrRequest", func(packet *message.C_W_ChatMessage) {
-		world.SendToClient(this.GetSocketId(), &message.W_C_ChatMessage{
+		world.SendToClient(this.GetGateSocketId(), &message.W_C_ChatMessage{
 			PacketHead:message.BuildPacketHead(this.GetAccountId(), 0 ),
 		})
 	})*/
