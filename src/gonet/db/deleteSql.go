@@ -392,6 +392,7 @@ func deleteSqlStr(sqltable string, sqlData *SqlData) string{
 	if index!= -1{
 		primary = primary[:index]
 	}
+	primary = strings.Replace(primary, ",", " and ", -1)
 	return "delete from " + sqltable + " where " + primary
 }
 
