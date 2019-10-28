@@ -57,7 +57,7 @@ func (this *ServerMgr)Init() bool{
 	//初始化log文件
 	this.m_Log.Init("account")
 	//初始ini配置文件
-	this.m_config.Read("SXZ_SERVER.CFG")
+	this.m_config.Read("GONET_SERVER.CFG")
 	EtcdEndpoints = this.m_config.Get5("Etcd_Cluster", ",")
 	UserNetIP, UserNetPort = this.m_config.Get2("Account_LANAddress", ":")
 	DB_Server 	= this.m_config.Get3("AccountDB", "DB_LANIP")

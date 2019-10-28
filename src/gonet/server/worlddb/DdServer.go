@@ -50,7 +50,7 @@ func (this *ServerMgr)Init() bool{
 	//test reload file
 	/*file := &common.FileMonitor{}
 	file.Init(1000)
-	file.AddFile("SXZ_SERVER.CFG", func() {this.m_config.Read("SXZ_SERVER.CFG")})
+	file.AddFile("GONET_SERVER.CFG", func() {this.m_config.Read("GONET_SERVER.CFG")})
 	file.AddFile(data.SKILL_DATA_NAME, func() {
 		data.SKILLDATA.Read()
 	})*/
@@ -58,7 +58,7 @@ func (this *ServerMgr)Init() bool{
 	//初始化log文件
 	this.m_Log.Init("world")
 	//初始ini配置文件
-	this.m_config.Read("SXZ_SERVER.CFG")
+	this.m_config.Read("GONET_SERVER.CFG")
 	UserNetIP, UserNetPort 	= this.m_config.Get2("Dd_LANAddress", ":")
 	WorldServerIp, WorldServerPort 	= this.m_config.Get2("World_LANAddress", ":")
 	DB_Server 	= this.m_config.Get("ActorDB_LANIP")

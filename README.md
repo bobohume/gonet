@@ -26,7 +26,7 @@ websocket模式下，在netgateserver里面注释回//websocket这段
 
 2.下载etcd做服发现（new），（redis做排行榜，全局缓存，可选）
 
-3.bin目录下的sxz_server.cfg配置数据库以及端口
+3.bin目录下的gonet_server.cfg配置数据库以及端口
 
 4.数据库在sql文件目录下生产
 
