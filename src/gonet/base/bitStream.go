@@ -31,9 +31,6 @@ type (
 		error          bool
 		maxReadBitNum  int
 		maxWriteBitNum int
-		zipflag        byte   //zip flag
-		tmpBuf         []byte //zip buf
-		zipSize        int    //zip length
 	}
 
 	IBitStream interface {

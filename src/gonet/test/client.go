@@ -3,9 +3,7 @@ package main
 import (
 	"gonet/base"
 	"fmt"
-	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/websocket"
-	"gonet/test/cgo"
 	"log"
 	"gonet/message"
 )
@@ -23,7 +21,7 @@ func ExampleDial() {
 
 	AccountName := fmt.Sprintf("test%d", 1)
 	packet1 := &message.C_A_LoginRequest{PacketHead: message.BuildPacketHead(0, int(message.SERVICE_ACCOUNTSERVER)),
-		AccountName: proto.String(AccountName), BuildNo: proto.String(base.BUILD_NO), SocketId: proto.Int32(0)}
+		AccountName: AccountName, BuildNo: base.BUILD_NO, SocketId: 0}
 	buff := message.Encode(packet1)
 	buff = base.SetTcpEnd(buff)
 	if _, err := ws.Write(buff); err != nil {
@@ -42,10 +40,5 @@ func ExampleDial() {
 }
 
 func main() {
-	a := []byte{1,2,3,4,5,6}
-	fmt.Println(cgo.IndexByte(a, []byte{2,3}))
-	for{
-		ttt := 0
-		ttt++
-	}
+	ExampleDial()
 }

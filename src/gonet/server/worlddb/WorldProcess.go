@@ -26,7 +26,7 @@ func (this * WorldProcess)RegisterServer(ServerType int, Ip string, Port int)  {
 
 func (this *WorldProcess) Init(num int) {
 	this.Actor.Init(num)
-	this.m_LostTimer = common.NewSimpleTimer(10)
+	this.m_LostTimer = common.NewSimpleTimer(3)
 	this.m_LostTimer.Start()
 	this.RegisterTimer(1 * 1000 * 1000 * 1000, this.Update)
 	this.RegisterCall("COMMON_RegisterRequest", func() {

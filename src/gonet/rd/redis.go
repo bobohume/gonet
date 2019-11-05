@@ -66,7 +66,7 @@ func Set(database int, timeout int, key string, val interface{}) (err error) {
 	defer c.Close()
 
 	c.Do("SELECT", database)
-	_, err = c.Do("SETEX", key, timeout, val)
+	_, err = c.Do("SET", key, val, "EX", timeout, )
 	if err != nil {
 		return err
 	}

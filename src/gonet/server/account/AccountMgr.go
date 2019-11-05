@@ -41,7 +41,7 @@ func (this* AccountMgr) Init(num int){
 		LoginAccount := func(pAccount *Account) {
 			if pAccount != nil {
 				SERVER.GetLog().Printf("帐号[%s]返回登录OK", accountName)
-				SERVER.GetServer().SendMsgByID(id, "A_G_Account_Login", accountId, socketId)
+				SERVER.GetServer().SendMsgById(id, "A_G_Account_Login", accountId, socketId)
 			}
 		}
 

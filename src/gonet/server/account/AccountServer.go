@@ -145,5 +145,5 @@ func SendToClient(socketId int, packet proto.Message){
 	if !message.GetMessagePacket(packet, bitstream) {
 		return
 	}
-	SERVER.GetServer().SendByID(socketId, bitstream.GetBuffer())
+	SERVER.GetServer().SendById(socketId, bitstream.GetBuffer())
 }

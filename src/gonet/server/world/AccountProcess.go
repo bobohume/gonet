@@ -33,7 +33,7 @@ func (this * AccountProcess) RegisterServer(ServerType int, Ip string, Port int)
 
 func (this *AccountProcess) Init(num int) {
 	this.Actor.Init(num)
-	this.m_LostTimer = common.NewSimpleTimer(10)
+	this.m_LostTimer = common.NewSimpleTimer(3)
 	this.m_LostTimer.Start()
 	this.RegisterTimer(1 * 1000 * 1000 * 1000, this.Update)
 	this.RegisterCall("COMMON_RegisterRequest", func() {
@@ -53,11 +53,11 @@ func (this *AccountProcess) Init(num int) {
 	})
 
 	this.RegisterCall("G_ClientLost", func(accountId int64) {
-		SERVER.GetServer().CallMsg("G_ClientLost", accountId)
+		actor.MGR.SendMsg("playermgr", "G_ClientLost", accountId)
 	})
 
 	this.RegisterCall("A_W_CreatePlayer", func(accountId int64, playerId int64, playername string, sex int32, socketId int) {
-		SERVER.GetServer().CallMsg("A_W_CreatePlayer", accountId, playerId, playername, sex, socketId)
+		actor.MGR.SendMsg("playermgr", "A_W_CreatePlayer", accountId, playerId, playername, sex, socketId)
 	})
 
 	this.Actor.Start()

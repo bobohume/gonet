@@ -19,7 +19,7 @@ type(
 		PlayerData
 		m_ItemMgr      Item.IItemMgr
 		m_db 			*sql.DB
-		m_Log           *base.CLog
+		m_Log      	    *base.CLog
 		m_offlineTimer  *common.SimpleTimer
 	}
 )
@@ -59,6 +59,7 @@ func (this* Player) Init(num int){
 		nPlayerId := packet.GetPlayerId()
 		if !this.SetPlayerId(nPlayerId){
 			this.m_Log.Printf("帐号[%d]登入的玩家[%d]不存在", this.AccountId, nPlayerId)
+			return
 		}
 
 		//读取玩家数据

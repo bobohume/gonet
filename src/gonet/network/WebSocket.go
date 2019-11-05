@@ -169,7 +169,7 @@ func (this *WebSocket) Stop() bool {
 	return true
 }
 
-func (this *WebSocket) SendByID(id int, buff  []byte) int{
+func (this *WebSocket) SendById(id int, buff  []byte) int{
 	pClient := this.GetClientById(id)
 	if pClient != nil{
 		pClient.Send(base.SetTcpEnd(buff))
@@ -177,7 +177,7 @@ func (this *WebSocket) SendByID(id int, buff  []byte) int{
 	return  0
 }
 
-func (this *WebSocket) SendMsgByID(id int, funcName string, params ...interface{}){
+func (this *WebSocket) SendMsgById(id int, funcName string, params ...interface{}){
 	pClient := this.GetClientById(id)
 	if pClient != nil{
 		pClient.Send(base.SetTcpEnd(base.GetPacket(funcName, params...)))

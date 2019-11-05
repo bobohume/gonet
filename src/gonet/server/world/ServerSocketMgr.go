@@ -43,7 +43,7 @@ func (this *ServerSocketManager) Init(num int){
 		this.AddServerMap(pServerInfo)
 		switch pServerInfo.Type {
 		case int(message.SERVICE_GATESERVER):
-			SERVER.GetServer().SendMsgByID(this.GetSocketId(), "COMMON_RegisterResponse")
+			SERVER.GetServer().SendMsgById(this.GetSocketId(), "COMMON_RegisterResponse")
 		}
 	})
 

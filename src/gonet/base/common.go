@@ -154,6 +154,15 @@ func BytesToFloat64(data []byte) float64 {
 	return math.Float64frombits(tmp)
 }
 
+//[]int转[]int32
+func IntToInt32(val []int) []int32 {
+	tmp := []int32{}
+	for _, v := range val{
+		tmp = append(tmp, int32(v))
+	}
+	return tmp
+}
+
 func Htons(n uint16) []byte{
 	bytes := make([]byte, 2)
 	binary.LittleEndian.PutUint16(bytes, n)

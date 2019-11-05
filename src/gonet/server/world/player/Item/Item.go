@@ -10,15 +10,15 @@ import (
 
 type(
 	Item struct {
-		Id int64 `sql:"primary;name:id"`						//物品唯一Id
-		PlayerId int `sql:"primary;name:player_id"`		//玩家Id
+		Id int64 `sql:"primary;name:id"`				//物品唯一Id
+		PlayerId int64 `sql:"primary;name:player_id"`	//玩家Id
 		ItemId int	`sql:"name:item_id"`				//模板Id
 		Quantity int `sql:name:quantity`				//数量(对于装备，只能为1)
 	}
 
 	Equip struct {
-		Id int64 `sql:"primary;name:id"`						//物品唯一Id
-		PlayerId int `sql:"primary;name:player_id"`		//玩家Id
+		Id int64 `sql:"primary;name:id"`				//物品唯一Id
+		PlayerId int64 `sql:"primary;name:player_id"`	//玩家Id
 		ItemId int `sql:"name:item_id"`					//模板Id
 		Level int	`sql:"name:level"`					//等级
 		StrengthenLv int `sql:"name:strengthen_lv"`		//强化等级
@@ -36,15 +36,15 @@ type(
 	}
 
 	IItemMgr interface {
-		Init(iPlayer common.IPlayer)
-		CreateItem(int, int, int) (*Item, *Equip)		//创建物品
-		AddItem(int, int, int)	bool					//物品操作
-		//SortItem(int) bool							//排序物品
-		CanReduceItem(int, int, int) bool				//能否扣除
-		addItem(int, int, int)	bool					//添加物品
-		reduceItem(int, int, int) bool					//删除物品
-		DelEquipById(int64, int) bool					//删除装备
-		DelEquip(*Equip) bool							//删除装备
+		Init(common.IPlayer)
+		CreateItem(int, int) (*Item, *Equip)		//创建物品
+		AddItem(int, int)	bool					//物品操作
+		//SortItem(int) bool						//排序物品
+		CanReduceItem(int, int) bool				//能否扣除
+		addItem(int, int)	bool					//添加物品
+		reduceItem(int, int) bool					//删除物品
+		DelEquipById(int64) bool					//删除装备
+		DelEquip(*Equip) bool						//删除装备
 	}
 )
 
@@ -59,7 +59,7 @@ func (this *ItemMgr) Init(pPlayer common.IPlayer){
 	})*/
 }
 
-func (this *ItemMgr) CreateItem(ItemId, PlayerId, Quantity int) (*Item, *Equip) {
+func (this *ItemMgr) CreateItem(ItemId int, Quantity int) (*Item, *Equip) {
 	pItemData := data.ITEMDATA.GetData(ItemId)
 	if pItemData == nil{
 		return nil, nil
@@ -69,27 +69,27 @@ func (this *ItemMgr) CreateItem(ItemId, PlayerId, Quantity int) (*Item, *Equip) 
 	pItem.Id = base.UUID.UUID()
 	pItem.ItemId = ItemId
 	pItem.Quantity = Quantity
-	pItem.PlayerId = PlayerId
+	pItem.PlayerId = this.GetPlayerId()
 
 	var pEquip *Equip
 	if pItemData.IsEquip(){
 		pEquip = &Equip{}
 		pEquip.Id = pItem.Id
 		pEquip.ItemId = ItemId
-		pEquip.PlayerId = PlayerId
+		pEquip.PlayerId = this.GetPlayerId()
 	}
 	return pItem, pEquip
 }
 
-func (this *ItemMgr) AddItem(ItemId, PlayerId, Quantity int) bool{
+func (this *ItemMgr) AddItem(ItemId int, Quantity int) bool{
 	if Quantity > 0 {
-		return this.addItem(ItemId, PlayerId, Quantity)
+		return this.addItem(ItemId, Quantity)
 	}
 
-	return  this.reduceItem(ItemId, PlayerId, Quantity)
+	return  this.reduceItem(ItemId, Quantity)
 }
 
-func (this *ItemMgr) CanReduceItem(ItemId, PlayerId, Quantity int) bool{
+func (this *ItemMgr) CanReduceItem(ItemId int, Quantity int) bool{
 	pItemData := data.ITEMDATA.GetData(ItemId)
 	if pItemData == nil{
 		return false
@@ -128,7 +128,7 @@ func (this *ItemMgr) DelEquip(pEquip *Equip) bool{
 	return false
 }
 
-func (this *ItemMgr) DelEquipById(Id int64, PlayerId int) bool{
+func (this *ItemMgr) DelEquipById(Id int64) bool{
 	pEquip, exist := this.m_EquipMap[Id]
 	if exist{
 		return this.DelEquip(pEquip)
@@ -136,7 +136,7 @@ func (this *ItemMgr) DelEquipById(Id int64, PlayerId int) bool{
 	return false
 }
 
-func (this *ItemMgr) addItem(ItemId, PlayerId, Quantity int) bool{
+func (this *ItemMgr) addItem(ItemId int, Quantity int) bool{
 	pItemData := data.ITEMDATA.GetData(ItemId)
 	if pItemData == nil{
 		return false
@@ -150,13 +150,13 @@ func (this *ItemMgr) addItem(ItemId, PlayerId, Quantity int) bool{
 		if pItem != nil && pItem.ItemId == ItemId && pItem.Quantity < pItemData.MaxDie{
 			iNeedQuantity = iLeftQuantity
 			iLeftQuantity -= pItemData.MaxDie - pItem.Quantity
-		}
 
-		if iLeftQuantity > 0 {
-			BatMap[pItem.Id] = pItemData.MaxDie - pItem.Quantity
-		}else{
-			BatMap[pItem.Id] = iNeedQuantity
-			break
+			if iLeftQuantity > 0 {
+				BatMap[pItem.Id] = pItemData.MaxDie - pItem.Quantity
+			}else{
+				BatMap[pItem.Id] = iNeedQuantity
+				break
+			}
 		}
 	}
 
@@ -165,7 +165,7 @@ func (this *ItemMgr) addItem(ItemId, PlayerId, Quantity int) bool{
 		iLeftQuantity -= pItemData.MaxDie
 
 		if iLeftQuantity > 0 {
-			pItem, pEquip := this.CreateItem(ItemId, PlayerId, pItemData.MaxDie)
+			pItem, pEquip := this.CreateItem(ItemId, pItemData.MaxDie)
 			if pItem != nil{
 				CreateMap[pItem.Id] = &ItemEquipPair{pItem, pEquip}
 			} else {
@@ -173,7 +173,7 @@ func (this *ItemMgr) addItem(ItemId, PlayerId, Quantity int) bool{
 				break
 			}
 		} else{
-			pItem, pEquip := this.CreateItem(ItemId, PlayerId, iNeedQuantity)
+			pItem, pEquip := this.CreateItem(ItemId, iNeedQuantity)
 			if pItem != nil{
 				CreateMap[pItem.Id] = &ItemEquipPair{pItem, pEquip}
 			} else {
@@ -208,7 +208,7 @@ func (this *ItemMgr) addItem(ItemId, PlayerId, Quantity int) bool{
 	return !bEnough
 }
 
-func (this *ItemMgr) reduceItem(ItemId, PlayerId, Quantity int) bool{
+func (this *ItemMgr) reduceItem(ItemId int, Quantity int) bool{
 	pItemData := data.ITEMDATA.GetData(ItemId)
 	if pItemData == nil{
 		return false

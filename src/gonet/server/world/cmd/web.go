@@ -1,9 +1,8 @@
 package cmd
 
 import (
-	"net/http"
 	"gonet/server/common"
-	"gonet/server/world"
+	"net/http"
 )
 
 //http://localhost:8080/gm?cmd=cpus()
@@ -16,11 +15,11 @@ func cmdHandle(w http.ResponseWriter, r *http.Request) {
 }
 
 func InitWeb(){
-	go func() {
+	/*go func() {
 		http.HandleFunc("/gm", cmdHandle)
 		err := http.ListenAndServe(world.Web_Url, nil)
 		if err != nil {
 			world.SERVER.GetLog().Println("World Web Server : ", err)
 		}
-	}()
+	}()*/
 }

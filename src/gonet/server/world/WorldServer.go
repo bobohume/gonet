@@ -46,7 +46,7 @@ var(
 	DB_Name string
 	DB_UserId string
 	DB_Password string
-	Web_Url string
+	//Web_Url string
 	SERVER ServerMgr
 	RdID int
 	OpenRedis bool
@@ -79,7 +79,7 @@ func (this *ServerMgr)Init() bool{
 	DB_Password	= this.m_config.Get3("WorldDB", "DB_Password")
 	RdID 		= 0//this.m_config.Int("WorkID") / 10
 	OpenRedis	= this.m_config.Bool("Redis_Open")
-	Web_Url		= this.m_config.Get("World_Url")
+	//Web_Url		= this.m_config.Get("World_Url")
 
 	ShowMessage := func(){
 		this.m_Log.Println("**********************************************************")
@@ -129,7 +129,6 @@ func (this *ServerMgr)Init() bool{
 	packet.Init(1000)
 	this.m_pService.BindPacketFunc(packet.PacketFunc)
 	this.m_pService.BindPacketFunc(this.m_pServerMgr.PacketFunc)
-
 	return  false
 }
 
@@ -171,6 +170,6 @@ func SendToClient(socketId int, packet proto.Message){
 		bitstream.WriteString(message.GetMessageName(packet))
 		bitstream.WriteInt64(pakcetHead.Id, base.Bit64)
 		bitstream.WriteBits(len(buff)<<3, buff)
-		SERVER.GetServer().SendByID(socketId, bitstream.GetBuffer())
+		SERVER.GetServer().SendById(socketId, bitstream.GetBuffer())
 	}
 }

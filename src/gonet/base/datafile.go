@@ -1,7 +1,6 @@
 package base
 
 import (
-	"bufio"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -68,14 +67,7 @@ func (this *CDataFile) ReadDataFile(fileName string) bool{
 		return false
 	}
 	defer file.Close()
-
-	fileInfo, err := file.Stat()
-	if err != nil{
-		return false
-	}
-
-	rd := bufio.NewReaderSize(file, int(fileInfo.Size()))
-	buf, err := ioutil.ReadAll(rd)
+	buf, err := ioutil.ReadAll(file)
 	if err != nil{
 		return false
 	}
@@ -115,7 +107,7 @@ func (this *CDataFile) ReadDataFile(fileName string) bool{
 	1、字段长度(int)
 	2、字读数据类型(int->2,string->1,enum->3,float->4)
 	3、字段内容(int,string)
-	*************************/
+*************************/
 func (this *CDataFile) GetData(pData *RData) bool {
 	if this.readstep == 0 || this.fstream == nil{
 		return false

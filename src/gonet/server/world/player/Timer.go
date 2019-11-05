@@ -18,7 +18,7 @@ type(
 	Timer struct {
 		Id int `sql:"primary;name:id"`						//定时器Id
 		PlayerId int64 `sql:"primary;name:player_id"`		//玩家Id
-		Flag 	int64	`sql:"name:flag"`					//定时器数据
+		Flag int64	`sql:"name:flag"`						//定时器数据
 		ExpireTime int64 `sql:datetime;name:expire_time`	//定时器过期时间
 	}
 
@@ -36,6 +36,7 @@ type(
 
 	ITimerMgr interface {
 		Init(int64)
+		GetTimer(Id int) *Timer//获取定时器
 		AddTimer(Id int, Flag int64, ExpireTime int64)//添加定时器
 		DelTimer(Id int)//删除定时器
 		Update()
@@ -50,11 +51,20 @@ func (this *TimerMgr) Init(PlayerId int64){
 	this.m_Log = world.SERVER.GetLog()
 }
 
+func (this *TimerMgr)  GetTimer(Id int) *Timer{
+	pTimer, bEx := this.m_TimerMap[Id]
+	if bEx{
+		return pTimer
+	}
+	return nil
+}
+
 func (this *TimerMgr) AddTimer(Id int, Flag int64, ExpireTime int64){
 	pTimer, bEx := this.m_TimerMap[Id]
 	if bEx && pTimer != nil{
 		pTimer.Flag = Flag
 		pTimer.ExpireTime = ExpireTime
+		this.sort()
 		this.m_db.Exec(db.UpdateSqlEx(pTimer, "tbl_timerset", "flag", "expire_time"))
 	}else{
 		pTimer = &Timer{}

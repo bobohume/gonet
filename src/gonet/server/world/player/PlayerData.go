@@ -31,12 +31,12 @@ const(
 
 type (
 	PlayerData struct{
+		SimplePlayerData
+
 		AccountId int64
 		PlayerId int64
 		SocketId int
 		AccountName string
-		PlayerSimpleData *SimplePlayerData
-
 		PlayerNum int
 		PlayerIdList []int64
 		PlayerSimpleDataList []*SimplePlayerData
@@ -47,6 +47,7 @@ type (
 
 	IPlayerData interface {
 		Init()
+
 		GetGateSocketId() int
 		GetAccountId() int64
 		GetPlayerId() int64
@@ -56,10 +57,10 @@ type (
 
 		LoadPlayerData()//加载其他数据
 		//----KV---//
-		LoadKV()//加载kv
-		SetKV(key int, value int64)//设置kv
-		DelKV(key int)//删除key
-		GetKV(key int) int64//获取key
+		LoadKV()                          //加载kv
+		SetKV(key int, value int64) //设置kv
+		DelKV(key int)              //删除key
+		GetKV(key int) int64        //获取key
 		//----KV---//
 	}
 )
@@ -67,7 +68,7 @@ type (
 func (this *PlayerData) Init(){
 	this.m_db = world.SERVER.GetDB()
 	this.m_Log = world.SERVER.GetLog()
-	this.m_PlayerKVMap = map[int]*PlayerKvData{}
+	this.m_PlayerKVMap = map[int] *PlayerKvData{}
 	//this.PlayerIdList = make([]int, 0)
 	//this.PlayerSimpleDataList = make([]*SimplePlayerData, 0)
 }
@@ -85,10 +86,7 @@ func (this *PlayerData) GetPlayerId()int64{
 }
 
 func (this *PlayerData) GetPlayerName() string{
-	if this.PlayerSimpleData != nil{
-		return this.PlayerSimpleData.PlayerName
-	}
-	return ""
+	return this.PlayerName
 }
 
 func (this *PlayerData) GetPlayerCount()int{
@@ -105,7 +103,7 @@ func (this *PlayerData) SetPlayerId(PlayerId int64) bool{
 	for i := 0; i < len(this.PlayerIdList); i++ {
 		if this.PlayerIdList[i] == PlayerId {
 			this.PlayerId = PlayerId
-			this.PlayerSimpleData = this.PlayerSimpleDataList[i]
+			this.SimplePlayerData = *this.PlayerSimpleDataList[i]
 			return  true
 		}
 	}
@@ -154,4 +152,3 @@ func (this *PlayerData) GetKV(key int) int64{
 	}
 	return 0
 }
-

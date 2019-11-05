@@ -79,7 +79,7 @@ func DispatchPacketToClient(id int, buff []byte) bool{
 	bitstream.ReadString()//统一格式包头名字
 	accountId := bitstream.ReadInt64(base.Bit64)
 	socketId := SERVER.GetPlayerMgr().GetSocket(accountId)
-	SERVER.GetServer().SendByID(socketId, bitstream.GetBytePtr())
+	SERVER.GetServer().SendById(socketId, bitstream.GetBytePtr())
 	return true
 }
 

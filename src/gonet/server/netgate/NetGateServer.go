@@ -99,7 +99,6 @@ func (this *ServerMgr)Init() bool{
 	packet := new(UserPrcoess)
 	packet.Init(1000)
 	this.m_pService.BindPacketFunc(packet.PacketFunc)
-	//this.m_pService.BindPacketFunc(packet1.PacketFunc)
 	this.m_pService.Start()
 
 	//websocket
@@ -139,6 +138,6 @@ func (this *ServerMgr) OnServerStart(){
 func SendToClient(socketId int, packet proto.Message){
 	buff, err := proto.Marshal(packet)
 	if err == nil {
-		SERVER.GetServer().SendByID(socketId, buff)
+		SERVER.GetServer().SendById(socketId, buff)
 	}
 }

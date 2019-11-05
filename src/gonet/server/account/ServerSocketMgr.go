@@ -52,9 +52,9 @@ func (this *ServerSocketManager) Init(num int){
 
 		switch pServerInfo.Type {
 		case int(message.SERVICE_GATESERVER):
-			SERVER.GetServer().SendMsgByID(this.GetSocketId(), "COMMON_RegisterResponse")
+			SERVER.GetServer().SendMsgById(this.GetSocketId(), "COMMON_RegisterResponse")
 		case int(message.SERVICE_WORLDSERVER):
-			SERVER.GetServer().SendMsgByID(this.GetSocketId(), "COMMON_RegisterResponse")
+			SERVER.GetServer().SendMsgById(this.GetSocketId(), "COMMON_RegisterResponse")
 		}
 	})
 
@@ -153,7 +153,7 @@ func (this *ServerSocketManager) KickWorldPlayer(accountId int64){
 	for _, v := range vec.Array(){
 		pSeverInfo, bOk := v.(*common.ServerInfo)
 		if bOk && pSeverInfo!= nil{
-			SERVER.GetServer().SendMsgByID(pSeverInfo.SocketId, "G_ClientLost", accountId)
+			SERVER.GetServer().SendMsgById(pSeverInfo.SocketId, "G_ClientLost", accountId)
 		}
 	}
 }

@@ -17,13 +17,14 @@ import (
 var(
 	PLAYERMGR PlayerMgr
 )
+
 type(
 	PlayerMgr struct{
 		actor.Actor
 
-		m_db *sql.DB
-		m_Log *base.CLog
-		m_PingTimer common.ISimpleTimer
+		m_db         *sql.DB
+		m_Log        *base.CLog
+		m_PingTimer  common.ISimpleTimer
 		m_PlayerPool actor.ActorPool//玩家actor线城池
 	}
 
@@ -34,7 +35,6 @@ type(
 		AddPlayer(accountId int64) actor.IActor
 		RemovePlayer(accountId int64)
 		Update()
-		SendPlayer(Id int64, funcName string, params  ...interface{}) bool
 	}
 )
 
@@ -46,6 +46,7 @@ func (this* PlayerMgr) Init(num int){
 	this.m_PingTimer = common.NewSimpleTimer(120)
 	this.m_PingTimer.Start()
 	actor.MGR.AddActor(this)
+
 	this.RegisterTimer(1000 * 1000 * 1000, this.Update)//定时器
 	//玩家登录
 	this.RegisterCall("G_W_CLoginRequest", func(accountId int64) {
@@ -189,12 +190,9 @@ func (this *PlayerMgr) PacketFunc(id int, buff []byte) bool{
 	return false
 }
 
-func (this *PlayerMgr) SendPlayer(Id int64, funcName string, params  ...interface{}) bool{
+func (this *PlayerMgr) SendMsgById(Id int64, funcName string, params  ...interface{}){
 	pActor := this.GetPlayer(Id)
 	if pActor != nil && pActor.FindCall(funcName) != nil {
 		pActor.SendMsg(funcName, params...)
-		return true
 	}
-
-	return false
 }

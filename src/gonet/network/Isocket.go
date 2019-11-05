@@ -63,9 +63,9 @@ type (
 		Clear()
 		Close()
 		Send([]byte) int
-		SendByID(int, []byte) int
+		SendById(int, []byte) int
 		SendMsg(string, ...interface{})
-		SendMsgByID(int,string, ...interface{})
+		SendMsgById(int,string, ...interface{})
 		CallMsg(string, ...interface{})//回调消息处理
 
 		GetState() int
@@ -121,14 +121,14 @@ func (this *Socket) Send([]byte) int{
 	return  0
 }
 
-func (this *Socket) SendByID(int, []byte) int{
+func (this *Socket) SendById(int, []byte) int{
 	return 0
 }
 
 func (this *Socket) SendMsg(funcName string, params  ...interface{}){
 }
 
-func (this *Socket) SendMsgByID(int,string, ...interface{}){
+func (this *Socket) SendMsgById(int,string, ...interface{}){
 }
 
 func (this *Socket) Clear() {
@@ -279,61 +279,5 @@ ParsePacekt:
 		this.m_pInBuffer = buff[nCurSize:]
 	}else{
 		fmt.Println("超出最大包限制，丢弃该包")
-	}
-}*/
-
-/*func (this *Socket) receivePacket1(Id int, buff []byte){
-	//递归最好调用这函数的前面recover，不然性能消耗很大
-	defer func() {
-		if err := recover(); err != nil {
-			fmt.Println("ReceivePacket", err) // 接受包错误
-			this.m_bHalf = false
-			this.m_pInBuffer = []byte{}
-		}
-	}()
-	nPacketSize := 0
-	nBufferSize := len(buff)
-	bFindFlag := false
-	//找包结束
-	seekToTcpEnd := func(buff []byte) (bool, int){
-		nLen := len(buff)
-		for	i := 0; i < nLen - 1; i++ {
-			if (buff[i] == base.TCP_END[0] &&  buff[i+1] == base.TCP_END[1]){
-				return true, i+2
-			}
-		}
-		return false, 0
-	}
-
-	if this.m_bHalf{
-		this.m_bHalf = false
-		this.m_pInBuffer = append(this.m_pInBuffer, buff...)
-		nBufferSize = len(this.m_pInBuffer)
-		bFindFlag, nPacketSize = seekToTcpEnd(this.m_pInBuffer)
-		if bFindFlag {
-			if nBufferSize == nPacketSize{		//完整包
-				this.HandlePacket(Id, this.m_pInBuffer[:nPacketSize-2])
-			}else if ( nBufferSize > nPacketSize){
-				this.HandlePacket(Id, this.m_pInBuffer[:nPacketSize-2])
-				this.receivePacket1(Id, this.m_pInBuffer[nPacketSize:])//继续解析
-			}
-		}else{//丢弃包
-			fmt.Println("丢弃一个不完整的包")
-		}
-	}else{
-		bFindFlag, nPacketSize = seekToTcpEnd(buff)
-		//fmt.Println(bFindFlag, nPacketSize, nBufferSize)
-		if bFindFlag {
-			if nBufferSize == nPacketSize{		//完整包
-				this.HandlePacket(Id, buff[:nPacketSize-2])
-			}else if ( nBufferSize > nPacketSize){
-				this.HandlePacket(Id, buff[:nPacketSize-2])
-				this.receivePacket1(Id, buff[nPacketSize:])//继续解析
-			}
-		}else{
-			this.m_bHalf = true
-			this.m_nHalfSize = nBufferSize
-			this.m_pInBuffer = buff
-		}
 	}
 }*/

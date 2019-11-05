@@ -5,7 +5,6 @@ import (
 	"encoding/gob"
 	"encoding/json"
 	"github.com/golang/protobuf/proto"
-	"github.com/json-iterator/go"
 	"gonet/base"
 	"gonet/message"
 	"reflect"
@@ -47,28 +46,6 @@ func TestUJson(t *testing.T){
 	}
 }
 
-func TestIJson(t *testing.T){
-	var json = jsoniter.ConfigCompatibleWithStandardLibrary
-	data := &TopRank{}
-	for i := 0; i < nArraySize; i++{
-		data.Value = append(data.Value, nValue)
-	}
-	for i := 0; i < ntimes; i++{
-		json.Marshal(data)
-	}
-}
-
-func TestUIJson(t *testing.T){
-	var json = jsoniter.ConfigCompatibleWithStandardLibrary
-	data := &TopRank{}
-	for i := 0; i < nArraySize; i++{
-		data.Value = append(data.Value, nValue)
-	}
-	buff, _ := json.Marshal(data)
-	for i := 0; i < ntimes; i++{
-		json.Unmarshal(buff, &TopRank{})
-	}
-}
 
 func TestPB(t *testing.T){
 	aa := []int32{}

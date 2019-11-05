@@ -157,7 +157,7 @@ func (this *ServerSocket) Stop() bool {
 	return true
 }
 
-func (this *ServerSocket) SendByID(id int, buff  []byte) int{
+func (this *ServerSocket) SendById(id int, buff  []byte) int{
 	pClient := this.GetClientById(id)
 	if pClient != nil{
 		pClient.Send(base.SetTcpEnd(buff))
@@ -165,7 +165,7 @@ func (this *ServerSocket) SendByID(id int, buff  []byte) int{
 	return  0
 }
 
-func (this *ServerSocket) SendMsgByID(id int, funcName string, params ...interface{}){
+func (this *ServerSocket) SendMsgById(id int, funcName string, params ...interface{}){
 	pClient := this.GetClientById(id)
 	if pClient != nil{
 		pClient.Send(base.SetTcpEnd(base.GetPacket(funcName, params...)))

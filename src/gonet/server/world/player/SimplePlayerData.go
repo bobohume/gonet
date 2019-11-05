@@ -15,9 +15,9 @@ type (
 	}
 
 	PlayerKvData struct {
-		PlayerId int64 `sql:"primary;name:player_id"`
-		Key int `sql:"primary;name:key"`
-		Value int64 `sql:"name:value"`
+		PlayerId int64     `sql:"primary;name:player_id"`
+		Key      int 	   `sql:"primary;name:key"`
+		Value    int64     `sql:"name:value"`
 	}
 )
 
