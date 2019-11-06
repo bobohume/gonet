@@ -40,10 +40,10 @@ type(
 		BindPacket(IClusterPacket)
 		BindPacketFunc(network.HandleFunc)
 		SendMsg(uint32, string, ...interface{})//发送给集群特定服务器
-		BalacaceMsg(string, ...interface{})//负载给集群特定服务器
+		BalanceMsg(string, ...interface{})//负载给集群特定服务器
 		BoardCastMsg(string, ...interface{})//给集群广播
 		Send(uint32, []byte)
-		BalacaceSend([]byte)//负载给集群特定服务器
+		BalanceSend([]byte)//负载给集群特定服务器
 
 		BalanceCluster()uint32//负载均衡
 		RandomCluster()uint32//随机分配
@@ -132,7 +132,7 @@ func (this *Cluster) SendMsg(socketId uint32, funcName string, params  ...interf
 	}
 }
 
-func (this *Cluster) BalacaceMsg(funcName string, params  ...interface{}){
+func (this *Cluster) BalanceMsg(funcName string, params  ...interface{}){
 	pClient := this.GetCluster(this.RandomCluster())
 	if pClient != nil{
 		pClient.SendMsg(funcName, params...)
@@ -158,7 +158,7 @@ func (this *Cluster) Send(socketId uint32, buff []byte){
 	}
 }
 
-func (this *Cluster) BalacaceSend(buff []byte){
+func (this *Cluster) BalanceSend(buff []byte){
 	pClient := this.GetCluster(this.RandomCluster())
 	if pClient != nil{
 		pClient.Send(buff)

@@ -107,7 +107,7 @@ func (this* PlayerMgr) Init(num int){
 
 		if error == 1 {//创建失败通知accout删除player
 			this.m_Log.Printf("账号[%d]创建玩家[%d]失败", accountId, playerId)
-			world.SERVER.GetAccountCluster().BalacaceMsg("W_A_DeletePlayer", accountId, playerId)
+			world.SERVER.GetAccountCluster().BalanceMsg("W_A_DeletePlayer", accountId, playerId)
 		}
 	})
 

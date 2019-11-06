@@ -85,7 +85,7 @@ func (this* Player) Init(num int){
 						PlayerId:0,
 					})
 				}else{
-					world.SERVER.GetAccountCluster().BalacaceMsg("W_A_CreatePlayer", this.AccountId, packet.GetPlayerName(), packet.GetSex(), this.GetSocketId())
+					world.SERVER.GetAccountCluster().BalanceMsg("W_A_CreatePlayer", this.AccountId, packet.GetPlayerName(), packet.GetSex(), this.GetSocketId())
 				}
 			}
 		}
