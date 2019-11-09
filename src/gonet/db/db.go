@@ -58,6 +58,7 @@ type(
 	SqlData struct {
 		SqlName string
 		SqlValue string
+		bitMap *base.BitMap
 	}
 )
 
@@ -264,15 +265,14 @@ func Query(rows *sql.Rows, err error) *Rows{
 	}
 	return rs
 }
-
-//example
-/*db := db.OpenDB("localhost:3306", "root", "123456", "test")
-nlen := 0
-for nlen < 10 {
-	go func() {
-		for {
-			db.Exec("INSERT INTO tbl_car(carnum) values(?)", 2)
+//--------------------note存储过程----------------------//
+//mysql存储过程多变更集的时候要用 NextResultSet()
+/*rows, err := this.m_db.Query(fmt.Sprintf("call `sp_checkcreatePlayer`(%d)", this.AccountId))
+if err == nil && rows != nil{
+	if rows.NextResultSet(){//import
+	rs := db.Query(rows, err)
+		if rs.Next(){
+			err := rs.Row().Int("@err")
 		}
-	}()
-	nlen++
+	}
 }*/

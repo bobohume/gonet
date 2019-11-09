@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	"gonet/base"
+	"math"
 	"reflect"
 	"strconv"
 	"strings"
+	"unicode"
 )
 
 func loadsql(sqlData *SqlData, p *Properties, val string){
@@ -17,6 +19,9 @@ func loadsql(sqlData *SqlData, p *Properties, val string){
 
 func loadsqlarray(sqlData *SqlData, p *Properties, val string, i int){
 	//sqlData.SqlValue += fmt.Sprintf("'%s',", val)
+	if sqlData.bitMap == nil || !sqlData.bitMap.Test(i){
+		return
+	}
 	sqlData.SqlName += fmt.Sprintf("`%s%d`,", p.Name, i)
 }
 
@@ -427,10 +432,28 @@ func LoadSqlEx(obj interface{}, sqltable string, key string, params ...string) s
 	}
 
 	sqlData := &SqlData{}
-	nameMap := make(map[string] string)
+	nameMap := make(map[string] *base.BitMap)//name index[for array]
 	for _,v := range params{
+		nIndex, i := 0, 0
 		v1 := strings.ToLower(v)
-		nameMap[v1] = v1
+		v2 := strings.TrimRightFunc(v, func(r rune) bool {
+			if unicode.IsNumber(r){
+				nIndex = int(r - '0') * int(math.Pow(10, float64(i))) + nIndex
+				i++
+				return true
+			}
+			return false
+		})
+		if v1 != v2{
+			bitMap, bOk := nameMap[v2]
+			if !bOk{
+				bitMap = base.NewBitMap(100)
+				nameMap[v2] = bitMap
+			}
+			bitMap.Set(nIndex)
+		}else{
+			nameMap[v1] = nil
+		}
 	}
 	for i := 0; i < classType.NumField(); i++ {
 		if !classVal.Field(i).CanInterface() {//private成员不能读取
@@ -438,8 +461,10 @@ func LoadSqlEx(obj interface{}, sqltable string, key string, params ...string) s
 		}
 
 		sf := classType.Field(i)
-		_, exist := nameMap[getProperties(sf).Name]
+		p := getProperties(sf)
+		bitMap, exist := nameMap[p.Name]
 		if exist{
+			sqlData.bitMap = bitMap
 			bRight := getLoadSql(sf, classVal.Field(i), sqlData)
 			if !bRight{
 				errorStr := fmt.Sprintf("LoadSqlEx error %s", reflect.TypeOf(obj).Name())
