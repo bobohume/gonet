@@ -447,7 +447,7 @@ func LoadSqlEx(obj interface{}, sqltable string, key string, params ...string) s
 		if v1 != v2{
 			bitMap, bOk := nameMap[v2]
 			if !bOk{
-				bitMap = base.NewBitMap(100)
+				bitMap = base.NewBitMap(MAX_ARRAY_LENGTH)
 				nameMap[v2] = bitMap
 			}
 			bitMap.Set(nIndex)
