@@ -11,9 +11,6 @@ import (
 	"time"
 )
 
-const (
-	MAX_ARRAY_LENGTH = 64
-)
 
 type(
 	Datetime int64

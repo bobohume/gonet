@@ -440,7 +440,7 @@ func DeleteSqlEx(obj interface{}, sqltable string, params ...string) string {
 		if v1 != v2{
 			bitMap, bOk := nameMap[v2]
 			if !bOk{
-				bitMap = base.NewBitMap(MAX_ARRAY_LENGTH)
+				bitMap = base.NewBitMap(100)
 				nameMap[v2] = bitMap
 			}
 			bitMap.Set(nIndex)
