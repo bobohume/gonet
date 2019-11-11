@@ -23,7 +23,7 @@ func insertsqlblob(sqlData *SqlData, p *Properties, val []byte){
 }
 
 func insertsqlarray(sqlData *SqlData, p *Properties, val string, i int){
-	if sqlData.bitMap == nil || !sqlData.bitMap.Test(i){
+	if sqlData.bitMap != nil && !sqlData.bitMap.Test(i){
 		return
 	}
 	sqlData.SqlValue += fmt.Sprintf("'%s',", val)

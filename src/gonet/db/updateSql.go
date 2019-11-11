@@ -31,7 +31,7 @@ func updatesqlblob(sqlData *SqlData, p *Properties, val []byte){
 func updatesqlarray(sqlData *SqlData, p *Properties, val string, i int){
 	if p.IsPrimary() {
 		sqlData.SqlName += fmt.Sprintf("`%s%d`='%s',", p.Name, i, val)
-	}else if sqlData.bitMap == nil || !sqlData.bitMap.Test(i){
+	}else if sqlData.bitMap != nil && !sqlData.bitMap.Test(i){
 		return
 	}else{
 		sqlData.SqlValue += fmt.Sprintf("`%s%d`='%s',", p.Name, i, val)

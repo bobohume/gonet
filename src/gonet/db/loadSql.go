@@ -19,7 +19,7 @@ func loadsql(sqlData *SqlData, p *Properties, val string){
 
 func loadsqlarray(sqlData *SqlData, p *Properties, val string, i int){
 	//sqlData.SqlValue += fmt.Sprintf("'%s',", val)
-	if sqlData.bitMap == nil || !sqlData.bitMap.Test(i){
+	if sqlData.bitMap != nil && !sqlData.bitMap.Test(i){
 		return
 	}
 	sqlData.SqlName += fmt.Sprintf("`%s%d`,", p.Name, i)
