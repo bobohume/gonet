@@ -1,10 +1,9 @@
 package player
 
 import (
-	"database/sql"
 	"gonet/base"
 	"gonet/db"
-	"gonet/server/world"
+	"gonet/server/world/common"
 	"sort"
 	"time"
 )
@@ -27,15 +26,13 @@ type(
 	}//定时器序列
 
 	TimerMgr struct {
+		common.IPlayer
 		m_TimerSet TimerSet//定时器set
 		m_TimerMap map[int] *Timer//方便查找
-		m_PlayerId int64
-		m_db *sql.DB
-		m_Log *base.CLog
 	}
 
 	ITimerMgr interface {
-		Init(int64)
+		Init(common.IPlayer)
 		GetTimer(Id int) *Timer//获取定时器
 		AddTimer(Id int, Flag int64, ExpireTime int64)//添加定时器
 		DelTimer(Id int)//删除定时器
@@ -44,11 +41,9 @@ type(
 	}
 )
 
-func (this *TimerMgr) Init(PlayerId int64){
+func (this *TimerMgr) Init(pPlayer common.IPlayer){
+	this.IPlayer = pPlayer
 	this.m_TimerMap = map[int] *Timer{}
-	this.m_PlayerId = PlayerId
-	this.m_db = world.SERVER.GetDB()
-	this.m_Log = world.SERVER.GetLog()
 }
 
 func (this *TimerMgr)  GetTimer(Id int) *Timer{
@@ -65,17 +60,17 @@ func (this *TimerMgr) AddTimer(Id int, Flag int64, ExpireTime int64){
 		pTimer.Flag = Flag
 		pTimer.ExpireTime = ExpireTime
 		this.sort()
-		this.m_db.Exec(db.UpdateSqlEx(pTimer, "tbl_timerset", "flag", "expire_time"))
+		this.GetDB().Exec(db.UpdateSqlEx(pTimer, "tbl_timerset", "flag", "expire_time"))
 	}else{
 		pTimer = &Timer{}
 		pTimer.Id = Id
-		pTimer.PlayerId = this.m_PlayerId
+		pTimer.PlayerId = this.GetPlayerId()
 		pTimer.ExpireTime = ExpireTime
 		pTimer.Flag = Flag
 		this.m_TimerSet.Push_back(pTimer)
 		this.m_TimerMap[Id] = pTimer
 		this.sort()
-		this.m_db.Exec(db.InsertSql(pTimer, "tbl_timerset"))
+		this.GetDB().Exec(db.InsertSql(pTimer, "tbl_timerset"))
 	}
 }
 
@@ -87,7 +82,7 @@ func (this *TimerMgr) DelTimer(Id int){
 				delete(this.m_TimerMap, Id)
 				this.m_TimerSet.Erase(i)
 				i--
-				this.m_db.Exec(db.DeleteSql((*v).(*Timer), "tbl_timerset"))
+				this.GetDB().Exec(db.DeleteSql((*v).(*Timer), "tbl_timerset"))
 				break
 			}
 		}
@@ -102,7 +97,7 @@ func (this *TimerMgr) Update() {
 			delete(this.m_TimerMap, (*v).(*Timer).Id)
 			this.m_TimerSet.Erase(i)
 			i--
-			this.m_db.Exec(db.DeleteSql((*v).(*Timer), "tbl_timerset"))
+			this.GetDB().Exec(db.DeleteSql((*v).(*Timer), "tbl_timerset"))
 			continue
 		}else{
 			break

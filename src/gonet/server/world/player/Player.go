@@ -18,9 +18,9 @@ type(
 
 		PlayerData
 		m_ItemMgr      Item.IItemMgr
-		m_db 			*sql.DB
-		m_Log      	    *base.CLog
-		m_offlineTimer  *common.SimpleTimer
+		m_db           *sql.DB
+		m_Log          *base.CLog
+		m_offlineTimer *common.SimpleTimer
 	}
 )
 
