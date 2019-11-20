@@ -322,18 +322,26 @@ func GetTypeString(param interface{}) string{
 	paramType := reflect.TypeOf(param)
 	sType := ""
 	if paramType.Kind() == reflect.Ptr{
-		sType = "*" + paramType.Elem().Kind().String()
+		sType = "*" + paramType.Elem().String()
 		paramType = paramType.Elem()
 	}else if paramType.Kind() == reflect.Slice{
 		sType = GetSliceTypeString(paramType.String())
 	}else if paramType.Kind() == reflect.Array{
 		sType = GetArrayTypeString(paramType.String())
 	}else{
-		sType = paramType.Kind().String()
+		sType = paramType.String()
 	}
 
-	if paramType.Kind() == reflect.Struct || paramType.Kind() == reflect.Map || sType == "[]*struct" ||
-		sType == "[]struct" || sType == "[*]*struct" || sType == "[*]struct"{
+	if sType == "bool" || sType == "float64" || sType == "float32" || sType == "int8" ||
+		sType == "uint8" || sType == "int16" || sType == "uint16" || sType == "int32" ||
+		sType == "uint32" || sType == "int64" || sType == "uint64" ||  sType == "string"||
+		sType == "int" || sType == "uint" ||
+		sType == "*bool" || sType == "*float64" || sType == "*float32" || sType == "*int8" ||
+		sType == "*uint8" || sType == "*int16" || sType == "*uint16" || sType == "*int32" ||
+		sType == "*uint32" || sType == "*int64" || sType == "*uint64" ||  sType == "*string"||
+		sType == "*int" || sType == "*uint" {
+
+	}else{
 		sType = "*gob"
 	}
 	return sType
