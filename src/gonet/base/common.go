@@ -326,8 +326,10 @@ func GetTypeString(param interface{}) string{
 		paramType = paramType.Elem()
 	}else if paramType.Kind() == reflect.Slice{
 		sType = GetSliceTypeString(paramType.String())
+		return sType
 	}else if paramType.Kind() == reflect.Array{
 		sType = GetArrayTypeString(paramType.String())
+		return sType
 	}else{
 		sType = paramType.String()
 	}
