@@ -36,7 +36,7 @@ websocket模式下，在netgateserver里面注释回//websocket这段
 
 
 
-目前游戏库分类：
+# 目前游戏库分类：
 
 1.actor核心库，actor模式的雏形。
 
@@ -52,7 +52,7 @@ websocket模式下，在netgateserver里面注释回//websocket这段
 
 
 
-目前游戏模块：
+# 目前游戏模块：
 
 1.account账号服务，提供注册账号，登录校验，集群服务。
 
@@ -62,9 +62,9 @@ websocket模式下，在netgateserver里面注释回//websocket这段
 
 4.第三方中间件：etcd分布式服发现，redis分布式缓存。
 
-交流
+# 交流
 
 QQ群:950288306
 
-服务器架构如下：
+# 服务器架构如下：
 ![image](https://github.com/bobohume/go-server/blob/master/框架.jpg)
