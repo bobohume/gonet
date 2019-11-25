@@ -12,7 +12,7 @@ websocket模式下，在netgateserver里面注释回//websocket这段
     前四位 protobuf name 的 crc，中间protobuf字节流， 尾部+结束标志💞♡ (结束标志也可以自己定义在base.TCP_END控制)
     //另外支持包头大小- 前四位包体大小,再四位protobuf name 的 crc，中间protobuf字节流,代码注视掉,（搜索tcp粘包固定包头）
 
-1.支持go mod, gopath可以不需要设置(使用gomod可以使用goproxy代理(GOPROXY=https://goproxy.i ),不然很坑爹)。（也支持go vendor（删除项目下的go.mod文件），下载这几个基础库，mysql，protobuf，redis，etcd）
+1.支持go mod, gopath可以不需要设置(使用gomod可以使用goproxy代理(GOPROXY=https://goproxy.io ),不然很坑爹)。（也支持go vendor（删除项目下的go.mod文件），下载这几个基础库，mysql，protobuf，redis，etcd）
 
 // go get github.com/golang/net
 
@@ -61,6 +61,10 @@ websocket模式下，在netgateserver里面注释回//websocket这段
 3.world世界服务，所有逻辑，集群服务。
 
 4.第三方中间件：etcd分布式服发现，redis分布式缓存。
+
+交流
+
+QQ群:950288306
 
 服务器架构如下：
 ![image](https://github.com/bobohume/go-server/blob/master/框架.jpg)
