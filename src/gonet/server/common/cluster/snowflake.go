@@ -49,7 +49,7 @@ TryTTL:
 		resp, err := this.m_KeysAPI.Set(context.Background(), key, "", &client.SetOptions{
 			TTL: ttl_time * 3, Refresh:true,
 		})
-		if err != nil || resp.Node.Value != this.Value(){
+		if err != nil ||  (resp != nil && resp.Node != nil && resp.Node.Value != this.Value()){
 			goto TrySET
 		}else{
 			time.Sleep(ttl_time)
