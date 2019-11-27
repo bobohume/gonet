@@ -272,7 +272,7 @@ func main() {
 	packet := base.GetMessage("server")
 	packet.ReadData(bs1)
 	fmt.Println(packet, sss1)
-	fmt.Println(message.GetPakcetHead(test))
+	fmt.Println(test.(message.Packet).GetPacketHead())
 
 
 	var server network.IServerSocket

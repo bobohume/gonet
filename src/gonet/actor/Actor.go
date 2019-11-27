@@ -1,12 +1,11 @@
 package actor
 
 import (
-	"bytes"
-	"encoding/gob"
-	"gonet/base"
 	"fmt"
-	"log"
+	jsoniter "github.com/json-iterator/go"
+	"gonet/base"
 	"gonet/message"
+	"log"
 	"reflect"
 	"strings"
 	"sync/atomic"
@@ -863,9 +862,8 @@ func (this *Actor) call(io CallIO) {
 				nLen := bitstream.ReadInt(base.Bit32)
 				packetBuf := bitstream.ReadBits(nLen << 3)
 				val := reflect.New(k.In(i))
-				buf := bytes.NewBuffer(packetBuf)
-				enc := gob.NewDecoder(buf)
-				err := enc.DecodeValue(val)
+				json := jsoniter.ConfigCompatibleWithStandardLibrary
+				err := json.Unmarshal(packetBuf, val.Interface())
 				if err != nil{
 					log.Printf("func [%s] params no fit, func params [%s], params [%v], error[%s]", funcName, strParams, params, err)
 					return

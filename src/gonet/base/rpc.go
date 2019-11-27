@@ -1,9 +1,8 @@
 package base
 
 import (
-	"bytes"
-	"encoding/gob"
 	"fmt"
+	jsoniter "github.com/json-iterator/go"
 	"reflect"
 )
 
@@ -13,7 +12,7 @@ const(
 	RPC_PInt64 		= 70
 	RPC_PUInt64 	= 71
 	RPC_MESSAGE 	= 120
-	RPC_GOB			= 121
+	RPC_GOB			= 121//暂时用json,gob包头解析小包太慢
 )
 
 func GetPacket(funcName string, params ...interface{})[]byte {
@@ -734,13 +733,12 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 
 
 		case "*gob":
-			bitstream.WriteInt(121, 8)
-			buf := &bytes.Buffer{}
-			enc := gob.NewEncoder(buf)
-			enc.Encode(param)
-			nLen := buf.Len()
+			bitstream.WriteInt(RPC_GOB, 8)
+			json := jsoniter.ConfigCompatibleWithStandardLibrary
+			buf, _ := json.Marshal(param)
+			nLen := len(buf)
 			bitstream.WriteInt(nLen, Bit32)
-			bitstream.WriteBits(nLen << 3, buf.Bytes())
+			bitstream.WriteBits(nLen << 3, buf)
 
 		default:
 			fmt.Println("params type not supported", sType,  reflect.TypeOf(param))

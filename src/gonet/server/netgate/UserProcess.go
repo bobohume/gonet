@@ -98,7 +98,7 @@ func (this *UserPrcoess) PacketFunc(socketid int, buff []byte) bool{
 		return true
 	}
 
-	packetHead := message.GetPakcetHead(packet)
+	packetHead := packet.(message.Packet).GetPacketHead()
 	if packetHead == nil || packetHead.Ckx != message.Default_Ipacket_Ckx || packetHead.Stx != message.Default_Ipacket_Stx {
 		SERVER.GetLog().Printf("(A)致命的越界包,已经被忽略 socket=%d", socketid)
 		return true

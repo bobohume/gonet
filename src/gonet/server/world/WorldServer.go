@@ -164,7 +164,7 @@ func (this *ServerMgr) GetAccountCluster() *cluster.Cluster{
 func SendToClient(socketId int, packet proto.Message){
 	buff := message.Encode(packet)
 	nLen := len(buff) + 128
-	pakcetHead := message.GetPakcetHead(packet)
+	pakcetHead := packet.(message.Packet).GetPacketHead()
 	if pakcetHead != nil {
 		bitstream := base.NewBitStream(make([]byte, nLen), nLen)
 		bitstream.WriteString(message.GetMessageName(packet))

@@ -147,7 +147,7 @@ func (this *CLog) WriteFile(nType LG_TYPE){
 
 		this.m_pFile[nType],err  = os.OpenFile(sFileName, os.O_RDWR|os.O_APPEND, 0)
 		if err != nil {
-			log.Fatalln("open logfile[%s] error", sFileName)
+			log.Fatalf("open logfile[%s] error", sFileName)
 		}
 
 		this.m_Logger[nType].SetOutput(this.m_pFile[nType])

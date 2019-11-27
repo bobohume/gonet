@@ -181,7 +181,7 @@ func (this *PlayerMgr) PacketFunc(id int, buff []byte) bool{
 			nLen := bitstream.ReadInt(base.Bit32)
 			packetBuf := bitstream.ReadBits(nLen << 3)
 			message.UnmarshalText(packet, packetBuf)
-			packetHead := message.GetPakcetHead(packet)
+			packetHead := packet.(message.Packet).GetPacketHead()
 			nId := packetHead.Id
 			return this.m_PlayerPool.Send(nId, funcName, io)
 		}

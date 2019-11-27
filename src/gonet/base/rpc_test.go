@@ -1,10 +1,11 @@
-package main_test
+package base_test
 
 import (
 	"bytes"
 	"encoding/gob"
 	"encoding/json"
 	"github.com/golang/protobuf/proto"
+	"github.com/json-iterator/go"
 	"gonet/base"
 	"gonet/message"
 	"reflect"
@@ -15,17 +16,17 @@ import (
 
 type(
 	TopRank struct{
-		Value []int `sql:"name:value"				json:"value"	json:"value"`
+		Value []int `sql:"name:value"`
 	}
 )
 
 var(
-	ntimes = 100000
-	nArraySize = 10
+	ntimes = 10000
+	nArraySize = 2000
 	nValue = 0x7fffffff
 )
 
-func TestJson(t *testing.T){
+func TestMarshalJson(t *testing.T){
 	data := &TopRank{}
 	for i := 0; i < nArraySize; i++{
 		data.Value = append(data.Value, nValue)
@@ -35,7 +36,7 @@ func TestJson(t *testing.T){
 	}
 }
 
-func TestUJson(t *testing.T){
+func TestUMarshalJson(t *testing.T){
 	data := &TopRank{}
 	for i := 0; i < nArraySize; i++{
 		data.Value = append(data.Value, nValue)
@@ -46,8 +47,30 @@ func TestUJson(t *testing.T){
 	}
 }
 
+func TestMarshalJsonIter(t *testing.T){
+	json := jsoniter.ConfigCompatibleWithStandardLibrary
+	data := &TopRank{}
+	for i := 0; i < nArraySize; i++{
+		data.Value = append(data.Value, nValue)
+	}
+	for i := 0; i < ntimes; i++{
+		json.Marshal(data)
+	}
+}
 
-func TestPB(t *testing.T){
+func TestUMarshalJsonIter(t *testing.T){
+	json := jsoniter.ConfigCompatibleWithStandardLibrary
+	data := &TopRank{}
+	for i := 0; i < nArraySize; i++{
+		data.Value = append(data.Value, nValue)
+	}
+	buff, _ := json.Marshal(data)
+	for i := 0; i < ntimes; i++{
+		json.Unmarshal(buff, &TopRank{})
+	}
+}
+
+func TestMarshalPB(t *testing.T){
 	aa := []int32{}
 	for i := 0; i < nArraySize; i++{
 		aa = append(aa, int32(nValue))
@@ -57,7 +80,7 @@ func TestPB(t *testing.T){
 	}
 }
 
-func TestUPB(t *testing.T){
+func TestUMarshalPB(t *testing.T){
 	aa := []int32{}
 	for i := 0; i < nArraySize; i++{
 		aa = append(aa, int32(nValue))
@@ -68,36 +91,37 @@ func TestUPB(t *testing.T){
 	}
 }
 
-func TestGob(t *testing.T){
+func TestMarshalGob(t *testing.T){
 	data := &TopRank{}
 	for i := 0; i < nArraySize; i++{
 		data.Value = append(data.Value, nValue)
 	}
 	for i := 0; i < ntimes; i++{
+		//enc.Encode(int(0))
 		buf := &bytes.Buffer{}
 		enc := gob.NewEncoder(buf)
-		enc.Encode(int(0))
-		//enc.Encode(data)
+		enc.Encode(data)
 	}
 }
 
-func TestUGob(t *testing.T){
+func TestUMarshalGob(t *testing.T){
 	data := &TopRank{}
 	for i := 0; i < nArraySize; i++{
 		data.Value = append(data.Value, nValue)
 	}
-	buf := bytes.NewBuffer([]byte{})
-	enc := gob.NewEncoder(buf)
-	enc.Encode(data)
+
 	//fmt.Println(buf.Bytes(), len(buf.Bytes()))
 	for i := 0; i < ntimes; i++{
+		buf := bytes.NewBuffer([]byte{})
+		enc := gob.NewEncoder(buf)
 		dec := gob.NewDecoder(buf)
+		enc.Encode(data)
 		aa1 := &TopRank{}
 		dec.Decode(aa1)
 	}
 }
 
-func TestRpc(t *testing.T){
+func TestMarshalRpc(t *testing.T){
 	aa := []int32{}
 	for i := 0; i < nArraySize; i++{
 		aa = append(aa, int32(nValue))
@@ -107,13 +131,13 @@ func TestRpc(t *testing.T){
 	}
 }
 
-func TestURpc(t *testing.T){
+func TestUMarshalRpc(t *testing.T){
 	aa := []int32{}
 	for i := 0; i < nArraySize; i++{
 		aa = append(aa, int32(nValue))
 	}
-	buff := base.GetPacket("test", aa)
 	for i := 0; i < ntimes; i++{
+		buff := base.GetPacket("test", aa)
 		parse(buff)
 	}
 }

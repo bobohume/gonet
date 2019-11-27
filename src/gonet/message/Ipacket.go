@@ -1,12 +1,11 @@
 package message
 
 import (
-	"fmt"
-	"reflect"
 	"github.com/golang/protobuf/proto"
 	"gonet/base"
-	"strings"
 	"log"
+	"reflect"
+	"strings"
 )
 
 var(
@@ -19,60 +18,12 @@ const(
 	Default_Ipacket_Ckx int32 = 0x72
 )
 
-func parseTypeElem(val reflect.Value, packetHead **Ipacket) {
-	sType := strings.ToLower(val.Type().String())
-	index := strings.Index(sType, ".")
-	if index!= -1{
-		sType = sType[:index]
+type(
+	//获取包头
+	Packet interface {
+		GetPacketHead() *Ipacket
 	}
-
-	switch sType {
-	case "*message":
-		if !val.IsNil(){
-			value := val.Elem().Interface()
-			parseTypeStruct(value, packetHead)
-		}
-	}
-}
-
-func setPacketHead(packetHead **Ipacket, TypeName string, protoVal reflect.Value) bool{
-	if TypeName == "PacketHead"{
-		*packetHead = protoVal.Interface().(*Ipacket)
-	}else{
-		return false
-	}
-
-	return true
-}
-
-func parseTypeStruct(message interface{}, packetHead **Ipacket) {
-	defer func() {
-		if err := recover(); err != nil {
-			fmt.Println("GetPakcetHead", err)
-		}
-	}()
-
-	protoType := reflect.TypeOf(message)
-	protoVal := reflect.ValueOf(message)
-	if protoType.Kind() == reflect.Ptr {
-		protoType = reflect.TypeOf(message).Elem()
-		protoVal = reflect.ValueOf(message).Elem()
-	}
-
-	for i := 0; i < protoType.NumField(); i++{
-		if !setPacketHead(packetHead, protoType.Field(i).Name, protoVal.Field(i)){
-			parseTypeElem(protoVal.Field(i), packetHead)
-		}else{
-			break
-		}
-	}
-}
-
-func GetPakcetHead(message interface{}) *Ipacket{
-	packetHead := BuildPacketHead( 0, 0)
-	parseTypeStruct(message, &packetHead)
-	return packetHead
-}
+)
 
 func BuildPacketHead(id int64, destservertype int) *Ipacket{
 	ipacket := &Ipacket{

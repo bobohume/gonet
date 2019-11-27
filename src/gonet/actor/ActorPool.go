@@ -119,7 +119,7 @@ func (this *ActorPool) SendMsg(Id int64, funcName string, params  ...interface{}
 			nLen := bitstream.ReadInt(base.Bit32)
 			packetBuf := bitstream.ReadBits(nLen << 3)
 			message.UnmarshalText(packet, packetBuf)
-			packetHead := message.GetPakcetHead(packet)
+			packetHead := packet.(message.Packet).GetPacketHead()
 			nId := packetHead.Id
 			return this.m_Self.(IActorPool).SendActor(nId, io, funcName)
 		}
