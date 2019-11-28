@@ -12,8 +12,6 @@ var(
 
 var POOL *redis.Pool
 
-type BYTES_TYPE int
-
 //@title 启动redis, redispo.Pool（连接池）
 func OpenRedisPool(ip, pwd string) error {
 	cpuNum := runtime.NumCPU()
