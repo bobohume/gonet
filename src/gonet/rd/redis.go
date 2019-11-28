@@ -50,6 +50,15 @@ func OpenRedisPool(ip, pwd string) error {
 	return nil
 }
 
+///Do a func can do no defer close
+func Do(database int, pFunc func(c redis.Conn)){
+	c := POOL.Get()
+	defer c.Close()
+
+	c.Do("SELECT", database)
+	pFunc(c)
+}
+
 ///Get 获取一个值
 func Get(database int, key string) ([]byte, error){
 	c := POOL.Get()
