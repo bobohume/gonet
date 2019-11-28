@@ -1,11 +1,13 @@
 package toprank
 
 import (
+	"database/sql"
+	"encoding/json"
+	"fmt"
+	"github.com/gomodule/redigo/redis"
 	"gonet/actor"
 	"gonet/base"
-	"database/sql"
 	"gonet/db"
-	"fmt"
 	"gonet/rd"
 	"gonet/server/common"
 	"gonet/server/world"
@@ -21,19 +23,21 @@ type(
 	}
 )
 
-func getZRdKey(nType int) string{
+func ZRdKey(nType int) string{
 	return fmt.Sprintf("z_%s_%d", sqlTable, nType)
 }
 
-func getHRdKey(nType int) string{
+func HRdKey(nType int) string{
 	return fmt.Sprintf("h_%s_%d", sqlTable, nType)
 }
 
 func (this *TopMgrR) loadDB(nType int) {
 	this.m_Log.Println("读取排行榜")
-	result := new(int64)
-	rd.Query(result, world.RdID, "ZCARD", getZRdKey(nType))
-	if *result == 0{
+	result := int64(0)
+	rd.Do(world.RdID, func(c redis.Conn) {
+		result, _ = redis.Int64(c.Do("ZCARD", ZRdKey(nType)))
+	})
+	if result == 0{
 		fmt.Println(db.LoadSql(&TopRank{}, sqlTable, fmt.Sprintf("type = %d order by `score` limit 0, %d", nType,TOP_RANK_MAX)))
 		rows, err := this.m_db.Query(db.LoadSql(&TopRank{}, sqlTable, fmt.Sprintf("type = %d order by `score` limit 0, %d", nType,TOP_RANK_MAX)));
 		if err != nil{
@@ -42,24 +46,15 @@ func (this *TopMgrR) loadDB(nType int) {
 		rs := db.Query(rows, err)
 		topList := make([]*TopRank, 0)
 		rs.Obj(&topList)
-		sdata := []interface{}{}
-		data  := []interface{}{}
 		for _, v := range topList{
-			sdata = append(sdata, v.Score, v.Id)
-			data  = append(data, v.Id, v)
+			rd.Do(world.RdID, func(c redis.Conn) {
+				c.Send("ZADD", ZRdKey(nType), v.Score, v.Id)
+				data, _ := json.Marshal(v)
+				c.Send("HSET", HRdKey(nType), v.Id, data)
+				c.Flush()
+			})
 		}
-
-		rd.ExecKV(-1, world.RdID, "ZADD", getZRdKey(nType), sdata...)
-		rd.ExecKV(-1, world.RdID, "HMSET", getHRdKey(nType), data...)
 	}
-	//redis遍历排行榜
-	/*sdata := []string{}
-	redispo.Query(REDIS_DB, "ZREVRANGE", getZRdKey(nType, getSubType()), &sdata, 0, TOP_RANK_TYPE_MAX - 1)
-	for _, v := range sdata{
-		pData := &toprank.TopData{}
-		redispo.Query(REDIS_DB, "HGET", getHRdKey(nType, nSubType), pData, v)
-		topList = append(topList, pData)
-	}*/
 
 	this.m_Log.Println("读取排行榜加载完成")
 }
@@ -86,8 +81,11 @@ func (this *TopMgrR) Init(num int){
 
 func (this *TopMgrR) newInData(nType int, id int64, name string, score,val0,val1 int){
 	pData := this.createRank(nType, id, name, score, val0, val1)
-	rd.ExecKV(-1, world.RdID, "ZADD", getZRdKey(nType), score, id)
-	rd.ExecKV(-1, world.RdID, "HMSET", getHRdKey(nType), id, pData)
+	rd.Do(world.RdID, func(c redis.Conn) {
+		c.Send("ZADD", ZRdKey(nType), score, id)
+		data, _ := json.Marshal(pData)
+		c.Send("HSET", HRdKey(nType), id, data)
+	})
 	bExist := false
 	row := this.m_db.QueryRow(fmt.Sprintf("select 1 from %s where id=%d and type=%d", sqlTable, id, nType))
 	if row != nil{
@@ -102,16 +100,25 @@ func (this *TopMgrR) newInData(nType int, id int64, name string, score,val0,val1
 }
 
 func (this *TopMgrR) clearTop(nType int){
-	rd.Exec(-1, world.RdID, "DEL", getZRdKey(nType))
-	rd.Exec(-1, world.RdID, "DEL", getHRdKey(nType))
+	rd.Do(world.RdID, func(c redis.Conn) {
+		c.Send("DEL", ZRdKey(nType))
+		c.Send("DEL", HRdKey(nType))
+		c.Flush()
+	})
 	this.m_db.Exec(fmt.Sprintf("delete %s where type=%d", sqlTable, nType))
 }
 
 func (this *TopMgrR) getRank(nType int, id int64) *TopRank{
 	pData := &TopRank{}
-	if rd.Query(pData, world.RdID, "HGET", getHRdKey(nType), id) == nil{
+	data := []byte{}
+	rd.Do(world.RdID, func(c redis.Conn) {
+		data, _ = redis.Bytes(c.Do("HGET", HRdKey(nType), id))
+	})
+
+	if json.Unmarshal(data, pData) == nil{
 		return pData
 	}
+
 	return nil
 }
 
@@ -127,11 +134,11 @@ func (this *TopMgrR) createRank(nType int, id int64, name string, score,val0,val
 }
 
 func (this* TopMgrR) getPlayerRank(nType int, playerId int64) int{
-	rank := new(int64)
-	if rd.Query(rank, world.RdID, "ZREVRANK", getZRdKey(nType), playerId) == nil{
-		return int(*rank)
-	}
-	return -1
+	rank := int(-1)
+	rd.Do(world.RdID, func(c redis.Conn) {
+		rank, _ =redis.Int(c.Do("ZREVRANK", ZRdKey(nType), playerId))
+	})
+	return rank
 }
 
 func (this* TopMgrR) update(){

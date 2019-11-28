@@ -56,14 +56,14 @@ type (
 	ISocialMgr interface {
 		actor.IActor
 
-		makeLink(int64, int64, int8) int//加好友
-		destoryLink(int64, int64, int8) int//删除好友
-		addFriendValue(int64, int64, int) int//增加好友度
-		loadSocialDB(int64, int8) SOCIALITEMMAP
-		loadSocialById(int64, int64, int8) *SocialItem
-		isFriendType(int8) bool
-		isBestFriendType(int8) bool
-		hasMakeLink(int8, int8)	bool
+		makeLink(PlayerId, TargetId int64, Type int8) int//加好友
+		destoryLink(PlayerId, TargetId int64, Type int8) int//删除好友
+		addFriendValue(PlayerId, TargetId int64, Value int) int//增加好友度
+		loadSocialDB(PlayerId int64, Type int8) SOCIALITEMMAP
+		loadSocialById(PlayerId, TargetId int64, Type int8) *SocialItem
+		isFriendType(Type int8) bool
+		isBestFriendType(Type int8) bool
+		hasMakeLink(oldType, newType int8) bool
 	}
 )
 

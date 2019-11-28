@@ -1,11 +1,13 @@
 package social
 
 import (
+	"database/sql"
+	"encoding/json"
+	"fmt"
+	"github.com/gomodule/redigo/redis"
 	"gonet/actor"
 	"gonet/base"
-	"database/sql"
 	"gonet/db"
-	"fmt"
 	"gonet/rd"
 	"gonet/server/world"
 	"gonet/server/world/player"
@@ -23,14 +25,14 @@ type (
 	ISocialMgrR interface {
 		actor.IActor
 
-		makeLink(int64, int64, int8) int//加好友
-		destoryLink(int64, int64, int8) int//删除好友
-		addFriendValue(int64, int64, int) int//增加好友度
-		loadSocialDB(int64, int8) SOCIALITEMMAP
-		loadSocialById(int64, int64, int8) *SocialItem
-		isFriendType(int8) bool
-		isBestFriendType(int8) bool
-		hasMakeLink(int8, int8)	bool
+		makeLink(PlayerId, TargetId int64, Type int8) int//加好友
+		destoryLink(PlayerId, TargetId int64, Type int8) int//删除好友
+		addFriendValue(PlayerId, TargetId int64, Value int) int//增加好友度
+		loadSocialDB(PlayerId int64, Type int8) SOCIALITEMMAP
+		loadSocialById(PlayerId, TargetId int64, Type int8) *SocialItem
+		isFriendType(Type int8) bool
+		isBestFriendType(Type int8) bool
+		hasMakeLink(oldType, newType int8) bool
 	}
 )
 
@@ -38,7 +40,7 @@ var(
 	SOCIALMGR SocialMgr
 )
 
-func getRdKey(nPlayerId int64) string{
+func RdKey(nPlayerId int64) string{
 	return fmt.Sprintf("h_%s_%d", sqlTable, nPlayerId)
 }
 
@@ -55,6 +57,7 @@ func (this *SocialMgrR) Init(num int) {
 			this.m_Log.Printf("查询玩家id[%d][%d]数据为空", PlayerId, TargetId)
 			return
 		}
+		this.makeLink(PlayerId, TargetId, Type)
 	})
 
 	this.Actor.Start()
@@ -131,7 +134,19 @@ func (this *SocialMgrR) makeLink(PlayerId, TargetId int64, Type int8) int{
 	}
 
 	SocialMap := SOCIALITEMMAP{}
-	if rd.QueryKV(&SocialMap, world.RdID, "HGETALL", getRdKey(PlayerId)) == nil{
+	datas := [][]byte{}
+	var err error
+	rd.Do(world.RdID, func(c redis.Conn) {
+		datas, err = redis.ByteSlices(c.Do("HVALS", RdKey(PlayerId)))
+	})
+
+	for _, v := range datas{
+		pData := &SocialItem{}
+		json.Unmarshal(v, pData)
+		SocialMap[pData.TargetId] = pData
+	}
+
+	if err == nil{
 
 	}else{
 		SocialMap = this.loadSocialDB(PlayerId, Type)
@@ -178,7 +193,12 @@ func (this *SocialMgrR) makeLink(PlayerId, TargetId int64, Type int8) int{
 			Item.Type = Type
 			Item.FriendValue = 0
 			this.m_db.Exec(db.UpdateSql(Item, sqlTable))
-			rd.Exec(5*60, world.RdID, "HMSET", getRdKey(PlayerId), TargetId, &Item)
+			rd.Do(world.RdID, func(c redis.Conn) {
+				data, _ := json.Marshal(&Item)
+				c.Send("HSET", RdKey(PlayerId), TargetId, data)
+				c.Send("EXPIRE", RdKey(PlayerId), 5*60)
+				c.Flush()
+			})
 			this.m_Log.Printf("更新社会关系playerId=%d,destPlayerId=%d,newType=%d", PlayerId, TargetId, Item.Type)
 			return SocialError_None
 		}
@@ -191,7 +211,12 @@ func (this *SocialMgrR) makeLink(PlayerId, TargetId int64, Type int8) int{
 
 		SocialMap[TargetId] = Item
 		this.m_db.Exec(db.InsertSql(Item, sqlTable))
-		rd.Exec(5*60, world.RdID, "HMSET", getRdKey(PlayerId), TargetId, &Item)
+		rd.Do(world.RdID, func(c redis.Conn) {
+			data, _ := json.Marshal(&Item)
+			c.Send("HSET", RdKey(PlayerId), TargetId, data)
+			c.Send("EXPIRE", RdKey(PlayerId), 5*60)
+			c.Flush()
+		})
 		this.m_Log.Printf("新增社会关系playerId=%d,destPlayerId=%d,type=%d", PlayerId, TargetId, Item.Type)
 		return SocialError_None
 	}
@@ -213,7 +238,9 @@ func (this *SocialMgrR) destoryLink(PlayerId, TargetId int64, Type int8) int{
 
 	if Item.Type == Friend || Item.Type == Mute || Item.Type == Temp || Item.Type == Enemy{
 		this.m_db.Exec(db.DeleteSql(Item, sqlTable))
-		rd.Exec(-1, world.RdID, "HDEL", getRdKey(PlayerId), TargetId)
+		rd.Do(world.RdID, func(c redis.Conn) {
+			c.Do("HDEL", RdKey(PlayerId), TargetId)
+		})
 		return SocialError_None
 	}
 
@@ -236,7 +263,14 @@ func (this *SocialMgrR) addFriendValue(PlayerId, TargetId int64, Value int) int{
 	Item2.FriendValue = Item1.FriendValue
 	this.m_db.Exec(db.UpdateSqlEx(Item1, sqlTable, "friend_value"))
 	this.m_db.Exec(db.UpdateSqlEx(Item2, sqlTable, "friend_value"))
-	rd.Exec(5*60, world.RdID, "HMSET", getRdKey(PlayerId), TargetId, &Item1)
-	rd.Exec(5*60, world.RdID, "HMSET", getRdKey(TargetId), PlayerId, &Item2)
+	rd.Do(world.RdID, func(c redis.Conn) {
+		data, _ := json.Marshal(&Item1)
+		c.Send("HSET", RdKey(PlayerId), TargetId, data)
+		c.Send("EXPIRE", RdKey(PlayerId), 5*60)
+		data, _ = json.Marshal(&Item2)
+		c.Send("HSET", RdKey(TargetId), PlayerId, data)
+		c.Send("EXPIRE", RdKey(TargetId), 5*60)
+		c.Flush()
+	})
 	return Value
 }
