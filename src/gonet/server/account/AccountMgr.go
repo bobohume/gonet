@@ -120,7 +120,7 @@ func (this *AccountMgr) RemoveAccount(accountId int64, bLogin bool){
 	//假如账号服务器分布式，只要踢出world世界服务器即可
 	//这里要登录的时候就同步到踢人world
 	if bLogin || pAccount != nil{
-		SERVER.GetServerMgr().KickWorldPlayer(accountId)
+		SERVER.GetClusterMgr().KickWorldPlayer(accountId)
 	}
 }
 

@@ -14,7 +14,7 @@
 type(
 	ServerMgr struct{
 		m_pService	*network.ServerSocket
-		m_pServerMgr *ServerSocketManager
+		m_pClusterMgr *ClusterManager
 		m_pActorDB *sql.DB
 		m_Inited bool
 		m_config base.Config
@@ -30,7 +30,7 @@ type(
 		GetDB() *sql.DB
 		GetLog() *base.CLog
 		GetServer() *network.ServerSocket
-		GetServerMgr() *ServerSocketManager
+		GetClusterMgr() *ClusterManager
 		GetAccountMgr() *AccountMgr
 	}
 
@@ -83,14 +83,6 @@ func (this *ServerMgr)Init() bool{
 	}
 	this.m_Log.Printf("[%s]数据库初始化成功!", DB_Name)
 
-	//账号管理类
-	this.m_AccountMgr = new(AccountMgr)
-	this.m_AccountMgr.Init(1000)
-
-	//socket管理
-	this.m_pServerMgr = new(ServerSocketManager)
-	this.m_pServerMgr.Init(1000)
-
 	//初始化socket
 	this.m_pService = new(network.ServerSocket)
 	port := base.Int(UserNetPort)
@@ -98,17 +90,25 @@ func (this *ServerMgr)Init() bool{
 	this.m_pService.SetMaxReceiveBufferSize(1024)
 	this.m_pService.SetMaxSendBufferSize(1024)
 	this.m_pService.Start()
+
+	//账号管理类
+	this.m_AccountMgr = new(AccountMgr)
+	this.m_AccountMgr.Init(1000)
+
+	//本身账号集群管理
+	this.m_pClusterMgr = new(ClusterManager)
+	this.m_pClusterMgr.Init(1000)
+	this.m_pClusterMgr.BindServer(this.m_pService)
+
 	var packet EventProcess
 	packet.Init(1000)
 	this.m_pService.BindPacketFunc(packet.PacketFunc)
 	this.m_pService.BindPacketFunc(this.m_AccountMgr.PacketFunc)
-	this.m_pService.BindPacketFunc(this.m_pServerMgr.PacketFunc)
+	this.m_pService.BindPacketFunc(this.m_pClusterMgr.PacketFunc)
 
 	//snowflake
 	this.m_SnowFlake = cluster.NewSnowflake(UserNetIP, base.Int(UserNetPort), this.m_config.Get5("Etcd_SnowFlake_Cluster", ","))
 
-	//注册account集群
-	this.m_Cluster = cluster.NewService(int(message.SERVICE_ACCOUNTSERVER), UserNetIP, base.Int(UserNetPort), EtcdEndpoints)
 	return  false
 }
 
@@ -132,9 +132,9 @@ func (this *ServerMgr) GetServer() *network.ServerSocket{
 	return this.m_pService
 }
 
-func (this *ServerMgr) GetServerMgr() *ServerSocketManager{
-	return this.m_pServerMgr
-}
+ func (this *ServerMgr) GetClusterMgr() *ClusterManager{
+	 return this.m_pClusterMgr
+ }
 
 func (this *ServerMgr) GetAccountMgr() *AccountMgr{
 	return this.m_AccountMgr

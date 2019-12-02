@@ -18,7 +18,7 @@ type (
 	IAccountProcess interface {
 		actor.IActor
 
-		RegisterServer(int, int, string, int)
+		RegisterServer(int, string, int)
 		SetSocketId(uint32)
 	}
 )

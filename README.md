@@ -34,6 +34,17 @@ websocket模式下，在netgateserver里面注释回//websocket这段
 
 6.linux下执行build.sh,start.sh
 
+# pb协议生成
+
+1.proto下载教程 https://blog.csdn.net/weixin_42117918/article/details/88920221
+
+2.网关加入消息防火墙:在 ipacket.go 中 添加RegisterPacket(&message)
+
+3.win下执行proto.bat
+
+4.linux下执行proto.sh
+
+5.生成后的pb文件在message目录对应的*.go
 
 
 # 目前游戏库分类：

@@ -166,8 +166,8 @@ func SendMessage(chat *ChatMessage, player *player){
 	})
 }
 
-func (this *ChatMgr) SendMessageToAll(chat *ChatMessage){
-	world.SERVER.GetServerMgr().SendMsg("Chat_SendMessageAll", chat)
+func (this *ChatMgr) SendMessageToAll(msg *ChatMessage){
+	world.SERVER.GetClusterMgr().BoardCastMsg(int(message.SERVICE_GATESERVER), "Chat_SendMessageAll", msg)
 }
 
 

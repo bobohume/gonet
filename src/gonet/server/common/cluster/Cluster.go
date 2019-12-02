@@ -89,9 +89,9 @@ func (this *Cluster) AddCluster(info *common.ClusterInfo){
 
 func (this *Cluster) DelCluster(info *common.ClusterInfo){
 	this.m_ClusterLocker.RLock()
-	pClient, exist := this.m_ClusterMap[info.Id()]
+	pClient, bEx := this.m_ClusterMap[info.Id()]
 	this.m_ClusterLocker.RUnlock()
-	if exist{
+	if bEx{
 		pClient.CallMsg("STOP_ACTOR")
 		pClient.Stop()
 	}
@@ -109,9 +109,9 @@ func (this *Cluster) DelCluster(info *common.ClusterInfo){
 
 func (this *Cluster) GetCluster(socketId uint32) *network.ClientSocket{
 	this.m_ClusterLocker.RLock()
-	pClient, exist := this.m_ClusterMap[socketId]
+	pClient, bEx := this.m_ClusterMap[socketId]
 	this.m_ClusterLocker.RUnlock()
-	if exist{
+	if bEx{
 		return pClient
 	}
 	return nil

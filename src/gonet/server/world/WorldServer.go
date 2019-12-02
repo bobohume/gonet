@@ -15,7 +15,7 @@ import (
 type(
 	ServerMgr struct{
 		m_pService	*network.ServerSocket
-		m_pServerMgr *ServerSocketManager
+		m_pClusterMgr *ClusterManager
 		m_pActorDB *sql.DB
 		m_Inited bool
 		m_config base.Config
@@ -114,21 +114,20 @@ func (this *ServerMgr)Init() bool{
 	//snowflake
 	this.m_SnowFlake = cluster.NewSnowflake(UserNetIP, base.Int(UserNetPort), this.m_config.Get5("Etcd_SnowFlake_Cluster", ","))
 
-	//注册到集群
-	this.m_Cluster = cluster.NewService(int(message.SERVICE_WORLDSERVER), UserNetIP, base.Int(UserNetPort), EtcdEndpoints)
-
 	//账号服务器集群
 	this.m_AccountCluster = new(cluster.Cluster)
 	this.m_AccountCluster.Init(1000, int(message.SERVICE_ACCOUNTSERVER), UserNetIP, base.Int(UserNetPort), EtcdEndpoints)
 	this.m_AccountCluster.BindPacket(&AccountProcess{})
 
-	this.m_pServerMgr = new(ServerSocketManager)
-	this.m_pServerMgr.Init(1000)
+	//本身world集群管理
+	this.m_pClusterMgr = new(ClusterManager)
+	this.m_pClusterMgr.Init(1000)
+	this.m_pClusterMgr.BindServer(this.m_pService)
 
 	var packet EventProcess
 	packet.Init(1000)
 	this.m_pService.BindPacketFunc(packet.PacketFunc)
-	this.m_pService.BindPacketFunc(this.m_pServerMgr.PacketFunc)
+	this.m_pService.BindPacketFunc(this.m_pClusterMgr.PacketFunc)
 	return  false
 }
 
@@ -152,8 +151,8 @@ func (this *ServerMgr) GetServer() *network.ServerSocket{
  	return this.m_pService
 }
 
-func (this *ServerMgr) GetServerMgr() *ServerSocketManager{
-	return this.m_pServerMgr
+func (this *ServerMgr) GetClusterMgr() *ClusterManager{
+	return this.m_pClusterMgr
 }
 
 func (this *ServerMgr) GetAccountCluster() *cluster.Cluster{
