@@ -40,9 +40,9 @@ websocket模式下，在netgateserver里面注释回//websocket这段
 
 2.网关加入消息防火墙:在 ipacket.go 中 添加RegisterPacket(&message)
 
-3.win下执行proto.bat
+3.win下拷贝protoc.exe,protoc-gen-go.exe到项目bin目录,再执行proto.bat
 
-4.linux下执行proto.sh
+4.linux下拷贝protoc.exe到项目bin目录,再执行proto.sh
 
 5.生成后的pb文件在message目录对应的*.go
 
