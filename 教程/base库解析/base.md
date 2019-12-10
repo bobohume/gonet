@@ -28,7 +28,7 @@ base 基础类库
         著名的snowflake,分布式64位整型uuid,妈妈再也不用担心,mysql的自增量了,里面的workerid基于etcd实现分布式workerid分配
         
       Vector
-        一个高性能的vector,无端队列
+        一个高性能的vector,双端队列
         
         
 [data工具地址](https://github.com/bobohume/gonet/tree/master/src/gonet/tool/data)
