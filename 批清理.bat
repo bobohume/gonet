@@ -19,6 +19,8 @@ del /f /s /q .\*.err
 del /f /s /q .\*.DS_Store
 del /f /s /q server.exe
 del /f /s /q client.exe
+del /f /s /q protobat.exe
+del /f /s /q data.exe
 del /f /s /q nohup.out
 del /f /s /q server
 del /f /s /q client

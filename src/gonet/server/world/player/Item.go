@@ -1,9 +1,8 @@
-package Item
+package player
 
 import (
 	"gonet/base"
 	"gonet/db"
-	"gonet/server/world/common"
 	"gonet/server/world/data"
 	"math"
 )
@@ -30,27 +29,30 @@ type(
 	}
 
 	ItemMgr struct {
-		common.IPlayer
+		IPlayer
 		m_ItemMap map[int64] *Item
 		m_EquipMap map[int64] *Equip
 	}
 
 	IItemMgr interface {
-		Init(common.IPlayer)
+		Init(IPlayer)
 		CreateItem(int, int) (*Item, *Equip)		//创建物品
 		AddItem(int, int)	bool					//物品操作
 		//SortItem(int) bool						//排序物品
 		CanReduceItem(int, int) bool				//能否扣除
-		addItem(int, int)	bool					//添加物品
-		reduceItem(int, int) bool					//删除物品
+		//addItem(int, int)	bool					//添加物品
+		//reduceItem(int, int) bool					//删除物品
 		DelEquipById(int64) bool					//删除装备
 		DelEquip(*Equip) bool						//删除装备
 	}
 )
 
-func (this *ItemMgr) Init(pPlayer common.IPlayer){
-	this.IPlayer = pPlayer
+func (this *Player) GetItemMgr() IItemMgr{
+	return this.m_ItemMgr
+}
 
+func (this *ItemMgr) Init(pPlayer IPlayer){
+	this.IPlayer = pPlayer
 	//test
 	/*this.RegisterCall("C_W_AddEquipAttrRequest", func(packet *message.C_W_ChatMessage) {
 		world.SendToClient(this.GetGateSocketId(), &message.W_C_ChatMessage{

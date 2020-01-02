@@ -193,18 +193,6 @@ func (this *ServerSocket) Close() {
 	//this.m_Pool.Put(this)
 }
 
-func SendClient(pClient *ServerSocketClient, buff []byte){
-	defer func() {
-		if err := recover(); err != nil {
-			fmt.Println("SendRpc", err) // 这里的err其实就是panic传入的内容，55
-		}
-	}()
-
-	if pClient != nil{
-		pClient.Send(buff)
-	}
-}
-
 func serverRoutine(server *ServerSocket) {
 	for {
 		tcpConn, err := server.m_Listen.AcceptTCP()

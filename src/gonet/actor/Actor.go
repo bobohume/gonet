@@ -1,7 +1,6 @@
 package actor
 
 import (
-	"fmt"
 	jsoniter "github.com/json-iterator/go"
 	"gonet/base"
 	"gonet/message"
@@ -47,7 +46,6 @@ type (
 		GetId() int64
 		GetCallId() int64
 		GetSocketId() int//rpc is safe
-		SendNoBlock(io CallIO)
 		SendMsgById(Id int64, funcName string, params ...interface{})//对于actor pool类型,动态actor重构
 	}
 
@@ -144,10 +142,6 @@ func (this *Actor) FindCall(funcName string) interface{} {
 }
 
 func (this *Actor) RegisterCall(funcName string, call interface{}) {
-	switch call.(type) {
-	case func(*IActor, []byte):
-		log.Fatalln("actor error [%s] 消息定义函数不符合", funcName)
-	}
 	funcName = strings.ToLower(funcName)
 	if this.FindCall(funcName) != nil {
 		log.Fatalln("actor error [%s] 消息重复定义", funcName)
@@ -169,27 +163,12 @@ func (this *Actor) Send(io CallIO) {
 	//go func() {
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Println("Send", err)
+			base.TraceCode(err)
 		}
 	}()
 
 	this.m_CallChan <- io
 	//}()
-}
-
-//防止消息过快,主要在player里面
-func (this *Actor) SendNoBlock(io CallIO) {
-	defer func() {
-		if err := recover(); err != nil {
-			fmt.Println("SendNoBlock", err)
-		}
-	}()
-
-	select {
-	case this.m_CallChan <- io: //chan满后再写即阻塞，select进入default分支报错
-	default:
-		break
-	}
 }
 
 //可以动态调节actor可以通过实现此函数
@@ -861,9 +840,15 @@ func (this *Actor) call(io CallIO) {
 			case base.RPC_GOB://gob
 				nLen := bitstream.ReadInt(base.Bit32)
 				packetBuf := bitstream.ReadBits(nLen << 3)
+				if i >= k.NumIn(){
+					break
+				}
 				val := reflect.New(k.In(i))
 				json := jsoniter.ConfigCompatibleWithStandardLibrary
 				err := json.Unmarshal(packetBuf, val.Interface())
+				/*buf := bytes.NewBuffer(packetBuf)
+				enc := gob.NewDecoder(buf)
+				err := enc.DecodeValue(val)*/
 				if err != nil{
 					log.Printf("func [%s] params no fit, func params [%s], params [%v], error[%s]", funcName, strParams, params, err)
 					return

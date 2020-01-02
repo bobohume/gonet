@@ -17,6 +17,9 @@ type(
 	}
 )
 
+//excel第一列 中文名字
+//excel第二列 客户端data下的列名
+//excel第三列 类型
 func OpenExcel(filename string){
 	xlFile, err := xlsx.OpenFile(filename)
 	if err != nil{
@@ -27,7 +30,28 @@ func OpenExcel(filename string){
 	dataTypes := []int{}
 	buf := make([]byte,  10 * 1024 * 1024)
 	stream := base.NewBitStream(buf, 10 * 1024 * 1024)
-	enmnMap := make(map[int] map[string] int)
+	enumKVMap := make(map[int] map[string] int) //列 key val
+	enumKMap := map[string] []string{}//列名对应key
+	enumNames := []string{}//列名
+	colNames := []string{}
+	{
+		sheet, bEx := xlFile.Sheet["Settings_Radio"]
+		if bEx{
+			for i, v := range sheet.Rows{
+				for i1, v1 := range v.Cells{
+					if v1.String() == ""{
+						continue
+					}
+					if i == 0{
+						enumNames = append(enumNames, v1.String())
+					}else{
+						enumKMap[enumNames[i1]] = append(enumKMap[enumNames[i1]], v1.String())
+					}
+				}
+			}
+		}
+	}
+
 	for page, sheet := range xlFile.Sheets{
 		if page != 0{
 			//other sheet
@@ -52,28 +76,53 @@ func OpenExcel(filename string){
 		}
 		for i, row := range sheet.Rows {
 			for j, cell := range row.Cells {
-				if i == 0 {
+				colTypeName := cell.String()//在data解析到enum时候重新组装枚举到sheet列名
+				if i == 0 {//excel第一列 中文名字
+					colNames = append(colNames, cell.String())
 					stream.WriteString(cell.String())
 					continue
-				}else if i == 1{
+				}else if i == 1 {//客户端data下的列名
+					stream.WriteString(cell.String())
+					continue
+				}else if i == 2{//类型
 					coltype := strings.ToLower(cell.String())
 					rd :=  bufio.NewReader(strings.NewReader(coltype))
 					data, _, _ := rd.ReadLine()
 					coltype = strings.TrimSpace(string(data))
 					if coltype == "enum"{
+						num := 0
+						colTypeName = "enum\n"
+						KVMap := map[string] int{}
 						for data, _, _ := rd.ReadLine(); data != nil;{
-							slot := strings.Split(string(data), " ")
+							slot := strings.Split(string(data), "=")
 							if len(slot) == 2{
-								_, bEx := enmnMap[j]
-								if !bEx{
-									enmnMap[j] = make(map[string] int)
-								}
-								enmnMap[j][slot[0]] = base.Int(slot[1])
+								KVMap[slot[0]] = base.Int(slot[1])
 							}
 							data, _, _ = rd.ReadLine()
 						}
+						keys, bEx := enumKMap[colNames[j]]
+						if bEx{
+							_, bEx := enumKVMap[j]
+							if !bEx{
+								enumKVMap[j] = make(map[string] int)
+							}
+							for _, v := range keys{
+								val, bEx := KVMap[v]
+								if bEx{
+									num = val
+								}
+								enumKVMap[j][v] = num
+								colTypeName += fmt.Sprintf("%s=%d\n", v, num)
+								num++
+							}
+						}
+						index := strings.LastIndex(colTypeName, ",")
+						if index!= -1{
+							colTypeName = colTypeName[:index]
+						}
 					}
-					stream.WriteString(cell.String())
+					//写入列名
+					stream.WriteString(colTypeName)
 					if coltype == "string"{
 						stream.WriteInt(base.DType_String, 8)
 						dataTypes = append(dataTypes, base.DType_String)
@@ -99,7 +148,7 @@ func OpenExcel(filename string){
 						stream.WriteInt(base.DType_S64, 8)
 						dataTypes = append(dataTypes, base.DType_S64)
 					}else{
-						fmt.Errorf("[%s] col[%d] type not support in[string, enum, int8, int16, int32, float32, float64]", coltype, j )
+						fmt.Printf("data [%s] [%s] col[%d] type not support in[string, enum, int8, int16, int32, float32, float64]", filename, coltype, j )
 						return
 					}
 					continue
@@ -109,7 +158,7 @@ func OpenExcel(filename string){
 					switch cell.Type() {
 					case xlsx.CellTypeString:
 						stream.WriteInt(base.Int(cell.String()), bitnum)
-					case xlsx.CellTypeFormula:
+					case xlsx.CellTypeStringFormula:
 						stream.WriteInt(base.Int(cell.String()), bitnum)
 					case xlsx.CellTypeNumeric:
 						stream.WriteInt(base.Int(cell.Value), bitnum)
@@ -130,7 +179,7 @@ func OpenExcel(filename string){
 					switch cell.Type() {
 					case xlsx.CellTypeString:
 						stream.WriteString(cell.String())
-					case xlsx.CellTypeFormula:
+					case xlsx.CellTypeStringFormula:
 						stream.WriteString(cell.String())
 					case xlsx.CellTypeNumeric:
 						stream.WriteString(fmt.Sprintf("%d", base.Int64(cell.Value)))
@@ -140,7 +189,7 @@ func OpenExcel(filename string){
 						stream.WriteString(cell.Value)
 					}
 				}else if dataTypes[j] == base.DType_Enum{
-					val, bEx := enmnMap[j][cell.Value]
+					val, bEx := enumKVMap[j][strings.ToLower(cell.Value)]
 					if bEx{
 						stream.WriteInt(val, 16)
 					}else{
@@ -156,7 +205,7 @@ func OpenExcel(filename string){
 					switch cell.Type() {
 					case xlsx.CellTypeString:
 						stream.WriteFloat(base.Float32(cell.String()))
-					case xlsx.CellTypeFormula:
+					case xlsx.CellTypeStringFormula:
 						stream.WriteFloat(base.Float32(cell.String()))
 					case xlsx.CellTypeNumeric:
 						stream.WriteFloat(base.Float32(cell.String()))
@@ -174,7 +223,7 @@ func OpenExcel(filename string){
 					switch cell.Type() {
 					case xlsx.CellTypeString:
 						stream.WriteFloat64(base.Float64(cell.String()))
-					case xlsx.CellTypeFormula:
+					case xlsx.CellTypeStringFormula:
 						stream.WriteFloat64(base.Float64(cell.String()))
 					case xlsx.CellTypeNumeric:
 						stream.WriteFloat64(base.Float64(cell.String()))
@@ -192,7 +241,7 @@ func OpenExcel(filename string){
 					switch cell.Type() {
 					case xlsx.CellTypeString:
 						stream.WriteInt64(base.Int64(cell.String()), 64)
-					case xlsx.CellTypeFormula:
+					case xlsx.CellTypeStringFormula:
 						stream.WriteInt64(base.Int64(cell.String()), 64)
 					case xlsx.CellTypeNumeric:
 						stream.WriteInt64(base.Int64(cell.Value), 64)
@@ -210,12 +259,13 @@ func OpenExcel(filename string){
 			}
 
 			//头结束
-			if i == 0{
-				for i1 := 0; i1 < 8 - (sheet.MaxCol % 8); i1++{
+			//第一列和第二列都写在头部
+			if i == 1{
+				for i1 := 0; i1 < 8 - (2 * sheet.MaxCol % 8); i1++{
 					stream.WriteFlag(true)
 				}
 				stream.WriteBits(16, []byte{'@', '\n'})
-				stream.WriteInt(sheet.MaxRow - 2, 32)
+				stream.WriteInt(sheet.MaxRow - 3, 32)
 				stream.WriteInt(sheet.MaxCol, 32)
 				stream.WriteString(sheet.Name)
 			}
@@ -231,7 +281,9 @@ func OpenExcel(filename string){
 	}
 }
 
-
+//excel第一列 中文名字
+//excel第二列 客户端data下的列名
+//excel第三列 类型
 func SaveExcel(filename string){
 	file, err := os.Open(filename)
 	if err != nil {
@@ -252,7 +304,7 @@ func SaveExcel(filename string){
 	}
 	fstream := base.NewBitStream(buf, len(buf) + 10)
 	hstream := base.NewBitStream(buf, len(buf) + 10)
-	enmnMap := make(map[int] map[int] string)
+	enunKVMap := make(map[int] map[int] string)
 	for {
 		tchr := fstream.ReadInt(8)
 		if tchr == '@'{//找到数据文件的开头
@@ -282,6 +334,15 @@ func SaveExcel(filename string){
 		}
 	}
 
+	//客户端data下的列名
+	{
+		row := sheet.AddRow()
+		for j := 0; j < ColumNum; j++{
+			cell := row.AddCell()
+			cell.SetString(hstream.ReadString())
+		}
+	}
+
 	//type
 	{
 		row := sheet.AddRow()
@@ -295,13 +356,13 @@ func SaveExcel(filename string){
 			coltype = strings.TrimSpace(string(data))
 			if coltype == "enum" {
 				for data, _, _ := rd.ReadLine(); data != nil; {
-					slot := strings.Split(string(data), " ")
+					slot := strings.Split(string(data), "=")
 					if len(slot) == 2 {
-						_, bEx := enmnMap[nColumnIndex]
+						_, bEx := enunKVMap[nColumnIndex]
 						if !bEx {
-							enmnMap[nColumnIndex] = make(map[int]string)
+							enunKVMap[nColumnIndex] = make(map[int]string)
 						}
-						enmnMap[nColumnIndex][base.Int(slot[1])] = slot[0]
+						enunKVMap[nColumnIndex][base.Int(slot[1])] = slot[0]
 					}
 					data, _, _ = rd.ReadLine()
 				}
@@ -326,7 +387,7 @@ func SaveExcel(filename string){
 			case base.DType_S32:
 				cell.SetInt(fstream.ReadInt(32))
 			case base.DType_Enum:
-				val, bEx := enmnMap[j][fstream.ReadInt(16)]
+				val, bEx := enunKVMap[j][fstream.ReadInt(16)]
 				if bEx{
 					cell.SetString(val)
 				}else{

@@ -7,10 +7,11 @@ import (
 //-----------quick sort----------//
 func QuickSort(arr []int, left int, right int){
 	i,j := left, right
-	key := arr[i]
 	if i >= j{
 		return
 	}
+
+	key := arr[i]
 
 	for i < j{
 		for i < j && arr[j] > key{
@@ -93,6 +94,7 @@ func MaxHeap(arr []int){
 	if nLen <= 1{
 		return
 	}
+	
 	for i := nLen/2-1; i >= 0; i--{
 		if 2*i+1 < nLen && arr[2*i+1] > arr[i]{
 			swap(&arr[2*i+1], &arr[i])
@@ -282,9 +284,7 @@ func GetAvlHeight(tree *AvlBitTree) int{
 }
 
 func DeleteAvlTree(tree *AvlBitTree, data int) *AvlBitTree{
-	tree1 := &tree
-	delteavl(tree, tree, tree1, data)
-	return *tree1
+	return delteavl(tree, &tree, data)
 }
 
 func InsertAvlBitTree(tree *AvlBitTree, data int)  *AvlBitTree {
@@ -357,70 +357,43 @@ func blanceavl(tree* AvlBitTree,root **AvlBitTree, data int)*AvlBitTree{
 	return tree
 }
 
-func delteavl(tree *AvlBitTree, parent *AvlBitTree, root **AvlBitTree, data int) *AvlBitTree{
+func delteavl(tree *AvlBitTree, root **AvlBitTree, data int) *AvlBitTree{
 	if tree != nil{
-		if tree.Equal(data){
-			if *root == tree{
-				if tree.lchild == nil{
-					*root = tree.rchild
-					parent = *root
-				}else if tree.rchild == nil{
-					*root = tree.lchild
-					parent = *root
-				}else{
-					if tree.lchild.rchild == nil{
-						tree.lchild.rchild = tree.rchild
-						*root = tree.lchild
-						parent = *root
-					}else{
-						tree1, tree2 := tree.lchild, tree.lchild
-						for ;tree1.rchild != nil; {
-							tree2 = tree1
-							tree1 = tree1.rchild
-						}
-
-						if tree1 != tree2{
-							if tree1.lchild != nil {
-								tree2.rchild = tree1.lchild
-							}
-
-							tree2.rchild = nil
-							tree1.lchild = tree.lchild
-							tree1.rchild = tree.rchild
-							*root = tree1
-							parent = *root
-						}else{
-							tree1.rchild = tree.rchild
-							*root = tree1
-							parent = *root
-						}
+		if data == tree.data{
+			if tree.lchild == nil{
+				return tree.rchild
+			}else if tree.rchild == nil{
+				return tree.lchild
+			}else{
+				//找右子树最深的左孩子，放到删除的点
+				var minChild, minParent *AvlBitTree
+				minChild = tree.rchild
+				for cur := minChild; cur != nil; cur = cur.lchild{
+					minChild = cur
+					if cur.lchild != nil{
+						minParent = cur
 					}
 				}
-				tree = *root
-			} else if tree.lchild == nil{
-				if parent.Less(data){
-					parent.lchild  = tree.rchild
-				}else{
-					parent.rchild = tree.rchild
+				if minParent != nil{
+					minParent.lchild = nil
 				}
-			}else if tree.rchild == nil {
-				if parent.Less(data) {
-					parent.lchild = tree.rchild
-				} else {
-					parent.rchild = tree.rchild
+				minChild.lchild = tree.lchild
+				if minChild != tree.rchild{
+					minChild.rchild = tree.rchild
 				}
-			}else{
-				parent.lchild = tree.lchild
-				tree.lchild.rchild = tree.rchild
+				if tree == *root{
+					*root = minChild
+				}
+				return blanceavl(minChild, root, data)
 			}
-		} else if tree.Less(data){
-			delteavl(tree.lchild, tree, root, data)
-		}else{
-			delteavl(tree.rchild, tree, root, data)
+		}else if data < tree.data{
+			tree.lchild = delteavl(tree.lchild, root, data)
+		}else {
+			tree.rchild = delteavl(tree.rchild, root, data)
 		}
-		blanceavl(tree, root, data)
 	}
-	return tree
+
+	return blanceavl(tree, root, data)
 }
 
 func insertavl(tree *AvlBitTree, root **AvlBitTree, data int)  *AvlBitTree{
@@ -443,4 +416,3 @@ func insertavl(tree *AvlBitTree, root **AvlBitTree, data int)  *AvlBitTree{
 
 	return blanceavl(tree, root, data)
 }
-

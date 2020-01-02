@@ -19,8 +19,8 @@ type SnowflakeT struct {
 
 const(
 	uuid_dir1 =  "server/uuid1/"
-	ttl_time1 = time.Second * 3
-	WorkeridMax = 1<<7 -1 //mac下要调制最大连接数，默认256，最大 1 << 10
+	ttl_time1 = time.Minute
+	WorkeridMax = 1<<9 -1 //mac下要调制最大连接数，默认256，最大 1 << 10
 )
 
 func (this *SnowflakeT) Key() string{
@@ -37,9 +37,24 @@ func (this *SnowflakeT) Ping(){
 		//设置key
 		key := this.Key()
 		_, err := this.m_KeysAPI.Set(context.Background(), key, this.Value(), &client.SetOptions{
-			TTL: ttl_time1 * 3, PrevExist:client.PrevNoExist,
+			TTL: ttl_time1, PrevExist:client.PrevNoExist,
 		})
 		if err != nil{
+			resp, err := this.m_KeysAPI.Get(context.Background(), uuid_dir1, &client.GetOptions{})
+			if err == nil && (resp != nil && resp.Node != nil){
+				Ids := [base.WorkeridMax+1]bool{}
+				for _, v := range resp.Node.Nodes{
+					Id := base.Int64(v.Key[len(uuid_dir1) + 1:])
+					Ids[Id] = true
+				}
+
+				for i, v := range Ids{
+					if v == false{
+						this.m_Id = int64(i) & base.WorkeridMax
+						goto TrySET
+					}
+				}
+			}
 			this.m_Id++
 			this.m_Id = this.m_Id & WorkeridMax
 			goto TrySET
@@ -50,12 +65,12 @@ func (this *SnowflakeT) Ping(){
 		//保持ttl
 	TryTTL:
 		resp, err := this.m_KeysAPI.Set(context.Background(), key, "", &client.SetOptions{
-			TTL: ttl_time1 * 3, Refresh:true,
+			TTL: ttl_time1, Refresh:true,
 		})
 		if err != nil || (resp != nil && resp.Node != nil && resp.Node.Value != this.Value()){
 			goto TrySET
 		}else{
-			time.Sleep(ttl_time1)
+			time.Sleep(time.Second * 3)
 			goto TryTTL
 		}
 	}
@@ -65,7 +80,7 @@ func (this *SnowflakeT) Init(IP string, Port int, endpoints []string){
 	cfg := client.Config{
 		Endpoints:               endpoints,
 		Transport:               client.DefaultTransport,
-		HeaderTimeoutPerRequest: time.Second,
+		HeaderTimeoutPerRequest: time.Second * 30,
 	}
 
 	etcdClient, err := client.New(cfg)
@@ -96,29 +111,7 @@ func TestSnowFlake(t *testing.T){
 		group = append(group, NewSnowflakeT("127.0.0.1", i, []string{"http://127.0.0.1:2379"}))
 	}
 
-	time.Sleep(3*time.Second)
-	for i, _ := range group{
-		go func(i int) {
-			for{
-				mm1 := []int64{}
-				for _, v := range group{
-					_, id, _ := base.ParseUUID(v.m_UUID.UUID())
-					mm1 = append(mm1, id)
-				}
-				for i, v := range mm1 {
-					for i1, v1 := range mm1 {
-						if i != i1 && v == v1 {
-							fmt.Println(mm1)
-							break
-						}
-					}
-				}
-				time.Sleep(time.Nanosecond * 100)
-			}
-		}(i)
-	}
 	for{
 		time.Sleep(time.Second * 1)
 	}
 }
-

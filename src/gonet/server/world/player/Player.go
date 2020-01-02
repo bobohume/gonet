@@ -9,7 +9,6 @@ import (
 	"gonet/message"
 	"gonet/server/common"
 	"gonet/server/world"
-	"gonet/server/world/player/Item"
 )
 
 type(
@@ -17,7 +16,7 @@ type(
 		actor.Actor
 
 		PlayerData
-		m_ItemMgr      Item.IItemMgr
+		m_ItemMgr      IItemMgr
 		m_db           *sql.DB
 		m_Log          *base.CLog
 		m_offlineTimer *common.SimpleTimer
@@ -31,7 +30,7 @@ func (this* Player) Init(num int){
 	this.m_offlineTimer = common.NewSimpleTimer(5 *60)
 	this.m_db = world.SERVER.GetDB()
 	this.m_Log = world.SERVER.GetLog()
-	this.m_ItemMgr = &Item.ItemMgr{}
+	this.m_ItemMgr = &ItemMgr{}
 	this.m_ItemMgr.Init(this)
 
 	//玩家登录

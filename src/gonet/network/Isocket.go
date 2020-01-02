@@ -197,7 +197,7 @@ func (this *Socket) HandlePacket(Id int, buff []byte){
 func (this *Socket) ReceivePacket(Id int, dat []byte) {
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Println("ReceivePacket", err) // 接受包错误
+			base.TraceCode(err)
 		}
 	}()
 	//找包结束
@@ -239,7 +239,7 @@ ParsePacekt:
 /*func (this *Socket) ReceivePacket(Id int, dat []byte){
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Println("ReceivePacket", err) // 接受包错误
+			base.TraceCode(err) // 接受包错误
 		}
 	}()
 	//找包结束

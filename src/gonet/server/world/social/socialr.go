@@ -193,8 +193,8 @@ func (this *SocialMgrR) makeLink(PlayerId, TargetId int64, Type int8) int{
 			Item.Type = Type
 			Item.FriendValue = 0
 			this.m_db.Exec(db.UpdateSql(Item, sqlTable))
+			data, _ := json.Marshal(&Item)
 			rd.Do(world.RdID, func(c redis.Conn) {
-				data, _ := json.Marshal(&Item)
 				c.Send("HSET", RdKey(PlayerId), TargetId, data)
 				c.Send("EXPIRE", RdKey(PlayerId), 5*60)
 				c.Flush()
@@ -211,8 +211,8 @@ func (this *SocialMgrR) makeLink(PlayerId, TargetId int64, Type int8) int{
 
 		SocialMap[TargetId] = Item
 		this.m_db.Exec(db.InsertSql(Item, sqlTable))
+		data, _ := json.Marshal(&Item)
 		rd.Do(world.RdID, func(c redis.Conn) {
-			data, _ := json.Marshal(&Item)
 			c.Send("HSET", RdKey(PlayerId), TargetId, data)
 			c.Send("EXPIRE", RdKey(PlayerId), 5*60)
 			c.Flush()
@@ -263,12 +263,12 @@ func (this *SocialMgrR) addFriendValue(PlayerId, TargetId int64, Value int) int{
 	Item2.FriendValue = Item1.FriendValue
 	this.m_db.Exec(db.UpdateSqlEx(Item1, sqlTable, "friend_value"))
 	this.m_db.Exec(db.UpdateSqlEx(Item2, sqlTable, "friend_value"))
+	data, _ := json.Marshal(&Item1)
+	data1, _ := json.Marshal(&Item2)
 	rd.Do(world.RdID, func(c redis.Conn) {
-		data, _ := json.Marshal(&Item1)
 		c.Send("HSET", RdKey(PlayerId), TargetId, data)
 		c.Send("EXPIRE", RdKey(PlayerId), 5*60)
-		data, _ = json.Marshal(&Item2)
-		c.Send("HSET", RdKey(TargetId), PlayerId, data)
+		c.Send("HSET", RdKey(TargetId), PlayerId, data1)
 		c.Send("EXPIRE", RdKey(TargetId), 5*60)
 		c.Flush()
 	})

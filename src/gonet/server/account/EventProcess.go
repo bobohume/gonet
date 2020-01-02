@@ -30,7 +30,7 @@ func (this *EventProcess) Init(num int) {
 		//password := *packet.Password
 		password := "123456"
 		socketId := int(packet.GetSocketId())
-		Error := 1
+		nError := 1
 		accountId := base.UUID.UUID()
 		//查找账号存在
 		rows, err := this.m_db.Query(fmt.Sprintf("select 1 from tbl_account A where A.account_name = '%s'", accountName))
@@ -43,17 +43,17 @@ func (this *EventProcess) Init(num int) {
 					SERVER.GetLog().Printf("帐号[%s]创建成功", accountName)
 					//登录账号
 					SERVER.GetAccountMgr().SendMsg( "Account_Login", accountName, accountId, socketId, this.GetSocketId())
-					Error = 0
+					nError = 0
 				}
 			}else{//账号存在
 				SERVER.GetLog().Printf("帐号[%s]已存在", accountName)
 			}
 		}
 
-		if Error != 0 {
+		if nError != 0 {
 			SendToClient(this.GetSocketId(), &message.A_C_RegisterResponse{
 				PacketHead: message.BuildPacketHead( accountId, 0),
-				Error:      int32(Error),
+				Error:      int32(nError),
 				SocketId:packet.SocketId,
 			})
 		}
@@ -66,9 +66,11 @@ func (this *EventProcess) Init(num int) {
 		password := "123456"
 		buildVersion := packet.GetBuildNo()
 		socketId := int(packet.GetSocketId())
-		error := base.NONE_ERROR
+		nError := base.NONE_ERROR
 
-		if base.VERSION.IsAcceptableBuildVersion(buildVersion) {
+		if accountName == ""{
+			nError = base.ACCOUNT_NOEXIST
+		} else if base.VERSION.IsAcceptableBuildVersion(buildVersion) {
 			log.Printf("账号[%s]登陆账号服务器", accountName)
 			rows, err := this.m_db.Query(fmt.Sprintf("select account_id, password from tbl_account where account_name = '%s'", accountName))
 			if err == nil {
@@ -77,24 +79,24 @@ func (this *EventProcess) Init(num int) {
 					accountId := rs.Row().Int64("account_id")
 					passWd := rs.Row().String("password")
 					if base.MD5(password)== passWd{
-						error = base.NONE_ERROR
+						nError = base.NONE_ERROR
 						SERVER.GetAccountMgr().SendMsg("Account_Login", accountName, accountId, socketId, this.GetSocketId())
 					}else{//密码错误
-						error = base.PASSWORD_ERROR
+						nError = base.PASSWORD_ERROR
 					}
 				}else{
-					error = base.ACCOUNT_NOEXIST
+					nError = base.ACCOUNT_NOEXIST
 				}
 			}
 		} else {
-			error = base.VERSION_ERROR
-			log.Printf("版本验证错误 clientVersion=%s,err=%d", buildVersion, error)
+			nError = base.VERSION_ERROR
+			log.Printf("版本验证错误 clientVersion=%s,err=%d", buildVersion, nError)
 		}
 
-		if error != base.NONE_ERROR {
-			SendToClient(this.GetSocketId(), &message.A_C_LoginRequest{
+		if nError != base.NONE_ERROR {
+			SendToClient(this.GetSocketId(), &message.A_C_LoginResponse{
 				PacketHead:message.BuildPacketHead( 0, 0 ),
-				Error:int32(error),
+				Error:int32(nError),
 				SocketId:packet.SocketId,
 				AccountName:packet.AccountName,
 			})

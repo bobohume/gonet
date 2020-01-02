@@ -31,10 +31,11 @@ type (
 
 	ILog interface {
 		Init(string) bool
-		Write(int)
-		WriteFile(int)
+		Write(LG_TYPE)
+		WriteFile(LG_TYPE)
 		Println(...interface{})
 		Print(...interface{})
+		Printf(string, ...interface{})
 		Fatalln(...interface{})
 		Fatal(...interface{})
 		Fatalf(string, ...interface{})

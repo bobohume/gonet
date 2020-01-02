@@ -155,7 +155,7 @@ func (this* PlayerMgr) Update(){
 func (this *PlayerMgr) PacketFunc(id int, buff []byte) bool{
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Println("PlayerMgr PacketFunc", err)
+			base.TraceCode(err)
 		}
 	}()
 

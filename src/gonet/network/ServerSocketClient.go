@@ -58,7 +58,7 @@ func (this *ServerSocketClient) Start() bool {
 func (this *ServerSocketClient) Send(buff []byte) int {
 	defer func() {
 		if err := recover(); err != nil{
-			fmt.Println("ServerSocketClient Send", err)
+			base.TraceCode(err)
 		}
 	}()
 
@@ -97,7 +97,7 @@ func serverclientRoutine(pClient *ServerSocketClient) bool {
 
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Println("serverclientRoutine", err)
+			base.TraceCode(err)
 		}
 	}()
 

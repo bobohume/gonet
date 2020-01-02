@@ -2,7 +2,6 @@ package base
 
 import (
 	"encoding/binary"
-	"fmt"
 	"hash/crc32"
 	"log"
 	"math"
@@ -352,53 +351,6 @@ func GetTypeStringEx(classField reflect.StructField, classVal reflect.Value) str
 		sType = classField.Type.Kind().String()
 	}
 	return sType
-}
-
-//copy name and type is right
-func Copy(source interface{}, dest interface{}){
-	defer func() {
-		if err := recover(); err != nil{
-			fmt.Printf("copy source to dest error")
-		}
-	}()
-	getvaltype := func(val interface{}) (reflect.Value, reflect.Type){
-
-		protoType := reflect.TypeOf(val)
-		protoVal := reflect.ValueOf(val)
-		for protoType.Kind() == reflect.Ptr {
-			protoType = protoType.Elem()
-			protoVal = protoVal.Elem()
-		}
-
-		return protoVal, protoType
-	}
-
-	val0, type0 := getvaltype(source)
-	val1, type1 := getvaltype(dest)
-
-	for i := 0; i < type0.NumField(); i++{
-		if !val0.Field(i).CanSet(){//小写成员只有只读
-			continue
-		}
-
-		for j := 0; j < type1.NumField(); j++{
-			if val1.Field(j).Kind() == reflect.Struct{
-				val := val1.Field(j).FieldByName(type0.Field(i).Name)
-				if val.IsValid(){
-					if val.Type() == type0.Field(i).Type{
-						val.Set(val0.Field(i))
-					}
-				}
-			}else{
-				val := val1.FieldByName(type0.Field(i).Name)
-				if val.IsValid(){
-					if val.Type() == type0.Field(i).Type{
-						val.Set(val0.Field(i))
-					}
-				}
-			}
-		}
-	}
 }
 
 func ToLower(name string) string{

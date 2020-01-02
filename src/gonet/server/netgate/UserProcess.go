@@ -74,7 +74,7 @@ func (this *UserPrcoess) SwtichSendToAccount(socketId int, packetName string, pa
 func (this *UserPrcoess) PacketFunc(socketid int, buff []byte) bool{
 	defer func() {
 		if err := recover(); err != nil {
-			SERVER.GetLog().Println("UserPrcoess PacketFunc", err)
+			base.TraceCode(err)
 		}
 	}()
 

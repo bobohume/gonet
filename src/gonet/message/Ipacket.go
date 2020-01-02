@@ -129,7 +129,7 @@ func Init(){
 	RegisterPacket(&W_C_LoginMap{})
 	RegisterPacket(&W_C_Move{})
 	RegisterPacket(&W_C_ADD_SIMOBJ{})
-	RegisterPacket(&A_C_LoginRequest{})
+	RegisterPacket(&A_C_LoginResponse{})
 	RegisterPacket(&A_C_RegisterResponse{})
 	RegisterPacket(&W_C_ChatMessage{})
 }

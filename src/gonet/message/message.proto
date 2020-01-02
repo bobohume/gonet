@@ -49,7 +49,7 @@ int32	Error = 2;
 int32  SocketId = 3;
 }
 
-message A_C_LoginRequest{
+message A_C_LoginResponse{
 Ipacket PacketHead = 1;
 int32  Error = 2;
 int32  SocketId = 3;

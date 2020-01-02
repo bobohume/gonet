@@ -63,7 +63,7 @@ func (this *ClientSocket) SendMsg(funcName string, params  ...interface{}){
 func (this *ClientSocket) Send(buff []byte) int {
 	defer func() {
 		if err := recover(); err != nil{
-			fmt.Println("ClientSocket Send", err)
+			base.TraceCode(err)
 		}
 	}()
 
@@ -121,7 +121,7 @@ func clientRoutine(pClient *ClientSocket) bool {
 
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Println("clientRoutine", err)
+			base.TraceCode(err)
 		}
 	}()
 

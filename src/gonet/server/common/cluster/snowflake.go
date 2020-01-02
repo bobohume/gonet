@@ -11,7 +11,7 @@ import (
 
 const(
 	uuid_dir =  "server/uuid/"
-	ttl_time = time.Second * 3
+	ttl_time = time.Minute
 )
 
 type Snowflake struct {
@@ -34,9 +34,24 @@ TrySET:
 		//设置key
 		key := this.Key()
 		_, err := this.m_KeysAPI.Set(context.Background(), key, this.Value(), &client.SetOptions{
-			TTL: ttl_time * 3, PrevExist:client.PrevNoExist,
+			TTL: ttl_time, PrevExist:client.PrevNoExist,
 		})
 		if err != nil{
+			resp, err := this.m_KeysAPI.Get(context.Background(), uuid_dir, &client.GetOptions{})
+			if err == nil && (resp != nil && resp.Node != nil){
+				Ids := [base.WorkeridMax+1]bool{}
+				for _, v := range resp.Node.Nodes{
+					Id := base.Int64(v.Key[len(uuid_dir) + 1:])
+					Ids[Id] = true
+				}
+
+				for i, v := range Ids{
+					if v == false{
+						this.m_Id = int64(i) & base.WorkeridMax
+						goto TrySET
+					}
+				}
+			}
 			this.m_Id++
 			this.m_Id = this.m_Id & base.WorkeridMax
 			goto TrySET
@@ -47,12 +62,12 @@ TrySET:
 		//保持ttl
 TryTTL:
 		resp, err := this.m_KeysAPI.Set(context.Background(), key, "", &client.SetOptions{
-			TTL: ttl_time * 3, Refresh:true,
+			TTL: ttl_time, Refresh:true,
 		})
-		if err != nil ||  (resp != nil && resp.Node != nil && resp.Node.Value != this.Value()){
+		if err != nil || (resp != nil && resp.Node != nil && resp.Node.Value != this.Value()){
 			goto TrySET
 		}else{
-			time.Sleep(ttl_time)
+			time.Sleep(time.Second * 3)
 			goto TryTTL
 		}
 	}
@@ -62,7 +77,7 @@ func (this *Snowflake) Init(IP string, Port int, endpoints []string){
 	cfg := client.Config{
 		Endpoints:               endpoints,
 		Transport:               client.DefaultTransport,
-		HeaderTimeoutPerRequest: time.Second,
+		HeaderTimeoutPerRequest: time.Second * 30,
 	}
 
 	etcdClient, err := client.New(cfg)

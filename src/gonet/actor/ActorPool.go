@@ -93,7 +93,7 @@ func (this *ActorPool) SendMsg(Id int64, funcName string, params  ...interface{}
 /*func (this *ActorPool) PacketFunc(id int, buff []byte) bool{
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Println("PlayerMgr PacketFunc", err)
+			base.TraceCode(err)
 		}
 	}()
 

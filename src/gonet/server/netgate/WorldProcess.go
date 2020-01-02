@@ -3,7 +3,6 @@ package netgate
 import (
 	"gonet/actor"
 	"gonet/base"
-	"fmt"
 	"gonet/message"
 	"gonet/server/common"
 	"strconv"
@@ -71,7 +70,7 @@ func (this* WorldProcess) Update(){
 func DispatchPacketToClient(id int, buff []byte) bool{
 	defer func(){
 		if err := recover(); err != nil{
-			fmt.Println("DispatchPacketToClient PacketFunc", err)
+			base.TraceCode(err)
 		}
 	}()
 

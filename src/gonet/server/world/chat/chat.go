@@ -45,14 +45,12 @@ type(
 	IChatMgr interface {
 		actor.IActor
 
-		SendMessageTo(*ChatMessage, int64)
-		SendMessageToChannel(*ChatMessage, int64)
-		SendMessageToAll(*ChatMessage)
+		SendMessageTo(msg *ChatMessage, playerId int64)
+		SendMessageToAll(msg *ChatMessage)
 		GetChannelManager() *ChannelMgr
-
-		setPlayerChatLastTime(int64, int8, int64)
-		getPlayerChatLastTime(int64, int8) int64
-		getPlayerChatPendingTime(int64, int8) int64
+		//setPlayerChatLastTime(int64, int8, int64)
+		//getPlayerChatLastTime(int64, int8) int64
+		//getPlayerChatPendingTime(int64, int8) int64
 	}
 )
 
@@ -98,8 +96,7 @@ func (this *ChatMgr) Init(num int) {
 
 		channelId := this.GetChannelManager().GetChannelIdByType(playerId, msg.MessageType)
 
-		if msg.MessageType == int8(message.CHAT_MSG_TYPE_PRIVATE) &&
-			msg.Recver != msg.Sender{// 不能给自己发点对点消息
+		if msg.MessageType == int8(message.CHAT_MSG_TYPE_PRIVATE) && msg.Recver != msg.Sender{// 不能给自己发点对点消息
 			this.SendMessageTo(msg, msg.Recver)
 		}else if msg.MessageType == int8(message.CHAT_MSG_TYPE_WORLD){
 			//this.SendMessageToAll(msg)
@@ -114,8 +111,8 @@ func (this *ChatMgr) Init(num int) {
 	})
 
 	//注册频道
-	this.RegisterCall("RegisterChannel", func(messageType int8) {
-		channelId := this.GetChannelManager().RegisterChannel(messageType, "")
+	this.RegisterCall("RegisterChannel", func(messageType int8, channelId int64) {
+		this.GetChannelManager().RegisterChannel(messageType, "", channelId)
 
 		if 0 == channelId{
 			return
@@ -132,9 +129,6 @@ func (this *ChatMgr) Init(num int) {
 
 	//添加玩家到频道
 	this.RegisterCall("AddPlayerToChannel", func(accoudId, playerId int64, channelId int64, playerName string, socketId int) {
-		if channelId == -3000{
-			channelId = g_wordChannelId
-		}
 		this.GetChannelManager().AddPlayer(accoudId, playerId, channelId, playerName, socketId)
 	})
 
@@ -150,19 +144,22 @@ func (this *ChatMgr) GetChannelManager() *ChannelMgr{
 	return &this.m_channelManager
 }
 
-func (this *ChatMgr) SendMessageTo(chat *ChatMessage, playerId int64){
-
+func (this *ChatMgr) SendMessageTo(msg *ChatMessage, playerId int64){
+	pPlayer := this.m_channelManager.getChannel(g_wordChannelId).GetPlayer(playerId)
+	if pPlayer != nil{
+		SendMessage(msg, pPlayer)
+	}
 }
 
-func SendMessage(chat *ChatMessage, player *player){
+func SendMessage(msg *ChatMessage, player *player){
 	world.SendToClient(player.sockeId, &message.W_C_ChatMessage{
 		PacketHead:message.BuildPacketHead(player.accountId, int(message.SERVICE_CLIENT)),
-		Sender:chat.Sender,
-		SenderName:chat.SenderName,
-		Recver:chat.Recver,
-		RecverName:chat.RecverName,
-		MessageType:int32(chat.MessageType),
-		Message:chat.Message,
+		Sender:msg.Sender,
+		SenderName:msg.SenderName,
+		Recver:msg.Recver,
+		RecverName:msg.RecverName,
+		MessageType:int32(msg.MessageType),
+		Message:msg.Message,
 	})
 }
 

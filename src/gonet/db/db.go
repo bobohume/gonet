@@ -211,7 +211,7 @@ func (this *Rows) Row() *Row{
 func (this *Rows) Obj(obj interface{}) bool{
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Println("rows load obj", err)
+			base.TraceCode(err)
 		}
 	}()
 

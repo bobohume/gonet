@@ -402,7 +402,7 @@ func deleteSqlStr(sqltable string, sqlData *SqlData) string{
 func DeleteSql(obj interface{}, sqltable string)string{
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Println("DeleteSql", err)
+			base.TraceCode(err)
 		}
 	}()
 
@@ -414,7 +414,7 @@ func DeleteSql(obj interface{}, sqltable string)string{
 func DeleteSqlEx(obj interface{}, sqltable string, params ...string) string {
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Println("DeleteSqlEx", err)
+			base.TraceCode(err)
 		}
 	}()
 

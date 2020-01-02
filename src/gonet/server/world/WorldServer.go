@@ -32,6 +32,7 @@ type(
 		GetLog() *base.CLog
 		GetServer() *network.ServerSocket
 		GetAccountCluster() *cluster.Cluster
+		GetClusterMgr() *ClusterManager
 	}
 
 	BitStream base.BitStream

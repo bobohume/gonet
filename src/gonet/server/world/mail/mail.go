@@ -38,12 +38,12 @@ type (
 	IMailMgr interface {
 		actor.IActor
 
-		sendMail(int64, int64, int, int, int, string, string, int8)
-		loadMail(int64, []*MailItem, int, int)
-		loadMialById(int64) *MailItem
-		deleteMail(int64, int64)
-		readMail(int64, int64)
-		recverMail(int64, int64)
+		sendMail(sender int64, recver int64, money int, itemId int, itemNum int, title string, content string, isSystem int8)
+		loadMail(playerId int64, mailList []*MailItem, recvCount int, noReadCount int)
+		loadMialById(mailId int64) *MailItem
+		deleteMail(playerId int64, mailId int64)
+		readMail(playerId int64, mailId int64)
+		recverMail(playerId int64, mailId int64)
 	}
 )
 
@@ -97,8 +97,8 @@ func loadMail(row db.IRow, m *MailItem){
 	m.Content = row.String("content")
 }
 
-func (this *CMailMgr) loadMail(playerid int64, mailList []*MailItem, recvCount int, noReadCount int){
-	rows, err := this.m_db.Query(db.LoadSql(MailItem{}, "tbl_mail", fmt.Sprintf("recver=%d", playerid)))
+func (this *CMailMgr) loadMail(playerId int64, mailList []*MailItem, recvCount int, noReadCount int){
+	rows, err := this.m_db.Query(db.LoadSql(MailItem{}, "tbl_mail", fmt.Sprintf("recver=%d", playerId)))
 	rs := db.Query(rows, err)
 	if rs.Next(){
 		m := &MailItem{}
@@ -112,14 +112,14 @@ func (this *CMailMgr) loadMail(playerid int64, mailList []*MailItem, recvCount i
 				noReadCount++
 			}
 			//fmt.Println(m)
-			world.SERVER.GetLog().Printf("读取玩家[%d]邮件成功", playerid)
+			world.SERVER.GetLog().Printf("读取玩家[%d]邮件成功", playerId)
 		}
 	}
 }
 
-func (this *CMailMgr) loadMialById(mailid int64) *MailItem{
+func (this *CMailMgr) loadMialById(mailId int64) *MailItem{
 	m := &MailItem{}
-	rows, err := this.m_db.Query(db.LoadSql(m, "tbl_mail", fmt.Sprintf("id=%d", mailid)))
+	rows, err := this.m_db.Query(db.LoadSql(m, "tbl_mail", fmt.Sprintf("id=%d", mailId)))
 	rs := db.Query(rows, err)
 	if rs.Next() {
 		loadMail(rs.Row(), m)
@@ -128,15 +128,15 @@ func (this *CMailMgr) loadMialById(mailid int64) *MailItem{
 	return nil
 }
 
-func (this *CMailMgr) deleteMail(playerid int64, mailid int64){
-	this.m_db.Exec("delete form tbl_mail where playerid=%d and id =%d", playerid, mailid)
+func (this *CMailMgr) deleteMail(playerId int64, mailId int64){
+	this.m_db.Exec("delete form tbl_mail where playerid=%d and id =%d", playerId, mailId)
 }
 
-func (this *CMailMgr) readMail(playerid int64, mailid int64){
-	m := this.loadMialById(mailid)
+func (this *CMailMgr) readMail(playerId int64, mailId int64){
+	m := this.loadMialById(mailId)
 	m.IsRead = 1
 
-	if m.Recver != playerid{
+	if m.Recver != playerId{
 		return
 	}
 
@@ -148,9 +148,9 @@ func (this *CMailMgr) readMail(playerid int64, mailid int64){
 	}
 }
 
-func (this *CMailMgr) recverMail(playerid int64, mailid int64){
-	m := this.loadMialById(mailid)
-	if m.Recver != playerid{
+func (this *CMailMgr) recverMail(playerId int64, mailId int64){
+	m := this.loadMialById(mailId)
+	if m.Recver != playerId{
 		return
 	}
 
@@ -161,5 +161,5 @@ func (this *CMailMgr) recverMail(playerid int64, mailid int64){
 
 	}
 
-	this.deleteMail(playerid, mailid)
+	this.deleteMail(playerId, mailId)
 }

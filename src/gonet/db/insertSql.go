@@ -405,7 +405,7 @@ func insertSqlStr(sqltable string, sqlData *SqlData) string{
 func InsertSql(obj interface{}, sqltable string,)string{
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Println("InsertSql", err)
+			base.TraceCode(err)
 		}
 	}()
 
@@ -417,7 +417,7 @@ func InsertSql(obj interface{}, sqltable string,)string{
 func InsertSqlEx(obj interface{}, sqltable string, params ...string) string {
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Println("InsertSqlEx", err)
+			base.TraceCode(err)
 		}
 	}()
 

@@ -39,7 +39,7 @@ func (this *WebSocketClient) Start() bool {
 func (this *WebSocketClient) Send(buff []byte) int {
 	defer func() {
 		if err := recover(); err != nil{
-			fmt.Println("WebSocketClient Send", err)
+			base.TraceCode(err)
 		}
 	}()
 
@@ -83,6 +83,12 @@ func wserverclientRoutine(pClient *WebSocketClient) bool {
 	if pClient.m_Conn == nil {
 		return false
 	}
+
+	defer func() {
+		if err := recover(); err != nil {
+			base.TraceCode(err)
+		}
+	}()
 
 	for {
 		if pClient.m_bShuttingDown {

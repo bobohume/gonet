@@ -62,7 +62,7 @@ func (this *AccountProcess) Init(num int) {
 		SERVER.GetServer().SendById(int(packet.GetSocketId()), buff)
 	})
 
-	this.RegisterCall("A_C_LoginRequest", func(packet *message.A_C_LoginRequest) {
+	this.RegisterCall("A_C_LoginResponse", func(packet *message.A_C_LoginResponse) {
 		buff := message.Encode(packet)
 		SERVER.GetServer().SendById(int(packet.GetSocketId()), buff)
 	})

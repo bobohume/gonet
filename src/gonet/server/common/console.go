@@ -3,6 +3,7 @@ package common
 import (
 	"fmt"
 	"bufio"
+	"gonet/base"
 	"os"
 	"gonet/actor"
 	"strings"
@@ -20,7 +21,7 @@ func consoleError(buf []byte){
  func ParseConsole(pCmd actor.IActor, command []byte) {
 	defer func() {
 		if err := recover(); err != nil{
-			fmt.Printf("parseConsole error [%s]", err.(error).Error())
+			base.TraceCode(err)
 		}
 	}()
 

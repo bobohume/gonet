@@ -424,7 +424,7 @@ func updateSqlStr(sqltable string, sqlData *SqlData) string{
 func UpdateSql(obj interface{}, sqltable string)string{
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Println("UpdateSql", err)
+			base.TraceCode(err)
 		}
 	}()
 
@@ -436,7 +436,7 @@ func UpdateSql(obj interface{}, sqltable string)string{
 func UpdateSqlEx(obj interface{}, sqltable string, params ...string) string {
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Println("UpdateSqlEx", err)
+			base.TraceCode(err)
 		}
 	}()
 

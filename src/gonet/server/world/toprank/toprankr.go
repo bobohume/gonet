@@ -47,9 +47,9 @@ func (this *TopMgrR) loadDB(nType int) {
 		topList := make([]*TopRank, 0)
 		rs.Obj(&topList)
 		for _, v := range topList{
+			data, _ := json.Marshal(v)
 			rd.Do(world.RdID, func(c redis.Conn) {
 				c.Send("ZADD", ZRdKey(nType), v.Score, v.Id)
-				data, _ := json.Marshal(v)
 				c.Send("HSET", HRdKey(nType), v.Id, data)
 				c.Flush()
 			})
@@ -81,9 +81,9 @@ func (this *TopMgrR) Init(num int){
 
 func (this *TopMgrR) newInData(nType int, id int64, name string, score,val0,val1 int){
 	pData := this.createRank(nType, id, name, score, val0, val1)
+	data, _ := json.Marshal(pData)
 	rd.Do(world.RdID, func(c redis.Conn) {
 		c.Send("ZADD", ZRdKey(nType), score, id)
-		data, _ := json.Marshal(pData)
 		c.Send("HSET", HRdKey(nType), id, data)
 	})
 	bExist := false

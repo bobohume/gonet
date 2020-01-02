@@ -401,7 +401,7 @@ func loadSqlStr(sqltable string, sqlData *SqlData) string{
 func LoadSql(obj interface{}, sqltable string, key string)string{
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Println("LoadSql", err)
+			base.TraceCode(err)
 		}
 	}()
 
@@ -417,7 +417,7 @@ func LoadSql(obj interface{}, sqltable string, key string)string{
 func LoadSqlEx(obj interface{}, sqltable string, key string, params ...string) string {
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Println("LoadSqlEx", err)
+			base.TraceCode(err)
 		}
 	}()
 

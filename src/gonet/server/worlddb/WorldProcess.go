@@ -20,7 +20,7 @@ type (
 	}
 )
 
-func (this * WorldProcess)RegisterServer(ServerType int, Ip string, Port int)  {
+func (this * WorldProcess) RegisterServer(ServerType int, Ip string, Port int)  {
 	SERVER.GetWorldSocket().SendMsg("COMMON_RegisterRequest",ServerType, Ip, Port)
 }
 

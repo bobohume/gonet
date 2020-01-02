@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-func OpenExceLua(filename string){
+func OpenExceGo(filename string){
 	xlFile, err := xlsx.OpenFile(filename)
 	if err != nil{
 		fmt.Println("open [%s] error", filename)
@@ -18,9 +18,15 @@ func OpenExceLua(filename string){
 	}
 
 	dataTypes := []int{}
+	dataTypeNames := []string{}
+	structName := ""
+	structResName := ""
 	dataColLen := 0//结束列数
+	dataColBeginLen := -1//开始列数
 	stream := bytes.NewBuffer([]byte{})
 	filenames := strings.Split(filename, ".")
+	structName = filenames[0] + "Data"
+	structResName = filenames[0] + "DataRes"
 	enumKVMap := make(map[int] map[string] int) //列 key val
 	enumKMap := map[string] []string{}//列名对应key
 	enumNames := []string{}//列名
@@ -67,11 +73,11 @@ func OpenExceLua(filename string){
 				} else if i == 1{
 					colName := cell.String()
 					dataNames = append(dataNames, colName)
-					if j == 0{
-						stream.WriteString(fmt.Sprintf("%s %s%s","local", filenames[0],"Data = {\n" ))
-					}
 					if colName != "" && colName != "0"{
 						dataColLen = j
+						if dataColBeginLen == -1{
+							dataColBeginLen = j
+						}
 					}
 					continue
 				}else if i == 2{
@@ -107,48 +113,86 @@ func OpenExceLua(filename string){
 					}
 					if coltype == "string"{
 						dataTypes = append(dataTypes, base.DType_String)
+						dataTypeNames = append(dataTypeNames, "string")
 					}else if coltype == "enum"{
 						dataTypes = append(dataTypes, base.DType_Enum)
+						dataTypeNames = append(dataTypeNames, "int")
 					}else if coltype == "int8"{
 						dataTypes = append(dataTypes, base.DType_S8)
+						dataTypeNames = append(dataTypeNames, "int8")
 					}else if coltype == "int16"{
 						dataTypes = append(dataTypes, base.DType_S16)
+						dataTypeNames = append(dataTypeNames, "int16")
 					}else if coltype == "int"{
 						dataTypes = append(dataTypes, base.DType_S32)
+						dataTypeNames = append(dataTypeNames, "int")
 					} else if coltype == "float"{
 						dataTypes = append(dataTypes, base.DType_F32)
+						dataTypeNames = append(dataTypeNames, "float")
 					}else if coltype == "float64"{
 						dataTypes = append(dataTypes, base.DType_F64)
+						dataTypeNames = append(dataTypeNames, "float64")
 					}else if coltype == "int64"{
 						dataTypes = append(dataTypes, base.DType_S64)
+						dataTypeNames = append(dataTypeNames, "int64")
 					}else{
 						fmt.Printf("data [%s] [%s] col[%d] type not support in[string, enum, int8, int16, int32, float32, float64]", filename, coltype, j )
 						return
 					}
-					continue
-				}
 
-				if j == 0{
-					stream.WriteString(fmt.Sprintf("\t[%s] = {\n", cell.Value))
+					if j == len(row.Cells) -1 {
+						stream.WriteString("package data\n")
+						stream.WriteString("\n")
+						stream.WriteString("type(\n")
+						//定义数据类型结构体
+						stream.WriteString(fmt.Sprintf("\t%s struct{\n", structName))
+						for i1, v := range dataTypeNames{
+							//过滤掉不是客户端的数据
+							if dataNames[i1] == "" || dataNames[i1] == "0"{
+								continue
+							}
+
+							stream.WriteString(fmt.Sprintf("\t\t%s\t%s\n", dataNames[i1], v))
+						}
+						stream.WriteString("\t}\n\n")
+						//定义数据datares结构体
+						stream.WriteString(fmt.Sprintf("\t%s struct{\n", structResName))
+						stream.WriteString(fmt.Sprintf("\t\tm_DataMap map[int] *%s\n", structName))
+						stream.WriteString("\t}\n")
+						stream.WriteString(")\n")
+						stream.WriteString("\n")
+						//定义全局datares变量
+						stream.WriteString("var(\n")
+						stream.WriteString(fmt.Sprintf("\t%s\t%s\n", strings.ToUpper(structName), structResName))
+						stream.WriteString(")\n")
+						stream.WriteString("\n")
+						//定义初始函数
+						stream.WriteString(fmt.Sprintf("func (this *%s) Init(){\n", structResName))
+						//定义map
+						stream.WriteString(fmt.Sprintf("\tthis.m_DataMap =   map[int] *%s{}\n", structName))
+						continue
+					}else{
+						continue
+					}
 				}
 
 				writeInt := func() {
 					switch cell.Type() {
 					case xlsx.CellTypeString:
-						stream.WriteString(fmt.Sprintf("\t\t%s = %d,\n",dataNames[j], base.Int(cell.String())))
+						stream.WriteString(fmt.Sprintf("\t\t%s : %d,\n",dataNames[j], base.Int(cell.String())))
 					case xlsx.CellTypeStringFormula:
-						stream.WriteString(fmt.Sprintf("\t\t%s = %d,\n",dataNames[j], base.Int(cell.String())))
+						stream.WriteString(fmt.Sprintf("\t\t%s : %d,\n",dataNames[j], base.Int(cell.String())))
 					case xlsx.CellTypeNumeric:
-						stream.WriteString(fmt.Sprintf("\t\t%s = %d,\n",dataNames[j], base.Int(cell.Value)))
+						stream.WriteString(fmt.Sprintf("\t\t%s : %d,\n",dataNames[j], base.Int(cell.Value)))
 					case xlsx.CellTypeBool:
 						bVal := base.Bool(cell.Value)
 						if bVal{
-							stream.WriteString(fmt.Sprintf("\t\t%s = %d,\n",dataNames[j], 1))
+							stream.WriteString(fmt.Sprintf("\t\t%s : %d,\n",dataNames[j], 1))
 						}else{
-							stream.WriteString(fmt.Sprintf("\t\t%s = %d,\n",dataNames[j], 0))
+							stream.WriteString(fmt.Sprintf("\t\t%s : %d,\n",dataNames[j], 0))
 						}
 					case xlsx.CellTypeDate:
-						stream.WriteString(fmt.Sprintf("\t\t%s = %d,\n",dataNames[j], base.Int(cell.Value)))
+						stream.WriteString(fmt.Sprintf("\t\t%s : %d,\n",dataNames[j], base.Int(cell.Value)))
 					}
 				}
 
@@ -157,30 +201,35 @@ func OpenExceLua(filename string){
 					continue
 				}
 
+				if j == dataColBeginLen{
+					//map赋值
+					stream.WriteString(fmt.Sprintf("\tthis.m_DataMap[%d] =  &%s{", base.Int(cell.String()), structName))
+				}
+
 				if dataTypes[j] == base.DType_String{
 					switch cell.Type() {
 					case xlsx.CellTypeString:
-						stream.WriteString(fmt.Sprintf("\t\t%s = \"%s\",\n",dataNames[j], cell.String()))
+						stream.WriteString(fmt.Sprintf("\t\t%s : \"%s\",\n",dataNames[j], cell.String()))
 					case xlsx.CellTypeStringFormula:
-						stream.WriteString(fmt.Sprintf("\t\t%s = \"%s\",\n",dataNames[j], cell.String()))
+						stream.WriteString(fmt.Sprintf("\t\t%s : \"%s\",\n",dataNames[j], cell.String()))
 					case xlsx.CellTypeNumeric:
-						stream.WriteString(fmt.Sprintf("\t\t%s = \"%s\",\n",dataNames[j], cell.Value))
+						stream.WriteString(fmt.Sprintf("\t\t%s : \"%s\",\n",dataNames[j], cell.Value))
 					case xlsx.CellTypeBool:
 						bVal := base.Bool(cell.Value)
 						if bVal{
-							stream.WriteString(fmt.Sprintf("\t\t%s = \"%s\",\n",dataNames[j], "true"))
+							stream.WriteString(fmt.Sprintf("\t\t%s : \"%s\",\n",dataNames[j], "true"))
 						}else{
-							stream.WriteString(fmt.Sprintf("\t\t%s = \"%s\",\n",dataNames[j], "false"))
+							stream.WriteString(fmt.Sprintf("\t\t%s : \"%s\",\n",dataNames[j], "false"))
 						}
 					case xlsx.CellTypeDate:
-						stream.WriteString(fmt.Sprintf("\t\t%s = \"%s\",\n",dataNames[j], cell.Value))
+						stream.WriteString(fmt.Sprintf("\t\t%s : \"%s\",\n",dataNames[j], cell.Value))
 					}
 				}else if dataTypes[j] == base.DType_Enum{
 					val, bEx := enumKVMap[j][strings.ToLower(cell.Value)]
 					if bEx{
-						stream.WriteString(fmt.Sprintf("\t\t%s = %d,\n",dataNames[j], val))
+						stream.WriteString(fmt.Sprintf("\t\t%s : %d,\n",dataNames[j], val))
 					}else{
-						stream.WriteString(fmt.Sprintf("\t\t%s = %d,\n",dataNames[j], 0))
+						stream.WriteString(fmt.Sprintf("\t\t%s : %d,\n",dataNames[j], 0))
 					}
 				}else if dataTypes[j] == base.DType_S8{
 					writeInt()
@@ -191,51 +240,60 @@ func OpenExceLua(filename string){
 				}else if dataTypes[j] == base.DType_F32{
 					switch cell.Type() {
 					case xlsx.CellTypeString:
-						stream.WriteString(fmt.Sprintf("\t\t%s = %f,\n",dataNames[j], base.Float32(cell.String())))
+						stream.WriteString(fmt.Sprintf("\t\t%s : %f,\n",dataNames[j], base.Float32(cell.String())))
 					case xlsx.CellTypeStringFormula:
-						stream.WriteString(fmt.Sprintf("\t\t%s = %f,\n",dataNames[j], base.Float32(cell.String())))
+						stream.WriteString(fmt.Sprintf("\t\t%s : %f,\n",dataNames[j], base.Float32(cell.String())))
 					case xlsx.CellTypeNumeric:
-						stream.WriteString(fmt.Sprintf("\t\t%s = %f,\n",dataNames[j], base.Float32(cell.Value)))
+						stream.WriteString(fmt.Sprintf("\t\t%s : %f,\n",dataNames[j], base.Float32(cell.Value)))
 					case xlsx.CellTypeBool:
 						bVal := base.Bool(cell.Value)
 						if bVal{
-							stream.WriteString(fmt.Sprintf("\t\t%s = %f,\n",dataNames[j], 1))
+							stream.WriteString(fmt.Sprintf("\t\t%s : %f,\n",dataNames[j], 1))
 						}else{
-							stream.WriteString(fmt.Sprintf("\t\t%s = %f,\n",dataNames[j], 0))
+							stream.WriteString(fmt.Sprintf("\t\t%s : %f,\n",dataNames[j], 0))
 						}
 					case xlsx.CellTypeDate:
-						stream.WriteString(fmt.Sprintf("\t\t%s = %f,\n",dataNames[j], base.Float32(cell.Value)))
+						stream.WriteString(fmt.Sprintf("\t\t%s : %f,\n",dataNames[j], base.Float32(cell.Value)))
 					}
 				}else if dataTypes[j] == base.DType_F64{
 					switch cell.Type() {
 					case xlsx.CellTypeString:
-						stream.WriteString(fmt.Sprintf("\t\t%s = %f,\n",dataNames[j], base.Float64(cell.String())))
+						stream.WriteString(fmt.Sprintf("\t\t%s : %f,\n",dataNames[j], base.Float64(cell.String())))
 					case xlsx.CellTypeStringFormula:
-						stream.WriteString(fmt.Sprintf("\t\t%s = %f,\n",dataNames[j], base.Float64(cell.String())))
+						stream.WriteString(fmt.Sprintf("\t\t%s : %f,\n",dataNames[j], base.Float64(cell.String())))
 					case xlsx.CellTypeNumeric:
-						stream.WriteString(fmt.Sprintf("\t\t%s = %f,\n",dataNames[j], base.Float64(cell.Value)))
+						stream.WriteString(fmt.Sprintf("\t\t%s : %f,\n",dataNames[j], base.Float64(cell.Value)))
 					case xlsx.CellTypeBool:
 						bVal := base.Bool(cell.Value)
 						if bVal{
-							stream.WriteString(fmt.Sprintf("\t\t%s = %f,\n",dataNames[j], 1))
+							stream.WriteString(fmt.Sprintf("\t\t%s : %f,\n",dataNames[j], 1))
 						}else{
-							stream.WriteString(fmt.Sprintf("\t\t%s = %f,\n",dataNames[j], 0))
+							stream.WriteString(fmt.Sprintf("\t\t%s : %f,\n",dataNames[j], 0))
 						}
 					case xlsx.CellTypeDate:
-						stream.WriteString(fmt.Sprintf("\t\t%s = %f,\n",dataNames[j], base.Float64(cell.Value)))
+						stream.WriteString(fmt.Sprintf("\t\t%s : %f,\n",dataNames[j], base.Float64(cell.Value)))
 					}
 				}else if dataTypes[j] == base.DType_S64{
 					writeInt()
 				}
 
 				if j == dataColLen{
-					stream.WriteString("\t},\n")
+					stream.WriteString("\t}\n")
 				}
 			}
 		}
 
+		//init函数执行完
 		stream.WriteString("}\n")
-		stream.WriteString(fmt.Sprintf("%s %s%s\n","return", filenames[0],"Data" ))
+		stream.WriteString("\n")
+		//写获取函数
+		stream.WriteString(fmt.Sprintf("func (this *%s) GetData(id int) *%s{\n", structResName, structName))
+		stream.WriteString("\tpData, bOk := this.m_DataMap[id]\n")
+		stream.WriteString("\tif bOk && pData != nil{\n")
+		stream.WriteString("\t\treturn pData\n")
+		stream.WriteString("\t}\n")
+		stream.WriteString("\treturn nil\n")
+		stream.WriteString("}\n")
 	}
 
 	//文件没有可导出
@@ -244,10 +302,11 @@ func OpenExceLua(filename string){
 	}
 
 	//other sheet
-	file, err := os.Create(filenames[0] + ".lua")
+	file, err := os.Create(filenames[0] + ".go")
 	if err == nil{
 		file.Write(stream.Bytes())
 		file.Close()
 	}
 }
+
 

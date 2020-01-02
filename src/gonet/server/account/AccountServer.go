@@ -132,9 +132,9 @@ func (this *ServerMgr) GetServer() *network.ServerSocket{
 	return this.m_pService
 }
 
- func (this *ServerMgr) GetClusterMgr() *ClusterManager{
-	 return this.m_pClusterMgr
- }
+func (this *ServerMgr) GetClusterMgr() *ClusterManager{
+	return this.m_pClusterMgr
+}
 
 func (this *ServerMgr) GetAccountMgr() *AccountMgr{
 	return this.m_AccountMgr

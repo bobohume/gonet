@@ -150,7 +150,7 @@ func (this *Config) Read(path string)  {
 
 	file, err := os.Open(path)
 	if err != nil {
-		fmt.Printf("read cof error %s", err)
+		fmt.Printf("read cof error %v", err)
 		return
 	}
 

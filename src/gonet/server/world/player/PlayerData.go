@@ -142,6 +142,7 @@ func (this *PlayerData) DelKV(key int){
 	pDdata, bEx := this.m_PlayerKVMap[key]
 	if bEx && pDdata != nil{
 		this.m_db.Exec(db.DeleteSql(pDdata, "tbl_player_kv"))
+		delete(this.m_PlayerKVMap, key)
 	}
 }
 

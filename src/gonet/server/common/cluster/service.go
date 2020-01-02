@@ -14,6 +14,7 @@ const(
 	ETCD_DIR =  "server/"
 )
 
+//注册服务器
 type Service struct {
 	*common.ClusterInfo
 	m_KeysAPI client.KeysAPI

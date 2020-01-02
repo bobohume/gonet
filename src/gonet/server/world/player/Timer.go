@@ -3,7 +3,6 @@ package player
 import (
 	"gonet/base"
 	"gonet/db"
-	"gonet/server/world/common"
 	"sort"
 	"time"
 )
@@ -26,13 +25,14 @@ type(
 	}//定时器序列
 
 	TimerMgr struct {
-		common.IPlayer
+		IPlayer
+
 		m_TimerSet TimerSet//定时器set
 		m_TimerMap map[int] *Timer//方便查找
 	}
 
 	ITimerMgr interface {
-		Init(common.IPlayer)
+		Init(IPlayer)
 		GetTimer(Id int) *Timer//获取定时器
 		AddTimer(Id int, Flag int64, ExpireTime int64)//添加定时器
 		DelTimer(Id int)//删除定时器
@@ -41,7 +41,7 @@ type(
 	}
 )
 
-func (this *TimerMgr) Init(pPlayer common.IPlayer){
+func (this *TimerMgr) Init(pPlayer IPlayer){
 	this.IPlayer = pPlayer
 	this.m_TimerMap = map[int] *Timer{}
 }
@@ -106,8 +106,6 @@ func (this *TimerMgr) Update() {
 }
 
 func (this *TimerMgr) sort(){
-	aa := this.m_TimerSet
-	sort.Sort(&aa)
 	sort.Sort(&this.m_TimerSet)
 }
 

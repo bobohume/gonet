@@ -18,7 +18,7 @@ const(
 func GetPacket(funcName string, params ...interface{})[]byte {
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Println("GetPacket", err)
+			TraceCode(err)
 		}
 	}()
 
@@ -739,6 +739,12 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 			nLen := len(buf)
 			bitstream.WriteInt(nLen, Bit32)
 			bitstream.WriteBits(nLen << 3, buf)
+			/*buf := &bytes.Buffer{}
+			enc := gob.NewEncoder(buf)
+			enc.Encode(param)
+			nLen := buf.Len()
+			bitstream.WriteInt(nLen, Bit32)
+			bitstream.WriteBits(nLen << 3, buf.Bytes())*/
 
 		default:
 			fmt.Println("params type not supported", sType,  reflect.TypeOf(param))

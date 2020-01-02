@@ -323,7 +323,7 @@ func parseLoadObjSql(obj interface{}, row IRow) (bool){
 func LoadObjSql(obj interface{}, row IRow)bool{
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Println("LoadObjSql", err)
+			base.TraceCode(err)
 		}
 	}()
 

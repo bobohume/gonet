@@ -12,10 +12,11 @@ type(
 		Init()
 		GetId() int64
 		GetMessageType() int8
-		HasPlayer(int64) bool
-		AddPlayer(int64, int64, string, int)
-		RemovePlayer(int64)
-		SendMessage(*ChatMessage)
+		HasPlayer(playerId int64) bool
+		GetPlayer(playerId int64) *player
+		AddPlayer(accountId, playerId int64, playername string, socketId int)
+		RemovePlayer(playerId int64)
+		SendMessage(msg *ChatMessage)
 	}
 )
 
@@ -36,16 +37,24 @@ func (this *Channel) AddPlayer(accountId, playerId int64, playername string, soc
 	this.m_playerMap[playerId] = &player{accountId, playerId, playername, socketId}
 }
 
-func (this *Channel) RemovePlayer(playerid int64) {
-	delete(this.m_playerMap, playerid)
+func (this *Channel) RemovePlayer(playerId int64) {
+	delete(this.m_playerMap, playerId)
 }
 
-func (this *Channel) HasPlayer(playerid int64) bool{
-	_, exist := this.m_playerMap[playerid]
+func (this *Channel) HasPlayer(playerId int64) bool{
+	_, exist := this.m_playerMap[playerId]
 	if exist{
 		return true
 	}
 	return false
+}
+
+func (this *Channel) GetPlayer(playerId int64) *player{
+	pPlayer, exist := this.m_playerMap[playerId]
+	if exist{
+		return pPlayer
+	}
+	return nil
 }
 
 func (this *Channel) SendMessage(msg *ChatMessage){
