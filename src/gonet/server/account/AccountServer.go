@@ -5,8 +5,8 @@
 	 "github.com/golang/protobuf/proto"
 	 "gonet/base"
 	 "gonet/db"
-	 "gonet/message"
 	 "gonet/network"
+	 "gonet/rpc"
 	 "gonet/server/common/cluster"
 	 "log"
  )
@@ -142,7 +142,7 @@ func (this *ServerMgr) GetAccountMgr() *AccountMgr{
 
 func SendToClient(socketId int, packet proto.Message){
 	bitstream := base.NewBitStream(make([]byte, 1024), 1024)
-	if !message.GetMessagePacket(packet, bitstream) {
+	if !rpc.MarshalPB(packet, bitstream) {
 		return
 	}
 	SERVER.GetServer().SendById(socketId, bitstream.GetBuffer())

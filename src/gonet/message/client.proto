@@ -2,58 +2,88 @@ syntax = "proto3";
 package message;
 import "message.proto";
 
+//登录
 message C_A_LoginRequest{
-Ipacket PacketHead = 1;
-string AccountName = 2;
-string BuildNo = 3;
-int32  SocketId = 4;
-//string Password = 5;
+    Ipacket PacketHead = 1;
+    string AccountName = 2;
+    string BuildNo = 3;
+    int32  SocketId = 4;
+    //string Password = 5;
 }
 
-message C_A_LoginRequest1{
-C_A_LoginRequest Login= 1;
+//登录反馈
+message A_C_LoginResponse{
+    Ipacket PacketHead = 1;
+    int32  Error = 2;
+    int32  SocketId = 3;
+    string AccountName = 4;
 }
 
+//注册
 message C_A_RegisterRequest{
-Ipacket PacketHead = 1;
-string AccountName = 2;
-int32  SocketId = 3;
-//string Password = 4;
+    Ipacket PacketHead = 1;
+    string AccountName = 2;
+    int32  SocketId = 3;
+    //string Password = 4;
 }
 
+//注册反馈
+message A_C_RegisterResponse{
+    Ipacket PacketHead = 1;
+    int32	Error = 2;
+    int32  SocketId = 3;
+}
+
+//创角
 message C_W_CreatePlayerRequest{
-Ipacket PacketHead = 1;
-string PlayerName = 2;
-int32  Sex = 3;
+    Ipacket PacketHead = 1;
+    string PlayerName = 2;
+    int32  Sex = 3;
 }
 
+//创角反馈
+message W_C_CreatePlayerResponse{
+    Ipacket PacketHead = 1;
+    int32 Error = 2;
+    int64 PlayerId = 3;
+}
+
+//登录游戏
 message C_W_Game_LoginRequset{
-Ipacket PacketHead = 1;
-int64	PlayerId =2;
+    Ipacket PacketHead = 1;
+    int64	PlayerId =2;
+}
+
+//选角反馈
+message W_C_SelectPlayerResponse{
+    Ipacket PacketHead = 1;
+    int64	AccountId = 2;
+    repeated PlayerData PlayerData = 3;
 }
 
 message C_G_LogoutResponse{
-Ipacket PacketHead = 1;
+    Ipacket PacketHead = 1;
 }
 
+//聊天
 message C_W_ChatMessage{
-Ipacket PacketHead = 1;
-int64	Sender = 2;
-int64	Recver = 3;
-int32	MessageType = 4;
-string	Message = 5;
+    Ipacket PacketHead = 1;
+    int64	Sender = 2;
+    int64	Recver = 3;
+    int32	MessageType = 4;
+    string	Message = 5;
 }
 
 message W_C_ChatMessage{
-Ipacket PacketHead = 1;
-int64	Sender = 2;
-string	SenderName = 3;
-int64	Recver = 4;
-string	RecverName = 5;
-int32	MessageType = 6;
-string	Message = 7;
+    Ipacket PacketHead = 1;
+    int64	Sender = 2;
+    string	SenderName = 3;
+    int64	Recver = 4;
+    string	RecverName = 5;
+    int32	MessageType = 6;
+    string	Message = 7;
 }
 
 message W_C_Test{
-repeated int32 Recv = 1;
+    repeated int32 Recv = 1;
 }

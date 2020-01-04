@@ -27,7 +27,7 @@ func loadsqlarray(sqlData *SqlData, p *Properties, val string, i int){
 
 func getLoadSql(classField reflect.StructField, classVal reflect.Value, sqlData *SqlData) (bool) {
 	p := getProperties(classField)
-	sType := base.GetTypeStringEx(classField, classVal)
+	sType := getTypeString(classField, classVal)
 	if p.IsJson(){
 		data, _ := json.Marshal(classVal.Interface())
 		loadsql(sqlData, p, string(data))

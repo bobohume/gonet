@@ -29,7 +29,7 @@ func deletesqlarray(sqlData *SqlData, p *Properties, val string, i int){
 func getDeleteSql(classField reflect.StructField, classVal reflect.Value, sqlData *SqlData) (bool) {
 	p := getProperties(classField)
 
-	sType := base.GetTypeStringEx(classField, classVal)
+	sType := getTypeString(classField, classVal)
 	//过略json
 	if p.IsJson(){
 		return true

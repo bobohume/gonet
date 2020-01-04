@@ -1,4 +1,4 @@
-package base_test
+package rpc_test
 
 import (
 	"bytes"
@@ -8,11 +8,24 @@ import (
 	"github.com/json-iterator/go"
 	"gonet/base"
 	"gonet/message"
+	"gonet/rpc"
+	"strings"
 	"testing"
 )
 
-func Benchmark_TestMarshalJson(b *testing.B){
-	b.StartTimer()
+type(
+	TopRank struct{
+		Value []int `sql:"name:value"`
+	}
+)
+
+var(
+	ntimes = 10000
+	nArraySize = 2000
+	nValue = 0x7fffffff
+)
+
+func TestMarshalJson(t *testing.T){
 	data := &TopRank{}
 	for i := 0; i < nArraySize; i++{
 		data.Value = append(data.Value, nValue)
@@ -20,24 +33,21 @@ func Benchmark_TestMarshalJson(b *testing.B){
 	for i := 0; i < ntimes; i++{
 		json.Marshal(data)
 	}
-	b.StopTimer()
 }
 
-func Benchmark_TestUMarshalJson(b *testing.B){
-	b.StartTimer()
+func TestUMarshalJson(t *testing.T){
 	data := &TopRank{}
 	for i := 0; i < nArraySize; i++{
 		data.Value = append(data.Value, nValue)
 	}
+
 	for i := 0; i < ntimes; i++{
 		buff, _ := json.Marshal(data)
 		json.Unmarshal(buff, &TopRank{})
 	}
-	b.StopTimer()
 }
 
-func Benchmark_TestMarshalJsonIter(b *testing.B){
-	b.StartTimer()
+func TestMarshalJsonIter(t *testing.T){
 	json := jsoniter.ConfigCompatibleWithStandardLibrary
 	data := &TopRank{}
 	for i := 0; i < nArraySize; i++{
@@ -46,25 +56,22 @@ func Benchmark_TestMarshalJsonIter(b *testing.B){
 	for i := 0; i < ntimes; i++{
 		json.Marshal(data)
 	}
-	b.StopTimer()
 }
 
-func Benchmark_TestUMarshalJsonIter(b *testing.B){
-	b.StartTimer()
+func TestUMarshalJsonIter(t *testing.T){
 	json := jsoniter.ConfigCompatibleWithStandardLibrary
 	data := &TopRank{}
 	for i := 0; i < nArraySize; i++{
 		data.Value = append(data.Value, nValue)
 	}
+
 	for i := 0; i < ntimes; i++{
 		buff, _ := json.Marshal(data)
 		json.Unmarshal(buff, &TopRank{})
 	}
-	b.StopTimer()
 }
 
-func Benchmark_TestMarshalPB(b *testing.B){
-	b.StartTimer()
+func TestMarshalPB(t *testing.T){
 	aa := []int32{}
 	for i := 0; i < nArraySize; i++{
 		aa = append(aa, int32(nValue))
@@ -72,11 +79,9 @@ func Benchmark_TestMarshalPB(b *testing.B){
 	for i := 0; i < ntimes; i++{
 		proto.Marshal(&message.W_C_Test{Recv:aa})
 	}
-	b.StopTimer()
 }
 
-func Benchmark_TestUMarshalPB(b *testing.B){
-	b.StartTimer()
+func TestUMarshalPB(t *testing.T){
 	aa := []int32{}
 	for i := 0; i < nArraySize; i++{
 		aa = append(aa, int32(nValue))
@@ -85,11 +90,9 @@ func Benchmark_TestUMarshalPB(b *testing.B){
 		buff, _ := proto.Marshal(&message.W_C_Test{Recv:aa})
 		proto.Unmarshal(buff, &message.W_C_Test{})
 	}
-	b.StopTimer()
 }
 
-func Benchmark_TestMarshalGob(b *testing.B){
-	b.StartTimer()
+func TestMarshalGob(t *testing.T){
 	data := &TopRank{}
 	for i := 0; i < nArraySize; i++{
 		data.Value = append(data.Value, nValue)
@@ -100,11 +103,9 @@ func Benchmark_TestMarshalGob(b *testing.B){
 		enc := gob.NewEncoder(buf)
 		enc.Encode(data)
 	}
-	b.StopTimer()
 }
 
-func Benchmark_TestUMarshalGob(b *testing.B){
-	b.StartTimer()
+func TestUMarshalGob(t *testing.T){
 	data := &TopRank{}
 	for i := 0; i < nArraySize; i++{
 		data.Value = append(data.Value, nValue)
@@ -119,30 +120,33 @@ func Benchmark_TestUMarshalGob(b *testing.B){
 		aa1 := &TopRank{}
 		dec.Decode(aa1)
 	}
-	b.StopTimer()
 }
 
-func Benchmark_TestMarshalRpc(b *testing.B){
-	b.StartTimer()
+func TestMarshalRpc(t *testing.T){
 	aa := []int32{}
 	for i := 0; i < nArraySize; i++{
 		aa = append(aa, int32(nValue))
 	}
 	for i := 0; i < ntimes; i++{
-		base.GetPacket("test", aa)
+		rpc.Marshal("test", aa)
 	}
-	b.StopTimer()
 }
 
-func Benchmark_TestUMarshalRpc(b *testing.B){
-	b.StartTimer()
+func TestUMarshalRpc(t *testing.T){
 	aa := []int32{}
 	for i := 0; i < nArraySize; i++{
 		aa = append(aa, int32(nValue))
 	}
 	for i := 0; i < ntimes; i++{
-		buff := base.GetPacket("test", aa)
+		buff := rpc.Marshal("test", aa)
 		parse(buff)
 	}
-	b.StopTimer()
+}
+
+func parse (buff []byte) {
+	funcName := ""
+	bitstream := base.NewBitStream(buff, len(buff))
+	funcName = bitstream.ReadString()
+	funcName = strings.ToLower(funcName)
+	rpc.Unmarshal(bitstream, funcName, nil)
 }

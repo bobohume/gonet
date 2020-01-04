@@ -3,6 +3,7 @@ package network
 import (
 	"gonet/base"
 	"fmt"
+	"gonet/rpc"
 	"log"
 	"net/http"
 	"sync"
@@ -180,7 +181,7 @@ func (this *WebSocket) SendById(id int, buff  []byte) int{
 func (this *WebSocket) SendMsgById(id int, funcName string, params ...interface{}){
 	pClient := this.GetClientById(id)
 	if pClient != nil{
-		pClient.Send(base.SetTcpEnd(base.GetPacket(funcName, params...)))
+		pClient.Send(base.SetTcpEnd(rpc.Marshal(funcName, params...)))
 	}
 }
 

@@ -29,8 +29,7 @@ func (this *UserServerProcess) PacketFunc(id int, buff []byte) bool{
 	bitstream := base.NewBitStream(io.Buff, len(io.Buff))
 	funcName := bitstream.ReadString()
 	funcName = strings.ToLower(funcName)
-	pFunc := this.FindCall(funcName)
-	if pFunc != nil{
+	if this.FindCall(funcName) != nil{
 		this.Send(io)
 		return true
 	}

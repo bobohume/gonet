@@ -5,6 +5,7 @@ import (
 	"gonet/base"
 	"gonet/message"
 	"gonet/network"
+	"gonet/rpc"
 )
 
 type(
@@ -113,7 +114,7 @@ func (this *UserPrcoess) PacketFunc(socketid int, buff []byte) bool{
 
 	//解析整个包
 	bitstream := base.NewBitStream(make([]byte, 1024), 1024)
-	if !message.GetMessagePacket(packet, bitstream) {
+	if !rpc.MarshalPB(packet, bitstream) {
 		SERVER.GetLog().Printf("收到[%s]消息,格式有问题", packetName)
 		return true
 	}

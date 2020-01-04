@@ -3,7 +3,6 @@ package message
 import (
 	"github.com/golang/protobuf/proto"
 	"gonet/base"
-	"log"
 	"reflect"
 	"strings"
 )
@@ -56,30 +55,6 @@ func Decode(buff []byte) (uint32, []byte){
 	return packetId, buff[4:]
 }
 
-func GetMessagePacket(packet proto.Message, bitstream *base.BitStream) bool {
-	bitstream.WriteString(GetMessageName(packet))
-	bitstream.WriteInt(1, 8)
-	{
-		sType := strings.ToLower(reflect.ValueOf(packet).Type().String())
-		index := strings.Index(sType, ".")
-		if index!= -1{
-			sType = sType[:index]
-		}
-		switch sType {
-		case "*message":
-			bitstream.WriteInt(base.RPC_MESSAGE, 8)
-			buf, _ :=proto.Marshal(packet)
-			nLen := len(buf)
-			bitstream.WriteInt(nLen, base.Bit32)
-			bitstream.WriteBits(nLen << 3, buf)
-		default:
-			log.Printf("packet params type not supported", packet, sType)
-			return false
-		}
-	}
-	return true
-}
-
 func RegisterPacket(packet proto.Message) {
 	packetName := GetMessageName(packet)
 	packetFunc := func() proto.Message{
@@ -123,13 +98,11 @@ func Init(){
 	RegisterPacket(&C_W_LoginCopyMap{})
 	RegisterPacket(&C_W_Move{})
 	RegisterPacket(&C_W_ChatMessage{})
+	RegisterPacket(&A_C_LoginResponse{})
+	RegisterPacket(&A_C_RegisterResponse{})
 	// test for client
 	RegisterPacket(&W_C_SelectPlayerResponse{})
 	RegisterPacket(&W_C_CreatePlayerResponse{})
 	RegisterPacket(&W_C_LoginMap{})
-	RegisterPacket(&W_C_Move{})
-	RegisterPacket(&W_C_ADD_SIMOBJ{})
-	RegisterPacket(&A_C_LoginResponse{})
-	RegisterPacket(&A_C_RegisterResponse{})
 	RegisterPacket(&W_C_ChatMessage{})
 }

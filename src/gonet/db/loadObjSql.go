@@ -20,7 +20,7 @@ func getLoadObjSql(classField reflect.StructField, classVal reflect.Value, row I
 	p := getProperties(classField)
 	classType := p.Name
 
-	sType := base.GetTypeStringEx(classField, classVal)
+	sType := getTypeString(classField, classVal)
 	if p.IsJson(){
 		json.Unmarshal(row.Byte(classType), classVal.Addr().Interface())
 		return true

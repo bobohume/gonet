@@ -1,170 +1,167 @@
-package base
+package rpc
 
 import (
 	"fmt"
-	jsoniter "github.com/json-iterator/go"
+	"github.com/golang/protobuf/proto"
+	"github.com/json-iterator/go"
+	"gonet/base"
+	"gonet/message"
+	"log"
 	"reflect"
+	"strings"
 )
 
-const(
-	RPC_Int64 		= 10
-	RPC_UInt64 		= 11
-	RPC_PInt64 		= 70
-	RPC_PUInt64 	= 71
-	RPC_MESSAGE 	= 120
-	RPC_GOB			= 121//暂时用json,gob包头解析小包太慢
-)
-
-func GetPacket(funcName string, params ...interface{})[]byte {
+//rpc  Marshal
+func Marshal(funcName string, params ...interface{})[]byte {
 	defer func() {
 		if err := recover(); err != nil {
-			TraceCode(err)
+			base.TraceCode(err)
 		}
 	}()
 
 	msg := make([]byte, 1024)
-	bitstream := NewBitStream(msg, 1024)
+	bitstream := base.NewBitStream(msg, 1024)
 	bitstream.WriteString(funcName)
 	bitstream.WriteInt(len(params), 8)
 	for _, param := range params {
-		sType := GetTypeString(param)
+		sType := getTypeString(param)
 		switch sType {
 		case "bool":
-			bitstream.WriteInt(1, 8)
+			bitstream.WriteInt(RPC_BOOL, 8)
 			bitstream.WriteFlag(param.(bool))
 		case "float64":
-			bitstream.WriteInt(2, 8)
+			bitstream.WriteInt(RPC_FLOAT64, 8)
 			bitstream.WriteFloat64(param.(float64))
 		case "float32":
-			bitstream.WriteInt(3, 8)
+			bitstream.WriteInt(RPC_FLOAT32, 8)
 			bitstream.WriteFloat(param.(float32))
 		case "int8":
-			bitstream.WriteInt(4, 8)
+			bitstream.WriteInt(RPC_INT8, 8)
 			bitstream.WriteInt(int(param.(int8)), 8)
 		case "uint8":
-			bitstream.WriteInt(5, 8)
+			bitstream.WriteInt(RPC_UINT8, 8)
 			bitstream.WriteInt(int(param.(uint8)),8)
 		case "int16":
-			bitstream.WriteInt(6, 8)
+			bitstream.WriteInt(RPC_INT16, 8)
 			bitstream.WriteInt(int(param.(int16)),16)
 		case "uint16":
-			bitstream.WriteInt(7, 8)
+			bitstream.WriteInt(RPC_UINT16, 8)
 			bitstream.WriteInt(int(param.(uint16)),16)
 		case "int32":
-			bitstream.WriteInt(8, 8)
+			bitstream.WriteInt(RPC_INT32, 8)
 			bitstream.WriteInt(int(param.(int32)),32)
 		case "uint32":
-			bitstream.WriteInt(9, 8)
+			bitstream.WriteInt(RPC_UINT32, 8)
 			bitstream.WriteInt(int(param.(uint32)),32)
 		case "int64":
-			bitstream.WriteInt(10, 8)
+			bitstream.WriteInt(RPC_INT64, 8)
 			bitstream.WriteInt64(param.(int64), 64)
 		case "uint64":
-			bitstream.WriteInt(11, 8)
+			bitstream.WriteInt(RPC_UINT64, 8)
 			bitstream.WriteInt64(int64(param.(uint64)), 64)
 		case "string":
-			bitstream.WriteInt(12, 8)
+			bitstream.WriteInt(RPC_STRING, 8)
 			bitstream.WriteString(param.(string))
 		case "int":
-			bitstream.WriteInt(13, 8)
+			bitstream.WriteInt(RPC_INT, 8)
 			bitstream.WriteInt(param.(int), 32)
 		case "uint":
-			bitstream.WriteInt(14, 8)
+			bitstream.WriteInt(RPC_UINT, 8)
 			bitstream.WriteInt(int(param.(uint)), 32)
 
 		case "[]bool":
-			bitstream.WriteInt(21, 8)
+			bitstream.WriteInt(RPC_BOOL_SLICE, 8)
 			nLen := len(param.([]bool))
 			bitstream.WriteInt(nLen, 16)
 			for i := 0; i < nLen; i++ {
 				bitstream.WriteFlag(param.([]bool)[i])
 			}
 		case "[]float64":
-			bitstream.WriteInt(22, 8)
+			bitstream.WriteInt(RPC_FLOAT64_SLICE, 8)
 			nLen := len(param.([]float64))
 			bitstream.WriteInt(nLen, 16)
 			for i := 0; i < nLen; i++ {
 				bitstream.WriteFloat64(param.([]float64)[i])
 			}
 		case "[]float32":
-			bitstream.WriteInt(23, 8)
+			bitstream.WriteInt(RPC_FLOAT32_SLICE, 8)
 			nLen := len(param.([]float32))
 			bitstream.WriteInt(nLen, 16)
 			for i := 0; i < nLen; i++ {
 				bitstream.WriteFloat(param.([]float32)[i])
 			}
 		case "[]int8":
-			bitstream.WriteInt(24, 8)
+			bitstream.WriteInt(RPC_INT8_SLICE, 8)
 			nLen := len(param.([]int8))
 			bitstream.WriteInt(nLen, 16)
 			for i := 0; i < nLen; i++ {
 				bitstream.WriteInt(int(param.([]int8)[i]), 8)
 			}
 		case "[]uint8":
-			bitstream.WriteInt(25, 8)
+			bitstream.WriteInt(RPC_UINT8_SLICE, 8)
 			nLen := len(param.([]uint8))
 			bitstream.WriteInt(nLen, 16)
 			for i := 0; i < nLen; i++ {
 				bitstream.WriteInt(int(param.([]uint8)[i]), 8)
 			}
 		case "[]int16":
-			bitstream.WriteInt(26, 8)
+			bitstream.WriteInt(RPC_INT16_SLICE, 8)
 			nLen := len(param.([]int16))
 			bitstream.WriteInt(nLen, 16)
 			for i := 0; i < nLen; i++ {
 				bitstream.WriteInt(int(param.([]int16)[i]), 16)
 			}
 		case "[]uint16":
-			bitstream.WriteInt(27, 8)
+			bitstream.WriteInt(RPC_UINT16_SLICE, 8)
 			nLen := len(param.([]uint16))
 			bitstream.WriteInt(nLen, 16)
 			for i := 0; i < nLen; i++ {
 				bitstream.WriteInt(int(param.([]uint16)[i]), 16)
 			}
 		case "[]int32":
-			bitstream.WriteInt(28, 8)
+			bitstream.WriteInt(RPC_INT32_SLICE, 8)
 			nLen := len(param.([]int32))
 			bitstream.WriteInt(nLen, 16)
 			for i := 0; i < nLen; i++ {
 				bitstream.WriteInt(int(param.([]int32)[i]), 32)
 			}
 		case "[]uint32":
-			bitstream.WriteInt(29, 8)
+			bitstream.WriteInt(RPC_UINT32_SLICE, 8)
 			nLen := len(param.([]uint32))
 			bitstream.WriteInt(nLen, 16)
 			for i := 0; i < nLen; i++ {
 				bitstream.WriteInt(int(param.([]uint32)[i]), 32)
 			}
 		case "[]int64":
-			bitstream.WriteInt(30, 8)
+			bitstream.WriteInt(RPC_INT64_SLICE, 8)
 			nLen := len(param.([]int64))
 			bitstream.WriteInt(nLen, 16)
 			for i := 0; i < nLen; i++ {
 				bitstream.WriteInt64(param.([]int64)[i], 64)
 			}
 		case "[]uint64":
-			bitstream.WriteInt(31, 8)
+			bitstream.WriteInt(RPC_UINT64_SLICE, 8)
 			nLen := len(param.([]uint64))
 			bitstream.WriteInt(nLen, 16)
 			for i := 0; i < nLen; i++ {
 				bitstream.WriteInt64(int64(param.([]uint64)[i]), 64)
 			}
 		case "[]string":
-			bitstream.WriteInt(32, 8)
+			bitstream.WriteInt(RPC_STRING_SLICE, 8)
 			nLen := len(param.([]string))
 			bitstream.WriteInt(nLen, 16)
 			for i := 0; i < nLen; i++ {
 				bitstream.WriteString(param.([]string)[i])
 			}
 		case "[]int":
-			bitstream.WriteInt(33, 8)
+			bitstream.WriteInt(RPC_INT_SLICE, 8)
 			nLen := len(param.([]int))
 			bitstream.WriteInt(nLen, 16)
 			for i := 0; i < nLen; i++ {
 				bitstream.WriteInt(param.([]int)[i], 32)
 			}
 		case "[]uint":
-			bitstream.WriteInt(34, 8)
+			bitstream.WriteInt(RPC_UINT_SLICE, 8)
 			nLen := len(param.([]uint))
 			bitstream.WriteInt(nLen, 16)
 			for i := 0; i < nLen; i++ {
@@ -174,7 +171,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 
 
 		case "[*]bool":
-			bitstream.WriteInt(41, 8)
+			bitstream.WriteInt(RPC_BOOL_ARRAY, 8)
 			val := reflect.ValueOf(param)
 			nLen := val.Len()
 			bitstream.WriteInt(nLen, 16)
@@ -182,7 +179,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 				bitstream.WriteFlag(val.Index(i).Bool())
 			}
 		case "[*]float64":
-			bitstream.WriteInt(42, 8)
+			bitstream.WriteInt(RPC_FLOAT64_ARRAY, 8)
 			val := reflect.ValueOf(param)
 			nLen := val.Len()
 			bitstream.WriteInt(nLen, 16)
@@ -190,7 +187,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 				bitstream.WriteFloat64(val.Index(i).Float())
 			}
 		case "[*]float32":
-			bitstream.WriteInt(43, 8)
+			bitstream.WriteInt(RPC_FLOAT32_ARRAY, 8)
 			val := reflect.ValueOf(param)
 			nLen := val.Len()
 			bitstream.WriteInt(nLen, 16)
@@ -198,7 +195,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 				bitstream.WriteFloat(float32(val.Index(i).Float()))
 			}
 		case "[*]int8":
-			bitstream.WriteInt(44, 8)
+			bitstream.WriteInt(RPC_INT8_ARRAY, 8)
 			val := reflect.ValueOf(param)
 			nLen := val.Len()
 			bitstream.WriteInt(nLen, 16)
@@ -206,7 +203,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 				bitstream.WriteInt(int(val.Index(i).Int()), 8)
 			}
 		case "[*]uint8":
-			bitstream.WriteInt(45, 8)
+			bitstream.WriteInt(RPC_UINT8_ARRAY, 8)
 			val := reflect.ValueOf(param)
 			nLen := val.Len()
 			bitstream.WriteInt(nLen, 16)
@@ -214,7 +211,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 				bitstream.WriteInt(int(val.Index(i).Uint()), 8)
 			}
 		case "[*]int16":
-			bitstream.WriteInt(46, 8)
+			bitstream.WriteInt(RPC_INT16_ARRAY, 8)
 			val := reflect.ValueOf(param)
 			nLen := val.Len()
 			bitstream.WriteInt(nLen, 16)
@@ -222,7 +219,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 				bitstream.WriteInt(int(val.Index(i).Int()), 16)
 			}
 		case "[*]uint16":
-			bitstream.WriteInt(47, 8)
+			bitstream.WriteInt(RPC_UINT16_ARRAY, 8)
 			val := reflect.ValueOf(param)
 			nLen := val.Len()
 			bitstream.WriteInt(nLen, 16)
@@ -230,7 +227,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 				bitstream.WriteInt(int(val.Index(i).Uint()), 16)
 			}
 		case "[*]int32":
-			bitstream.WriteInt(48, 8)
+			bitstream.WriteInt(RPC_INT32_ARRAY, 8)
 			val := reflect.ValueOf(param)
 			nLen := val.Len()
 			bitstream.WriteInt(nLen, 16)
@@ -238,7 +235,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 				bitstream.WriteInt(int(val.Index(i).Int()), 32)
 			}
 		case "[*]uint32":
-			bitstream.WriteInt(49, 8)
+			bitstream.WriteInt(RPC_UINT32_ARRAY, 8)
 			val := reflect.ValueOf(param)
 			nLen := val.Len()
 			bitstream.WriteInt(nLen, 16)
@@ -246,7 +243,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 				bitstream.WriteInt(int(val.Index(i).Uint()), 32)
 			}
 		case "[*]int64":
-			bitstream.WriteInt(50, 8)
+			bitstream.WriteInt(RPC_INT64_ARRAY, 8)
 			val := reflect.ValueOf(param)
 			nLen := val.Len()
 			bitstream.WriteInt(nLen, 16)
@@ -254,7 +251,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 				bitstream.WriteInt64(val.Index(i).Int(), 64)
 			}
 		case "[*]uint64":
-			bitstream.WriteInt(51, 8)
+			bitstream.WriteInt(RPC_UINT64_ARRAY, 8)
 			val := reflect.ValueOf(param)
 			nLen := val.Len()
 			bitstream.WriteInt(nLen, 16)
@@ -262,7 +259,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 				bitstream.WriteInt64(int64(val.Index(i).Uint()), 64)
 			}
 		case "[*]string":
-			bitstream.WriteInt(52, 8)
+			bitstream.WriteInt(RPC_STRING_ARRAY, 8)
 			val := reflect.ValueOf(param)
 			nLen := val.Len()
 			bitstream.WriteInt(nLen, 16)
@@ -270,7 +267,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 				bitstream.WriteString(val.Index(i).String())
 			}
 		case "[*]int":
-			bitstream.WriteInt(53, 8)
+			bitstream.WriteInt(RPC_INT_ARRAY, 8)
 			val := reflect.ValueOf(param)
 			nLen := val.Len()
 			bitstream.WriteInt(nLen, 16)
@@ -278,7 +275,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 				bitstream.WriteInt(int(val.Index(i).Int()), 32)
 			}
 		case "[*]uint":
-			bitstream.WriteInt(54, 8)
+			bitstream.WriteInt(RPC_UINT_ARRAY, 8)
 			val := reflect.ValueOf(param)
 			nLen := val.Len()
 			bitstream.WriteInt(nLen, 16)
@@ -289,122 +286,108 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 
 
 		case "*bool":
+			bitstream.WriteInt(RPC_BOOL_PTR, 8)
 			if param.(*bool) != nil{
-				bitstream.WriteInt(61, 8)
 				bitstream.WriteFlag(*param.(*bool))
 			}else{
-				bitstream.WriteInt(61, 8)
 				bitstream.WriteFlag(false)
 			}
 		case "*float64":
+			bitstream.WriteInt(RPC_FLOAT64_PTR, 8)
 			if param.(*float64) != nil {
-				bitstream.WriteInt(62, 8)
 				bitstream.WriteFloat64(*param.(*float64))
 			}else{
-				bitstream.WriteInt(62, 8)
 				bitstream.WriteFloat64(0)
 			}
 		case "*float32":
+			bitstream.WriteInt(RPC_FLOAT32_PTR, 8)
 			if param.(*float32) != nil {
-				bitstream.WriteInt(63, 8)
 				bitstream.WriteFloat(*param.(*float32))
 			}else{
-				bitstream.WriteInt(63, 8)
 				bitstream.WriteFloat(0)
 			}
 		case "*int8":
+			bitstream.WriteInt(RPC_INT8_PTR, 8)
 			if param.(*int8) != nil {
-				bitstream.WriteInt(64, 8)
 				bitstream.WriteInt(int(*param.(*int8)), 8)
 			}else{
-				bitstream.WriteInt(64, 8)
 				bitstream.WriteInt(0, 8)
 			}
 		case "*uint8":
+			bitstream.WriteInt(RPC_UINT8_PTR, 8)
 			if param.(*uint8) != nil {
-				bitstream.WriteInt(65, 8)
 				bitstream.WriteInt(int(*param.(*uint8)), 8)
 			}else{
-				bitstream.WriteInt(65, 8)
 				bitstream.WriteInt(0, 8)
 			}
 		case "*int16":
+			bitstream.WriteInt(RPC_INT16_PTR, 8)
 			if param.(*int16) != nil {
-				bitstream.WriteInt(66, 8)
 				bitstream.WriteInt(int(*param.(*int16)), 16)
 			}else{
-				bitstream.WriteInt(66, 8)
 				bitstream.WriteInt(0, 16)
 			}
 		case "*uint16":
+			bitstream.WriteInt(RPC_UINT16_PTR, 8)
 			if param.(*uint16) != nil {
-				bitstream.WriteInt(67, 8)
 				bitstream.WriteInt(int(*param.(*uint16)), 16)
 			}else{
-				bitstream.WriteInt(67, 8)
 				bitstream.WriteInt(0, 16)
 			}
 		case "*int32":
+			bitstream.WriteInt(RPC_INT32_PTR, 8)
 			if param.(*int32) != nil {
-				bitstream.WriteInt(68, 8)
 				bitstream.WriteInt(int(*param.(*int32)), 32)
 			}else{
-				bitstream.WriteInt(68, 8)
 				bitstream.WriteInt(0, 32)
 			}
 		case "*uint32":
+			bitstream.WriteInt(RPC_UINT32_PTR, 8)
 			if param.(*uint32) != nil {
-				bitstream.WriteInt(69, 8)
 				bitstream.WriteInt(int(*param.(*uint32)), 32)
 			}else{
-				bitstream.WriteInt(69, 8)
 				bitstream.WriteInt(0, 32)
 			}
 		case "*int64":
+			bitstream.WriteInt(RPC_INT64_PTR, 8)
 			if param.(*int64) != nil {
-				bitstream.WriteInt(70, 8)
 				bitstream.WriteInt64(*param.(*int64), 64)
 			}else{
-				bitstream.WriteInt(70, 8)
 				bitstream.WriteInt64(0, 64)
 			}
 		case "*uint64":
+			bitstream.WriteInt(RPC_UINT64_PTR, 8)
 			if param.(*uint64) != nil {
-				bitstream.WriteInt(71, 8)
 				bitstream.WriteInt64(int64(*param.(*uint64)), 64)
 			}else{
-				bitstream.WriteInt(71, 8)
 				bitstream.WriteInt64(0, 64)
 			}
 		case "*string":
+			bitstream.WriteInt(RPC_STRING_PTR, 8)
 			if param.(*string) != nil {
-				bitstream.WriteInt(72, 8)
 				bitstream.WriteString(*param.(*string))
 			}else{
-				bitstream.WriteInt(72, 8)
 				bitstream.WriteString("")
 			}
 		case "*int":
+			bitstream.WriteInt(RPC_INT_PTR, 8)
 			if param.(*int) != nil {
-				bitstream.WriteInt(73, 8)
 				bitstream.WriteInt(*param.(*int), 32)
 			}else{
-				bitstream.WriteInt(73, 8)
 				bitstream.WriteInt(0, 32)
 			}
 		case "*uint":
+			bitstream.WriteInt(RPC_UINT_PTR, 8)
 			if param.(*uint) != nil {
-				bitstream.WriteInt(74, 8)
 				bitstream.WriteInt(int(*param.(*uint)), 32)
 			}else{
-				bitstream.WriteInt(74, 8)
 				bitstream.WriteInt(0, 32)
 			}
 
 
 
 		case "[]*bool":
-			bitstream.WriteInt(81, 8)
+			bitstream.WriteInt(RPC_BOOL_PTR_SLICE, 8)
 			nLen := len(param.([]*bool))
 			bitstream.WriteInt(nLen, 16)
 			for _, v := range param.([]*bool){
@@ -415,7 +398,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 				}
 			}
 		case "[]*float64":
-			bitstream.WriteInt(82, 8)
+			bitstream.WriteInt(RPC_FLOAT64_PTR_SLICE, 8)
 			nLen := len(param.([]float64))
 			bitstream.WriteInt(nLen, 16)
 			for _, v := range param.([]*float64){
@@ -426,7 +409,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 				}
 			}
 		case "[]*float32":
-			bitstream.WriteInt(83, 8)
+			bitstream.WriteInt(RPC_FLOAT32_PTR_SLICE, 8)
 			nLen := len(param.([]float32))
 			bitstream.WriteInt(nLen, 16)
 			for _, v := range param.([]*float32){
@@ -437,7 +420,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 				}
 			}
 		case "[]*int8":
-			bitstream.WriteInt(84, 8)
+			bitstream.WriteInt(RPC_INT8_PTR_SLICE, 8)
 			nLen := len(param.([]int8))
 			bitstream.WriteInt(nLen, 16)
 			for _, v := range param.([]*int8){
@@ -448,7 +431,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 				}
 			}
 		case "[]*uint8":
-			bitstream.WriteInt(85, 8)
+			bitstream.WriteInt(RPC_UINT8_PTR_SLICE, 8)
 			nLen := len(param.([]uint8))
 			bitstream.WriteInt(nLen, 16)
 			for _, v := range param.([]*uint8){
@@ -459,7 +442,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 				}
 			}
 		case "[]*int16":
-			bitstream.WriteInt(86, 8)
+			bitstream.WriteInt(RPC_INT16_PTR_SLICE, 8)
 			nLen := len(param.([]int16))
 			bitstream.WriteInt(nLen, 16)
 			for _, v := range param.([]*int16){
@@ -470,7 +453,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 				}
 			}
 		case "[]*uint16":
-			bitstream.WriteInt(87, 8)
+			bitstream.WriteInt(RPC_UINT16_PTR_SLICE, 8)
 			nLen := len(param.([]uint16))
 			bitstream.WriteInt(nLen, 16)
 			for _, v := range param.([]*uint16){
@@ -481,7 +464,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 				}
 			}
 		case "[]*int32":
-			bitstream.WriteInt(88, 8)
+			bitstream.WriteInt(RPC_INT32_PTR_SLICE, 8)
 			nLen := len(param.([]int32))
 			bitstream.WriteInt(nLen, 16)
 			for _, v := range param.([]*int32){
@@ -492,7 +475,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 				}
 			}
 		case "[]*uint32":
-			bitstream.WriteInt(89, 8)
+			bitstream.WriteInt(RPC_UINT32_PTR_SLICE, 8)
 			nLen := len(param.([]uint32))
 			bitstream.WriteInt(nLen, 16)
 			for _, v := range param.([]*uint32){
@@ -504,7 +487,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 
 			}
 		case "[]*int64":
-			bitstream.WriteInt(90, 8)
+			bitstream.WriteInt(RPC_INT64_PTR_SLICE, 8)
 			nLen := len(param.([]int64))
 			bitstream.WriteInt(nLen, 16)
 			for _, v := range param.([]*int64){
@@ -515,7 +498,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 				}
 			}
 		case "[]*uint64":
-			bitstream.WriteInt(91, 8)
+			bitstream.WriteInt(RPC_UINT64_PTR_SLICE, 8)
 			nLen := len(param.([]uint64))
 			bitstream.WriteInt(nLen, 16)
 			for _, v := range param.([]*uint64){
@@ -526,7 +509,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 				}
 			}
 		case "[]*string":
-			bitstream.WriteInt(92, 8)
+			bitstream.WriteInt(RPC_STRING_PTR_SLICE, 8)
 			nLen := len(param.([]string))
 			bitstream.WriteInt(nLen, 16)
 			for _, v := range param.([]*string){
@@ -537,7 +520,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 				}
 			}
 		case "[]*int":
-			bitstream.WriteInt(93, 8)
+			bitstream.WriteInt(RPC_INT_PTR_SLICE, 8)
 			nLen := len(param.([]*int))
 			bitstream.WriteInt(nLen, 16)
 			for _, v := range param.([]*int){
@@ -548,7 +531,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 				}
 			}
 		case "[]*uint":
-			bitstream.WriteInt(94, 8)
+			bitstream.WriteInt(RPC_UINT_PTR_SLICE, 8)
 			nLen := len(param.([]uint))
 			bitstream.WriteInt(nLen, 16)
 			for _, v := range param.([]*int){
@@ -562,7 +545,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 
 
 		case "[*]*bool":
-			bitstream.WriteInt(101, 8)
+			bitstream.WriteInt(RPC_BOOL_PTR_ARRAY, 8)
 			val := reflect.ValueOf(param)
 			nLen := val.Len()
 			bitstream.WriteInt(nLen, 16)
@@ -574,7 +557,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 				}
 			}
 		case "[*]*float64":
-			bitstream.WriteInt(102, 8)
+			bitstream.WriteInt(RPC_FLOAT64_PTR_ARRAY, 8)
 			val := reflect.ValueOf(param)
 			nLen := val.Len()
 			bitstream.WriteInt(nLen, 16)
@@ -586,7 +569,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 				}
 			}
 		case "[*]*float32":
-			bitstream.WriteInt(103, 8)
+			bitstream.WriteInt(RPC_FLOAT32_PTR_ARRAY, 8)
 			val := reflect.ValueOf(param)
 			nLen := val.Len()
 			bitstream.WriteInt(nLen, 16)
@@ -598,7 +581,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 				}
 			}
 		case "[*]*int8":
-			bitstream.WriteInt(104, 8)
+			bitstream.WriteInt(RPC_INT8_PTR_ARRAY, 8)
 			val := reflect.ValueOf(param)
 			nLen := val.Len()
 			bitstream.WriteInt(nLen, 16)
@@ -610,7 +593,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 				}
 			}
 		case "[*]*uint8":
-			bitstream.WriteInt(105, 8)
+			bitstream.WriteInt(RPC_UINT8_PTR_ARRAY, 8)
 			val := reflect.ValueOf(param)
 			nLen := val.Len()
 			bitstream.WriteInt(nLen, 16)
@@ -622,7 +605,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 				}
 			}
 		case "[*]*int16":
-			bitstream.WriteInt(106, 8)
+			bitstream.WriteInt(RPC_INT16_PTR_ARRAY, 8)
 			val := reflect.ValueOf(param)
 			nLen := val.Len()
 			bitstream.WriteInt(nLen, 16)
@@ -634,7 +617,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 				}
 			}
 		case "[*]*uint16":
-			bitstream.WriteInt(107, 8)
+			bitstream.WriteInt(RPC_UINT16_PTR_ARRAY, 8)
 			val := reflect.ValueOf(param)
 			nLen := val.Len()
 			bitstream.WriteInt(nLen, 16)
@@ -646,7 +629,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 				}
 			}
 		case "[*]*int32":
-			bitstream.WriteInt(108, 8)
+			bitstream.WriteInt(RPC_INT32_PTR_ARRAY, 8)
 			val := reflect.ValueOf(param)
 			nLen := val.Len()
 			bitstream.WriteInt(nLen, 16)
@@ -658,7 +641,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 				}
 			}
 		case "[*]*uint32":
-			bitstream.WriteInt(109, 8)
+			bitstream.WriteInt(RPC_UINT32_PTR_ARRAY, 8)
 			val := reflect.ValueOf(param)
 			nLen := val.Len()
 			bitstream.WriteInt(nLen, 16)
@@ -670,7 +653,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 				}
 			}
 		case "[*]*int64":
-			bitstream.WriteInt(110, 8)
+			bitstream.WriteInt(RPC_INT64_PTR_ARRAY, 8)
 			val := reflect.ValueOf(param)
 			nLen := val.Len()
 			bitstream.WriteInt(nLen, 16)
@@ -682,7 +665,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 				}
 			}
 		case "[*]*uint64":
-			bitstream.WriteInt(111, 8)
+			bitstream.WriteInt(RPC_UINT64_PTR_ARRAY, 8)
 			val := reflect.ValueOf(param)
 			nLen := val.Len()
 			bitstream.WriteInt(nLen, 16)
@@ -694,7 +677,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 				}
 			}
 		case "[*]*string":
-			bitstream.WriteInt(112, 8)
+			bitstream.WriteInt(RPC_STRING_PTR_ARRAY, 8)
 			val := reflect.ValueOf(param)
 			nLen := val.Len()
 			bitstream.WriteInt(nLen, 16)
@@ -706,7 +689,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 				}
 			}
 		case "[*]*int":
-			bitstream.WriteInt(113, 8)
+			bitstream.WriteInt(RPC_INT_PTR_ARRAY, 8)
 			val := reflect.ValueOf(param)
 			nLen := val.Len()
 			bitstream.WriteInt(nLen, 16)
@@ -718,7 +701,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 				}
 			}
 		case "[*]*uint":
-			bitstream.WriteInt(114, 8)
+			bitstream.WriteInt(RPC_UINT_PTR_ARRAY, 8)
 			val := reflect.ValueOf(param)
 			nLen := val.Len()
 			bitstream.WriteInt(nLen, 16)
@@ -737,7 +720,7 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 			json := jsoniter.ConfigCompatibleWithStandardLibrary
 			buf, _ := json.Marshal(param)
 			nLen := len(buf)
-			bitstream.WriteInt(nLen, Bit32)
+			bitstream.WriteInt(nLen, 32)
 			bitstream.WriteBits(nLen << 3, buf)
 			/*buf := &bytes.Buffer{}
 			enc := gob.NewEncoder(buf)
@@ -753,4 +736,29 @@ func GetPacket(funcName string, params ...interface{})[]byte {
 	}
 
 	return bitstream.GetBuffer()
+}
+
+//rpc  MarshalPB
+func MarshalPB(packet proto.Message, bitstream *base.BitStream) bool {
+	bitstream.WriteString(message.GetMessageName(packet))
+	bitstream.WriteInt(1, 8)
+	{
+		sType := strings.ToLower(reflect.ValueOf(packet).Type().String())
+		index := strings.Index(sType, ".")
+		if index!= -1{
+			sType = sType[:index]
+		}
+		switch sType {
+		case "*message":
+			bitstream.WriteInt(RPC_MESSAGE, 8)
+			buf, _ :=proto.Marshal(packet)
+			nLen := len(buf)
+			bitstream.WriteInt(nLen, 32)
+			bitstream.WriteBits(nLen << 3, buf)
+		default:
+			log.Panicln("packet params type not supported", packet, sType)
+			return false
+		}
+	}
+	return true
 }

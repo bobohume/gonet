@@ -10,7 +10,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"unsafe"
 )
 
 const (
@@ -18,24 +17,6 @@ const (
 	TCP_END = "💞♡"						//解决tpc粘包半包,结束标志
 	//TCP_END = "💞💞💞"				//解决tpc粘包半包,结束标志,-1
 )
-
-const(
-	SIZE_BOOL = unsafe.Sizeof(bool(false))
-	SIZE_INT = unsafe.Sizeof(int(0))
-	SIZE_INT8 = unsafe.Sizeof(int8(0))
-	SIZE_INT16 = unsafe.Sizeof(int16(0))
-	SIZE_INT32 = unsafe.Sizeof(int32(0))
-	SIZE_INT64 = unsafe.Sizeof(int64(0))
-	SIZE_UINT = unsafe.Sizeof(uint(0))
-	SIZE_UINT8 = unsafe.Sizeof(uint8(0))
-	SIZE_UINT16 = unsafe.Sizeof(uint16(0))
-	SIZE_UINT32 = unsafe.Sizeof(uint32(0))
-	SIZE_UINT64 = unsafe.Sizeof(uint64(0))
-	SIZE_FLOAT32 = unsafe.Sizeof(float32(0))
-	SIZE_FLOAT64 = unsafe.Sizeof(float64(0))
-	SIZE_STRING = unsafe.Sizeof(string(0))
-	SIZE_PTR 	= unsafe.Sizeof(uintptr(0))
-)//packet size
 
 var(
 	SEVERNAME string
@@ -198,92 +179,6 @@ func PathExists(path string) (bool) {
 	return false
 }
 
-func GetSliceTypeString(sTypeName string) string{
-	index := strings.Index(sTypeName, "]")
-	if index != -1{
-		sTypeName = sTypeName[index+1:]
-	}
-
-	if sTypeName == "bool" || sTypeName == "float64" || sTypeName == "float32" || sTypeName == "int8" ||
-		sTypeName == "uint8" || sTypeName == "int16" || sTypeName == "uint16" || sTypeName == "int32" ||
-		sTypeName == "uint32" || sTypeName == "int64" || sTypeName == "uint64" ||  sTypeName == "string"||
-		sTypeName == "int" || sTypeName == "uint" ||
-		sTypeName == "*bool" || sTypeName == "*float64" || sTypeName == "*float32" || sTypeName == "*int8" ||
-		sTypeName == "*uint8" || sTypeName == "*int16" || sTypeName == "*uint16" || sTypeName == "*int32" ||
-		sTypeName == "*uint32" || sTypeName == "*int64" || sTypeName == "*uint64" ||  sTypeName == "*string"||
-		sTypeName == "*int" || sTypeName == "*uint"{
-		return "[]" + sTypeName
-	}else{
-		if strings.Index(sTypeName, "*") != -1{
-			return "[]*struct"
-		}
-		return "[]struct"
-	}
-
-	return sTypeName
-}
-
-func GetArrayTypeString(sTypeName string) string{
-	index := strings.Index(sTypeName, "]")
-	if index != -1{
-		sTypeName = sTypeName[index+1:]
-	}
-
-	if sTypeName == "bool" || sTypeName == "float64" || sTypeName == "float32" || sTypeName == "int8" ||
-		sTypeName == "uint8" || sTypeName == "int16" || sTypeName == "uint16" || sTypeName == "int32" ||
-		sTypeName == "uint32" || sTypeName == "int64" || sTypeName == "uint64" ||  sTypeName == "string"||
-		sTypeName == "int"  || sTypeName == "uint" ||
-		sTypeName == "*bool" || sTypeName == "*float64" || sTypeName == "*float32" || sTypeName == "*int8" ||
-		sTypeName == "*uint8" || sTypeName == "*int16" || sTypeName == "*uint16" || sTypeName == "*int32" ||
-		sTypeName == "*uint32" || sTypeName == "*int64" || sTypeName == "*uint64" ||  sTypeName == "*string"||
-		sTypeName == "*int" || sTypeName == "*uint"{
-		return "[*]" + sTypeName
-	}else{
-		if strings.Index(sTypeName, "*") != -1{
-			return "[*]*struct"
-		}
-		return "[*]struct"
-	}
-
-	return sTypeName
-}
-
-func GetSliceTypeStringEx(sTypeName string) string{
-	index := strings.Index(sTypeName, "]")
-	if index != -1{
-		sTypeName = sTypeName[index+1:]
-	}
-
-	if sTypeName == "bool" || sTypeName == "float64" || sTypeName == "float32" || sTypeName == "int8" ||
-		sTypeName == "uint8" || sTypeName == "int16" || sTypeName == "uint16" || sTypeName == "int32" ||
-		sTypeName == "uint32" || sTypeName == "int64" || sTypeName == "uint64" ||  sTypeName == "string"||
-		sTypeName == "int" || sTypeName == "uint"{
-		return "[]" + sTypeName
-	}else{
-		return "[]struct"
-	}
-
-	return sTypeName
-}
-
-func GetArrayTypeStringEx(sTypeName string) string{
-	index := strings.Index(sTypeName, "]")
-	if index != -1{
-		sTypeName = sTypeName[index+1:]
-	}
-
-	if sTypeName == "bool" || sTypeName == "float64" || sTypeName == "float32" || sTypeName == "int8" ||
-		sTypeName == "uint8" || sTypeName == "int16" || sTypeName == "uint16" || sTypeName == "int32" ||
-		sTypeName == "uint32" || sTypeName == "int64" || sTypeName == "uint64" ||  sTypeName == "string"||
-		sTypeName == "int"  || sTypeName == "uint"{
-		return "[*]" + sTypeName
-	}else{
-		return "[*]struct"
-	}
-
-	return sTypeName
-}
-
 func ParseTag(sf reflect.StructField, tag string) map[string]string {
 	setting := map[string]string{}
 	tags := strings.Split(sf.Tag.Get(tag), ";")
@@ -304,51 +199,6 @@ func GetClassName(param interface{}) string{
 	index := strings.Index(sType, ".")
 	if index!= -1{
 		sType = sType[index+1:]
-	}
-	return sType
-}
-
-func GetPacketType(param interface{})string{
-	sType := strings.ToLower(reflect.ValueOf(param).Type().String())
-	index := strings.Index(sType, ".")
-	if index!= -1{
-		sType = sType[:index]
-	}
-	return sType
-}
-
-func GetTypeString(param interface{}) string{
-	paramType := reflect.TypeOf(param)
-	sType := ""
-	if paramType.Kind() == reflect.Ptr{
-		sType = "*" + paramType.Elem().Kind().String()
-		paramType = paramType.Elem()
-	}else if paramType.Kind() == reflect.Slice{
-		sType = GetSliceTypeString(paramType.String())
-	}else if paramType.Kind() == reflect.Array{
-		sType = GetArrayTypeString(paramType.String())
-	}else{
-		sType = paramType.Kind().String()
-	}
-
-	if paramType.Kind() == reflect.Struct || paramType.Kind() == reflect.Map || sType == "[]*struct" ||
-		sType == "[]struct" || sType == "[*]*struct" || sType == "[*]struct"{
-		sType = "*gob"
-	}
-	return sType
-}
-
-func GetTypeStringEx(classField reflect.StructField, classVal reflect.Value) string{
-	paramType := classField.Type
-	sType := ""
-	if paramType.Kind() == reflect.Ptr{
-		sType = "*" + paramType.Elem().Kind().String()
-	}else if paramType.Kind() == reflect.Slice{
-		sType = GetSliceTypeStringEx(paramType.String())
-	}else if paramType.Kind() == reflect.Array{
-		sType = GetArrayTypeStringEx(paramType.String())
-	} else{
-		sType = classField.Type.Kind().String()
 	}
 	return sType
 }

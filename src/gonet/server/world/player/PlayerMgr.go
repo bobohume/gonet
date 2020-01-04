@@ -7,6 +7,7 @@ import (
 	"gonet/base"
 	"gonet/db"
 	"gonet/message"
+	"gonet/rpc"
 	"gonet/server/common"
 	"gonet/server/world"
 	"strings"
@@ -166,17 +167,16 @@ func (this *PlayerMgr) PacketFunc(id int, buff []byte) bool{
 	bitstream := base.NewBitStream(io.Buff, len(io.Buff))
 	funcName := bitstream.ReadString()
 	funcName = strings.ToLower(funcName)
-	pFunc := this.FindCall(funcName)
-	if pFunc != nil{
+	if this.FindCall(funcName) != nil{
 		this.Send(io)
 		return true
 	}else{
 		bitstream.ReadInt(base.Bit8)
 		nType := bitstream.ReadInt(base.Bit8)
-		if (nType == base.RPC_Int64 || nType == base.RPC_UInt64 || nType == base.RPC_PInt64 || nType == base.RPC_PUInt64){
+		if (nType == rpc.RPC_INT64 || nType == rpc.RPC_UINT64 || nType == rpc.RPC_INT64_PTR || nType == rpc.RPC_UINT64_PTR){
 			nId := bitstream.ReadInt64(base.Bit64)
 			return this.m_PlayerPool.Send(nId, funcName, io)
-		}else if (nType == base.RPC_MESSAGE){
+		}else if (nType == rpc.RPC_MESSAGE){
 			packet := message.GetPakcetByName(funcName)
 			nLen := bitstream.ReadInt(base.Bit32)
 			packetBuf := bitstream.ReadBits(nLen << 3)

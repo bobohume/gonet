@@ -4,6 +4,7 @@ import (
 	"gonet/base"
 	"bytes"
 	"fmt"
+	"gonet/rpc"
 	"net"
 )
 
@@ -182,7 +183,7 @@ func (this *Socket) BindPacketFunc(callfunc HandleFunc){
 }
 
 func (this *Socket) CallMsg(funcName string, params ...interface{}){
-	buff := base.GetPacket(funcName, params...)
+	buff := rpc.Marshal(funcName, params...)
 	this.HandlePacket(this.m_ClientId, buff)
 }
 

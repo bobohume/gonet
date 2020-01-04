@@ -20,6 +20,7 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
+//登录
 type C_A_LoginRequest struct {
 	PacketHead           *Ipacket `protobuf:"bytes,1,opt,name=PacketHead,proto3" json:"PacketHead,omitempty"`
 	AccountName          string   `protobuf:"bytes,2,opt,name=AccountName,proto3" json:"AccountName,omitempty"`
@@ -83,45 +84,71 @@ func (m *C_A_LoginRequest) GetSocketId() int32 {
 	return 0
 }
 
-type C_A_LoginRequest1 struct {
-	Login                *C_A_LoginRequest `protobuf:"bytes,1,opt,name=Login,proto3" json:"Login,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
-	XXX_unrecognized     []byte            `json:"-"`
-	XXX_sizecache        int32             `json:"-"`
+//登录反馈
+type A_C_LoginResponse struct {
+	PacketHead           *Ipacket `protobuf:"bytes,1,opt,name=PacketHead,proto3" json:"PacketHead,omitempty"`
+	Error                int32    `protobuf:"varint,2,opt,name=Error,proto3" json:"Error,omitempty"`
+	SocketId             int32    `protobuf:"varint,3,opt,name=SocketId,proto3" json:"SocketId,omitempty"`
+	AccountName          string   `protobuf:"bytes,4,opt,name=AccountName,proto3" json:"AccountName,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *C_A_LoginRequest1) Reset()         { *m = C_A_LoginRequest1{} }
-func (m *C_A_LoginRequest1) String() string { return proto.CompactTextString(m) }
-func (*C_A_LoginRequest1) ProtoMessage()    {}
-func (*C_A_LoginRequest1) Descriptor() ([]byte, []int) {
+func (m *A_C_LoginResponse) Reset()         { *m = A_C_LoginResponse{} }
+func (m *A_C_LoginResponse) String() string { return proto.CompactTextString(m) }
+func (*A_C_LoginResponse) ProtoMessage()    {}
+func (*A_C_LoginResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_014de31d7ac8c57c, []int{1}
 }
 
-func (m *C_A_LoginRequest1) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_C_A_LoginRequest1.Unmarshal(m, b)
+func (m *A_C_LoginResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_A_C_LoginResponse.Unmarshal(m, b)
 }
-func (m *C_A_LoginRequest1) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_C_A_LoginRequest1.Marshal(b, m, deterministic)
+func (m *A_C_LoginResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_A_C_LoginResponse.Marshal(b, m, deterministic)
 }
-func (m *C_A_LoginRequest1) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_C_A_LoginRequest1.Merge(m, src)
+func (m *A_C_LoginResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_A_C_LoginResponse.Merge(m, src)
 }
-func (m *C_A_LoginRequest1) XXX_Size() int {
-	return xxx_messageInfo_C_A_LoginRequest1.Size(m)
+func (m *A_C_LoginResponse) XXX_Size() int {
+	return xxx_messageInfo_A_C_LoginResponse.Size(m)
 }
-func (m *C_A_LoginRequest1) XXX_DiscardUnknown() {
-	xxx_messageInfo_C_A_LoginRequest1.DiscardUnknown(m)
+func (m *A_C_LoginResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_A_C_LoginResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_C_A_LoginRequest1 proto.InternalMessageInfo
+var xxx_messageInfo_A_C_LoginResponse proto.InternalMessageInfo
 
-func (m *C_A_LoginRequest1) GetLogin() *C_A_LoginRequest {
+func (m *A_C_LoginResponse) GetPacketHead() *Ipacket {
 	if m != nil {
-		return m.Login
+		return m.PacketHead
 	}
 	return nil
 }
 
+func (m *A_C_LoginResponse) GetError() int32 {
+	if m != nil {
+		return m.Error
+	}
+	return 0
+}
+
+func (m *A_C_LoginResponse) GetSocketId() int32 {
+	if m != nil {
+		return m.SocketId
+	}
+	return 0
+}
+
+func (m *A_C_LoginResponse) GetAccountName() string {
+	if m != nil {
+		return m.AccountName
+	}
+	return ""
+}
+
+//注册
 type C_A_RegisterRequest struct {
 	PacketHead           *Ipacket `protobuf:"bytes,1,opt,name=PacketHead,proto3" json:"PacketHead,omitempty"`
 	AccountName          string   `protobuf:"bytes,2,opt,name=AccountName,proto3" json:"AccountName,omitempty"`
@@ -177,6 +204,63 @@ func (m *C_A_RegisterRequest) GetSocketId() int32 {
 	return 0
 }
 
+//注册反馈
+type A_C_RegisterResponse struct {
+	PacketHead           *Ipacket `protobuf:"bytes,1,opt,name=PacketHead,proto3" json:"PacketHead,omitempty"`
+	Error                int32    `protobuf:"varint,2,opt,name=Error,proto3" json:"Error,omitempty"`
+	SocketId             int32    `protobuf:"varint,3,opt,name=SocketId,proto3" json:"SocketId,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *A_C_RegisterResponse) Reset()         { *m = A_C_RegisterResponse{} }
+func (m *A_C_RegisterResponse) String() string { return proto.CompactTextString(m) }
+func (*A_C_RegisterResponse) ProtoMessage()    {}
+func (*A_C_RegisterResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_014de31d7ac8c57c, []int{3}
+}
+
+func (m *A_C_RegisterResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_A_C_RegisterResponse.Unmarshal(m, b)
+}
+func (m *A_C_RegisterResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_A_C_RegisterResponse.Marshal(b, m, deterministic)
+}
+func (m *A_C_RegisterResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_A_C_RegisterResponse.Merge(m, src)
+}
+func (m *A_C_RegisterResponse) XXX_Size() int {
+	return xxx_messageInfo_A_C_RegisterResponse.Size(m)
+}
+func (m *A_C_RegisterResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_A_C_RegisterResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_A_C_RegisterResponse proto.InternalMessageInfo
+
+func (m *A_C_RegisterResponse) GetPacketHead() *Ipacket {
+	if m != nil {
+		return m.PacketHead
+	}
+	return nil
+}
+
+func (m *A_C_RegisterResponse) GetError() int32 {
+	if m != nil {
+		return m.Error
+	}
+	return 0
+}
+
+func (m *A_C_RegisterResponse) GetSocketId() int32 {
+	if m != nil {
+		return m.SocketId
+	}
+	return 0
+}
+
+//创角
 type C_W_CreatePlayerRequest struct {
 	PacketHead           *Ipacket `protobuf:"bytes,1,opt,name=PacketHead,proto3" json:"PacketHead,omitempty"`
 	PlayerName           string   `protobuf:"bytes,2,opt,name=PlayerName,proto3" json:"PlayerName,omitempty"`
@@ -190,7 +274,7 @@ func (m *C_W_CreatePlayerRequest) Reset()         { *m = C_W_CreatePlayerRequest
 func (m *C_W_CreatePlayerRequest) String() string { return proto.CompactTextString(m) }
 func (*C_W_CreatePlayerRequest) ProtoMessage()    {}
 func (*C_W_CreatePlayerRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_014de31d7ac8c57c, []int{3}
+	return fileDescriptor_014de31d7ac8c57c, []int{4}
 }
 
 func (m *C_W_CreatePlayerRequest) XXX_Unmarshal(b []byte) error {
@@ -232,6 +316,63 @@ func (m *C_W_CreatePlayerRequest) GetSex() int32 {
 	return 0
 }
 
+//创角反馈
+type W_C_CreatePlayerResponse struct {
+	PacketHead           *Ipacket `protobuf:"bytes,1,opt,name=PacketHead,proto3" json:"PacketHead,omitempty"`
+	Error                int32    `protobuf:"varint,2,opt,name=Error,proto3" json:"Error,omitempty"`
+	PlayerId             int64    `protobuf:"varint,3,opt,name=PlayerId,proto3" json:"PlayerId,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *W_C_CreatePlayerResponse) Reset()         { *m = W_C_CreatePlayerResponse{} }
+func (m *W_C_CreatePlayerResponse) String() string { return proto.CompactTextString(m) }
+func (*W_C_CreatePlayerResponse) ProtoMessage()    {}
+func (*W_C_CreatePlayerResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_014de31d7ac8c57c, []int{5}
+}
+
+func (m *W_C_CreatePlayerResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_W_C_CreatePlayerResponse.Unmarshal(m, b)
+}
+func (m *W_C_CreatePlayerResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_W_C_CreatePlayerResponse.Marshal(b, m, deterministic)
+}
+func (m *W_C_CreatePlayerResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_W_C_CreatePlayerResponse.Merge(m, src)
+}
+func (m *W_C_CreatePlayerResponse) XXX_Size() int {
+	return xxx_messageInfo_W_C_CreatePlayerResponse.Size(m)
+}
+func (m *W_C_CreatePlayerResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_W_C_CreatePlayerResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_W_C_CreatePlayerResponse proto.InternalMessageInfo
+
+func (m *W_C_CreatePlayerResponse) GetPacketHead() *Ipacket {
+	if m != nil {
+		return m.PacketHead
+	}
+	return nil
+}
+
+func (m *W_C_CreatePlayerResponse) GetError() int32 {
+	if m != nil {
+		return m.Error
+	}
+	return 0
+}
+
+func (m *W_C_CreatePlayerResponse) GetPlayerId() int64 {
+	if m != nil {
+		return m.PlayerId
+	}
+	return 0
+}
+
+//登录游戏
 type C_W_Game_LoginRequset struct {
 	PacketHead           *Ipacket `protobuf:"bytes,1,opt,name=PacketHead,proto3" json:"PacketHead,omitempty"`
 	PlayerId             int64    `protobuf:"varint,2,opt,name=PlayerId,proto3" json:"PlayerId,omitempty"`
@@ -244,7 +385,7 @@ func (m *C_W_Game_LoginRequset) Reset()         { *m = C_W_Game_LoginRequset{} }
 func (m *C_W_Game_LoginRequset) String() string { return proto.CompactTextString(m) }
 func (*C_W_Game_LoginRequset) ProtoMessage()    {}
 func (*C_W_Game_LoginRequset) Descriptor() ([]byte, []int) {
-	return fileDescriptor_014de31d7ac8c57c, []int{4}
+	return fileDescriptor_014de31d7ac8c57c, []int{6}
 }
 
 func (m *C_W_Game_LoginRequset) XXX_Unmarshal(b []byte) error {
@@ -279,6 +420,62 @@ func (m *C_W_Game_LoginRequset) GetPlayerId() int64 {
 	return 0
 }
 
+//选角反馈
+type W_C_SelectPlayerResponse struct {
+	PacketHead           *Ipacket      `protobuf:"bytes,1,opt,name=PacketHead,proto3" json:"PacketHead,omitempty"`
+	AccountId            int64         `protobuf:"varint,2,opt,name=AccountId,proto3" json:"AccountId,omitempty"`
+	PlayerData           []*PlayerData `protobuf:"bytes,3,rep,name=PlayerData,proto3" json:"PlayerData,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
+	XXX_unrecognized     []byte        `json:"-"`
+	XXX_sizecache        int32         `json:"-"`
+}
+
+func (m *W_C_SelectPlayerResponse) Reset()         { *m = W_C_SelectPlayerResponse{} }
+func (m *W_C_SelectPlayerResponse) String() string { return proto.CompactTextString(m) }
+func (*W_C_SelectPlayerResponse) ProtoMessage()    {}
+func (*W_C_SelectPlayerResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_014de31d7ac8c57c, []int{7}
+}
+
+func (m *W_C_SelectPlayerResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_W_C_SelectPlayerResponse.Unmarshal(m, b)
+}
+func (m *W_C_SelectPlayerResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_W_C_SelectPlayerResponse.Marshal(b, m, deterministic)
+}
+func (m *W_C_SelectPlayerResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_W_C_SelectPlayerResponse.Merge(m, src)
+}
+func (m *W_C_SelectPlayerResponse) XXX_Size() int {
+	return xxx_messageInfo_W_C_SelectPlayerResponse.Size(m)
+}
+func (m *W_C_SelectPlayerResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_W_C_SelectPlayerResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_W_C_SelectPlayerResponse proto.InternalMessageInfo
+
+func (m *W_C_SelectPlayerResponse) GetPacketHead() *Ipacket {
+	if m != nil {
+		return m.PacketHead
+	}
+	return nil
+}
+
+func (m *W_C_SelectPlayerResponse) GetAccountId() int64 {
+	if m != nil {
+		return m.AccountId
+	}
+	return 0
+}
+
+func (m *W_C_SelectPlayerResponse) GetPlayerData() []*PlayerData {
+	if m != nil {
+		return m.PlayerData
+	}
+	return nil
+}
+
 type C_G_LogoutResponse struct {
 	PacketHead           *Ipacket `protobuf:"bytes,1,opt,name=PacketHead,proto3" json:"PacketHead,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -290,7 +487,7 @@ func (m *C_G_LogoutResponse) Reset()         { *m = C_G_LogoutResponse{} }
 func (m *C_G_LogoutResponse) String() string { return proto.CompactTextString(m) }
 func (*C_G_LogoutResponse) ProtoMessage()    {}
 func (*C_G_LogoutResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_014de31d7ac8c57c, []int{5}
+	return fileDescriptor_014de31d7ac8c57c, []int{8}
 }
 
 func (m *C_G_LogoutResponse) XXX_Unmarshal(b []byte) error {
@@ -318,6 +515,7 @@ func (m *C_G_LogoutResponse) GetPacketHead() *Ipacket {
 	return nil
 }
 
+//聊天
 type C_W_ChatMessage struct {
 	PacketHead           *Ipacket `protobuf:"bytes,1,opt,name=PacketHead,proto3" json:"PacketHead,omitempty"`
 	Sender               int64    `protobuf:"varint,2,opt,name=Sender,proto3" json:"Sender,omitempty"`
@@ -333,7 +531,7 @@ func (m *C_W_ChatMessage) Reset()         { *m = C_W_ChatMessage{} }
 func (m *C_W_ChatMessage) String() string { return proto.CompactTextString(m) }
 func (*C_W_ChatMessage) ProtoMessage()    {}
 func (*C_W_ChatMessage) Descriptor() ([]byte, []int) {
-	return fileDescriptor_014de31d7ac8c57c, []int{6}
+	return fileDescriptor_014de31d7ac8c57c, []int{9}
 }
 
 func (m *C_W_ChatMessage) XXX_Unmarshal(b []byte) error {
@@ -406,7 +604,7 @@ func (m *W_C_ChatMessage) Reset()         { *m = W_C_ChatMessage{} }
 func (m *W_C_ChatMessage) String() string { return proto.CompactTextString(m) }
 func (*W_C_ChatMessage) ProtoMessage()    {}
 func (*W_C_ChatMessage) Descriptor() ([]byte, []int) {
-	return fileDescriptor_014de31d7ac8c57c, []int{7}
+	return fileDescriptor_014de31d7ac8c57c, []int{10}
 }
 
 func (m *W_C_ChatMessage) XXX_Unmarshal(b []byte) error {
@@ -487,7 +685,7 @@ func (m *W_C_Test) Reset()         { *m = W_C_Test{} }
 func (m *W_C_Test) String() string { return proto.CompactTextString(m) }
 func (*W_C_Test) ProtoMessage()    {}
 func (*W_C_Test) Descriptor() ([]byte, []int) {
-	return fileDescriptor_014de31d7ac8c57c, []int{8}
+	return fileDescriptor_014de31d7ac8c57c, []int{11}
 }
 
 func (m *W_C_Test) XXX_Unmarshal(b []byte) error {
@@ -517,10 +715,13 @@ func (m *W_C_Test) GetRecv() []int32 {
 
 func init() {
 	proto.RegisterType((*C_A_LoginRequest)(nil), "message.C_A_LoginRequest")
-	proto.RegisterType((*C_A_LoginRequest1)(nil), "message.C_A_LoginRequest1")
+	proto.RegisterType((*A_C_LoginResponse)(nil), "message.A_C_LoginResponse")
 	proto.RegisterType((*C_A_RegisterRequest)(nil), "message.C_A_RegisterRequest")
+	proto.RegisterType((*A_C_RegisterResponse)(nil), "message.A_C_RegisterResponse")
 	proto.RegisterType((*C_W_CreatePlayerRequest)(nil), "message.C_W_CreatePlayerRequest")
+	proto.RegisterType((*W_C_CreatePlayerResponse)(nil), "message.W_C_CreatePlayerResponse")
 	proto.RegisterType((*C_W_Game_LoginRequset)(nil), "message.C_W_Game_LoginRequset")
+	proto.RegisterType((*W_C_SelectPlayerResponse)(nil), "message.W_C_SelectPlayerResponse")
 	proto.RegisterType((*C_G_LogoutResponse)(nil), "message.C_G_LogoutResponse")
 	proto.RegisterType((*C_W_ChatMessage)(nil), "message.C_W_ChatMessage")
 	proto.RegisterType((*W_C_ChatMessage)(nil), "message.W_C_ChatMessage")
@@ -530,32 +731,37 @@ func init() {
 func init() { proto.RegisterFile("client.proto", fileDescriptor_014de31d7ac8c57c) }
 
 var fileDescriptor_014de31d7ac8c57c = []byte{
-	// 426 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x54, 0xcb, 0x8e, 0xd3, 0x30,
-	0x14, 0x95, 0x49, 0xd3, 0x96, 0x3b, 0xa0, 0x29, 0x46, 0x40, 0xe8, 0x22, 0x8a, 0xb2, 0xca, 0x6a,
-	0x78, 0x7d, 0xc1, 0x10, 0xc4, 0x50, 0x09, 0x46, 0x23, 0xb7, 0x52, 0x97, 0x91, 0x49, 0xae, 0x4a,
-	0x44, 0x1b, 0x87, 0xc4, 0x41, 0x74, 0xc1, 0x92, 0xbf, 0xe0, 0x1f, 0xf8, 0x34, 0x7e, 0x01, 0xf9,
-	0xd1, 0xe2, 0x66, 0x81, 0x44, 0x47, 0xdd, 0xdd, 0x73, 0x7c, 0xed, 0x73, 0x8e, 0x7d, 0x13, 0xb8,
-	0x97, 0xaf, 0x4b, 0xac, 0xe4, 0x45, 0xdd, 0x08, 0x29, 0xe8, 0x68, 0x83, 0x6d, 0xcb, 0x57, 0x38,
-	0xbd, 0x6f, 0x0b, 0xc3, 0xc7, 0x3f, 0x09, 0x4c, 0xd2, 0xec, 0x32, 0x7b, 0x2f, 0x56, 0x65, 0xc5,
-	0xf0, 0x4b, 0x87, 0xad, 0xa4, 0xcf, 0x01, 0x6e, 0x78, 0xfe, 0x19, 0xe5, 0x3b, 0xe4, 0x45, 0x40,
-	0x22, 0x92, 0x9c, 0xbd, 0x9c, 0x5c, 0xec, 0x36, 0xce, 0x6a, 0xbd, 0xc6, 0x9c, 0x1e, 0x1a, 0xc1,
-	0xd9, 0x65, 0x9e, 0x8b, 0xae, 0x92, 0xd7, 0x7c, 0x83, 0xc1, 0x9d, 0x88, 0x24, 0x77, 0x99, 0x4b,
-	0xd1, 0x00, 0x46, 0xaf, 0xbb, 0x72, 0x5d, 0x5c, 0x8b, 0xc0, 0xd3, 0xab, 0x3b, 0x48, 0xa7, 0x30,
-	0x9e, 0x0b, 0x75, 0xd2, 0xac, 0x08, 0x06, 0x11, 0x49, 0x7c, 0xb6, 0xc7, 0xf1, 0x1b, 0x78, 0xd0,
-	0x77, 0xf7, 0x82, 0x3e, 0x03, 0x5f, 0x13, 0xd6, 0xd9, 0xd3, 0xbd, 0xb3, 0x7e, 0x2b, 0x33, 0x7d,
-	0xf1, 0x0f, 0x02, 0x0f, 0xd5, 0x1a, 0xc3, 0x55, 0xd9, 0x4a, 0x6c, 0x4e, 0x99, 0xd3, 0x4d, 0xe3,
-	0xf5, 0xd2, 0x7c, 0x87, 0x27, 0x69, 0xb6, 0xcc, 0xd2, 0x06, 0xb9, 0xc4, 0x9b, 0x35, 0xdf, 0xde,
-	0xc6, 0x4a, 0x08, 0x60, 0x8e, 0x70, 0x9c, 0x38, 0x0c, 0x9d, 0x80, 0x37, 0xc7, 0x6f, 0xd6, 0x83,
-	0x2a, 0x63, 0x84, 0x47, 0x4a, 0xfe, 0x8a, 0x6f, 0xf0, 0xef, 0x35, 0xb5, 0x78, 0x8c, 0xf8, 0x14,
-	0xc6, 0x46, 0x6a, 0x56, 0x68, 0x69, 0x8f, 0xed, 0x71, 0xfc, 0x16, 0x68, 0x9a, 0x5d, 0x29, 0x05,
-	0xd1, 0x49, 0x86, 0x6d, 0x2d, 0xaa, 0x16, 0xff, 0x5f, 0x23, 0xfe, 0x45, 0xe0, 0x5c, 0x5f, 0xd7,
-	0x27, 0x2e, 0x3f, 0x98, 0xbe, 0x23, 0x9c, 0x3e, 0x86, 0xe1, 0x1c, 0xab, 0x02, 0x1b, 0xeb, 0xd3,
-	0x22, 0xc5, 0x33, 0xcc, 0xbf, 0x62, 0xa3, 0x6f, 0xc8, 0x63, 0x16, 0xa9, 0x17, 0xb6, 0x62, 0x8b,
-	0x6d, 0x8d, 0x76, 0x20, 0x5d, 0x4a, 0x4d, 0xb2, 0x85, 0x81, 0x6f, 0x26, 0xd9, 0xc2, 0xf8, 0x37,
-	0x81, 0xf3, 0x65, 0x96, 0x9e, 0xc8, 0x71, 0x08, 0x60, 0x2a, 0xfd, 0xe0, 0xe6, 0x23, 0x72, 0x18,
-	0x27, 0xd1, 0xe0, 0x20, 0x51, 0x08, 0x60, 0x2a, 0xbd, 0xcf, 0x58, 0x76, 0x98, 0x7e, 0xe2, 0xe1,
-	0x3f, 0x13, 0x8f, 0x0e, 0x13, 0x87, 0x30, 0x56, 0x81, 0x17, 0x6a, 0x84, 0x29, 0x0c, 0xd4, 0xa9,
-	0x01, 0x89, 0xbc, 0xc4, 0x67, 0xba, 0xfe, 0x38, 0xd4, 0x7f, 0x99, 0x57, 0x7f, 0x02, 0x00, 0x00,
-	0xff, 0xff, 0x61, 0x45, 0x7d, 0x25, 0x8d, 0x04, 0x00, 0x00,
+	// 503 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x95, 0xcd, 0x6e, 0x13, 0x31,
+	0x10, 0xc7, 0xe5, 0x6e, 0x36, 0x69, 0x27, 0xa0, 0x06, 0xb7, 0x80, 0x55, 0xa1, 0x68, 0xe5, 0xd3,
+	0x9e, 0x2a, 0xd4, 0x3e, 0x41, 0x58, 0xa0, 0x54, 0x82, 0xaa, 0x72, 0x2a, 0xf5, 0xb8, 0x32, 0x9b,
+	0x51, 0x88, 0x48, 0xd6, 0x61, 0xd7, 0x41, 0x14, 0x09, 0x6e, 0x3c, 0x04, 0x12, 0x12, 0x8f, 0xc0,
+	0xa3, 0xf1, 0x0a, 0xc8, 0x1f, 0x49, 0x9c, 0x20, 0xf5, 0x90, 0x12, 0x6e, 0x33, 0x63, 0xef, 0xcc,
+	0xff, 0x37, 0xb6, 0x67, 0xe1, 0x5e, 0x31, 0x1e, 0x61, 0xa9, 0x8f, 0xa7, 0x95, 0xd2, 0x8a, 0xb6,
+	0x26, 0x58, 0xd7, 0x72, 0x88, 0x47, 0xf7, 0xbd, 0xe1, 0xe2, 0xfc, 0x07, 0x81, 0x4e, 0x96, 0xf7,
+	0xf2, 0xd7, 0x6a, 0x38, 0x2a, 0x05, 0x7e, 0x98, 0x61, 0xad, 0xe9, 0x53, 0x80, 0x4b, 0x59, 0xbc,
+	0x47, 0xfd, 0x0a, 0xe5, 0x80, 0x91, 0x84, 0xa4, 0xed, 0x93, 0xce, 0xf1, 0xfc, 0xc3, 0xf3, 0xa9,
+	0x5d, 0x13, 0xc1, 0x1e, 0x9a, 0x40, 0xbb, 0x57, 0x14, 0x6a, 0x56, 0xea, 0x0b, 0x39, 0x41, 0xb6,
+	0x93, 0x90, 0x74, 0x4f, 0x84, 0x21, 0xca, 0xa0, 0xf5, 0x6c, 0x36, 0x1a, 0x0f, 0x2e, 0x14, 0x8b,
+	0xec, 0xea, 0xdc, 0xa5, 0x47, 0xb0, 0xdb, 0x57, 0x26, 0xd3, 0xf9, 0x80, 0x35, 0x12, 0x92, 0xc6,
+	0x62, 0xe1, 0xf3, 0xef, 0x04, 0x1e, 0xf4, 0xf2, 0x6c, 0x2e, 0xaf, 0x9e, 0xaa, 0xb2, 0xc6, 0x0d,
+	0xf4, 0x1d, 0x42, 0xfc, 0xa2, 0xaa, 0x54, 0x65, 0x95, 0xc5, 0xc2, 0x39, 0x2b, 0x95, 0xa3, 0xd5,
+	0xca, 0xeb, 0x44, 0x8d, 0xbf, 0x88, 0xf8, 0x37, 0x02, 0x07, 0xa6, 0x75, 0x02, 0x87, 0xa3, 0x5a,
+	0x63, 0xb5, 0xcd, 0xee, 0xdd, 0xa2, 0x94, 0x7f, 0x86, 0x43, 0xd3, 0xa2, 0xa5, 0x8c, 0xff, 0xd7,
+	0x25, 0xfe, 0x05, 0x1e, 0x67, 0xf9, 0x75, 0x9e, 0x55, 0x28, 0x35, 0x5e, 0x8e, 0xe5, 0xcd, 0x5d,
+	0xda, 0xd0, 0x05, 0x70, 0x29, 0x82, 0x2e, 0x04, 0x11, 0xda, 0x81, 0xa8, 0x8f, 0x9f, 0xbc, 0x06,
+	0x63, 0xf2, 0xaf, 0xc0, 0xae, 0xf3, 0x6c, 0xad, 0xfc, 0xbf, 0xc7, 0x77, 0x99, 0x3d, 0x7e, 0x24,
+	0x16, 0x3e, 0x47, 0x78, 0x68, 0xf0, 0xcf, 0xe4, 0x04, 0x97, 0x2f, 0xa8, 0xc6, 0x4d, 0xe0, 0xc3,
+	0x32, 0x3b, 0x6b, 0x65, 0x7e, 0x12, 0xc7, 0xd9, 0xc7, 0x31, 0x16, 0xfa, 0xce, 0x9c, 0x4f, 0x60,
+	0xcf, 0xdf, 0xad, 0x45, 0xad, 0x65, 0x80, 0x9e, 0xce, 0x4f, 0xe1, 0xb9, 0xd4, 0x92, 0x45, 0x49,
+	0x94, 0xb6, 0x4f, 0x0e, 0x16, 0xf9, 0x96, 0x4b, 0x22, 0xd8, 0xc6, 0x5f, 0x02, 0xcd, 0xf2, 0x33,
+	0xd3, 0x03, 0x35, 0xd3, 0x9b, 0x4b, 0xe3, 0xbf, 0x08, 0xec, 0xdb, 0x0b, 0xf5, 0x4e, 0xea, 0x37,
+	0x6e, 0xdf, 0x06, 0x80, 0x8f, 0xa0, 0xd9, 0xc7, 0x72, 0x80, 0x95, 0xa7, 0xf3, 0x9e, 0x89, 0x0b,
+	0x2c, 0x3e, 0x62, 0xe5, 0x0f, 0xd2, 0x7b, 0xe6, 0xfd, 0xf9, 0x62, 0x57, 0x37, 0x53, 0xf4, 0x43,
+	0x28, 0x0c, 0x99, 0xe9, 0xe5, 0x5d, 0x16, 0xbb, 0xe9, 0xe5, 0x5d, 0xfe, 0x9b, 0xc0, 0xbe, 0xbd,
+	0x83, 0x5b, 0x51, 0xdc, 0x05, 0x70, 0x96, 0x7d, 0x12, 0x6e, 0x70, 0x06, 0x91, 0x80, 0xa8, 0xb1,
+	0x42, 0xd4, 0x05, 0x70, 0x96, 0xfd, 0xce, 0x49, 0x0e, 0x22, 0xeb, 0xc4, 0xcd, 0x5b, 0x89, 0x5b,
+	0xab, 0xc4, 0x5d, 0xd8, 0x35, 0xc0, 0x57, 0xe6, 0x91, 0x53, 0x68, 0x98, 0xac, 0x8c, 0x24, 0x51,
+	0x1a, 0x0b, 0x6b, 0xbf, 0x6d, 0xda, 0x3f, 0xcb, 0xe9, 0x9f, 0x00, 0x00, 0x00, 0xff, 0xff, 0xad,
+	0xb8, 0xc5, 0xde, 0x81, 0x06, 0x00, 0x00,
 }
