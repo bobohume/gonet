@@ -14,7 +14,7 @@ var (
 	CLIENT *network.ClientSocket
 )
 func main() {
-	message.Init()
+	message.InitClient()
 	cfg := &base.Config{}
 	cfg.Read("GONET_SERVER.CFG")
 	UserNetIP, UserNetPort := cfg.Get2("NetGate_WANAddress", ":")

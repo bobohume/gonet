@@ -2,43 +2,28 @@ package db
 
 import (
 	"reflect"
-	"strings"
 )
 
-func getSliceTypeString(sTypeName string) string{
-	index := strings.Index(sTypeName, "]")
-	if index != -1{
-		sTypeName = sTypeName[index+1:]
+func getSliceTypeString(paramType reflect.Type) string{
+	sTypeName := reflect.SliceOf(paramType.Elem()).Elem().Kind().String()
+	switch sTypeName{
+	case "bool", "float64", "float32", "int8", "uint8", "int16", "uint16",
+		"int32", "uint32", "int64", "uint64", "string", "int", "uint":
+		return "[*]" + sTypeName
 	}
 
-	if sTypeName == "bool" || sTypeName == "float64" || sTypeName == "float32" || sTypeName == "int8" ||
-		sTypeName == "uint8" || sTypeName == "int16" || sTypeName == "uint16" || sTypeName == "int32" ||
-		sTypeName == "uint32" || sTypeName == "int64" || sTypeName == "uint64" ||  sTypeName == "string"||
-		sTypeName == "int" || sTypeName == "uint"{
-		return "[]" + sTypeName
-	}else{
-		return "[]struct"
-	}
-
-	return sTypeName
+	return "[*]struct"
 }
 
-func getArrayTypeString(sTypeName string) string{
-	index := strings.Index(sTypeName, "]")
-	if index != -1{
-		sTypeName = sTypeName[index+1:]
+func getArrayTypeString(paramType reflect.Type) string{
+	sTypeName := reflect.SliceOf(paramType.Elem()).Elem().Kind().String()
+	switch sTypeName{
+	case "bool", "float64", "float32", "int8", "uint8", "int16", "uint16",
+		"int32", "uint32", "int64", "uint64", "string", "int", "uint":
+			return "[*]" + sTypeName
 	}
 
-	if sTypeName == "bool" || sTypeName == "float64" || sTypeName == "float32" || sTypeName == "int8" ||
-		sTypeName == "uint8" || sTypeName == "int16" || sTypeName == "uint16" || sTypeName == "int32" ||
-		sTypeName == "uint32" || sTypeName == "int64" || sTypeName == "uint64" ||  sTypeName == "string"||
-		sTypeName == "int"  || sTypeName == "uint"{
-		return "[*]" + sTypeName
-	}else{
-		return "[*]struct"
-	}
-
-	return sTypeName
+	return "[*]struct"
 }
 
 func getTypeString(classField reflect.StructField, classVal reflect.Value) string{
@@ -47,9 +32,9 @@ func getTypeString(classField reflect.StructField, classVal reflect.Value) strin
 	if paramType.Kind() == reflect.Ptr{
 		sType = "*" + paramType.Elem().Kind().String()
 	}else if paramType.Kind() == reflect.Slice{
-		sType = getSliceTypeString(paramType.String())
+		sType = getSliceTypeString(paramType)
 	}else if paramType.Kind() == reflect.Array{
-		sType = getArrayTypeString(paramType.String())
+		sType = getArrayTypeString(paramType)
 	} else{
 		sType = classField.Type.Kind().String()
 	}

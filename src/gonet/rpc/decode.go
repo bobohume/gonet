@@ -1,9 +1,9 @@
 package rpc
 
 import (
+	"github.com/golang/protobuf/proto"
 	"github.com/json-iterator/go"
 	"gonet/base"
-	"gonet/message"
 	"reflect"
 	"unsafe"
 )
@@ -637,18 +637,17 @@ func Unmarshal(bitstream *base.BitStream, funcName string, pFuncType reflect.Typ
 		case RPC_MESSAGE://protobuf
 			nLen := bitstream.ReadInt(32)
 			packetBuf := bitstream.ReadBits(nLen << 3)
-			packet := message.GetPakcetByName(funcName)
-			message.UnmarshalText(packet, packetBuf)
-			params[i] = packet
-			/*if pFuncType != nil{
+			if pFuncType != nil{
 				if i < pFuncType.NumIn() {
 					val := reflect.New(pFuncType.In(i).Elem())
 					err := proto.Unmarshal(packetBuf, val.Interface().(proto.Message))
+					//packet := message.GetPakcetByName(funcName)
+					//err := message.UnmarshalText(packet, packetBuf)
 					if err == nil{
 						params[i] = val.Interface()
 					}
 				}
-			}*/
+			}
 
 
 

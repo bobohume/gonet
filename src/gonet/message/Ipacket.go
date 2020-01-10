@@ -88,6 +88,7 @@ func init(){
 	Packet_CreateFactorMap 		 = make(map[uint32] func()proto.Message)
 }
 
+//网关防火墙
 func Init(){
 	//注册消息
 	RegisterPacket(&C_A_LoginRequest{})
@@ -98,11 +99,15 @@ func Init(){
 	RegisterPacket(&C_W_LoginCopyMap{})
 	RegisterPacket(&C_W_Move{})
 	RegisterPacket(&C_W_ChatMessage{})
-	RegisterPacket(&A_C_LoginResponse{})
-	RegisterPacket(&A_C_RegisterResponse{})
-	// test for client
+}
+
+//client消息回调
+func InitClient(){
+	//注册消息
 	RegisterPacket(&W_C_SelectPlayerResponse{})
 	RegisterPacket(&W_C_CreatePlayerResponse{})
 	RegisterPacket(&W_C_LoginMap{})
 	RegisterPacket(&W_C_ChatMessage{})
+	RegisterPacket(&A_C_LoginResponse{})
+	RegisterPacket(&A_C_RegisterResponse{})
 }

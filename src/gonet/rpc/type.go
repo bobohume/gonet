@@ -126,23 +126,14 @@ func getSliceTypeString(sTypeName string) string{
 		sTypeName = sTypeName[index+1:]
 	}
 
-	if sTypeName == "bool" || sTypeName == "float64" || sTypeName == "float32" || sTypeName == "int8" ||
-		sTypeName == "uint8" || sTypeName == "int16" || sTypeName == "uint16" || sTypeName == "int32" ||
-		sTypeName == "uint32" || sTypeName == "int64" || sTypeName == "uint64" ||  sTypeName == "string"||
-		sTypeName == "int" || sTypeName == "uint" ||
-		sTypeName == "*bool" || sTypeName == "*float64" || sTypeName == "*float32" || sTypeName == "*int8" ||
-		sTypeName == "*uint8" || sTypeName == "*int16" || sTypeName == "*uint16" || sTypeName == "*int32" ||
-		sTypeName == "*uint32" || sTypeName == "*int64" || sTypeName == "*uint64" ||  sTypeName == "*string"||
-		sTypeName == "*int" || sTypeName == "*uint"{
+	switch sTypeName {
+	case "*bool", "*float64", "*float32", "*int8", "*uint8", "*int16", "*uint16",
+		"*int32", "*uint32", "*int64", "*uint64", "*string", "*int", "*uint",
+		"bool", "float64", "float32", "int8", "uint8", "int16", "uint16",
+		"int32", "uint32", "int64", "uint64", "string", "int", "uint":
 		return "[]" + sTypeName
-	}else{
-		if strings.Index(sTypeName, "*") != -1{
-			return "[]*struct"
-		}
-		return "[]struct"
 	}
-
-	return sTypeName
+	return "*gob"
 }
 
 func getArrayTypeString(sTypeName string) string{
@@ -151,42 +142,41 @@ func getArrayTypeString(sTypeName string) string{
 		sTypeName = sTypeName[index+1:]
 	}
 
-	if sTypeName == "bool" || sTypeName == "float64" || sTypeName == "float32" || sTypeName == "int8" ||
-		sTypeName == "uint8" || sTypeName == "int16" || sTypeName == "uint16" || sTypeName == "int32" ||
-		sTypeName == "uint32" || sTypeName == "int64" || sTypeName == "uint64" ||  sTypeName == "string"||
-		sTypeName == "int"  || sTypeName == "uint" ||
-		sTypeName == "*bool" || sTypeName == "*float64" || sTypeName == "*float32" || sTypeName == "*int8" ||
-		sTypeName == "*uint8" || sTypeName == "*int16" || sTypeName == "*uint16" || sTypeName == "*int32" ||
-		sTypeName == "*uint32" || sTypeName == "*int64" || sTypeName == "*uint64" ||  sTypeName == "*string"||
-		sTypeName == "*int" || sTypeName == "*uint"{
+	switch sTypeName {
+	case "*bool", "*float64", "*float32", "*int8", "*uint8", "*int16", "*uint16",
+		"*int32", "*uint32", "*int64", "*uint64", "*string", "*int", "*uint",
+		"bool", "float64", "float32", "int8", "uint8", "int16", "uint16",
+		"int32", "uint32", "int64", "uint64", "string", "int", "uint":
 		return "[*]" + sTypeName
-	}else{
-		if strings.Index(sTypeName, "*") != -1{
-			return "[*]*struct"
-		}
-		return "[*]struct"
 	}
-
-	return sTypeName
+	return "*gob"
 }
 
 func getTypeString(param interface{}) string{
 	paramType := reflect.TypeOf(param)
 	sType := ""
+
 	if paramType.Kind() == reflect.Ptr{
-		sType = "*" + paramType.Elem().Kind().String()
-		paramType = paramType.Elem()
+		switch paramType.String() {
+		case "*bool", "*float64", "*float32", "*int8", "*uint8", "*int16", "*uint16",
+			"*int32", "*uint32", "*int64", "*uint64", "*string", "*int", "*uint":
+			sType = paramType.String()
+		default:
+			sType = "*gob"
+		}
 	}else if paramType.Kind() == reflect.Slice{
 		sType = getSliceTypeString(paramType.String())
 	}else if paramType.Kind() == reflect.Array{
 		sType = getArrayTypeString(paramType.String())
 	}else{
-		sType = paramType.Kind().String()
+		switch paramType.String() {
+		case "bool", "float64", "float32", "int8", "uint8", "int16", "uint16",
+			"int32", "uint32", "int64", "uint64", "string", "int", "uint":
+			sType = paramType.String()
+		default:
+			sType = "*gob"
+		}
 	}
 
-	if paramType.Kind() == reflect.Struct || paramType.Kind() == reflect.Map || sType == "[]*struct" ||
-		sType == "[]struct" || sType == "[*]*struct" || sType == "[*]struct"{
-		sType = "*gob"
-	}
 	return sType
 }
