@@ -3,6 +3,7 @@ package player
 import (
 	"database/sql"
 	"fmt"
+	"github.com/golang/protobuf/proto"
 	"gonet/actor"
 	"gonet/base"
 	"gonet/db"
@@ -10,6 +11,7 @@ import (
 	"gonet/rpc"
 	"gonet/server/common"
 	"gonet/server/world"
+	"reflect"
 	"strings"
 )
 //********************************************************
@@ -177,10 +179,12 @@ func (this *PlayerMgr) PacketFunc(id int, buff []byte) bool{
 			nId := bitstream.ReadInt64(base.Bit64)
 			return this.m_PlayerPool.Send(nId, funcName, io)
 		}else if (nType == rpc.RPC_MESSAGE){
-			packet := message.GetPakcetByName(funcName)
+			packetName := bitstream.ReadString()
 			nLen := bitstream.ReadInt(base.Bit32)
 			packetBuf := bitstream.ReadBits(nLen << 3)
-			message.UnmarshalText(packet, packetBuf)
+			val := reflect.New(proto.MessageType(packetName).Elem())
+			packet := val.Interface().(proto.Message)
+			proto.Unmarshal(packetBuf, packet)
 			packetHead := packet.(message.Packet).GetPacketHead()
 			nId := packetHead.Id
 			return this.m_PlayerPool.Send(nId, funcName, io)

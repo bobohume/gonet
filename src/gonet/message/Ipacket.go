@@ -57,9 +57,12 @@ func Decode(buff []byte) (uint32, []byte){
 
 func RegisterPacket(packet proto.Message) {
 	packetName := GetMessageName(packet)
+	val := reflect.ValueOf(packet).Elem()
 	packetFunc := func() proto.Message{
-		packet := reflect.New(reflect.ValueOf(packet).Elem().Type()).Interface().(proto.Message)
-		return packet
+		packet := reflect.New(val.Type())
+		packet.Elem().Field(0).Set(val.Field(0))
+		//packet.Elem().Set(val)
+		return packet.Interface().(proto.Message)
 	}
 
 	Packet_CreateFactorStringMap[packetName] = packetFunc
@@ -72,7 +75,7 @@ func GetPakcet(packetId uint32) proto.Message{
 		return packetFunc()
 	}
 
-	return nil;
+	return nil
 }
 
 func GetPakcetByName(packetName string) proto.Message{
@@ -91,14 +94,15 @@ func init(){
 //网关防火墙
 func Init(){
 	//注册消息
-	RegisterPacket(&C_A_LoginRequest{})
-	RegisterPacket(&C_A_RegisterRequest{})
-	RegisterPacket(&C_G_LogoutResponse{})
-	RegisterPacket(&C_W_CreatePlayerRequest{})
-	RegisterPacket(&C_W_Game_LoginRequset{})
-	RegisterPacket(&C_W_LoginCopyMap{})
-	RegisterPacket(&C_W_Move{})
-	RegisterPacket(&C_W_ChatMessage{})
+	//PacketHead 中的 DestServerType 决定转发到那个服务器
+	RegisterPacket(&C_A_LoginRequest{PacketHead:BuildPacketHead(0, int(SERVICE_ACCOUNTSERVER))})
+	RegisterPacket(&C_A_RegisterRequest{PacketHead:BuildPacketHead(0, int(SERVICE_ACCOUNTSERVER))})
+	RegisterPacket(&C_G_LogoutResponse{PacketHead:BuildPacketHead(0, int(SERVICE_GATESERVER))})
+	RegisterPacket(&C_W_CreatePlayerRequest{PacketHead:BuildPacketHead(0, int(SERVICE_WORLDSERVER))})
+	RegisterPacket(&C_W_Game_LoginRequset{PacketHead:BuildPacketHead(0, int(SERVICE_WORLDSERVER))})
+	RegisterPacket(&C_W_LoginCopyMap{PacketHead:BuildPacketHead(0, int(SERVICE_WORLDSERVER))})
+	RegisterPacket(&C_W_Move{PacketHead:BuildPacketHead(0, int(SERVICE_WORLDSERVER))})
+	RegisterPacket(&C_W_ChatMessage{PacketHead:BuildPacketHead(0, int(SERVICE_WORLDSERVER))})
 }
 
 //client消息回调

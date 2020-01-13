@@ -73,12 +73,6 @@ func (this *UserPrcoess) SwtichSendToAccount(socketId int, packetName string, pa
 }
 
 func (this *UserPrcoess) PacketFunc(socketid int, buff []byte) bool{
-	defer func() {
-		if err := recover(); err != nil {
-			base.TraceCode(err)
-		}
-	}()
-
 	packetId, data := message.Decode(buff)
 	packet := message.GetPakcet(packetId)
 	if packet == nil{
@@ -93,6 +87,8 @@ func (this *UserPrcoess) PacketFunc(socketid int, buff []byte) bool{
 		return true
 	}
 
+	//获取配置的路由地址
+	destServerType := packet.(message.Packet).GetPacketHead().DestServerType
 	err := message.UnmarshalText(packet, data)
 	if err != nil{
 		SERVER.GetLog().Printf("包解析错误2  socket=%d", socketid)
@@ -100,6 +96,7 @@ func (this *UserPrcoess) PacketFunc(socketid int, buff []byte) bool{
 	}
 
 	packetHead := packet.(message.Packet).GetPacketHead()
+	packetHead.DestServerType = destServerType
 	if packetHead == nil || packetHead.Ckx != message.Default_Ipacket_Ckx || packetHead.Stx != message.Default_Ipacket_Stx {
 		SERVER.GetLog().Printf("(A)致命的越界包,已经被忽略 socket=%d", socketid)
 		return true
@@ -112,19 +109,12 @@ func (this *UserPrcoess) PacketFunc(socketid int, buff []byte) bool{
 		packet.(*message.C_A_RegisterRequest).SocketId = int32(socketid)
 	}
 
-	//解析整个包
-	bitstream := base.NewBitStream(make([]byte, 1024), 1024)
-	if !rpc.MarshalPB(packet, bitstream) {
-		SERVER.GetLog().Printf("收到[%s]消息,格式有问题", packetName)
-		return true
-	}
-
 	if packetHead.DestServerType == int32(message.SERVICE_WORLDSERVER){
-		this.SwtichSendToWorld(socketid, packetName, packetHead, bitstream.GetBuffer())
+		this.SwtichSendToWorld(socketid, packetName, packetHead, rpc.Marshal(packetName, packet))
 	}else if packetHead.DestServerType == int32(message.SERVICE_ACCOUNTSERVER){
-		this.SwtichSendToAccount(socketid, packetName, packetHead, bitstream.GetBuffer())
+		this.SwtichSendToAccount(socketid, packetName, packetHead, rpc.Marshal(packetName, packet))
 	}else{
-		this.Actor.PacketFunc(socketid,bitstream.GetBuffer())
+		this.Actor.PacketFunc(socketid, rpc.Marshal(packetName, packet))
 	}
 
 	return true

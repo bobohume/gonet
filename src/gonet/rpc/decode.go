@@ -635,20 +635,14 @@ func Unmarshal(bitstream *base.BitStream, funcName string, pFuncType reflect.Typ
 
 
 		case RPC_MESSAGE://protobuf
+			packetName := bitstream.ReadString()
 			nLen := bitstream.ReadInt(32)
 			packetBuf := bitstream.ReadBits(nLen << 3)
-			if pFuncType != nil{
-				if i < pFuncType.NumIn() {
-					val := reflect.New(pFuncType.In(i).Elem())
-					err := proto.Unmarshal(packetBuf, val.Interface().(proto.Message))
-					//packet := message.GetPakcetByName(funcName)
-					//err := message.UnmarshalText(packet, packetBuf)
-					if err == nil{
-						params[i] = val.Interface()
-					}
-				}
+			val := reflect.New(proto.MessageType(packetName).Elem())
+			err := proto.Unmarshal(packetBuf, val.Interface().(proto.Message))
+			if err == nil{
+				params[i] = val.Interface()
 			}
-
 
 
 		case RPC_GOB://gob

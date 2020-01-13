@@ -162,7 +162,11 @@ func getTypeString(param interface{}) string{
 			"*int32", "*uint32", "*int64", "*uint64", "*string", "*int", "*uint":
 			sType = paramType.String()
 		default:
-			sType = "*gob"
+			if strings.Index(paramType.String(), "*message")!= -1{
+				sType = "*message"
+			}else{
+				sType = "*gob"
+			}
 		}
 	}else if paramType.Kind() == reflect.Slice{
 		sType = getSliceTypeString(paramType.String())

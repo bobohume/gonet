@@ -19,7 +19,7 @@ type (
 func (this *CmdProcess) Init(num int) {
 	this.Actor.Init(num)
 	this.RegisterCall("msg", func(args string) {
-		packet1 := &message.C_W_ChatMessage{PacketHead:message.BuildPacketHead( PACKET.AccountId, int(message.SERVICE_WORLDSERVER)),
+		packet1 := &message.C_W_ChatMessage{PacketHead:message.BuildPacketHead( PACKET.AccountId, int(message.SERVICE_GATESERVER)),
 			Sender:PACKET.PlayerId,
 			Recver:0,
 			MessageType:int32(message.CHAT_MSG_TYPE_WORLD),

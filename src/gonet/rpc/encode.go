@@ -5,10 +5,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/json-iterator/go"
 	"gonet/base"
-	"gonet/message"
-	"log"
 	"reflect"
-	"strings"
 )
 
 //rpc  Marshal
@@ -715,6 +712,16 @@ func Marshal(funcName string, params ...interface{})[]byte {
 
 
 
+		case "*message":
+			bitstream.WriteInt(RPC_MESSAGE, 8)
+			bitstream.WriteString(proto.MessageName(param.(proto.Message)))
+			buf, _ :=proto.Marshal(param.(proto.Message))
+			nLen := len(buf)
+			bitstream.WriteInt(nLen, 32)
+			bitstream.WriteBits(nLen << 3, buf)
+
+
+
 		case "*gob":
 			bitstream.WriteInt(RPC_GOB, 8)
 			json := jsoniter.ConfigCompatibleWithStandardLibrary
@@ -736,29 +743,4 @@ func Marshal(funcName string, params ...interface{})[]byte {
 	}
 
 	return bitstream.GetBuffer()
-}
-
-//rpc  MarshalPB
-func MarshalPB(packet proto.Message, bitstream *base.BitStream) bool {
-	bitstream.WriteString(message.GetMessageName(packet))
-	bitstream.WriteInt(1, 8)
-	{
-		sType := strings.ToLower(reflect.ValueOf(packet).Type().String())
-		index := strings.Index(sType, ".")
-		if index!= -1{
-			sType = sType[:index]
-		}
-		switch sType {
-		case "*message":
-			bitstream.WriteInt(RPC_MESSAGE, 8)
-			buf, _ :=proto.Marshal(packet)
-			nLen := len(buf)
-			bitstream.WriteInt(nLen, 32)
-			bitstream.WriteBits(nLen << 3, buf)
-		default:
-			log.Panicln("packet params type not supported", packet, sType)
-			return false
-		}
-	}
-	return true
 }
