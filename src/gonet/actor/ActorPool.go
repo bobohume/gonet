@@ -114,12 +114,10 @@ func (this *ActorPool) SendMsg(Id int64, funcName string, params  ...interface{}
 			nId := bitstream.ReadInt64(base.Bit64)
 			return this.m_Self.(IActorPool).SendActor(nId, io, funcName)
 		}else if (nType == rpc.RPC_MESSAGE){
-			packetName := bitstream.ReadString()
-			nLen := bitstream.ReadInt(base.Bit32)
-			packetBuf := bitstream.ReadBits(nLen << 3)
-			val := reflect.New(proto.MessageType(packetName).Elem())
-			packet := val.Interface().(proto.Message)
-			proto.Unmarshal(packetBuf, packet)
+			packet, err := rpc.UnmarshalPB(bitstream)
+			if err != nil{
+				return false
+			}
 			packetHead := packet.(message.Packet).GetPacketHead()
 			nId := packetHead.Id
 			return this.m_Self.(IActorPool).SendActor(nId, io, funcName)

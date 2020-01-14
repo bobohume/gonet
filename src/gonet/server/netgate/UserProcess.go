@@ -109,9 +109,9 @@ func (this *UserPrcoess) PacketFunc(socketid int, buff []byte) bool{
 		packet.(*message.C_A_RegisterRequest).SocketId = int32(socketid)
 	}
 
-	if packetHead.DestServerType == int32(message.SERVICE_WORLDSERVER){
+	if packetHead.DestServerType == message.SERVICE_WORLDSERVER{
 		this.SwtichSendToWorld(socketid, packetName, packetHead, rpc.Marshal(packetName, packet))
-	}else if packetHead.DestServerType == int32(message.SERVICE_ACCOUNTSERVER){
+	}else if packetHead.DestServerType == message.SERVICE_ACCOUNTSERVER{
 		this.SwtichSendToAccount(socketid, packetName, packetHead, rpc.Marshal(packetName, packet))
 	}else{
 		this.Actor.PacketFunc(socketid, rpc.Marshal(packetName, packet))

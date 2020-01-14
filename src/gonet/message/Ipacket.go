@@ -24,10 +24,10 @@ type(
 	}
 )
 
-func BuildPacketHead(id int64, destservertype int) *Ipacket{
+func BuildPacketHead(id int64, destservertype SERVICE) *Ipacket{
 	ipacket := &Ipacket{
 		Stx:	Default_Ipacket_Stx,
-		DestServerType:	int32(destservertype),
+		DestServerType:	destservertype,
 		Ckx:	Default_Ipacket_Ckx,
 		Id:	id,
 	}
@@ -95,14 +95,14 @@ func init(){
 func Init(){
 	//注册消息
 	//PacketHead 中的 DestServerType 决定转发到那个服务器
-	RegisterPacket(&C_A_LoginRequest{PacketHead:BuildPacketHead(0, int(SERVICE_ACCOUNTSERVER))})
-	RegisterPacket(&C_A_RegisterRequest{PacketHead:BuildPacketHead(0, int(SERVICE_ACCOUNTSERVER))})
-	RegisterPacket(&C_G_LogoutResponse{PacketHead:BuildPacketHead(0, int(SERVICE_GATESERVER))})
-	RegisterPacket(&C_W_CreatePlayerRequest{PacketHead:BuildPacketHead(0, int(SERVICE_WORLDSERVER))})
-	RegisterPacket(&C_W_Game_LoginRequset{PacketHead:BuildPacketHead(0, int(SERVICE_WORLDSERVER))})
-	RegisterPacket(&C_W_LoginCopyMap{PacketHead:BuildPacketHead(0, int(SERVICE_WORLDSERVER))})
-	RegisterPacket(&C_W_Move{PacketHead:BuildPacketHead(0, int(SERVICE_WORLDSERVER))})
-	RegisterPacket(&C_W_ChatMessage{PacketHead:BuildPacketHead(0, int(SERVICE_WORLDSERVER))})
+	RegisterPacket(&C_A_LoginRequest{PacketHead:BuildPacketHead(0, SERVICE_ACCOUNTSERVER)})
+	RegisterPacket(&C_A_RegisterRequest{PacketHead:BuildPacketHead(0, SERVICE_ACCOUNTSERVER)})
+	RegisterPacket(&C_G_LogoutResponse{PacketHead:BuildPacketHead(0, SERVICE_GATESERVER)})
+	RegisterPacket(&C_W_CreatePlayerRequest{PacketHead:BuildPacketHead(0, SERVICE_WORLDSERVER)})
+	RegisterPacket(&C_W_Game_LoginRequset{PacketHead:BuildPacketHead(0, SERVICE_WORLDSERVER)})
+	RegisterPacket(&C_W_LoginCopyMap{PacketHead:BuildPacketHead(0, SERVICE_WORLDSERVER)})
+	RegisterPacket(&C_W_Move{PacketHead:BuildPacketHead(0, SERVICE_WORLDSERVER)})
+	RegisterPacket(&C_W_ChatMessage{PacketHead:BuildPacketHead(0, SERVICE_WORLDSERVER)})
 }
 
 //client消息回调

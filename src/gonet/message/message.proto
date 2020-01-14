@@ -20,7 +20,7 @@ enum CHAT{
 
 message Ipacket{
     int32  Stx = 1;
-    int32  DestServerType = 2;
+    SERVICE  DestServerType = 2;
     int32  Ckx = 3;
     int64  Id = 4;
 }

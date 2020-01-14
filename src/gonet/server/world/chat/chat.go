@@ -153,7 +153,7 @@ func (this *ChatMgr) SendMessageTo(msg *ChatMessage, playerId int64){
 
 func SendMessage(msg *ChatMessage, player *player){
 	world.SendToClient(player.sockeId, &message.W_C_ChatMessage{
-		PacketHead:message.BuildPacketHead(player.accountId, int(message.SERVICE_CLIENT)),
+		PacketHead:message.BuildPacketHead(player.accountId, message.SERVICE_CLIENT),
 		Sender:msg.Sender,
 		SenderName:msg.SenderName,
 		Recver:msg.Recver,
