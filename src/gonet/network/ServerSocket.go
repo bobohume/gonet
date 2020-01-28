@@ -72,11 +72,11 @@ func (this *ServerSocket) Start() bool {
 	var strRemote = fmt.Sprintf("%s:%d", this.m_sIP, this.m_nPort)
 	tcpAddr, err := net.ResolveTCPAddr("tcp4", strRemote)
 	if err != nil {
-		log.Fatal("%v", err)
+		log.Fatalf("%v", err)
 	}
 	ln, err := net.ListenTCP("tcp4", tcpAddr)
 	if err != nil {
-		log.Fatal("%v", err)
+		log.Fatalf("%v", err)
 		return false
 	}
 
@@ -121,7 +121,7 @@ func (this *ServerSocket) AddClinet(tcpConn *net.TCPConn, addr string, connectTy
 		this.m_nClientCount++
 		return pClient
 	} else {
-		log.Print("%s", "无法创建客户端连接对象")
+		log.Printf("%s", "无法创建客户端连接对象")
 	}
 	return nil
 }

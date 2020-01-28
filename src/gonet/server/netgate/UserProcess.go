@@ -16,15 +16,14 @@ type(
 	IUserPrcoess interface {
 		actor.IActor
 
-		CheckClient(int, string, interface{})bool
-		CheckClientEx(int, string, interface{}) *AccountInfo
-		SwtichSendToWorld(int, string, interface{}, []byte)
-		SwtichSendToAccount(int, string, interface{}, []byte)
+		CheckClient(int, string, *message.Ipacket)bool
+		CheckClientEx(int, string, *message.Ipacket) *AccountInfo
+		SwtichSendToWorld(int, string, *message.Ipacket, []byte)
+		SwtichSendToAccount(int, string, *message.Ipacket, []byte)
 	}
 )
 
-func (this *UserPrcoess) CheckClient(sockId int, packetName string, packet interface{}) bool{
-	packetHead := packet.(*message.Ipacket)
+func (this *UserPrcoess) CheckClient(sockId int, packetName string, packetHead *message.Ipacket) bool{
 	if packetHead != nil{
 		if IsCheckClient(packetName){
 			return  true
@@ -40,8 +39,7 @@ func (this *UserPrcoess) CheckClient(sockId int, packetName string, packet inter
 	return  false
 }
 
-func (this *UserPrcoess) CheckClientEx(sockId int, packetName string, packet interface{}) *AccountInfo{
-	packetHead := packet.(*message.Ipacket)
+func (this *UserPrcoess) CheckClientEx(sockId int, packetName string, packetHead *message.Ipacket) *AccountInfo{
 	if packetHead != nil{
 		if IsCheckClient(packetName){
 			return  nil
@@ -57,16 +55,16 @@ func (this *UserPrcoess) CheckClientEx(sockId int, packetName string, packet int
 	return nil
 }
 
-func (this *UserPrcoess)SwtichSendToWorld(socketId int, packetName string, packet interface{}, buff []byte){
-	pAccountInfo := this.CheckClientEx(socketId, packetName, packet)
+func (this *UserPrcoess)SwtichSendToWorld(socketId int, packetName string, packetHead *message.Ipacket, buff []byte){
+	pAccountInfo := this.CheckClientEx(socketId, packetName, packetHead)
 	if pAccountInfo != nil{
 		buff = base.SetTcpEnd(buff)
 		SERVER.GetWorldCluster().Send(pAccountInfo.WSocketId, buff)
 	}
 }
 
-func (this *UserPrcoess) SwtichSendToAccount(socketId int, packetName string, packet interface{}, buff []byte){
-	if this.CheckClient(socketId, packetName, packet) == true {
+func (this *UserPrcoess) SwtichSendToAccount(socketId int, packetName string, packetHead *message.Ipacket, buff []byte){
+	if this.CheckClient(socketId, packetName, packetHead) == true {
 		buff = base.SetTcpEnd(buff)
 		SERVER.GetAccountCluster().BalanceSend(buff)
 	}
@@ -109,6 +107,7 @@ func (this *UserPrcoess) PacketFunc(socketid int, buff []byte) bool{
 		packet.(*message.C_A_RegisterRequest).SocketId = int32(socketid)
 	}
 
+	//解析整个包
 	if packetHead.DestServerType == message.SERVICE_WORLDSERVER{
 		this.SwtichSendToWorld(socketid, packetName, packetHead, rpc.Marshal(packetName, packet))
 	}else if packetHead.DestServerType == message.SERVICE_ACCOUNTSERVER{

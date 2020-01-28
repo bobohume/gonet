@@ -72,7 +72,7 @@ func (this *WebSocket) Start() bool {
 		http.Handle("/ws", websocket.Handler(this.wserverRoutine))
 		err := http.ListenAndServe(strRemote, nil)
 		if err != nil {
-			fmt.Errorf("WebSocket ListenAndServe:", err)
+			fmt.Errorf("WebSocket ListenAndServe:%v", err)
 		}
 	}()
 
@@ -117,7 +117,7 @@ func (this *WebSocket) AddClinet(tcpConn *websocket.Conn, addr string, connectTy
 		this.m_nClientCount++
 		return pClient
 	} else {
-		log.Print("%s", "无法创建客户端连接对象")
+		log.Printf("%s", "无法创建客户端连接对象")
 	}
 	return nil
 }

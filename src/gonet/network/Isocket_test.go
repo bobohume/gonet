@@ -4,6 +4,7 @@ import (
 	"gonet/base"
 	"bytes"
 	"fmt"
+	"gonet/rpc"
 	"testing"
 )
 
@@ -22,7 +23,7 @@ func Test66(t *testing.T)  {
 	t.Log("固定长度")
 	buff := []byte{}
 	for j := 0; j < 1; j++{
-		buff = append(buff, SetTcpEnd(base.GetPacket("test1",[100]int64{1,2,3,4,5,6}))...)
+		buff = append(buff, SetTcpEnd(rpc.Marshal("test1",[100]int64{1,2,3,4,5,6}))...)
 	}
 	for i :=0;i < nTimes;i++{
 		ReceivePacket(0,buff)
@@ -33,7 +34,7 @@ func Test2(t *testing.T)  {
 	t.Log("结束标志")
 	buff := []byte{}
 	for j := 0; j < 1; j++{
-		buff = append(buff, SetTcpEnd1(base.GetPacket("test1", [100]int64{1,2,3,4,5,6}))...)
+		buff = append(buff, SetTcpEnd1(rpc.Marshal("test1", [100]int64{1,2,3,4,5,6}))...)
 	}
 	for i :=0;i < nTimes;i++{
 		ReceivePacket1(0,buff)
@@ -44,7 +45,7 @@ func Test3(t *testing.T)  {
 	t.Log("c语言结束标志", []byte(TCP_END1))
 	buff := []byte{}
 	for j := 0; j < 1; j++{
-		buff = append(buff, SetTcpEnd2(base.GetPacket("test1", [100]int64{1,2,3,4,5,6}))...)
+		buff = append(buff, SetTcpEnd2(rpc.Marshal("test1", [100]int64{1,2,3,4,5,6}))...)
 	}
 	for i :=0;i < nTimes;i++{
 		ReceivePacket2(0,buff)
