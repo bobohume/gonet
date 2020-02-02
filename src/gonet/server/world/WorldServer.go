@@ -108,8 +108,6 @@ func (this *ServerMgr)Init() bool{
 	this.m_pService = new(network.ServerSocket)
 	port := base.Int(UserNetPort)
 	this.m_pService.Init(UserNetIP, port)
-	this.m_pService.SetMaxReceiveBufferSize(1024)
-	this.m_pService.SetMaxSendBufferSize(1024)
 	this.m_pService.Start()
 
 	//snowflake

@@ -101,12 +101,12 @@ func serverclientRoutine(pClient *ServerSocketClient) bool {
 		}
 	}()
 
+	var buff= make([]byte, pClient.m_ReceiveBufferSize)
 	for {
 		if pClient.m_bShuttingDown {
 			break
 		}
 
-		var buff = make([]byte, pClient.m_MaxReceiveBufferSize)
 		//n, err := io.ReadFull(pClient.m_Reader, buff)
 		n, err := pClient.m_Conn.Read(buff)
 		if err == io.EOF {

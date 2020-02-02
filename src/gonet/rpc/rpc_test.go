@@ -1,11 +1,7 @@
 package rpc_test
 
 import (
-	"bytes"
-	"encoding/gob"
-	"encoding/json"
 	"github.com/golang/protobuf/proto"
-	"github.com/json-iterator/go"
 	"gonet/base"
 	"gonet/message"
 	"gonet/rpc"
@@ -20,127 +16,56 @@ type(
 )
 
 var(
-	ntimes = 10000
+	ntimes = 100000
 	nArraySize = 2000
 	nValue = 0x7fffffff
 )
 
-func TestMarshalJson(t *testing.T){
-	data := &TopRank{}
-	for i := 0; i < nArraySize; i++{
-		data.Value = append(data.Value, nValue)
-	}
-	for i := 0; i < ntimes; i++{
-		json.Marshal(data)
-	}
-}
-
-func TestUMarshalJson(t *testing.T){
-	data := &TopRank{}
-	for i := 0; i < nArraySize; i++{
-		data.Value = append(data.Value, nValue)
-	}
-
-	for i := 0; i < ntimes; i++{
-		buff, _ := json.Marshal(data)
-		json.Unmarshal(buff, &TopRank{})
-	}
-}
-
-func TestMarshalJsonIter(t *testing.T){
-	json := jsoniter.ConfigCompatibleWithStandardLibrary
-	data := &TopRank{}
-	for i := 0; i < nArraySize; i++{
-		data.Value = append(data.Value, nValue)
-	}
-	for i := 0; i < ntimes; i++{
-		json.Marshal(data)
-	}
-}
-
-func TestUMarshalJsonIter(t *testing.T){
-	json := jsoniter.ConfigCompatibleWithStandardLibrary
-	data := &TopRank{}
-	for i := 0; i < nArraySize; i++{
-		data.Value = append(data.Value, nValue)
-	}
-
-	for i := 0; i < ntimes; i++{
-		buff, _ := json.Marshal(data)
-		json.Unmarshal(buff, &TopRank{})
-	}
-}
-
 func TestMarshalPB(t *testing.T){
-	aa := []int32{}
-	for i := 0; i < nArraySize; i++{
-		aa = append(aa, int32(nValue))
-	}
 	for i := 0; i < ntimes; i++{
-		proto.Marshal(&message.W_C_Test{Recv:aa})
+		proto.Marshal(&message.W_C_Test1{Recv:uint32(nValue)})
 	}
 }
 
 func TestUMarshalPB(t *testing.T){
-	aa := []int32{}
-	for i := 0; i < nArraySize; i++{
-		aa = append(aa, int32(nValue))
-	}
 	for i := 0; i < ntimes; i++{
-		buff, _ := proto.Marshal(&message.W_C_Test{Recv:aa})
+		buff, _ := proto.Marshal(&message.W_C_Test1{Recv:uint32(nValue)})
 		proto.Unmarshal(buff, &message.W_C_Test{})
 	}
 }
 
-func TestMarshalGob(t *testing.T){
-	data := &TopRank{}
-	for i := 0; i < nArraySize; i++{
-		data.Value = append(data.Value, nValue)
-	}
-	for i := 0; i < ntimes; i++{
-		//enc.Encode(int(0))
-		buf := &bytes.Buffer{}
-		enc := gob.NewEncoder(buf)
-		enc.Encode(data)
-	}
-}
-
-func TestUMarshalGob(t *testing.T){
-	data := &TopRank{}
-	for i := 0; i < nArraySize; i++{
-		data.Value = append(data.Value, nValue)
-	}
-
-	//fmt.Println(buf.Bytes(), len(buf.Bytes()))
-	for i := 0; i < ntimes; i++{
-		buf := bytes.NewBuffer([]byte{})
-		enc := gob.NewEncoder(buf)
-		dec := gob.NewDecoder(buf)
-		enc.Encode(data)
-		aa1 := &TopRank{}
-		dec.Decode(aa1)
-	}
-}
-
 func TestMarshalRpc(t *testing.T){
-	aa := []int32{}
-	for i := 0; i < nArraySize; i++{
-		aa = append(aa, int32(nValue))
-	}
 	for i := 0; i < ntimes; i++{
-		rpc.Marshal("test", aa)
+		rpc.Marshal("", int32(1), int32(1), int32(1), int32(1), int32(1), int32(1))
 	}
 }
 
 func TestUMarshalRpc(t *testing.T){
-	aa := []int32{}
-	for i := 0; i < nArraySize; i++{
-		aa = append(aa, int32(nValue))
-	}
 	for i := 0; i < ntimes; i++{
-		buff := rpc.Marshal("test", aa)
+		buff := rpc.Marshal("", int32(1), int32(1), int32(1), int32(1), int32(1), int32(1))
 		parse(buff)
 	}
+}
+
+func TestMarshalRpcStream(t *testing.T){
+	for i := 0; i < ntimes; i++{
+		rpc.MarshalSteam("", uint32(1), uint32(1), uint32(1), uint32(1), uint32(1), uint32(1))
+	}
+}
+
+func TestUMarshalRpcStream(t *testing.T){
+	for i := 0; i < ntimes; i++{
+		buff := rpc.MarshalSteam("", uint32(1), uint32(1), uint32(1), uint32(1), uint32(1), uint32(1))
+		parseStream(buff)
+	}
+}
+
+func parseStream (buff []byte) {
+	funcName := ""
+	bitstream := base.NewBitStream(buff, len(buff))
+	funcName = bitstream.ReadString()
+	funcName = strings.ToLower(funcName)
+	rpc.UnmarshalStream(bitstream, funcName, nil)
 }
 
 func parse (buff []byte) {

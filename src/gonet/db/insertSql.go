@@ -49,60 +49,54 @@ func getInsertSql(classField reflect.StructField, classVal reflect.Value, sqlDat
 	}
 
 	switch sType {
-	case "*float64":
-		value := float64(0)
-		if !classVal.IsNil() {
-			value = *classVal.Interface().(*float64)
-		}
-		insertsql(sqlData, p, strconv.FormatFloat(value, 'f', -1, 64))
-	case "*float32":
-		value := float32(0)
-		if !classVal.IsNil() {
-			value = *classVal.Interface().(*float32)
-		}
-		insertsql(sqlData, p, strconv.FormatFloat(float64(value), 'f', -1, 32))
 	case "*bool":
 		value := bool(false)
 		if !classVal.IsNil() {
 			value = *classVal.Interface().(*bool)
 		}
 		insertsql(sqlData, p, strconv.FormatBool(value))
+	case "*string":
+		value := string("")
+		if !classVal.IsNil() {
+			value = *classVal.Interface().(*string)
+		}
+		insertsql(sqlData, p, value)
+	case "*float32":
+		value := float32(0)
+		if !classVal.IsNil() {
+			value = *classVal.Interface().(*float32)
+		}
+		insertsql(sqlData, p, strconv.FormatFloat(float64(value), 'f', -1, 32))
+	case "*float64":
+		value := float64(0)
+		if !classVal.IsNil() {
+			value = *classVal.Interface().(*float64)
+		}
+		insertsql(sqlData, p, strconv.FormatFloat(value, 'f', -1, 64))
+	case "*int":
+		value := int(0)
+		if !classVal.IsNil() {
+			value = *classVal.Interface().(*int)
+		}
+		insertsql(sqlData, p, strconv.FormatInt(int64(value),10))
 	case "*int8":
 		value := int8(0)
 		if !classVal.IsNil() {
 			value = *classVal.Interface().(*int8)
 		}
 		insertsql(sqlData, p, strconv.FormatInt(int64(value),10))
-	case "*uint8":
-		value := uint8(0)
-		if !classVal.IsNil() {
-			value = *classVal.Interface().(*uint8)
-		}
-		insertsql(sqlData, p, strconv.FormatUint(uint64(value),10))
 	case "*int16":
 		value := int16(0)
 		if !classVal.IsNil() {
 			value = *classVal.Interface().(*int16)
 		}
 		insertsql(sqlData, p, strconv.FormatInt(int64(value),10))
-	case "*uint16":
-		value := uint16(0)
-		if !classVal.IsNil() {
-			value = *classVal.Interface().(*uint16)
-		}
-		insertsql(sqlData, p, strconv.FormatUint(uint64(value),10))
 	case "*int32":
 		value := int32(0)
 		if !classVal.IsNil() {
 			value = *classVal.Interface().(*int32)
 		}
 		insertsql(sqlData, p, strconv.FormatInt(int64(value),10))
-	case "*uint32":
-		value := uint32(0)
-		if !classVal.IsNil() {
-			value = *classVal.Interface().(*uint32)
-		}
-		insertsql(sqlData, p, strconv.FormatUint(uint64(value),10))
 	case "*int64":
 		value := int64(0)
 		if !classVal.IsNil() {
@@ -113,28 +107,34 @@ func getInsertSql(classField reflect.StructField, classVal reflect.Value, sqlDat
 		}else{
 			insertsql(sqlData, p, GetDBTimeString(int64(value)))
 		}
-	case "*uint64":
-		value := uint64(0)
-		if !classVal.IsNil() {
-			value = *classVal.Interface().(*uint64)
-		}
-		insertsql(sqlData, p, strconv.FormatUint(uint64(value),10))
-	case "*string":
-		value := string("")
-		if !classVal.IsNil() {
-			value = *classVal.Interface().(*string)
-		}
-		insertsql(sqlData, p, value)
-	case "*int":
-		value := int(0)
-		if !classVal.IsNil() {
-			value = *classVal.Interface().(*int)
-		}
-		insertsql(sqlData, p, strconv.FormatInt(int64(value),10))
 	case "*uint":
 		value := uint(0)
 		if !classVal.IsNil() {
 			value = *classVal.Interface().(*uint)
+		}
+		insertsql(sqlData, p, strconv.FormatUint(uint64(value),10))
+	case "*uint8":
+		value := uint8(0)
+		if !classVal.IsNil() {
+			value = *classVal.Interface().(*uint8)
+		}
+		insertsql(sqlData, p, strconv.FormatUint(uint64(value),10))
+	case "*uint16":
+		value := uint16(0)
+		if !classVal.IsNil() {
+			value = *classVal.Interface().(*uint16)
+		}
+		insertsql(sqlData, p, strconv.FormatUint(uint64(value),10))
+	case "*uint32":
+		value := uint32(0)
+		if !classVal.IsNil() {
+			value = *classVal.Interface().(*uint32)
+		}
+		insertsql(sqlData, p, strconv.FormatUint(uint64(value),10))
+	case "*uint64":
+		value := uint64(0)
+		if !classVal.IsNil() {
+			value = *classVal.Interface().(*uint64)
 		}
 		insertsql(sqlData, p, strconv.FormatUint(uint64(value),10))
 	case "*struct":
@@ -142,47 +142,61 @@ func getInsertSql(classField reflect.StructField, classVal reflect.Value, sqlDat
 			value := classVal.Elem().Interface()
 			parseInserSql(value, sqlData)
 		}
-	case "float64":
-		insertsql(sqlData, p, strconv.FormatFloat(classVal.Float(), 'f', -1, 64))
-	case "float32":
-		insertsql(sqlData, p, strconv.FormatFloat(classVal.Float(), 'f', -1, 32))
+
+
+
 	case "bool":
 		insertsql(sqlData, p, strconv.FormatBool(classVal.Bool()))
+	case "string":
+		insertsql(sqlData, p, classVal.String())
+	case "float32":
+		insertsql(sqlData, p, strconv.FormatFloat(classVal.Float(), 'f', -1, 32))
+	case "float64":
+		insertsql(sqlData, p, strconv.FormatFloat(classVal.Float(), 'f', -1, 64))
+	case "int":
+		insertsql(sqlData, p, strconv.FormatInt(classVal.Int(),10))
 	case "int8":
 		insertsql(sqlData, p, strconv.FormatInt(classVal.Int(),10))
-	case "uint8":
-		insertsql(sqlData, p, strconv.FormatUint(classVal.Uint(),10))
 	case "int16":
 		insertsql(sqlData, p, strconv.FormatInt(classVal.Int(),10))
-	case "uint16":
-		insertsql(sqlData, p, strconv.FormatUint(classVal.Uint(),10))
 	case "int32":
 		insertsql(sqlData, p, strconv.FormatInt(classVal.Int(),10))
-	case "uint32":
-		insertsql(sqlData, p, strconv.FormatUint(classVal.Uint(), 10))
 	case "int64":
 		if !p.IsDatetime(){
 			insertsql(sqlData, p, strconv.FormatInt(classVal.Int(),10))
 		}else{
 			insertsql(sqlData, p, GetDBTimeString(classVal.Int()))
 		}
-	case "uint64":
-		insertsql(sqlData, p, strconv.FormatUint(classVal.Uint(),10))
-	case "string":
-		insertsql(sqlData, p, classVal.String())
-	case "int":
-		insertsql(sqlData, p, strconv.FormatInt(classVal.Int(),10))
 	case "uint":
+		insertsql(sqlData, p, strconv.FormatUint(classVal.Uint(),10))
+	case "uint8":
+		insertsql(sqlData, p, strconv.FormatUint(classVal.Uint(),10))
+	case "uint16":
+		insertsql(sqlData, p, strconv.FormatUint(classVal.Uint(),10))
+	case "uint32":
+		insertsql(sqlData, p, strconv.FormatUint(classVal.Uint(), 10))
+	case "uint64":
 		insertsql(sqlData, p, strconv.FormatUint(classVal.Uint(),10))
 	case "struct":
 		parseInserSql(classVal.Interface(), sqlData)
-	case "[]float64":
-		value := []float64{}
+
+
+
+	case "[]bool":
+		value := []bool{}
 		if !classVal.IsNil() {
-			value = classVal.Interface().([]float64)
+			value = classVal.Interface().([]bool)
 		}
 		for i,v := range value{
-			insertsqlarray(sqlData, p, strconv.FormatFloat(v, 'f', -1, 64), i)
+			insertsqlarray(sqlData, p, strconv.FormatBool(v), i)
+		}
+	case "[]string":
+		value := []string{}
+		if !classVal.IsNil() {
+			value = classVal.Interface().([]string)
+		}
+		for i,v := range value{
+			insertsqlarray(sqlData, p, v, i)
 		}
 	case "[]float32":
 		value := []float32{}
@@ -192,13 +206,21 @@ func getInsertSql(classField reflect.StructField, classVal reflect.Value, sqlDat
 		for i,v := range value{
 			insertsqlarray(sqlData, p, strconv.FormatFloat(float64(v), 'f', -1, 32), i)
 		}
-	case "[]bool":
-		value := []bool{}
+	case "[]float64":
+		value := []float64{}
 		if !classVal.IsNil() {
-			value = classVal.Interface().([]bool)
+			value = classVal.Interface().([]float64)
 		}
 		for i,v := range value{
-			insertsqlarray(sqlData, p, strconv.FormatBool(v), i)
+			insertsqlarray(sqlData, p, strconv.FormatFloat(v, 'f', -1, 64), i)
+		}
+	case "[]int":
+		value := []int{}
+		if !classVal.IsNil() {
+			value = classVal.Interface().([]int)
+		}
+		for i,v := range value{
+			insertsqlarray(sqlData, p, strconv.FormatInt(int64(v), 10), i)
 		}
 	case "[]int8":
 		value := []int8{}
@@ -208,14 +230,6 @@ func getInsertSql(classField reflect.StructField, classVal reflect.Value, sqlDat
 		for i,v := range value{
 			insertsqlarray(sqlData, p, strconv.FormatInt(int64(v), 10), i)
 		}
-	case "[]uint8":
-		value := []uint8{}
-		if !classVal.IsNil() {
-			value = classVal.Interface().([]uint8)
-		}
-		for i,v := range value{
-			insertsqlarray(sqlData, p, strconv.FormatUint(uint64(v), 10), i)
-		}
 	case "[]int16":
 		value := []int16{}
 		if !classVal.IsNil() {
@@ -224,14 +238,6 @@ func getInsertSql(classField reflect.StructField, classVal reflect.Value, sqlDat
 		for i,v := range value{
 			insertsqlarray(sqlData, p, strconv.FormatInt(int64(v), 10), i)
 		}
-	case "[]uint16":
-		value := []uint16{}
-		if !classVal.IsNil() {
-			value = classVal.Interface().([]uint16)
-		}
-		for i,v := range value{
-			insertsqlarray(sqlData, p, strconv.FormatUint(uint64(v), 10), i)
-		}
 	case "[]int32":
 		value := []int32{}
 		if !classVal.IsNil() {
@@ -239,14 +245,6 @@ func getInsertSql(classField reflect.StructField, classVal reflect.Value, sqlDat
 		}
 		for i,v := range value{
 			insertsqlarray(sqlData, p, strconv.FormatInt(int64(v), 10), i)
-		}
-	case "[]uint32":
-		value := []uint32{}
-		if !classVal.IsNil() {
-			value = classVal.Interface().([]uint32)
-		}
-		for i,v := range value{
-			insertsqlarray(sqlData, p, strconv.FormatUint(uint64(v), 10), i)
 		}
 	case "[]int64":
 		value := []int64{}
@@ -260,30 +258,6 @@ func getInsertSql(classField reflect.StructField, classVal reflect.Value, sqlDat
 				insertsqlarray(sqlData, p, GetDBTimeString(v), i)
 			}
 		}
-	case "[]uint64":
-		value := []uint64{}
-		if !classVal.IsNil() {
-			value = classVal.Interface().([]uint64)
-		}
-		for i,v := range value{
-			insertsqlarray(sqlData, p, strconv.FormatUint(uint64(v), 10), i)
-		}
-	case "[]string":
-		value := []string{}
-		if !classVal.IsNil() {
-			value = classVal.Interface().([]string)
-		}
-		for i,v := range value{
-			insertsqlarray(sqlData, p, v, i)
-		}
-	case "[]int":
-		value := []int{}
-		if !classVal.IsNil() {
-			value = classVal.Interface().([]int)
-		}
-		for i,v := range value{
-			insertsqlarray(sqlData, p, strconv.FormatInt(int64(v), 10), i)
-		}
 	case "[]uint":
 		value := []uint{}
 		if !classVal.IsNil() {
@@ -292,63 +266,98 @@ func getInsertSql(classField reflect.StructField, classVal reflect.Value, sqlDat
 		for i,v := range value{
 			insertsqlarray(sqlData, p, strconv.FormatUint(uint64(v), 10), i)
 		}
+	case "[]uint8":
+		value := []uint8{}
+		if !classVal.IsNil() {
+			value = classVal.Interface().([]uint8)
+		}
+		for i,v := range value{
+			insertsqlarray(sqlData, p, strconv.FormatUint(uint64(v), 10), i)
+		}
+	case "[]uint16":
+		value := []uint16{}
+		if !classVal.IsNil() {
+			value = classVal.Interface().([]uint16)
+		}
+		for i,v := range value{
+			insertsqlarray(sqlData, p, strconv.FormatUint(uint64(v), 10), i)
+		}
+	case "[]uint32":
+		value := []uint32{}
+		if !classVal.IsNil() {
+			value = classVal.Interface().([]uint32)
+		}
+		for i,v := range value{
+			insertsqlarray(sqlData, p, strconv.FormatUint(uint64(v), 10), i)
+		}
+	case "[]uint64":
+		value := []uint64{}
+		if !classVal.IsNil() {
+			value = classVal.Interface().([]uint64)
+		}
+		for i,v := range value{
+			insertsqlarray(sqlData, p, strconv.FormatUint(uint64(v), 10), i)
+		}
 	case "[]struct":
 		for i := 0;  i < classVal.Len(); i++{
 			parseInserSql(classVal.Index(i).Interface(), sqlData)
 		}
-	case "[*]float64":
-		for i := 0; i < classVal.Len(); i++{
-			insertsqlarray(sqlData, p, strconv.FormatFloat(classVal.Index(i).Float(), 'f', -1, 64), i)
-		}
-	case "[*]float32":
-		for i := 0; i < classVal.Len(); i++{
-			insertsqlarray(sqlData, p, strconv.FormatFloat(classVal.Index(i).Float(), 'f', -1, 64), i)
-		}
+
+
+
 	case "[*]bool":
 		for i := 0; i < classVal.Len(); i++{
 			insertsqlarray(sqlData, p, strconv.FormatBool(classVal.Index(i).Bool()), i)
-		}
-	case "[*]int8":
-		for i := 0; i < classVal.Len(); i++{
-			insertsqlarray(sqlData, p, strconv.FormatInt(classVal.Index(i).Int(), 10), i)
-		}
-	case "[*]uint8":
-		for i := 0; i < classVal.Len(); i++{
-			insertsqlarray(sqlData, p, strconv.FormatUint(classVal.Index(i).Uint(), 10), i)
-		}
-	case "[*]int16":
-		for i := 0; i < classVal.Len(); i++{
-			insertsqlarray(sqlData, p, strconv.FormatInt(classVal.Index(i).Int(), 10), i)
-		}
-	case "[*]uint16":
-		for i := 0; i < classVal.Len(); i++{
-			insertsqlarray(sqlData, p, strconv.FormatUint(classVal.Index(i).Uint(), 10), i)
-		}
-	case "[*]int32":
-		for i := 0; i < classVal.Len(); i++{
-			insertsqlarray(sqlData, p, strconv.FormatInt(classVal.Index(i).Int(), 10), i)
-		}
-	case "[*]uint32":
-		for i := 0; i < classVal.Len(); i++{
-			insertsqlarray(sqlData, p, strconv.FormatUint(classVal.Index(i).Uint(), 10), i)
-		}
-	case "[*]int64":
-		for i := 0; i < classVal.Len(); i++{
-			insertsqlarray(sqlData, p, strconv.FormatInt(classVal.Index(i).Int(), 10), i)
-		}
-	case "[*]uint64":
-		for i := 0; i < classVal.Len(); i++{
-			insertsqlarray(sqlData, p, strconv.FormatUint(classVal.Index(i).Uint(), 10), i)
 		}
 	case "[*]string":
 		for i := 0; i < classVal.Len(); i++{
 			insertsqlarray(sqlData, p, classVal.Index(i).String(), i)
 		}
+	case "[*]float32":
+		for i := 0; i < classVal.Len(); i++{
+			insertsqlarray(sqlData, p, strconv.FormatFloat(classVal.Index(i).Float(), 'f', -1, 64), i)
+		}
+	case "[*]float64":
+		for i := 0; i < classVal.Len(); i++{
+			insertsqlarray(sqlData, p, strconv.FormatFloat(classVal.Index(i).Float(), 'f', -1, 64), i)
+		}
 	case "[*]int":
 		for i := 0; i < classVal.Len(); i++{
 			insertsqlarray(sqlData, p, strconv.FormatInt(classVal.Index(i).Int(), 10), i)
 		}
+	case "[*]int8":
+		for i := 0; i < classVal.Len(); i++{
+			insertsqlarray(sqlData, p, strconv.FormatInt(classVal.Index(i).Int(), 10), i)
+		}
+	case "[*]int16":
+		for i := 0; i < classVal.Len(); i++{
+			insertsqlarray(sqlData, p, strconv.FormatInt(classVal.Index(i).Int(), 10), i)
+		}
+	case "[*]int32":
+		for i := 0; i < classVal.Len(); i++{
+			insertsqlarray(sqlData, p, strconv.FormatInt(classVal.Index(i).Int(), 10), i)
+		}
+	case "[*]int64":
+		for i := 0; i < classVal.Len(); i++{
+			insertsqlarray(sqlData, p, strconv.FormatInt(classVal.Index(i).Int(), 10), i)
+		}
 	case "[*]uint":
+		for i := 0; i < classVal.Len(); i++{
+			insertsqlarray(sqlData, p, strconv.FormatUint(classVal.Index(i).Uint(), 10), i)
+		}
+	case "[*]uint8":
+		for i := 0; i < classVal.Len(); i++{
+			insertsqlarray(sqlData, p, strconv.FormatUint(classVal.Index(i).Uint(), 10), i)
+		}
+	case "[*]uint16":
+		for i := 0; i < classVal.Len(); i++{
+			insertsqlarray(sqlData, p, strconv.FormatUint(classVal.Index(i).Uint(), 10), i)
+		}
+	case "[*]uint32":
+		for i := 0; i < classVal.Len(); i++{
+			insertsqlarray(sqlData, p, strconv.FormatUint(classVal.Index(i).Uint(), 10), i)
+		}
+	case "[*]uint64":
 		for i := 0; i < classVal.Len(); i++{
 			insertsqlarray(sqlData, p, strconv.FormatUint(classVal.Index(i).Uint(), 10), i)
 		}

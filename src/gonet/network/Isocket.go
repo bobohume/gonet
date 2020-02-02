@@ -33,8 +33,8 @@ type (
 		m_sIP                  string
 		m_nState			   int
 		m_nConnectType		   int
-		m_MaxReceiveBufferSize int
-		m_MaxSendBufferSize    int
+		m_ReceiveBufferSize    int//单次接受缓存
+		m_MaxReceiveBufferSize int//最大接受缓存
 
 		m_ClientId int
 		m_Seq      int64
@@ -50,7 +50,7 @@ type (
 
 		m_bHalf		bool
 		m_nHalfSize int
-		m_pInBuffer []byte
+		m_MaxReceiveBuffer []byte//max receive buff
 	}
 
 	ISocket interface {
@@ -70,8 +70,8 @@ type (
 		CallMsg(string, ...interface{})//回调消息处理
 
 		GetState() int
-		SetMaxSendBufferSize(int)
-		GetMaxSendBufferSize()int
+		SetReceiveBufferSize(int)
+		GetReceiveBufferSize()int
 		SetMaxReceiveBufferSize(int)
 		GetMaxReceiveBufferSize()int
 		BindPacketFunc(HandleFunc)
@@ -86,8 +86,8 @@ type (
 func (this *Socket) Init(string, int) bool {
 	this.m_PacketFuncList = base.NewVector()
 	this.m_nState = SSF_SHUT_DOWN
-	this.m_MaxReceiveBufferSize = 1024
-	this.m_MaxSendBufferSize =1024
+	this.m_ReceiveBufferSize =1024
+	this.m_MaxReceiveBufferSize = base.MAX_PACKET
 	this.m_nConnectType = SERVER_CONNECT
 	this.m_bHalf = false
 	this.m_nHalfSize = 0
@@ -138,8 +138,8 @@ func (this *Socket) Clear() {
 	this.m_Conn = nil
 	//this.m_Reader = nil
 	//this.m_Writer = nil
-	this.m_MaxSendBufferSize = 1024
-	this.m_MaxReceiveBufferSize = 1024
+	this.m_ReceiveBufferSize = 1024
+	this.m_MaxReceiveBufferSize = base.MAX_PACKET
 	this.m_bShuttingDown = false
 	this.m_bHalf = false
 	this.m_nHalfSize = 0
@@ -160,12 +160,12 @@ func (this *Socket) SetMaxReceiveBufferSize(maxReceiveSize int){
 	this.m_MaxReceiveBufferSize = maxReceiveSize
 }
 
-func (this *Socket) GetMaxSendBufferSize() int{
-	return  this.m_MaxSendBufferSize
+func (this *Socket) GetReceiveBufferSize() int{
+	return  this.m_ReceiveBufferSize
 }
 
-func (this *Socket) SetMaxSendBufferSize(maxSendSize int){
-	this.m_MaxSendBufferSize = maxSendSize
+func (this *Socket) SetReceiveBufferSize(maxSendSize int){
+	this.m_ReceiveBufferSize = maxSendSize
 }
 
 func (this *Socket) SetConnectType(nType int){
@@ -210,10 +210,10 @@ func (this *Socket) ReceivePacket(Id int, dat []byte) {
 		return false, 0
 	}
 
-	buff := append(this.m_pInBuffer, dat...)
-	this.m_pInBuffer = []byte{}
+	buff := append(this.m_MaxReceiveBuffer, dat...)
+	this.m_MaxReceiveBuffer = []byte{}
 	nCurSize := 0
-	//fmt.Println(this.m_pInBuffer)
+	//fmt.Println(this.m_MaxReceiveBuffer)
 ParsePacekt:
 	nPacketSize := 0
 	nBufferSize := len(buff[nCurSize:])
@@ -229,8 +229,8 @@ ParsePacekt:
 			nCurSize += nPacketSize
 			goto ParsePacekt
 		}
-	} else if nBufferSize < base.MAX_PACKET {
-		this.m_pInBuffer = buff[nCurSize:]
+	} else if nBufferSize < this.m_MaxReceiveBufferSize{
+		this.m_MaxReceiveBuffer = buff[nCurSize:]
 	} else {
 		fmt.Println("超出最大包限制，丢弃该包")
 	}
@@ -257,10 +257,10 @@ ParsePacekt:
 		return false, 0
 	}
 
-	buff := append(this.m_pInBuffer, dat...)
-	this.m_pInBuffer = []byte{}
+	buff := append(this.m_MaxReceiveBuffer, dat...)
+	this.m_MaxReceiveBuffer = []byte{}
 	nCurSize := 0
-	//fmt.Println(this.m_pInBuffer)
+	//fmt.Println(this.m_MaxReceiveBuffer)
 ParsePacekt:
 	nPacketSize := 0
 	nBufferSize := len(buff[nCurSize:])
@@ -276,8 +276,8 @@ ParsePacekt:
 			nCurSize += nPacketSize
 			goto ParsePacekt
 		}
-	}else if nBufferSize < base.MAX_PACKET{
-		this.m_pInBuffer = buff[nCurSize:]
+	}else if nBufferSize < this.m_MaxReceiveBufferSize{
+		this.m_MaxReceiveBuffer = buff[nCurSize:]
 	}else{
 		fmt.Println("超出最大包限制，丢弃该包")
 	}

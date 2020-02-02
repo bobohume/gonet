@@ -30,3 +30,67 @@ message PlayerData{
     string PlayerName = 2;
     int32 PlayerGold = 3;
 }
+
+message Int{
+    int32 Val = 1;
+}
+
+message IntSlice{
+    repeated int32 Val = 1;
+}
+
+message UInt{
+    uint32 Val = 1;
+}
+
+message UIntSlice{
+    repeated uint32 Val = 1;
+}
+
+message Int64{
+    int64 Val = 1;
+}
+
+message Int64Slice{
+    repeated int64 Val = 1;
+}
+
+message UInt64{
+    uint64 Val = 1;
+}
+
+message UInt64Slice{
+    repeated uint64 Val = 1;
+}
+
+message Float{
+    float Val = 1;
+}
+
+message FloatSlice{
+    repeated float Val = 1;
+}
+
+message Double{
+    double Val = 1;
+}
+
+message DoubleSlice{
+    repeated double Val = 1;
+}
+
+message String{
+    string Val = 1;
+}
+
+message StringSlice{
+    repeated string Val = 1;
+}
+
+message Bool{
+    bool Val = 1;
+}
+
+message BoolSlice{
+    repeated bool Val = 1;
+}

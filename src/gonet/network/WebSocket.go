@@ -104,6 +104,8 @@ func (this *WebSocket) AddClinet(tcpConn *websocket.Conn, addr string, connectTy
 	if pClient != nil {
 		pClient.Socket.Init("", 0)
 		pClient.m_pServer = this
+		pClient.m_ReceiveBufferSize = this.m_ReceiveBufferSize
+		pClient.m_MaxReceiveBufferSize = this.m_MaxReceiveBufferSize
 		pClient.m_ClientId = this.AssignClientId()
 		pClient.m_sIP = addr
 		pClient.SetTcpConn(tcpConn)
@@ -155,8 +157,6 @@ func (this *WebSocket) StopClient(id int){
 
 func (this *WebSocket) LoadClient() *WebSocketClient {
 	s := this.m_Pool.Get().(*WebSocketClient)
-	s.m_MaxReceiveBufferSize = this.m_MaxReceiveBufferSize
-	s.m_MaxSendBufferSize = this.m_MaxSendBufferSize
 	return s
 }
 

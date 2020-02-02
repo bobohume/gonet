@@ -110,10 +110,9 @@ func (this *ActorPool) SendMsg(Id int64, funcName string, params  ...interface{}
 	}else{
 		bitstream.ReadInt(base.Bit8)
 		nType := bitstream.ReadInt(base.Bit8)
-		if (nType == rpc.RPC_INT64 || nType == rpc.RPC_UINT64 || nType == rpc.RPC_INT64_PTR || nType == rpc.RPC_UINT64_PTR){
-			nId := bitstream.ReadInt64(base.Bit64)
-			return this.m_Self.(IActorPool).SendActor(nId, io, funcName)
-		}else if (nType == rpc.RPC_MESSAGE){
+		if nType == rpc.RPC_INT64 || nType == rpc.RPC_INT64_PTR{
+			nId := rpc.ReadInt64(bitstream)
+		else if nType == rpc.RPC_MESSAGE{
 			packet, err := rpc.UnmarshalPB(bitstream)
 			if err != nil{
 				return false

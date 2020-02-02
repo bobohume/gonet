@@ -11,44 +11,33 @@ import (
 var(
 	m_pInBuffer []byte
 	m_pInBuffer1 []byte
-	nTimes = 1000000
+	nTimes = 1000
 )
 
 const (
-	TCP_END = "#@"						//解决tpc粘包半包,结束标志
-	TCP_END1 = "💞♡"					//解决tpc粘包半包,结束标志
+	TCP_END	  = "💞♡"					//解决tpc粘包半包,结束标志
+	ARRAY_LEN = 100000					//800kb 100 * 1000 * 8
 )
 
-func Test66(t *testing.T)  {
+func TestFixHead(t *testing.T)  {
 	t.Log("固定长度")
 	buff := []byte{}
 	for j := 0; j < 1; j++{
-		buff = append(buff, SetTcpEnd(rpc.Marshal("test1",[100]int64{1,2,3,4,5,6}))...)
+		buff = append(buff, SetTcpEnd(rpc.Marshal("test1",[ARRAY_LEN]int64{1,2,3,4,5,6}))...)
 	}
 	for i :=0;i < nTimes;i++{
 		ReceivePacket(0,buff)
 	}
 }
 
-func Test2(t *testing.T)  {
-	t.Log("结束标志")
+func TestEndFlag(t *testing.T)  {
+	t.Log("c语言结束标志", []byte(TCP_END))
 	buff := []byte{}
 	for j := 0; j < 1; j++{
-		buff = append(buff, SetTcpEnd1(rpc.Marshal("test1", [100]int64{1,2,3,4,5,6}))...)
+		buff = append(buff, SetTcpEnd1(rpc.Marshal("test1", [ARRAY_LEN]int64{1,2,3,4,5,6}))...)
 	}
 	for i :=0;i < nTimes;i++{
 		ReceivePacket1(0,buff)
-	}
-}
-
-func Test3(t *testing.T)  {
-	t.Log("c语言结束标志", []byte(TCP_END1))
-	buff := []byte{}
-	for j := 0; j < 1; j++{
-		buff = append(buff, SetTcpEnd2(rpc.Marshal("test1", [100]int64{1,2,3,4,5,6}))...)
-	}
-	for i :=0;i < nTimes;i++{
-		ReceivePacket2(0,buff)
 	}
 }
 
@@ -59,11 +48,6 @@ func SetTcpEnd(buff []byte) []byte{
 
 func SetTcpEnd1(buff []byte) []byte{
 	buff = append(buff, []byte(TCP_END)...)
-	return buff
-}
-
-func SetTcpEnd2(buff []byte) []byte{
-	buff = append(buff, []byte(TCP_END1)...)
 	return buff
 }
 
@@ -121,48 +105,7 @@ func  ReceivePacket1(Id int, dat []byte){
 	}()
 	//找包结束
 	seekToTcpEnd := func(buff []byte) (bool, int){
-		nLen := len(buff)
-		for	i := 0; i < nLen - 1; i++ {
-			if (buff[i] == TCP_END[0] && buff[i+1] == TCP_END[1]){
-				return true, i+2
-			}
-		}
-		return false, 0
-	}
-
-	buff := append(m_pInBuffer1, dat...)
-	m_pInBuffer1 = []byte{}
-	nCurSize := 0
-	//fmt.Println(this.m_pInBuffer)
-ParsePacekt:
-	nPacketSize := 0
-	nBufferSize := len(buff[nCurSize:])
-	bFindFlag := false
-	bFindFlag, nPacketSize = seekToTcpEnd(buff[nCurSize:])
-	//fmt.Println(bFindFlag, nPacketSize, nBufferSize)
-	if bFindFlag{
-		if nBufferSize == nPacketSize{		//完整包
-			nCurSize += nPacketSize
-		}else if ( nBufferSize > nPacketSize){
-			nCurSize += nPacketSize
-			goto ParsePacekt
-		}
-	}else if nBufferSize < base.MAX_PACKET{
-		m_pInBuffer1 = buff[nCurSize:]
-	}else{
-		fmt.Println("超出最大包限制，丢弃该包")
-	}
-}
-
-func  ReceivePacket2(Id int, dat []byte){
-	defer func() {
-		if err := recover(); err != nil {
-			fmt.Println("ReceivePacket1", err) // 接受包错误
-		}
-	}()
-	//找包结束
-	seekToTcpEnd := func(buff []byte) (bool, int){
-		i := bytes.Index(buff, []byte(TCP_END1))
+		i := bytes.Index(buff, []byte(TCP_END))
 		if i != -1{
 			return true, i+2
 		}

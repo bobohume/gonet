@@ -173,10 +173,10 @@ func (this *PlayerMgr) PacketFunc(id int, buff []byte) bool{
 	}else{
 		bitstream.ReadInt(base.Bit8)
 		nType := bitstream.ReadInt(base.Bit8)
-		if (nType == rpc.RPC_INT64 || nType == rpc.RPC_UINT64 || nType == rpc.RPC_INT64_PTR || nType == rpc.RPC_UINT64_PTR){
-			nId := bitstream.ReadInt64(base.Bit64)
+		if nType == rpc.RPC_INT64 || nType == rpc.RPC_INT64_PTR{
+			nId := rpc.ReadInt64(bitstream)
 			return this.m_PlayerPool.Send(nId, funcName, io)
-		}else if (nType == rpc.RPC_MESSAGE){
+		}else if nType == rpc.RPC_MESSAGE{
 			packet, err := rpc.UnmarshalPB(bitstream)
 			if err != nil{
 				return false

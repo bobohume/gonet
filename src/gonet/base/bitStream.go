@@ -16,7 +16,8 @@ const (
 	Bit32  = 32
 	Bit64  = 64
 	Bit128 = 128
-	MAX_PACKET = 128 * 1024
+	MAX_PACKET = 1 * 1024 * 1024 //1MB
+	MAX_CLIENT_PACKET = 10 * 1024 //10KB
 	PACKET_HEAD_SIZE = 4
 )
 
@@ -134,7 +135,7 @@ func (this *BitStream) resize() bool{
 	//fmt.Println("BitStream Resize")
 	this.dataPtr = append(this.dataPtr, make([]byte, this.bitsLimite)...)
 	size := this.bitsLimite * 2
-	if size <= 0 && size >= MAX_PACKET * 10{
+	if size <= 0 && size >= MAX_PACKET * 2{
 		return false
 	}
 	this.bufSize = size
@@ -169,9 +170,10 @@ func (this *BitStream) WriteBits(bitCount int, bitPtr []byte) {
 
 	bitNum := this.bitNum >> 3
 	byteCount := (bitCount + 7) >> 3
-	for i, v := range bitPtr[:byteCount] {
+	copy(this.dataPtr[bitNum:], bitPtr[:byteCount])
+	/*for i, v := range bitPtr[:byteCount] {
 		this.dataPtr[bitNum+i] = v
-	}
+	}*/
 	this.bitNum += bitCount
 }
 
