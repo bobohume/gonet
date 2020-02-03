@@ -12,13 +12,12 @@ import (
 
 type SnowflakeT struct {
 	m_Id int64
-	m_Ip string
 	m_KeysAPI client.KeysAPI
 	m_UUID base.Snowflake
 }
 
 const(
-	uuid_dir1 =  "server/uuid1/"
+	uuid_dir1 =  "uuid1/"
 	ttl_time1 = time.Minute
 	WorkeridMax = 1<<9 -1 //mac下要调制最大连接数，默认256，最大 1 << 10
 )
@@ -27,24 +26,20 @@ func (this *SnowflakeT) Key() string{
 	return uuid_dir1 + fmt.Sprintf("%d", this.m_Id)
 }
 
-func (this *SnowflakeT) Value() string{
-	return this.m_Ip
-}
-
 func (this *SnowflakeT) Ping(){
 	for {
 	TrySET:
 		//设置key
 		key := this.Key()
-		_, err := this.m_KeysAPI.Set(context.Background(), key, this.Value(), &client.SetOptions{
-			TTL: ttl_time1, PrevExist:client.PrevNoExist,
+		_, err := this.m_KeysAPI.Set(context.Background(), key, "", &client.SetOptions{
+			TTL: ttl_time1, PrevExist:client.PrevNoExist, NoValueOnSuccess:true,
 		})
 		if err != nil{
-			resp, err := this.m_KeysAPI.Get(context.Background(), uuid_dir1, &client.GetOptions{})
+			resp, err := this.m_KeysAPI.Get(context.Background(), uuid_dir1, &client.GetOptions{Quorum:true})
 			if err == nil && (resp != nil && resp.Node != nil){
 				Ids := [base.WorkeridMax+1]bool{}
 				for _, v := range resp.Node.Nodes{
-					Id := base.Int64(v.Key[len(uuid_dir1) + 1:])
+					Id := base.Int(v.Key[len(uuid_dir1) + 1:])
 					Ids[Id] = true
 				}
 
@@ -64,10 +59,10 @@ func (this *SnowflakeT) Ping(){
 
 		//保持ttl
 	TryTTL:
-		resp, err := this.m_KeysAPI.Set(context.Background(), key, "", &client.SetOptions{
-			TTL: ttl_time1, Refresh:true,
+		_, err = this.m_KeysAPI.Set(context.Background(), key, "", &client.SetOptions{
+			TTL: ttl_time1, Refresh:true, NoValueOnSuccess:true,
 		})
-		if err != nil || (resp != nil && resp.Node != nil && resp.Node.Value != this.Value()){
+		if err != nil{
 			goto TrySET
 		}else{
 			time.Sleep(time.Second * 10)
@@ -76,7 +71,7 @@ func (this *SnowflakeT) Ping(){
 	}
 }
 
-func (this *SnowflakeT) Init(IP string, Port int, endpoints []string){
+func (this *SnowflakeT) Init(endpoints []string){
 	cfg := client.Config{
 		Endpoints:               endpoints,
 		Transport:               client.DefaultTransport,
@@ -88,7 +83,6 @@ func (this *SnowflakeT) Init(IP string, Port int, endpoints []string){
 		log.Fatal("Error: cannot connec to etcd:", err)
 	}
 	this.m_Id = 0
-	this.m_Ip = fmt.Sprintf("%s:%d", IP, Port)
 	this.m_KeysAPI = client.NewKeysAPI(etcdClient)
 }
 
@@ -97,9 +91,9 @@ func (this *SnowflakeT) Start(){
 }
 
 //注册服务器
-func NewSnowflakeT(IP string, Port int, Endpoints []string) *SnowflakeT{
+func NewSnowflakeT(Endpoints []string) *SnowflakeT{
 	uuid := &SnowflakeT{}
-	uuid.Init(IP, Port, Endpoints)
+	uuid.Init(Endpoints)
 	uuid.Start()
 	return uuid
 }
@@ -108,7 +102,7 @@ func NewSnowflakeT(IP string, Port int, Endpoints []string) *SnowflakeT{
 func TestSnowFlake(t *testing.T){
 	group := []*SnowflakeT{}
 	for i := 0; i < int(WorkeridMax); i++{
-		group = append(group, NewSnowflakeT("127.0.0.1", i, []string{"http://127.0.0.1:2379"}))
+		group = append(group, NewSnowflakeT([]string{"http://127.0.0.1:2379"}))
 	}
 
 	for{

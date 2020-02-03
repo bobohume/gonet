@@ -106,7 +106,7 @@ func (this *ServerMgr)Init() bool{
 	this.m_pService.BindPacketFunc(this.m_pClusterMgr.PacketFunc)
 
 	//snowflake
-	this.m_SnowFlake = cluster.NewSnowflake(UserNetIP, base.Int(UserNetPort), this.m_config.Get5("Etcd_SnowFlake_Cluster", ","))
+	this.m_SnowFlake = cluster.NewSnowflake(this.m_config.Get5("Etcd_SnowFlake_Cluster", ","))
 
 	return  false
 }

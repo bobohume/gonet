@@ -10,13 +10,12 @@ import (
 )
 
 const(
-	uuid_dir =  "server/uuid/"
+	uuid_dir =  "uuid/"
 	ttl_time = time.Minute
 )
 
 type Snowflake struct {
 	m_Id int64
-	m_Ip string
 	m_KeysAPI client.KeysAPI
 }
 
@@ -24,24 +23,20 @@ func (this *Snowflake) Key() string{
 	return uuid_dir + fmt.Sprintf("%d", this.m_Id)
 }
 
-func (this *Snowflake) Value() string{
-	return this.m_Ip
-}
-
 func (this *Snowflake) Ping(){
 	for {
 TrySET:
 		//设置key
 		key := this.Key()
-		_, err := this.m_KeysAPI.Set(context.Background(), key, this.Value(), &client.SetOptions{
-			TTL: ttl_time, PrevExist:client.PrevNoExist,
+		_, err := this.m_KeysAPI.Set(context.Background(), key, "", &client.SetOptions{
+			TTL: ttl_time, PrevExist:client.PrevNoExist, NoValueOnSuccess:true,
 		})
 		if err != nil{
-			resp, err := this.m_KeysAPI.Get(context.Background(), uuid_dir, &client.GetOptions{})
+			resp, err := this.m_KeysAPI.Get(context.Background(), uuid_dir, &client.GetOptions{Quorum:true})
 			if err == nil && (resp != nil && resp.Node != nil){
 				Ids := [base.WorkeridMax+1]bool{}
 				for _, v := range resp.Node.Nodes{
-					Id := base.Int64(v.Key[len(uuid_dir) + 1:])
+					Id := base.Int(v.Key[len(uuid_dir) + 1:])
 					Ids[Id] = true
 				}
 
@@ -61,10 +56,10 @@ TrySET:
 
 		//保持ttl
 TryTTL:
-		resp, err := this.m_KeysAPI.Set(context.Background(), key, "", &client.SetOptions{
-			TTL: ttl_time, Refresh:true,
+		_, err = this.m_KeysAPI.Set(context.Background(), key, "", &client.SetOptions{
+			TTL: ttl_time, Refresh:true, NoValueOnSuccess:true,
 		})
-		if err != nil || (resp != nil && resp.Node != nil && resp.Node.Value != this.Value()){
+		if err != nil{
 			goto TrySET
 		}else{
 			time.Sleep(time.Second * 10)
@@ -73,7 +68,7 @@ TryTTL:
 	}
 }
 
-func (this *Snowflake) Init(IP string, Port int, endpoints []string){
+func (this *Snowflake) Init(endpoints []string){
 	cfg := client.Config{
 		Endpoints:               endpoints,
 		Transport:               client.DefaultTransport,
@@ -85,7 +80,6 @@ func (this *Snowflake) Init(IP string, Port int, endpoints []string){
 		log.Fatal("Error: cannot connec to etcd:", err)
 	}
 	this.m_Id = 0
-	this.m_Ip = fmt.Sprintf("%s:%d", IP, Port)
 	this.m_KeysAPI = client.NewKeysAPI(etcdClient)
 }
 
@@ -94,9 +88,9 @@ func (this *Snowflake) Start(){
 }
 
 //注册服务器
-func NewSnowflake(IP string, Port int, Endpoints []string) *Snowflake{
+func NewSnowflake(Endpoints []string) *Snowflake{
 	uuid := &Snowflake{}
-	uuid.Init(IP, Port, Endpoints)
+	uuid.Init(Endpoints)
 	uuid.Start()
 	return uuid
 }

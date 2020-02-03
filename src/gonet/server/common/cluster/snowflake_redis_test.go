@@ -41,7 +41,7 @@ func (this *SnowflakeR) Ping(){
 			if err == nil{
 				Ids := [base.WorkeridMax + 1]bool{}
 				for _, v := range val {
-					Id := base.Int64(v[len(uuid_dir2):])
+					Id := base.Int(v[len(uuid_dir2):])
 					Ids[Id] = true
 				}
 

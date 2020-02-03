@@ -111,7 +111,7 @@ func (this *ServerMgr)Init() bool{
 	this.m_pService.Start()
 
 	//snowflake
-	this.m_SnowFlake = cluster.NewSnowflake(UserNetIP, base.Int(UserNetPort), this.m_config.Get5("Etcd_SnowFlake_Cluster", ","))
+	this.m_SnowFlake = cluster.NewSnowflake(this.m_config.Get5("Etcd_SnowFlake_Cluster", ","))
 
 	//账号服务器集群
 	this.m_AccountCluster = new(cluster.Cluster)
