@@ -67,7 +67,7 @@ TryTTL:
 		if err != nil || (resp != nil && resp.Node != nil && resp.Node.Value != this.Value()){
 			goto TrySET
 		}else{
-			time.Sleep(time.Second * 3)
+			time.Sleep(time.Second * 10)
 			goto TryTTL
 		}
 	}
