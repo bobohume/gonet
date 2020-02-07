@@ -14,82 +14,84 @@ func writeBool(bitstream base.IBitStream, val bool)(){
 	dat, _ := proto.Marshal(&message.Bool{Val:val})
 	nLen := len(dat)
 	bitstream.WriteInt(nLen, 8)
-	bitstream.WriteBits(nLen << 3, dat)
+	bitstream.WriteBits(dat, nLen << 3)
 }
 
 func writeString(bitstream base.IBitStream, val string)(){
 	dat, _ := proto.Marshal(&message.String{Val:val})
 	nLen := len(dat)
 	bitstream.WriteInt(nLen, 8)
-	bitstream.WriteBits(nLen << 3, dat)
+	bitstream.WriteBits(dat, nLen << 3)
 }
 
 func writeFloat32(bitstream base.IBitStream, val float32)(){
 	dat, _ := proto.Marshal(&message.Float{Val:val})
 	nLen := len(dat)
 	bitstream.WriteInt(nLen, 8)
-	bitstream.WriteBits(nLen << 3, dat)
+	bitstream.WriteBits(dat, nLen << 3)
 }
 
 func writeFloat64(bitstream base.IBitStream, val float64)(){
 	dat, _ := proto.Marshal(&message.Double{Val:val})
 	nLen := len(dat)
 	bitstream.WriteInt(nLen, 8)
-	bitstream.WriteBits(nLen << 3, dat)
+	bitstream.WriteBits(dat, nLen << 3)
 }
 
 func writeInt32(bitstream base.IBitStream, val int32)(){
 	dat, _ := proto.Marshal(&message.Int{Val:val})
 	nLen := len(dat)
 	bitstream.WriteInt(nLen, 8)
-	bitstream.WriteBits(nLen << 3, dat)
+	bitstream.WriteBits(dat, nLen << 3)
 }
 
 func writeInt64(bitstream base.IBitStream, val int64)(){
 	dat, _ := proto.Marshal(&message.Int64{Val:val})
 	nLen := len(dat)
 	bitstream.WriteInt(nLen, 8)
-	bitstream.WriteBits(nLen << 3, dat)
+	bitstream.WriteBits(dat, nLen << 3)
 }
 
 func writeUInt32(bitstream base.IBitStream, val uint32)(){
 	dat, _ := proto.Marshal(&message.UInt{Val:val})
 	nLen := len(dat)
 	bitstream.WriteInt(nLen, 8)
-	bitstream.WriteBits(nLen << 3, dat)
+	bitstream.WriteBits(dat, nLen << 3)
 }
 
 func writeUInt64(bitstream base.IBitStream, val uint64)(){
 	dat, _ := proto.Marshal(&message.UInt64{Val:val})
 	nLen := len(dat)
 	bitstream.WriteInt(nLen, 8)
-	bitstream.WriteBits(nLen << 3, dat)
+	bitstream.WriteBits(dat, nLen << 3)
 }
 
 func writeBoolSlice(bitstream base.IBitStream, val []bool)(){
 	dat, _ := proto.Marshal(&message.BoolSlice{Val:val})
 	nLen := len(dat)
 	bitstream.WriteInt(nLen, 16)
-	bitstream.WriteBits(nLen << 3, dat)
+	bitstream.WriteBits(dat, nLen << 3)
 }
 
 func writeStringSlice(bitstream base.IBitStream, val []string)(){
 	dat, _ := proto.Marshal(&message.StringSlice{Val:val})
-	bitstream.WriteBits(len(dat), dat)
+	nLen := len(dat)
+	bitstream.WriteInt(nLen, 16)
+	bitstream.WriteBits(dat,  nLen << 3)
 }
 
 func writeFloat32Slice(bitstream base.IBitStream, val []float32)(){
 	dat, _ := proto.Marshal(&message.FloatSlice{Val:val})
 	nLen := len(dat)
 	bitstream.WriteInt(nLen, 16)
-	bitstream.WriteBits(nLen << 3, dat)
+	bitstream.WriteBits(dat,  nLen << 3)
 }
 
 func writeFloat64Slice(bitstream base.IBitStream, val []float64)(){
 	dat, _ := proto.Marshal(&message.DoubleSlice{Val:val})
 	nLen := len(dat)
 	bitstream.WriteInt(nLen, 16)
-	bitstream.WriteBits(nLen << 3, dat)
+	bitstream.WriteBits(dat,  nLen << 3)
 }
 
 func writeIntSlice(bitstream base.IBitStream, val []int)(){
@@ -120,14 +122,14 @@ func writeInt32Slice(bitstream base.IBitStream, val []int32)(){
 	dat, _ := proto.Marshal(&message.IntSlice{Val:val})
 	nLen := len(dat)
 	bitstream.WriteInt(nLen, 16)
-	bitstream.WriteBits(nLen << 3, dat)
+	bitstream.WriteBits(dat,  nLen << 3)
 }
 
 func writeInt64Slice(bitstream base.IBitStream, val []int64)(){
 	dat, _ := proto.Marshal(&message.Int64Slice{Val:val})
 	nLen := len(dat)
 	bitstream.WriteInt(nLen, 16)
-	bitstream.WriteBits(nLen << 3, dat)
+	bitstream.WriteBits(dat,  nLen << 3)
 }
 
 func writeUIntSlice(bitstream base.IBitStream, val []uint)(){
@@ -158,14 +160,14 @@ func writeUInt32Slice(bitstream base.IBitStream, val []uint32)(){
 	dat, _ := proto.Marshal(&message.UIntSlice{Val:val})
 	nLen := len(dat)
 	bitstream.WriteInt(nLen, 16)
-	bitstream.WriteBits(nLen << 3, dat)
+	bitstream.WriteBits(dat, nLen << 3)
 }
 
 func writeUInt64Slice(bitstream base.IBitStream, val []uint64)(){
 	dat, _ := proto.Marshal(&message.UInt64Slice{Val:val})
 	nLen := len(dat)
 	bitstream.WriteInt(nLen, 16)
-	bitstream.WriteBits(nLen << 3, dat)
+	bitstream.WriteBits(dat, nLen << 3)
 }
 
 func writeBoolPtrSlice(bitstream base.IBitStream, val []*bool)(){
@@ -975,7 +977,7 @@ func Marshal(funcName string, params ...interface{})[]byte {
 			buf, _ :=proto.Marshal(param.(proto.Message))
 			nLen := len(buf)
 			bitstream.WriteInt(nLen, 32)
-			bitstream.WriteBits(nLen << 3, buf)
+			bitstream.WriteBits(buf, nLen << 3)
 
 
 
@@ -985,7 +987,7 @@ func Marshal(funcName string, params ...interface{})[]byte {
 			buf, _ := json.Marshal(param)
 			nLen := len(buf)
 			bitstream.WriteInt(nLen, 32)
-			bitstream.WriteBits(nLen << 3, buf)
+			bitstream.WriteBits(buf, nLen << 3)
 			/*buf := &bytes.Buffer{}
 			enc := gob.NewEncoder(buf)
 			enc.Encode(param)

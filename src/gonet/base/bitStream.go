@@ -47,7 +47,7 @@ type (
 		clear()
 		resize() bool
 
-		WriteBits(int, []byte)
+		WriteBits([]byte, int)
 		ReadBits(int)[]byte
 		WriteInt(int, int)
 		ReadInt(int) int
@@ -145,7 +145,7 @@ func (this *BitStream) resize() bool{
 	return true
 }
 
-func (this *BitStream) WriteBits(bitCount int, bitPtr []byte) {
+func (this *BitStream) WriteBits(bitPtr []byte, bitCount int) {
 	if bitCount == 0 {
 		return
 	}
@@ -208,7 +208,7 @@ func (this *BitStream) ReadBits(bitCount int) []byte{
 }
 
 func (this *BitStream) WriteInt(value int, bitCount int) {
-	this.WriteBits(bitCount, IntToBytes(value))
+	this.WriteBits(IntToBytes(value), bitCount)
 }
 
 func (this *BitStream) ReadInt(bitCount int) int {
@@ -250,7 +250,7 @@ func (this *BitStream) ReadFlag() bool {
 	return ret
 }
 
-func (this *BitStream) WriteFlag(val bool) bool {
+func (this *BitStream) WriteFlag(value bool) bool {
 	if ((this.flagNum - (this.flagNum>>3)<<3) == 0) && !this.tailFlag {
 		this.flagNum = this.bitNum
 
@@ -271,13 +271,13 @@ func (this *BitStream) WriteFlag(val bool) bool {
 		return false
 	}
 
-	if val {
+	if value {
 		this.dataPtr[(this.flagNum >> 3)] |= (1 << uint32(this.flagNum&0x7))
 	} else {
 		this.dataPtr[(this.flagNum >> 3)] &= ^(1 << uint32(this.flagNum&0x7))
 	}
 	this.flagNum++
-	return (val)
+	return (value)
 }
 
 func (this *BitStream) ReadString() string {
@@ -289,18 +289,18 @@ func (this *BitStream) ReadString() string {
 	return string("")
 }
 
-func (this *BitStream) WriteString(str string) {
-	buf := []byte(str)
+func (this *BitStream) WriteString(value string) {
+	buf := []byte(value)
 	nLen := len(buf)
 
 	if this.WriteFlag(nLen > 0) {
 		this.WriteInt(nLen, Bit16)
-		this.WriteBits(nLen<<3, buf)
+		this.WriteBits(buf, nLen<<3,)
 	}
 }
 
 func (this *BitStream) WriteInt64(value int64, bitCount int) {
-	this.WriteBits(bitCount, Int64ToBytes(value))
+	this.WriteBits(Int64ToBytes(value), bitCount)
 }
 
 func (this *BitStream) ReadInt64(bitCount int) int64 {
@@ -317,7 +317,7 @@ func (this *BitStream) ReadInt64(bitCount int) int64 {
 }
 
 func (this *BitStream) WriteFloat(value float32) {
-	this.WriteBits(Bit32, Float32ToByte(value))
+	this.WriteBits(Float32ToByte(value), Bit32)
 }
 
 func (this *BitStream) ReadFloat() float32 {
@@ -329,7 +329,7 @@ func (this *BitStream) ReadFloat() float32 {
 }
 
 func (this *BitStream) WriteFloat64(value float64) {
-	this.WriteBits(Bit64, Float64ToByte(value))
+	this.WriteBits(Float64ToByte(value), Bit64)
 }
 
 func (this *BitStream) ReadFloat64() float64 {

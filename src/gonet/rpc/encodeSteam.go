@@ -1320,7 +1320,7 @@ func MarshalSteam(funcName string, params ...interface{})[]byte {
 			buf, _ :=proto.Marshal(param.(proto.Message))
 			nLen := len(buf)
 			bitstream.WriteInt(nLen, 32)
-			bitstream.WriteBits(nLen << 3, buf)
+			bitstream.WriteBits(buf, nLen << 3)
 
 
 
@@ -1330,7 +1330,7 @@ func MarshalSteam(funcName string, params ...interface{})[]byte {
 			buf, _ := json.Marshal(param)
 			nLen := len(buf)
 			bitstream.WriteInt(nLen, 32)
-			bitstream.WriteBits(nLen << 3, buf)
+			bitstream.WriteBits(buf, nLen << 3)
 			/*buf := &bytes.Buffer{}
 			enc := gob.NewEncoder(buf)
 			enc.Encode(param)

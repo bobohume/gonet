@@ -167,7 +167,7 @@ func SendToClient(socketId int, packet proto.Message){
 		bitstream := base.NewBitStream(make([]byte, nLen), nLen)
 		bitstream.WriteString(message.GetMessageName(packet))
 		bitstream.WriteInt64(pakcetHead.Id, base.Bit64)
-		bitstream.WriteBits(len(buff)<<3, buff)
+		bitstream.WriteBits(buff, len(buff)<<3)
 		SERVER.GetServer().SendById(socketId, bitstream.GetBuffer())
 	}
 }
