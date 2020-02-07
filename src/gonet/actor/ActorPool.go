@@ -1,14 +1,19 @@
 package actor
 
 import (
+	"gonet/base"
+	"gonet/message"
+	"gonet/rpc"
+	"strings"
 	"sync"
 )
 
 //********************************************************
-// actorpool 管理,这里的actor可以动态调节
+// actorpool 管理,这里的actor可以动态添加,携程池
 //********************************************************
 type(
 	ActorPool struct{
+		Actor
 		m_ActorMap  map[int64] IActor
 		m_ActorLock *sync.RWMutex
 		//m_ActorMap sync.Map
@@ -19,15 +24,16 @@ type(
 		AddActor(Id int64, pActor IActor)//添加actor
 		DelActor(Id int64)//删除actor
 		BoardCast(funcName string, params ...interface{})//广播actor
-		Send(Id int64, funcName string, io CallIO) bool//发送到actor
-		SendMsg(Id int64, funcName string, params  ...interface{}) bool//发送到actor
+		SendById(Id int64, funcName string, io CallIO) bool//发送到actor
+		SendMsgById(Id int64, funcName string, params  ...interface{}) bool//发送到actor
 		GetActorNum() int
 	}
 )
 
-func (this *ActorPool) Init(){
+func (this *ActorPool) Init(chanNum int){
 	this.m_ActorMap = make(map[int64] IActor)
 	this.m_ActorLock = &sync.RWMutex{}
+	this.Actor.Init(chanNum)
 }
 
 func (this *ActorPool) GetActor(Id int64) IActor{
@@ -71,7 +77,7 @@ func (this *ActorPool) BoardCast(funcName string, params ...interface{}){
 	this.m_ActorLock.RUnlock()
 }
 
-func (this *ActorPool) Send(Id int64, funcName string, io CallIO) bool{
+func (this *ActorPool) SendById(Id int64, funcName string, io CallIO) bool{
 	pActor := this.GetActor(Id)
 	if pActor != nil && pActor.FindCall(funcName) != nil{
 		pActor.Send(io)
@@ -80,7 +86,7 @@ func (this *ActorPool) Send(Id int64, funcName string, io CallIO) bool{
 	return false
 }
 
-func (this *ActorPool) SendMsg(Id int64, funcName string, params  ...interface{}) bool{
+func (this *ActorPool) SendMsgById(Id int64, funcName string, params  ...interface{}) bool{
 	pActor := this.GetActor(Id)
 	if pActor != nil && pActor.FindCall(funcName) != nil{
 		pActor.SendMsg(funcName, params...)
@@ -90,7 +96,7 @@ func (this *ActorPool) SendMsg(Id int64, funcName string, params  ...interface{}
 }
 
 //actor pool must rewrite PacketFunc
-/*func (this *ActorPool) PacketFunc(id int, buff []byte) bool{
+func (this *ActorPool) PacketFunc(id int, buff []byte) bool{
 	defer func() {
 		if err := recover(); err != nil {
 			base.TraceCode(err)
@@ -112,16 +118,17 @@ func (this *ActorPool) SendMsg(Id int64, funcName string, params  ...interface{}
 		nType := bitstream.ReadInt(base.Bit8)
 		if nType == rpc.RPC_INT64 || nType == rpc.RPC_INT64_PTR{
 			nId := rpc.ReadInt64(bitstream)
-		else if nType == rpc.RPC_MESSAGE{
-			packet, err := rpc.UnmarshalPB(bitstream)
+			return this.SendById(nId, funcName, io)
+		}else if nType == rpc.RPC_MESSAGE{
+				packet, err := rpc.UnmarshalPB(bitstream)
 			if err != nil{
 				return false
 			}
 			packetHead := packet.(message.Packet).GetPacketHead()
 			nId := packetHead.Id
-			return this.m_Self.(IActorPool).SendActor(nId, io, funcName)
+			return this.SendById(nId, funcName, io)
 		}
 	}
 
 	return false
-}*/
+}

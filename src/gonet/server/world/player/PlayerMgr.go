@@ -21,12 +21,11 @@ var(
 
 type(
 	PlayerMgr struct{
-		actor.Actor
+		actor.ActorPool//玩家actor线城池
 
 		m_db         *sql.DB
 		m_Log        *base.CLog
 		m_PingTimer  common.ISimpleTimer
-		m_PlayerPool actor.ActorPool//玩家actor线城池
 	}
 
 	IPlayerMgr interface {
@@ -40,8 +39,7 @@ type(
 )
 
 func (this* PlayerMgr) Init(num int){
-	this.Actor.Init(num)
-	this.m_PlayerPool.Init()
+	this.ActorPool.Init(num)
 	this.m_db = world.SERVER.GetDB()
 	this.m_Log = world.SERVER.GetLog()
 	this.m_PingTimer = common.NewSimpleTimer(120)
@@ -117,7 +115,7 @@ func (this* PlayerMgr) Init(num int){
 }
 
 func (this *PlayerMgr) GetPlayer(accountId int64) actor.IActor{
-	return this.m_PlayerPool.GetActor(accountId)
+	return this.GetActor(accountId)
 }
 
 func (this *PlayerMgr) AddPlayer(accountId int64) actor.IActor{
@@ -140,14 +138,14 @@ func (this *PlayerMgr) AddPlayer(accountId int64) actor.IActor{
 	pPlayer.AccountId = accountId
 	pPlayer.PlayerIdList = PlayerList
 	pPlayer.PlayerNum = PlayerNum
-	this.m_PlayerPool.AddActor(accountId, pPlayer)
+	this.AddActor(accountId, pPlayer)
 	pPlayer.Init(MAX_PLAYER_CHAN)
 	return pPlayer
 }
 
 func (this *PlayerMgr) RemovePlayer(accountId int64){
 	this.m_Log.Printf("移除帐号数据[%d]", accountId)
-	this.m_PlayerPool.DelActor(accountId)
+	this.DelActor(accountId)
 }
 
 func (this* PlayerMgr) Update(){
@@ -175,7 +173,7 @@ func (this *PlayerMgr) PacketFunc(id int, buff []byte) bool{
 		nType := bitstream.ReadInt(base.Bit8)
 		if nType == rpc.RPC_INT64 || nType == rpc.RPC_INT64_PTR{
 			nId := rpc.ReadInt64(bitstream)
-			return this.m_PlayerPool.Send(nId, funcName, io)
+			return this.SendById(nId, funcName, io)
 		}else if nType == rpc.RPC_MESSAGE{
 			packet, err := rpc.UnmarshalPB(bitstream)
 			if err != nil{
@@ -183,16 +181,9 @@ func (this *PlayerMgr) PacketFunc(id int, buff []byte) bool{
 			}
 			packetHead := packet.(message.Packet).GetPacketHead()
 			nId := packetHead.Id
-			return this.m_PlayerPool.Send(nId, funcName, io)
+			return this.SendById(nId, funcName, io)
 		}
 	}
 
 	return false
-}
-
-func (this *PlayerMgr) SendMsgById(Id int64, funcName string, params  ...interface{}){
-	pActor := this.GetPlayer(Id)
-	if pActor != nil && pActor.FindCall(funcName) != nil {
-		pActor.SendMsg(funcName, params...)
-	}
 }

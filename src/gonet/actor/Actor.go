@@ -44,7 +44,8 @@ type (
 		GetId() int64
 		GetCallId() int64
 		GetSocketId() int//rpc is safe
-		SendMsgById(Id int64, funcName string, params ...interface{})//对于actor pool类型,动态actor重构
+		SendMsgById(id int64, funcName string, params ...interface{}) bool//对于actor pool类型,动态actor重构
+		SendById(id int64, funcName string, io CallIO) bool//对于actor pool类型,动态actor重构
 	}
 
 	CallIO struct {
@@ -174,8 +175,14 @@ func (this *Actor) Send(io CallIO) {
 	//}()
 }
 
-//可以动态调节actor可以通过实现此函数
-func (this *Actor) SendMsgById(Id int64,funcName string, params ...interface{}) {
+//actor携程池可以通过实现此函数
+func (this *Actor) SendMsgById(id int64,funcName string, params ...interface{}) bool{
+	return false
+}
+
+//actor携程池可以通过实现此函数
+func (this *Actor)SendById(id int64, funcName string, io CallIO) bool{
+	return false
 }
 
 func (this *Actor) PacketFunc(id int, buff []byte) bool{
