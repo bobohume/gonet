@@ -14,7 +14,7 @@ import (
 
 const (
 	INT_MAX = int(2147483647)
-	TCP_END = "💞♡"						//解决tpc粘包半包,结束标志
+	TCP_END = "💞♡"						//解决tpc粘包半包,结束标志,pb采用Varint编码高位有特殊含义
 	//TCP_END = "💞💞💞"				//解决tpc粘包半包,结束标志,-1
 )
 
