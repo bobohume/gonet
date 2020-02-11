@@ -66,7 +66,7 @@ func (this *EventProcess) Init(num int) {
 		nLen := len(packet.GetPlayerData())
 		//fmt.Println(len(packet.PlayerData), this.AccountId, packet.PlayerData)
 		if nLen == 0{
-			packet1 := &message.C_W_CreatePlayerRequest{PacketHead:message.BuildPacketHead( this.AccountId, int(message.SERVICE_GATESERVER)),
+			packet1 := &message.C_W_CreatePlayerRequest{PacketHead:message.BuildPacketHead( this.AccountId, message.SERVICE_GATESERVER),
 				PlayerName:"我是大坏蛋",
 				Sex:int32(0),}
 			this.SendPacket(packet1)
@@ -85,9 +85,9 @@ func (this *EventProcess) Init(num int) {
 		}
 	})
 
-	this.RegisterCall("A_C_LoginRequest", func(packet *message.A_C_LoginRequest) {
+	this.RegisterCall("A_C_LoginResponse", func(packet *message.A_C_LoginResponse) {
 		if packet.GetError() == base.ACCOUNT_NOEXIST {
-			packet1 := &message.C_A_RegisterRequest{PacketHead:message.BuildPacketHead( 0, int(message.SERVICE_GATESERVER)),
+			packet1 := &message.C_A_RegisterRequest{PacketHead:message.BuildPacketHead( 0, message.SERVICE_GATESERVER),
 				AccountName: packet.AccountName, SocketId: 0}
 			this.SendPacket(packet1)
 		}
@@ -107,7 +107,7 @@ func (this *EventProcess) Init(num int) {
 }
 
 func (this *EventProcess)  LoginGame(){
-	packet1 := &message.C_W_Game_LoginRequset{PacketHead:message.BuildPacketHead( this.AccountId, int(message.SERVICE_GATESERVER)),
+	packet1 := &message.C_W_Game_LoginRequset{PacketHead:message.BuildPacketHead( this.AccountId, message.SERVICE_GATESERVER),
 		PlayerId:this.PlayerId,}
 	this.SendPacket(packet1)
 }
@@ -120,7 +120,7 @@ func (this *EventProcess)  LoginAccount() {
 	id++
 	this.AccountName = fmt.Sprintf("test%d", id)
 	//this.AccountName = fmt.Sprintf("test%d", base.RAND.RandI(0, 7000))
-	packet1 := &message.C_A_LoginRequest{PacketHead: message.BuildPacketHead(0, int(message.SERVICE_GATESERVER)),
+	packet1 := &message.C_A_LoginRequest{PacketHead: message.BuildPacketHead(0, message.SERVICE_GATESERVER),
 		AccountName: this.AccountName, BuildNo: base.BUILD_NO, SocketId: 0}
 	this.SendPacket(packet1)
 }

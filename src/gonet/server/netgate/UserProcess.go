@@ -55,7 +55,7 @@ func (this *UserPrcoess) CheckClientEx(sockId int, packetName string, packetHead
 	return nil
 }
 
-func (this *UserPrcoess)SwtichSendToWorld(socketId int, packetName string, packetHead *message.Ipacket, buff []byte){
+func (this *UserPrcoess) SwtichSendToWorld(socketId int, packetName string, packetHead *message.Ipacket, buff []byte){
 	pAccountInfo := this.CheckClientEx(socketId, packetName, packetHead)
 	if pAccountInfo != nil{
 		buff = base.SetTcpEnd(buff)

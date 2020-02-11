@@ -14,8 +14,8 @@ import (
 
 const (
 	INT_MAX = int(2147483647)
-	TCP_END = "💞♡"						//解决tpc粘包半包,结束标志,pb采用Varint编码高位有特殊含义
-	//TCP_END = "💞💞💞"				//解决tpc粘包半包,结束标志,-1
+	TCP_HEAD_SIZE = 4			//解决tpc粘包半包,包头固定长度
+	TCP_END = "💞♡"					//解决tpc粘包半包,特殊结束标志,pb采用Varint编码高位有特殊含义
 )
 
 var(
@@ -208,13 +208,13 @@ func ToLower(name string) string{
 }
 
 func SetTcpEnd(buff []byte) []byte{
-	buff = append(buff, []byte(TCP_END)...)
+	buff = append(IntToBytes(len(buff)), buff...)
 	return buff
 }
 
-//tcp粘包固定包头
+//tcp粘包特殊结束标志
 /*func SetTcpEnd(buff []byte) []byte{
-	buff = append(base.IntToBytes(len(buff)), buff...)
+	buff = append(buff, []byte(TCP_END)...)
 	return buff
 }*/
 

@@ -60,13 +60,13 @@ func ReceivePacket(Id int, dat []byte){
 	//找包结束
 	seekToTcpEnd := func(buff []byte) (bool, int){
 		nLen := len(buff)
-		if nLen < base.PACKET_HEAD_SIZE{
+		if nLen < base.TCP_HEAD_SIZE{
 			return false, 0
 		}
 
 		nSize := base.BytesToInt(buff[0:4])
-		if nSize + base.PACKET_HEAD_SIZE <= nLen{
-			return true, nSize+base.PACKET_HEAD_SIZE
+		if nSize + base.TCP_HEAD_SIZE <= nLen{
+			return true, nSize+base.TCP_HEAD_SIZE
 		}
 		return false, 0
 	}
@@ -83,10 +83,10 @@ ParsePacekt:
 	//fmt.Println(bFindFlag, nPacketSize, nBufferSize)
 	if bFindFlag{
 		if nBufferSize == nPacketSize{		//完整包
-			//this.HandlePacket(Id, buff[nCurSize+base.PACKET_HEAD_SIZE:nCurSize+nPacketSize])
+			//this.HandlePacket(Id, buff[nCurSize+base.TCP_HEAD_SIZE:nCurSize+nPacketSize])
 			nCurSize += nPacketSize
 		}else if ( nBufferSize > nPacketSize){
-			//this.HandlePacket(Id, buff[nCurSize+base.PACKET_HEAD_SIZE:nCurSize+nPacketSize])
+			//this.HandlePacket(Id, buff[nCurSize+base.TCP_HEAD_SIZE:nCurSize+nPacketSize])
 			nCurSize += nPacketSize
 			goto ParsePacekt
 		}
