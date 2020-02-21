@@ -211,7 +211,7 @@ func (this *Actor) call(io CallIO) {
 		f := pFunc.FuncVal
 		k := pFunc.FuncType
 		strParams := pFunc.FuncParams
-		params := rpc.Unmarshal(bitstream, funcName, k)
+		params := rpc.Unmarshal(bitstream, k)
 
 		this.m_SocketId = io.SocketId
 		this.m_CallId = io.ActorId

@@ -117,7 +117,7 @@ func (this *ActorPool) PacketFunc(id int, buff []byte) bool{
 		bitstream.ReadInt(base.Bit8)
 		nType := bitstream.ReadInt(base.Bit8)
 		if nType == rpc.RPC_INT64 || nType == rpc.RPC_INT64_PTR{
-			nId := rpc.ReadInt64(bitstream)
+			nId := bitstream.ReadInt64(64)
 			return this.SendById(nId, funcName, io)
 		}else if nType == rpc.RPC_MESSAGE{
 				packet, err := rpc.UnmarshalPB(bitstream)

@@ -143,39 +143,10 @@ func TestUMarshalRpc(t *testing.T){
 	}
 }
 
-func TestMarshalRpcStream(t *testing.T){
-	aa := []int32{}
-	for i := 0; i < nArraySize; i++{
-		aa = append(aa, int32(nValue))
-	}
-	for i := 0; i < ntimes; i++{
-		rpc.MarshalSteam("test", aa)
-	}
-}
-
-func TestUMarshalRpcStream(t *testing.T){
-	aa := []int32{}
-	for i := 0; i < nArraySize; i++{
-		aa = append(aa, int32(nValue))
-	}
-	for i := 0; i < ntimes; i++{
-		buff := rpc.MarshalSteam("test", aa)
-		parseStream(buff)
-	}
-}
-
-func parseStream (buff []byte) {
-	funcName := ""
-	bitstream := base.NewBitStream(buff, len(buff))
-	funcName = bitstream.ReadString()
-	funcName = strings.ToLower(funcName)
-	rpc.UnmarshalStream(bitstream, funcName, nil)
-}
-
 func parse (buff []byte) {
 	funcName := ""
 	bitstream := base.NewBitStream(buff, len(buff))
 	funcName = bitstream.ReadString()
 	funcName = strings.ToLower(funcName)
-	rpc.Unmarshal(bitstream, funcName, nil)
+	rpc.Unmarshal(bitstream, nil)
 }

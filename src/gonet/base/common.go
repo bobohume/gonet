@@ -58,9 +58,7 @@ func IntToBytes(val int) []byte {
 //字节转换成整形
 func BytesToInt(data []byte) int {
 	buff := make([]byte, 4)
-	for i, v := range data{
-		buff[i] = v
-	}
+	copy(buff, data)
 	tmp := int32(binary.LittleEndian.Uint32(buff))
 	return int(tmp)
 }
@@ -76,9 +74,7 @@ func Int16ToBytes(val int16) []byte {
 //字节转换成为int16
 func BytesToInt16(data []byte) int16 {
 	buff := make([]byte, 2)
-	for i, v := range data{
-		buff[i] = v
-	}
+	copy(buff, data)
 	tmp := binary.LittleEndian.Uint16(buff)
 	return int16(tmp)
 }
@@ -93,9 +89,7 @@ func Int64ToBytes(val int64) []byte {
 
 func BytesToInt64(data []byte) int64 {
 	buff := make([]byte, 8)
-	for i, v := range data{
-		buff[i] = v
-	}
+	copy(buff, data)
 	tmp := binary.LittleEndian.Uint64(buff)
 	return int64(tmp)
 }
@@ -110,9 +104,7 @@ func Float32ToByte(val float32) []byte {
 
 func BytesToFloat32(data []byte) float32 {
 	buff := make([]byte, 4)
-	for i, v := range data{
-		buff[i] = v
-	}
+	copy(buff, data)
 	tmp := binary.LittleEndian.Uint32(buff)
 	return math.Float32frombits(tmp)
 }
@@ -127,9 +119,7 @@ func Float64ToByte(val float64) []byte {
 
 func BytesToFloat64(data []byte) float64 {
 	buff := make([]byte, 8)
-	for i, v := range data{
-		buff[i] = v
-	}
+	copy(buff, data)
 	tmp := binary.LittleEndian.Uint64(buff)
 	return math.Float64frombits(tmp)
 }

@@ -1,6 +1,8 @@
 package rpc
 
 import (
+	"github.com/golang/protobuf/proto"
+	"gonet/base"
 	"reflect"
 	"strings"
 )
@@ -236,4 +238,23 @@ func getTypeString(param interface{}) string{
 	}
 
 	return sType
+}
+
+//rpc  MarshalPB
+func MarshalPB(bitstream *base.BitStream, packet proto.Message) {
+	bitstream.WriteString(proto.MessageName(packet))
+	buf, _ :=proto.Marshal(packet)
+	nLen := len(buf)
+	bitstream.WriteInt(nLen, 32)
+	bitstream.WriteBits(buf, nLen << 3)
+}
+
+//rpc  UnmarshalPB
+func UnmarshalPB(bitstream *base.BitStream) (proto.Message, error) {
+	packetName := bitstream.ReadString()
+	nLen := bitstream.ReadInt(32)
+	packetBuf := bitstream.ReadBits(nLen << 3)
+	packet := reflect.New(proto.MessageType(packetName).Elem()).Interface().(proto.Message)
+	err := proto.Unmarshal(packetBuf, packet)
+	return  packet, err
 }
