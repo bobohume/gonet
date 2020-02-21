@@ -6,6 +6,7 @@ import (
 	"github.com/json-iterator/go"
 	"gonet/base"
 	"reflect"
+	"strings"
 )
 
 //rpc  Marshal
@@ -19,7 +20,7 @@ func Marshal(funcName string, params ...interface{})[]byte {
 
 	msg := make([]byte, 1024)
 	bitstream := base.NewBitStream(msg, 1024)
-	bitstream.WriteString(funcName)
+	bitstream.WriteString(strings.ToLower(funcName))
 	bitstream.WriteInt(len(params), 8)
 	for _, param := range params {
 		sType := getTypeString(param)

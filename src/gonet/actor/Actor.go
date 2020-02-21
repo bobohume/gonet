@@ -191,8 +191,7 @@ func (this *Actor) PacketFunc(id int, buff []byte) bool{
 	io.SocketId = id
 
 	bitstream := base.NewBitStream(io.Buff, len(io.Buff))
-	funcName := bitstream.ReadString()
-	funcName = strings.ToLower(funcName)
+	funcName := strings.ToLower(bitstream.ReadString())
 	if this.FindCall(funcName) != nil{
 		this.Send(io)
 		return true
@@ -204,8 +203,7 @@ func (this *Actor) PacketFunc(id int, buff []byte) bool{
 func (this *Actor) call(io CallIO) {
 	funcName := ""
 	bitstream := base.NewBitStream(io.Buff, len(io.Buff))
-	funcName = bitstream.ReadString()
-	funcName = strings.ToLower(funcName)
+	funcName = strings.ToLower(bitstream.ReadString())
 	pFunc := this.FindCall(funcName)
 	if pFunc != nil {
 		f := pFunc.FuncVal

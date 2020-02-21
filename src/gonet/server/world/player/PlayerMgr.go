@@ -163,8 +163,7 @@ func (this *PlayerMgr) PacketFunc(id int, buff []byte) bool{
 	io.SocketId = id
 
 	bitstream := base.NewBitStream(io.Buff, len(io.Buff))
-	funcName := bitstream.ReadString()
-	funcName = strings.ToLower(funcName)
+	funcName := strings.ToLower(bitstream.ReadString())
 	if this.FindCall(funcName) != nil{
 		this.Send(io)
 		return true

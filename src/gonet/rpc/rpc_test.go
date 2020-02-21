@@ -9,7 +9,6 @@ import (
 	"gonet/base"
 	"gonet/message"
 	"gonet/rpc"
-	"strings"
 	"testing"
 )
 
@@ -144,9 +143,7 @@ func TestUMarshalRpc(t *testing.T){
 }
 
 func parse (buff []byte) {
-	funcName := ""
 	bitstream := base.NewBitStream(buff, len(buff))
-	funcName = bitstream.ReadString()
-	funcName = strings.ToLower(funcName)
+	bitstream.ReadString()
 	rpc.Unmarshal(bitstream, nil)
 }
