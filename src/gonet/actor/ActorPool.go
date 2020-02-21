@@ -120,7 +120,7 @@ func (this *ActorPool) PacketFunc(id int, buff []byte) bool{
 			nId := bitstream.ReadInt64(64)
 			return this.SendById(nId, funcName, io)
 		}else if nType == rpc.RPC_MESSAGE{
-				packet, err := rpc.UnmarshalPB(bitstream)
+			packet, err := rpc.UnmarshalPB(bitstream)
 			if err != nil{
 				return false
 			}
