@@ -1,15 +1,27 @@
 package rpc
 
 import (
+	"github.com/golang/protobuf/proto"
 	"github.com/json-iterator/go"
 	"gonet/base"
+	"gonet/message"
 	"reflect"
+	"strings"
 )
+
+//rpc UnmarshalHead
+func UnmarshalHead(buff []byte) *message.RpcPacket{
+	rpcPacket := &message.RpcPacket{}
+	proto.Unmarshal(buff, rpcPacket)
+	rpcPacket.FuncName = strings.ToLower(rpcPacket.FuncName)
+	return rpcPacket
+}
 
 //rpc Unmarshal
 //pFuncType for RegisterCall func
-func Unmarshal(bitstream *base.BitStream, pFuncType reflect.Type) []interface{}{
-	nCurLen := bitstream.ReadInt(8)
+func UnmarshalBody(rpcPacket *message.RpcPacket, pFuncType reflect.Type) []interface{}{
+	bitstream := base.NewBitStream(rpcPacket.RpcBody, len(rpcPacket.RpcBody))
+	nCurLen := int(rpcPacket.ArgLen)
 	params := make([]interface{}, nCurLen)
 	for i := 0; i < nCurLen; i++  {
 		switch bitstream.ReadInt(8) {
@@ -1078,7 +1090,7 @@ func Unmarshal(bitstream *base.BitStream, pFuncType reflect.Type) []interface{}{
 
 
 		case RPC_MESSAGE://protobuf
-			packet, err := UnmarshalPB(bitstream)
+			packet, err := unmarshalPB(bitstream)
 			if err == nil{
 				params[i] = packet
 			}
@@ -1108,4 +1120,14 @@ func Unmarshal(bitstream *base.BitStream, pFuncType reflect.Type) []interface{}{
 		}
 	}
 	return params
+}
+
+//rpc  UnmarshalPB
+func unmarshalPB(bitstream *base.BitStream) (proto.Message, error) {
+	packetName := bitstream.ReadString()
+	nLen := bitstream.ReadInt(32)
+	packetBuf := bitstream.ReadBits(nLen << 3)
+	packet := reflect.New(proto.MessageType(packetName).Elem()).Interface().(proto.Message)
+	err := proto.Unmarshal(packetBuf, packet)
+	return  packet, err
 }

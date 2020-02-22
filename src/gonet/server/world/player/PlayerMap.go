@@ -2,6 +2,7 @@ package player
 
 import (
 	"gonet/actor"
+	"gonet/message"
 )
 
 func (this *Player) AddMap() {
@@ -18,5 +19,8 @@ func (this *Player) ReloginMap(SocketId int) {
 
 //--------------发送给客户端----------------------//
 func SendToMap(Id int64, funcName string, params  ...interface{}){
-	actor.MGR.SendMsgById("mapmgr", Id, funcName, params...)
+	params1 := make([]interface{}, len(params)+1)
+	params1[0] = &message.RpcHead{Id:Id}
+	copy(params1[1:], params)
+	actor.MGR.SendMsg("mapmgr", funcName, params1...)
 }

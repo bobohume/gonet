@@ -4,6 +4,7 @@ import (
 	"gonet/actor"
 	"gonet/base"
 	"gonet/message"
+	"gonet/rpc"
 	"gonet/server/common"
 	"strconv"
 )
@@ -74,11 +75,9 @@ func DispatchPacketToClient(id int, buff []byte) bool{
 		}
 	}()
 
-	bitstream := base.NewBitStream(buff, len(buff))
-	bitstream.ReadString()//统一格式包头名字
-	accountId := bitstream.ReadInt64(base.Bit64)
-	socketId := SERVER.GetPlayerMgr().GetSocket(accountId)
-	SERVER.GetServer().SendById(socketId, bitstream.GetBytePtr())
+	rpcPacket := rpc.UnmarshalHead(buff)
+	socketId := SERVER.GetPlayerMgr().GetSocket(rpcPacket.RpcHead.Id)
+	SERVER.GetServer().SendById(socketId, rpcPacket.RpcBody)
 	return true
 }
 

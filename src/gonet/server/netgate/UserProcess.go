@@ -108,12 +108,13 @@ func (this *UserPrcoess) PacketFunc(socketid int, buff []byte) bool{
 	}
 
 	//解析整个包
+	rpcHead := &message.RpcHead{DestServerType:packetHead.DestServerType, Id:packetHead.Id}
 	if packetHead.DestServerType == message.SERVICE_WORLDSERVER{
-		this.SwtichSendToWorld(socketid, packetName, packetHead, rpc.Marshal(packetName, packet))
+		this.SwtichSendToWorld(socketid, packetName, packetHead, rpc.Marshal(packetName, rpcHead, packet))
 	}else if packetHead.DestServerType == message.SERVICE_ACCOUNTSERVER{
-		this.SwtichSendToAccount(socketid, packetName, packetHead, rpc.Marshal(packetName, packet))
+		this.SwtichSendToAccount(socketid, packetName, packetHead, rpc.Marshal(packetName, rpcHead, packet))
 	}else{
-		this.Actor.PacketFunc(socketid, rpc.Marshal(packetName, packet))
+		this.Actor.PacketFunc(socketid, rpc.Marshal(packetName, rpcHead, packet))
 	}
 
 	return true

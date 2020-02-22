@@ -26,9 +26,8 @@ func (this *UserServerProcess) PacketFunc(id int, buff []byte) bool{
 	io.Buff = buff
 	io.SocketId = id
 
-	bitstream := base.NewBitStream(io.Buff, len(io.Buff))
-	funcName := strings.ToLower(bitstream.ReadString())
-	if this.FindCall(funcName) != nil{
+	rpcPacket := rpc.UnmarshalHead(io.Buff)
+	if this.FindCall(rpcPacket.FuncName) != nil{
 		this.Send(io)
 		return true
 	}

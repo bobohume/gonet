@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"github.com/golang/protobuf/proto"
 	"github.com/json-iterator/go"
-	"gonet/base"
 	"gonet/message"
 	"gonet/rpc"
 	"testing"
@@ -143,7 +142,6 @@ func TestUMarshalRpc(t *testing.T){
 }
 
 func parse (buff []byte) {
-	bitstream := base.NewBitStream(buff, len(buff))
-	bitstream.ReadString()
-	rpc.Unmarshal(bitstream, nil)
+	rpcPacket := rpc.UnmarshalHead(buff)
+	rpc.UnmarshalBody(rpcPacket, nil)
 }

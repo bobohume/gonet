@@ -44,8 +44,6 @@ type (
 		GetId() int64
 		GetCallId() int64
 		GetSocketId() int//rpc is safe
-		SendMsgById(id int64, funcName string, params ...interface{}) bool//对于actor pool类型,动态actor重构
-		SendById(id int64, funcName string, io CallIO) bool//对于actor pool类型,动态actor重构
 	}
 
 	CallIO struct {
@@ -162,7 +160,6 @@ func (this *Actor) SendMsg(funcName string, params ...interface{}) {
 	this.Send(io)
 }
 
-
 func (this *Actor) Send(io CallIO) {
 	//go func() {
 	defer func() {
@@ -175,24 +172,13 @@ func (this *Actor) Send(io CallIO) {
 	//}()
 }
 
-//actor携程池可以通过实现此函数
-func (this *Actor) SendMsgById(id int64,funcName string, params ...interface{}) bool{
-	return false
-}
-
-//actor携程池可以通过实现此函数
-func (this *Actor)SendById(id int64, funcName string, io CallIO) bool{
-	return false
-}
-
 func (this *Actor) PacketFunc(id int, buff []byte) bool{
 	var io CallIO
 	io.Buff = buff
 	io.SocketId = id
 
-	bitstream := base.NewBitStream(io.Buff, len(io.Buff))
-	funcName := strings.ToLower(bitstream.ReadString())
-	if this.FindCall(funcName) != nil{
+	rpcPacket := rpc.UnmarshalHead(io.Buff)
+	if this.FindCall(rpcPacket.FuncName) != nil{
 		this.Send(io)
 		return true
 	}
@@ -201,15 +187,14 @@ func (this *Actor) PacketFunc(id int, buff []byte) bool{
 }
 
 func (this *Actor) call(io CallIO) {
-	funcName := ""
-	bitstream := base.NewBitStream(io.Buff, len(io.Buff))
-	funcName = strings.ToLower(bitstream.ReadString())
+	rpcPacket := rpc.UnmarshalHead(io.Buff)
+	funcName := rpcPacket.FuncName
 	pFunc := this.FindCall(funcName)
 	if pFunc != nil {
 		f := pFunc.FuncVal
 		k := pFunc.FuncType
 		strParams := pFunc.FuncParams
-		params := rpc.Unmarshal(bitstream, k)
+		params := rpc.UnmarshalBody(rpcPacket, k)
 
 		this.m_SocketId = io.SocketId
 		this.m_CallId = io.ActorId

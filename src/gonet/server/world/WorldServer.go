@@ -161,13 +161,10 @@ func (this *ServerMgr) GetAccountCluster() *cluster.Cluster{
 //发送给客户端
 func SendToClient(socketId int, packet proto.Message){
 	buff := message.Encode(packet)
-	nLen := len(buff) + 128
 	pakcetHead := packet.(message.Packet).GetPacketHead()
 	if pakcetHead != nil {
-		bitstream := base.NewBitStream(make([]byte, nLen), nLen)
-		bitstream.WriteString(message.GetMessageName(packet))
-		bitstream.WriteInt64(pakcetHead.Id, base.Bit64)
-		bitstream.WriteBits(buff, len(buff)<<3)
-		SERVER.GetServer().SendById(socketId, bitstream.GetBuffer())
+		rpcPacket := &message.RpcPacket{FuncName:message.GetMessageName(packet), ArgLen:1, RpcHead:&message.RpcHead{DestServerType:pakcetHead.DestServerType, Id:pakcetHead.Id}, RpcBody:buff}
+		data, _ := proto.Marshal(rpcPacket)
+		SERVER.GetServer().SendById(socketId, data)
 	}
 }

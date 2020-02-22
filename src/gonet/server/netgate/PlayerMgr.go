@@ -3,6 +3,7 @@ package netgate
 import (
 	"gonet/actor"
 	"gonet/base"
+	"gonet/message"
 	"sync"
 	"time"
 )
@@ -128,7 +129,7 @@ func (this *PlayerManager) Init(num int){
 
 		if len(accountMap) != 0{
 			for i, v := range accountMap {
-				SERVER.GetWorldCluster().SendMsg(v, "G_W_Relogin", i)
+				SERVER.GetWorldCluster().SendMsg(v, "G_W_Relogin", &message.RpcHead{Id:i})
 			}
 		}
 	})

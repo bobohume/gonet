@@ -116,7 +116,7 @@ func (this* Player) Init(num int){
 	})
 
 	//断线重连
-	this.RegisterCall("G_W_Relogin", func(accountId int64) {
+	this.RegisterCall("G_W_Relogin", func() {
 		this.SocketId = this.GetSocketId()
 		this.ReloginMap(this.GetSocketId())
 		//添加到世界频道

@@ -6,11 +6,8 @@ import (
 	"gonet/actor"
 	"gonet/base"
 	"gonet/db"
-	"gonet/message"
-	"gonet/rpc"
 	"gonet/server/common"
 	"gonet/server/world"
-	"strings"
 )
 //********************************************************
 // 玩家管理
@@ -149,40 +146,4 @@ func (this *PlayerMgr) RemovePlayer(accountId int64){
 }
 
 func (this* PlayerMgr) Update(){
-}
-
-func (this *PlayerMgr) PacketFunc(id int, buff []byte) bool{
-	defer func() {
-		if err := recover(); err != nil {
-			base.TraceCode(err)
-		}
-	}()
-
-	var io actor.CallIO
-	io.Buff = buff
-	io.SocketId = id
-
-	bitstream := base.NewBitStream(io.Buff, len(io.Buff))
-	funcName := strings.ToLower(bitstream.ReadString())
-	if this.FindCall(funcName) != nil{
-		this.Send(io)
-		return true
-	}else{
-		bitstream.ReadInt(base.Bit8)
-		nType := bitstream.ReadInt(base.Bit8)
-		if nType == rpc.RPC_INT64 || nType == rpc.RPC_INT64_PTR{
-			nId := bitstream.ReadInt64(64)
-			return this.SendById(nId, funcName, io)
-		}else if nType == rpc.RPC_MESSAGE{
-			packet, err := rpc.UnmarshalPB(bitstream)
-			if err != nil{
-				return false
-			}
-			packetHead := packet.(message.Packet).GetPacketHead()
-			nId := packetHead.Id
-			return this.SendById(nId, funcName, io)
-		}
-	}
-
-	return false
 }

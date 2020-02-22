@@ -4,7 +4,6 @@ import (
 	"gonet/base"
 	"gonet/message"
 	"gonet/rpc"
-	"strings"
 	"sync"
 )
 
@@ -24,8 +23,6 @@ type(
 		AddActor(Id int64, pActor IActor)//添加actor
 		DelActor(Id int64)//删除actor
 		BoardCast(funcName string, params ...interface{})//广播actor
-		SendById(Id int64, funcName string, io CallIO) bool//发送到actor
-		SendMsgById(Id int64, funcName string, params  ...interface{}) bool//发送到actor
 		GetActorNum() int
 	}
 )
@@ -77,22 +74,17 @@ func (this *ActorPool) BoardCast(funcName string, params ...interface{}){
 	this.m_ActorLock.RUnlock()
 }
 
-func (this *ActorPool) SendById(Id int64, funcName string, io CallIO) bool{
-	pActor := this.GetActor(Id)
-	if pActor != nil && pActor.FindCall(funcName) != nil{
-		pActor.Send(io)
-		return true
+func (this *ActorPool) SendMsg(funcName string, params ...interface{}) {
+	rpcHead, bOk := params[0].(*message.RpcHead)
+	if bOk{
+		pActor := this.GetActor(rpcHead.Id)
+		if pActor != nil && pActor.FindCall(funcName) != nil{
+			pActor.SendMsg(funcName, params...)
+			return
+		}
 	}
-	return false
-}
 
-func (this *ActorPool) SendMsgById(Id int64, funcName string, params  ...interface{}) bool{
-	pActor := this.GetActor(Id)
-	if pActor != nil && pActor.FindCall(funcName) != nil{
-		pActor.SendMsg(funcName, params...)
-		return true
-	}
-	return false
+	this.Actor.SendMsg(funcName, params...)
 }
 
 //actor pool must rewrite PacketFunc
@@ -107,27 +99,16 @@ func (this *ActorPool) PacketFunc(id int, buff []byte) bool{
 	io.Buff = buff
 	io.SocketId = id
 
-	bitstream := base.NewBitStream(io.Buff, len(io.Buff))
-	funcName := strings.ToLower(bitstream.ReadString())
-	if this.FindCall(funcName) != nil{
+	rpcPacket := rpc.UnmarshalHead(io.Buff)
+	if this.FindCall(rpcPacket.FuncName) != nil{
 		this.Send(io)
 		return true
 	}else{
-		bitstream.ReadInt(base.Bit8)
-		nType := bitstream.ReadInt(base.Bit8)
-		if nType == rpc.RPC_INT64 || nType == rpc.RPC_INT64_PTR{
-			nId := bitstream.ReadInt64(64)
-			return this.SendById(nId, funcName, io)
-		}else if nType == rpc.RPC_MESSAGE{
-			packet, err := rpc.UnmarshalPB(bitstream)
-			if err != nil{
-				return false
-			}
-			packetHead := packet.(message.Packet).GetPacketHead()
-			nId := packetHead.Id
-			return this.SendById(nId, funcName, io)
+		pActor := this.GetActor(rpcPacket.RpcHead.Id)
+		if pActor != nil && pActor.FindCall(rpcPacket.FuncName) != nil{
+			pActor.Send(io)
+			return true
 		}
 	}
-
 	return false
 }

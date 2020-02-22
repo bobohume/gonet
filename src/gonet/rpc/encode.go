@@ -5,6 +5,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/json-iterator/go"
 	"gonet/base"
+	"gonet/message"
 	"reflect"
 	"strings"
 )
@@ -18,11 +19,10 @@ func Marshal(funcName string, params ...interface{})[]byte {
 		}
 	}()
 
+	rpcPacket := &message.RpcPacket{FuncName:strings.ToLower(funcName), ArgLen:int32(len(params)), RpcHead:&message.RpcHead{}}
 	msg := make([]byte, 1024)
 	bitstream := base.NewBitStream(msg, 1024)
-	bitstream.WriteString(strings.ToLower(funcName))
-	bitstream.WriteInt(len(params), 8)
-	for _, param := range params {
+	for i, param := range params {
 		sType := getTypeString(param)
 		switch sType {
 		case "bool":
@@ -1317,8 +1317,17 @@ func Marshal(funcName string, params ...interface{})[]byte {
 
 
 		case "*message":
+			//rpc  特定rpc头部设置需求，params[0]传入RpcHead
+			if i == 0{
+				rpcHead, bOk := params[0].(*message.RpcHead)
+				if bOk{
+					rpcPacket.ArgLen--
+					rpcPacket.RpcHead = rpcHead
+					continue
+				}
+			}
 			bitstream.WriteInt(RPC_MESSAGE, 8)
-			MarshalPB(bitstream, param.(proto.Message))
+			marshalPB(bitstream, param.(proto.Message))
 
 
 
@@ -1342,5 +1351,16 @@ func Marshal(funcName string, params ...interface{})[]byte {
 		}
 	}
 
-	return bitstream.GetBuffer()
+	rpcPacket.RpcBody = bitstream.GetBuffer()
+	buf, _ := proto.Marshal(rpcPacket)
+	return buf
+}
+
+//rpc  MarshalPB
+func marshalPB(bitstream *base.BitStream, packet proto.Message) {
+	bitstream.WriteString(proto.MessageName(packet))
+	buf, _ :=proto.Marshal(packet)
+	nLen := len(buf)
+	bitstream.WriteInt(nLen, 32)
+	bitstream.WriteBits(buf, nLen << 3)
 }

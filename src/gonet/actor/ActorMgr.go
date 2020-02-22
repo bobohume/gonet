@@ -19,7 +19,6 @@ type (
 		AddActor(IActor, ...string)
 		InitActorHandle(network.ISocket)
 		SendMsg(string, string, ...interface{})
-		SendMsgById(string, int, string, ...interface{})
 	}
 )
 
@@ -54,14 +53,6 @@ func (this *ActorMgr) SendMsg(name, funcName string, params  ...interface{}){
 	pActor, exist := this.m_ActorMap[name]
 	if exist{
 		pActor.SendMsg(funcName, params...)
-	}
-}
-
-func (this *ActorMgr) SendMsgById(name string, Id int64, funcName string, params  ...interface{}){
-	name = strings.ToLower(name)
-	pActor, exist := this.m_ActorMap[name]
-	if exist{
-		pActor.SendMsgById(Id, funcName, params...)
 	}
 }
 
