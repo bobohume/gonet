@@ -108,7 +108,7 @@ func (this *UserPrcoess) PacketFunc(socketid int, buff []byte) bool{
 	}
 
 	//解析整个包
-	rpcHead := &message.RpcHead{DestServerType:packetHead.DestServerType, Id:packetHead.Id}
+	rpcHead := &message.RpcHead{Id:packetHead.Id}
 	if packetHead.DestServerType == message.SERVICE_WORLDSERVER{
 		this.SwtichSendToWorld(socketid, packetName, packetHead, rpc.Marshal(packetName, rpcHead, packet))
 	}else if packetHead.DestServerType == message.SERVICE_ACCOUNTSERVER{

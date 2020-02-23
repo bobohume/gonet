@@ -2,6 +2,7 @@ package actor
 
 import (
 	"gonet/base"
+	"gonet/message"
 	"gonet/rpc"
 	"log"
 	"reflect"
@@ -23,12 +24,10 @@ type (
 		m_AcotrChan chan int//use for states
 		m_Id       	 int64
 		m_CallMap	 map[string] *CallFunc//rpc
-		//m_pActorMgr  *ActorMgr
 		m_pTimer 	 *time.Ticker//定时器
 		m_TimerCall	func()//定时器触发函数
 		m_bStart	bool
-		m_SocketId	int
-		m_CallId	int64
+		m_RpcPacket message.RpcPacket
 	}
 
 	IActor interface {
@@ -42,8 +41,8 @@ type (
 		PacketFunc(id int, buff []byte) bool//回调函数
 		RegisterTimer(duration time.Duration, fun interface{})//注册定时器,时间为纳秒 1000 * 1000 * 1000
 		GetId() int64
-		GetCallId() int64
 		GetSocketId() int//rpc is safe
+		GetRpcPacket() *message.RpcPacket//rpc is safe
 	}
 
 	CallIO struct {
@@ -64,17 +63,6 @@ const (
 	DESDORY_EVENT = iota
 )
 
-/*func SendMsg(pActor IActor, sokcetId int, funcName string, params ...interface{}){
-	var io CallIO
-	io.ActorId = pActor.GetId()
-	io.SocketId = sokcetId
-	io.Buff = base.GetPacket(funcName, params...)
-
-	if pActor != nil{
-		pActor.Send(io)
-	}
-}*/
-
 func AssignActorId() int64 {
 	atomic.AddInt64(&g_IdSeed, 1)
 	return int64(g_IdSeed)
@@ -85,11 +73,11 @@ func (this *Actor) GetId() int64 {
 }
 
 func (this *Actor) GetSocketId() int {
-	return this.m_SocketId
+	return int(this.m_RpcPacket.RpcHead.SocketId)
 }
 
-func (this *Actor) GetCallId() int64 {
-	return this.m_CallId
+func (this *Actor) GetRpcPacket() *message.RpcPacket{
+	return &this.m_RpcPacket
 }
 
 func (this *Actor) Init(chanNum int) {
@@ -97,9 +85,9 @@ func (this *Actor) Init(chanNum int) {
 	this.m_AcotrChan = make(chan int, 1)
 	this.m_Id = AssignActorId()
 	this.m_CallMap = make(map[string] *CallFunc)
-	//this.m_pActorMgr = nil
 	this.m_pTimer = time.NewTicker(1<<63-1)//默认没有定时器
 	this.m_TimerCall = nil
+	this.m_RpcPacket = message.RpcPacket{RpcHead:&message.RpcHead{}}
 }
 
 func (this *Actor)  RegisterTimer(duration time.Duration, fun interface{}){
@@ -110,10 +98,8 @@ func (this *Actor)  RegisterTimer(duration time.Duration, fun interface{}){
 
 func (this *Actor) clear() {
 	this.m_Id = 0
-	this.m_CallId = 0
-	this.m_SocketId = 0
+	this.m_RpcPacket = message.RpcPacket{RpcHead:&message.RpcHead{}}
 	this.m_bStart = false
-	//this.m_pActorMgr = nil
 	close(this.m_AcotrChan)
 	close(this.m_CallChan)
 	if this.m_pTimer != nil{
@@ -161,7 +147,6 @@ func (this *Actor) SendMsg(funcName string, params ...interface{}) {
 }
 
 func (this *Actor) Send(io CallIO) {
-	//go func() {
 	defer func() {
 		if err := recover(); err != nil {
 			base.TraceCode(err)
@@ -169,7 +154,6 @@ func (this *Actor) Send(io CallIO) {
 	}()
 
 	this.m_CallChan <- io
-	//}()
 }
 
 func (this *Actor) PacketFunc(id int, buff []byte) bool{
@@ -196,8 +180,9 @@ func (this *Actor) call(io CallIO) {
 		strParams := pFunc.FuncParams
 		params := rpc.UnmarshalBody(rpcPacket, k)
 
-		this.m_SocketId = io.SocketId
-		this.m_CallId = io.ActorId
+		this.m_RpcPacket = *rpcPacket
+		this.m_RpcPacket.RpcHead.SocketId = int32(io.SocketId)
+		this.m_RpcPacket.RpcHead.CallId = io.ActorId
 
 		if k.NumIn()  != len(params) {
 			log.Printf("func [%s] can not call, func params [%s], params [%v]", funcName, strParams, params)

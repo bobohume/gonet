@@ -32,8 +32,9 @@ message PlayerData{
 }
 
 message RpcHead{
-    SERVICE  DestServerType = 1;
-    int64  Id = 2;
+    int64  Id = 1;
+    int64  CallId = 2;
+    int32  SocketId = 3;
 }
 
 message RpcPacket{

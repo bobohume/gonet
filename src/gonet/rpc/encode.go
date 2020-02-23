@@ -13,6 +13,13 @@ import (
 //rpc  Marshal
 //rpc  特定rpc头部设置需求，params[0]传入RpcHead
 func Marshal(funcName string, params ...interface{})[]byte {
+	data, _ := MarshalEx(funcName, params...)
+	return data
+}
+
+//rpc  MarshalEx
+//rpc  特定rpc头部设置需求，params[0]传入RpcHead
+func MarshalEx(funcName string, params ...interface{})([]byte, *message.RpcPacket) {
 	defer func() {
 		if err := recover(); err != nil {
 			base.TraceCode(err)
@@ -1353,7 +1360,7 @@ func Marshal(funcName string, params ...interface{})[]byte {
 
 	rpcPacket.RpcBody = bitstream.GetBuffer()
 	buf, _ := proto.Marshal(rpcPacket)
-	return buf
+	return buf, rpcPacket
 }
 
 //rpc  MarshalPB

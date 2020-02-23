@@ -2,7 +2,6 @@ package actor
 
 import (
 	"gonet/base"
-	"gonet/message"
 	"gonet/rpc"
 	"sync"
 )
@@ -75,16 +74,19 @@ func (this *ActorPool) BoardCast(funcName string, params ...interface{}){
 }
 
 func (this *ActorPool) SendMsg(funcName string, params ...interface{}) {
-	rpcHead, bOk := params[0].(*message.RpcHead)
-	if bOk{
-		pActor := this.GetActor(rpcHead.Id)
+	var io CallIO
+	io.ActorId = this.m_Id
+	io.SocketId = 0
+	buff, rpcPacket := rpc.MarshalEx(funcName, params...)
+	io.Buff = buff
+	if rpcPacket.RpcHead.Id != 0{
+		pActor := this.GetActor(rpcPacket.RpcHead.Id)
 		if pActor != nil && pActor.FindCall(funcName) != nil{
-			pActor.SendMsg(funcName, params...)
+			pActor.Send(io)
 			return
 		}
 	}
-
-	this.Actor.SendMsg(funcName, params...)
+	this.Send(io)
 }
 
 //actor pool must rewrite PacketFunc

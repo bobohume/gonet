@@ -163,7 +163,7 @@ func SendToClient(socketId int, packet proto.Message){
 	buff := message.Encode(packet)
 	pakcetHead := packet.(message.Packet).GetPacketHead()
 	if pakcetHead != nil {
-		rpcPacket := &message.RpcPacket{FuncName:message.GetMessageName(packet), ArgLen:1, RpcHead:&message.RpcHead{DestServerType:pakcetHead.DestServerType, Id:pakcetHead.Id}, RpcBody:buff}
+		rpcPacket := &message.RpcPacket{FuncName:message.GetMessageName(packet), ArgLen:1, RpcHead:&message.RpcHead{Id:pakcetHead.Id}, RpcBody:buff}
 		data, _ := proto.Marshal(rpcPacket)
 		SERVER.GetServer().SendById(socketId, data)
 	}
