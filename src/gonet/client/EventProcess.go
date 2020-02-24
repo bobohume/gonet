@@ -88,7 +88,7 @@ func (this *EventProcess) Init(num int) {
 	this.RegisterCall("A_C_LoginResponse", func(packet *message.A_C_LoginResponse) {
 		if packet.GetError() == base.ACCOUNT_NOEXIST {
 			packet1 := &message.C_A_RegisterRequest{PacketHead:message.BuildPacketHead( 0, message.SERVICE_GATESERVER),
-				AccountName: packet.AccountName, SocketId: 0}
+				AccountName: packet.AccountName}
 			this.SendPacket(packet1)
 		}
 	})
@@ -121,7 +121,7 @@ func (this *EventProcess)  LoginAccount() {
 	this.AccountName = fmt.Sprintf("test%d", id)
 	//this.AccountName = fmt.Sprintf("test%d", base.RAND.RandI(0, 7000))
 	packet1 := &message.C_A_LoginRequest{PacketHead: message.BuildPacketHead(0, message.SERVICE_GATESERVER),
-		AccountName: this.AccountName, BuildNo: base.BUILD_NO, SocketId: 0}
+		AccountName: this.AccountName, BuildNo: base.BUILD_NO}
 	this.SendPacket(packet1)
 }
 

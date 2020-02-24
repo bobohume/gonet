@@ -7,7 +7,6 @@ message C_A_LoginRequest{
     Ipacket PacketHead = 1;
     string AccountName = 2;
     string BuildNo = 3;
-    int32  SocketId = 4;
     //string Password = 5;
 }
 
@@ -15,7 +14,6 @@ message C_A_LoginRequest{
 message A_C_LoginResponse{
     Ipacket PacketHead = 1;
     int32  Error = 2;
-    int32  SocketId = 3;
     string AccountName = 4;
 }
 
@@ -23,7 +21,6 @@ message A_C_LoginResponse{
 message C_A_RegisterRequest{
     Ipacket PacketHead = 1;
     string AccountName = 2;
-    int32  SocketId = 3;
     //string Password = 4;
 }
 
@@ -31,7 +28,6 @@ message C_A_RegisterRequest{
 message A_C_RegisterResponse{
     Ipacket PacketHead = 1;
     int32	Error = 2;
-    int32  SocketId = 3;
 }
 
 //创角

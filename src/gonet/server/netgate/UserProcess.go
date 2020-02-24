@@ -6,6 +6,12 @@ import (
 	"gonet/message"
 	"gonet/network"
 	"gonet/rpc"
+	"strings"
+)
+
+var(
+	C_A_LoginRequest 		 = strings.ToLower("C_A_LoginRequest")
+	C_A_RegisterRequest 	 = strings.ToLower("C_A_RegisterRequest")
 )
 
 type(
@@ -101,14 +107,14 @@ func (this *UserPrcoess) PacketFunc(socketid int, buff []byte) bool{
 	}
 
 	packetName := message.GetMessageName(packet)
-	if packetName  == base.ToLower("C_A_LoginRequest") {
-		packet.(*message.C_A_LoginRequest).SocketId = int32(socketid)
-	}else if packetName  == base.ToLower("C_A_RegisterRequest") {
-		packet.(*message.C_A_RegisterRequest).SocketId = int32(socketid)
+	rpcHead := &message.RpcHead{Id:packetHead.Id}
+	if packetName  == C_A_LoginRequest{
+		rpcHead.Id = int64(socketid)
+	}else if packetName  == C_A_RegisterRequest {
+		rpcHead.Id = int64(socketid)
 	}
 
 	//解析整个包
-	rpcHead := &message.RpcHead{Id:packetHead.Id}
 	if packetHead.DestServerType == message.SERVICE_WORLDSERVER{
 		this.SwtichSendToWorld(socketid, packetName, packetHead, rpc.Marshal(packetName, rpcHead, packet))
 	}else if packetHead.DestServerType == message.SERVICE_ACCOUNTSERVER{

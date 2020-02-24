@@ -29,7 +29,7 @@ func (this *EventProcess) Init(num int) {
 		accountName := packet.GetAccountName()
 		//password := *packet.Password
 		password := "123456"
-		socketId := int(packet.GetSocketId())
+		socketId := int(this.GetRpcPacket().RpcHead.Id)
 		nError := 1
 		accountId := base.UUID.UUID()
 		//查找账号存在
@@ -54,7 +54,7 @@ func (this *EventProcess) Init(num int) {
 			SendToClient(this.GetSocketId(), &message.A_C_RegisterResponse{
 				PacketHead: message.BuildPacketHead( accountId, 0),
 				Error:      int32(nError),
-			}, &message.RpcHead{Id:int64(packet.SocketId)})
+			}, &message.RpcHead{Id:this.GetRpcPacket().RpcHead.Id})
 		}
 	})
 
@@ -64,7 +64,7 @@ func (this *EventProcess) Init(num int) {
 		//password := *packet.Password
 		password := "123456"
 		buildVersion := packet.GetBuildNo()
-		socketId := int(packet.GetSocketId())
+		socketId := int(this.GetRpcPacket().RpcHead.Id)
 		nError := base.NONE_ERROR
 
 		if accountName == ""{
@@ -97,7 +97,7 @@ func (this *EventProcess) Init(num int) {
 				PacketHead:message.BuildPacketHead( 0, 0 ),
 				Error:int32(nError),
 				AccountName:packet.AccountName,
-			}, &message.RpcHead{Id:int64(packet.SocketId)})
+			}, &message.RpcHead{Id:this.GetRpcPacket().RpcHead.Id})
 		}
 	})
 
