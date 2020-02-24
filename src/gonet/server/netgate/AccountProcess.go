@@ -2,9 +2,17 @@ package netgate
 
 import (
 	"gonet/actor"
+	"gonet/base"
 	"gonet/message"
+	"gonet/rpc"
 	"strconv"
 	"gonet/server/common"
+	"strings"
+)
+
+var(
+	A_C_RegisterResponse = strings.ToLower("A_C_RegisterResponse")
+	A_C_LoginResponse 	 = strings.ToLower("A_C_LoginResponse")
 )
 
 type (
@@ -57,16 +65,6 @@ func (this *AccountProcess) Init(num int) {
 		SERVER.GetPlayerMgr().SendMsg("ADD_ACCOUNT", accountId, socketId)
 	})
 
-	this.RegisterCall("A_C_RegisterResponse", func(packet *message.A_C_RegisterResponse) {
-		buff := message.Encode(packet)
-		SERVER.GetServer().SendById(int(packet.GetSocketId()), buff)
-	})
-
-	this.RegisterCall("A_C_LoginResponse", func(packet *message.A_C_LoginResponse) {
-		buff := message.Encode(packet)
-		SERVER.GetServer().SendById(int(packet.GetSocketId()), buff)
-	})
-
 	this.Actor.Start()
 }
 
@@ -74,4 +72,21 @@ func (this* AccountProcess) Update(){
 	if this.m_LostTimer.CheckTimer(){
 		SERVER.GetAccountCluster().GetCluster(this.m_Id).Start()
 	}
+}
+
+func DispatchAccountPacketToClient(id int, buff []byte) bool{
+	defer func(){
+		if err := recover(); err != nil{
+			base.TraceCode(err)
+		}
+	}()
+
+	rpcPacket := rpc.UnmarshalHead(buff)
+	if rpcPacket.FuncName == A_C_RegisterResponse || rpcPacket.FuncName == A_C_LoginResponse{
+		SERVER.GetServer().SendById(int(rpcPacket.RpcHead.Id), rpcPacket.RpcBody)
+	}else{
+		socketId := SERVER.GetPlayerMgr().GetSocket(rpcPacket.RpcHead.Id)
+		SERVER.GetServer().SendById(socketId, rpcPacket.RpcBody)
+	}
+	return true
 }

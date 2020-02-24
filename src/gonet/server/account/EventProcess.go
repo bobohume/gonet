@@ -54,8 +54,7 @@ func (this *EventProcess) Init(num int) {
 			SendToClient(this.GetSocketId(), &message.A_C_RegisterResponse{
 				PacketHead: message.BuildPacketHead( accountId, 0),
 				Error:      int32(nError),
-				SocketId:packet.SocketId,
-			})
+			}, &message.RpcHead{Id:int64(packet.SocketId)})
 		}
 	})
 
@@ -97,9 +96,8 @@ func (this *EventProcess) Init(num int) {
 			SendToClient(this.GetSocketId(), &message.A_C_LoginResponse{
 				PacketHead:message.BuildPacketHead( 0, 0 ),
 				Error:int32(nError),
-				SocketId:packet.SocketId,
 				AccountName:packet.AccountName,
-			})
+			}, &message.RpcHead{Id:int64(packet.SocketId)})
 		}
 	})
 

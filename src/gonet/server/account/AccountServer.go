@@ -7,7 +7,6 @@
 	 "gonet/db"
 	 "gonet/message"
 	 "gonet/network"
-	 "gonet/rpc"
 	 "gonet/server/common/cluster"
 	 "log"
  )
@@ -139,6 +138,15 @@ func (this *ServerMgr) GetAccountMgr() *AccountMgr{
 	return this.m_AccountMgr
 }
 
-func SendToClient(socketId int, packet proto.Message){
-	SERVER.GetServer().SendById(socketId, rpc.Marshal(message.GetMessageName(packet), packet))
+func SendToClient(socketId int, packet proto.Message, rpcHead ...*message.RpcHead){
+	buff := message.Encode(packet)
+	pakcetHead := packet.(message.Packet).GetPacketHead()
+	var rpcPacket *message.RpcPacket
+	if rpcHead != nil{
+		rpcPacket = &message.RpcPacket{FuncName:message.GetMessageName(packet), ArgLen:1, RpcHead:rpcHead[0], RpcBody:buff}
+	}else if pakcetHead != nil {
+		rpcPacket = &message.RpcPacket{FuncName:message.GetMessageName(packet), ArgLen:1, RpcHead:&message.RpcHead{Id:pakcetHead.Id}, RpcBody:buff}
+	}
+	data, _ := proto.Marshal(rpcPacket)
+	SERVER.GetServer().SendById(socketId, data)
 }

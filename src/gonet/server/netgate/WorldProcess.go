@@ -68,7 +68,7 @@ func (this* WorldProcess) Update(){
 	}
 }
 
-func DispatchPacketToClient(id int, buff []byte) bool{
+func DispatchWorldPacketToClient(id int, buff []byte) bool{
 	defer func(){
 		if err := recover(); err != nil{
 			base.TraceCode(err)
@@ -80,5 +80,3 @@ func DispatchPacketToClient(id int, buff []byte) bool{
 	SERVER.GetServer().SendById(socketId, rpcPacket.RpcBody)
 	return true
 }
-
-

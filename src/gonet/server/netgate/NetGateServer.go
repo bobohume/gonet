@@ -119,12 +119,13 @@ func (this *ServerMgr)Init() bool{
 	this.m_WorldCluster = new(cluster.Cluster)
 	this.m_WorldCluster.Init(1000, int(message.SERVICE_WORLDSERVER), UserNetIP, base.Int(UserNetPort), EtcdEndpoints)
 	this.m_WorldCluster.BindPacket(&WorldProcess{})
-	this.m_WorldCluster.BindPacketFunc(DispatchPacketToClient)
+	this.m_WorldCluster.BindPacketFunc(DispatchWorldPacketToClient)
 
 	//账号服务器集群
 	this.m_AccountCluster = new(cluster.Cluster)
 	this.m_AccountCluster.Init(1000, int(message.SERVICE_ACCOUNTSERVER), UserNetIP, base.Int(UserNetPort), EtcdEndpoints)
 	this.m_AccountCluster.BindPacket(&AccountProcess{})
+	this.m_AccountCluster.BindPacketFunc(DispatchAccountPacketToClient)
 
 	//初始玩家管理
 	this.m_PlayerMgr = new(PlayerManager)
