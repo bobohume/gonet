@@ -264,7 +264,7 @@ func OpenExcel(filename string){
 				for i1 := 0; i1 < 8 - (2 * sheet.MaxCol % 8); i1++{
 					stream.WriteFlag(true)
 				}
-				stream.WriteBits(16, []byte{'@', '\n'})
+				stream.WriteBits([]byte{'@', '\n'}, 16)
 				stream.WriteInt(sheet.MaxRow - 3, 32)
 				stream.WriteInt(sheet.MaxCol, 32)
 				stream.WriteString(sheet.Name)
