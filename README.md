@@ -79,3 +79,4 @@ QQ群:950288306
 
 # 服务器架构如下：
 ![image](https://github.com/bobohume/go-server/blob/master/框架.jpg)
+<video src="https://github.com/bobohume/gonet-mmo-demo/blob/master/QQ%E8%A7%86%E9%A2%9120200303224312.mp4" controls="controls" width="500" height="300">您的浏览器不支持播放该视频！</video>
