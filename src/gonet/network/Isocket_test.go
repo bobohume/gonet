@@ -28,6 +28,7 @@ func TestFixHead(t *testing.T)  {
 	for i :=0;i < nTimes;i++{
 		ReceivePacket(0,buff)
 	}
+	
 }
 
 func TestEndFlag(t *testing.T)  {
