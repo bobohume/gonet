@@ -39,7 +39,6 @@ func TestEndFlag(t *testing.T)  {
 	for i :=0;i < nTimes;i++{
 		ReceivePacket1(0,buff)
 	}
-	
 }
 
 func SetTcpEnd(buff []byte) []byte{
