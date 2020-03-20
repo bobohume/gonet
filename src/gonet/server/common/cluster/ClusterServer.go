@@ -21,12 +21,12 @@ type(
 	//集群服务器
 	ClusterServer struct{
 		actor.Actor
+		*Service//集群注册
 
 		m_ClusterMap [MAX_CLUSTER_TYPE]HashClusterMap
 		m_ClusterSocketMap [MAX_CLUSTER_TYPE]HashClusterSocketMap
 		m_ClusterList [MAX_CLUSTER_TYPE]base.IVector
 		m_ClusterLocker *sync.RWMutex
-		m_Service  *Service//集群注册
 		m_pService *network.ServerSocket//socket管理
 	}
 
@@ -53,7 +53,7 @@ type(
 func (this *ClusterServer) InitService(Type int, IP string, Port int, Endpoints []string) {
 	this.m_ClusterLocker = &sync.RWMutex{}
 	//注册服务器
-	this.m_Service = NewService(Type, IP, Port, Endpoints)
+	this.Service = NewService(Type, IP, Port, Endpoints)
 	for i := 0; i < MAX_CLUSTER_TYPE; i++{
 		this.m_ClusterMap[i] = make(HashClusterMap)
 		this.m_ClusterSocketMap[i] = make(HashClusterSocketMap)
