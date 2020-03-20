@@ -33,7 +33,7 @@ type(
 		accountId int64
 		playerId int64
 		playerName string
-		sockeId int
+		gateClusterId uint32
 	}
 
 	ChatMgr struct {
@@ -128,8 +128,8 @@ func (this *ChatMgr) Init(num int) {
 	})
 
 	//添加玩家到频道
-	this.RegisterCall("AddPlayerToChannel", func(accoudId, playerId int64, channelId int64, playerName string, socketId int) {
-		this.GetChannelManager().AddPlayer(accoudId, playerId, channelId, playerName, socketId)
+	this.RegisterCall("AddPlayerToChannel", func(accoudId, playerId int64, channelId int64, playerName string, gateClusterId uint32) {
+		this.GetChannelManager().AddPlayer(accoudId, playerId, channelId, playerName, gateClusterId)
 	})
 
 	//删除玩家到频道
@@ -152,7 +152,7 @@ func (this *ChatMgr) SendMessageTo(msg *ChatMessage, playerId int64){
 }
 
 func SendMessage(msg *ChatMessage, player *player){
-	world.SendToClient(player.sockeId, &message.W_C_ChatMessage{
+	world.SendToClient(player.gateClusterId, &message.W_C_ChatMessage{
 		PacketHead:message.BuildPacketHead(player.accountId, message.SERVICE_CLIENT),
 		Sender:msg.Sender,
 		SenderName:msg.SenderName,

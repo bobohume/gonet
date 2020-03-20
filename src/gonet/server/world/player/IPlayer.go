@@ -11,7 +11,7 @@ type(
 	IPlayer interface {
 		actor.IActor
 
-		GetGateSocketId() int//获取网关id
+		GetGateClusterId() uint32//获取网关id
 		GetPlayerId() int64//获取playerid
 		GetAccountId() int64//获取账号id
 

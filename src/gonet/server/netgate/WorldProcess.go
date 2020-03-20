@@ -48,7 +48,6 @@ func (this *WorldProcess) Init(num int) {
 		//收到worldserver对自己注册的反馈
 		this.m_LostTimer.Stop()
 		SERVER.GetLog().Println("收到world对自己注册的反馈")
-		SERVER.GetPlayerMgr().SendMsg("World_Relogin")
 	})
 
 	this.RegisterCall("STOP_ACTOR", func() {

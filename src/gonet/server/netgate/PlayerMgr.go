@@ -3,7 +3,6 @@ package netgate
 import (
 	"gonet/actor"
 	"gonet/base"
-	"gonet/message"
 	"sync"
 	"time"
 )
@@ -44,10 +43,10 @@ func NewAccountInfo(socket int, accountId int64) *AccountInfo{
 
 func (this *PlayerManager) ReleaseSocketMap(socketId int, bClose bool){
 	this.m_Locker.RLock()
-	accountid, _ :=  this.m_SocketMap[socketId]
+	accountId, _ :=  this.m_SocketMap[socketId]
 	this.m_Locker.RUnlock()
 	this.m_Locker.Lock()
-	delete(this.m_AccountMap, accountid)
+	delete(this.m_AccountMap, accountId)
 	delete(this.m_SocketMap, socketId)
 	this.m_Locker.Unlock()
 	//if bClose{
@@ -65,7 +64,7 @@ func (this *PlayerManager) AddAccountMap(accountId int64, socketId int) int {
 	this.m_AccountMap[accountId] = accountInfo
 	this.m_SocketMap[socketId] = accountId
 	this.m_Locker.Unlock()
-	SERVER.GetWorldCluster().SendMsg(accountInfo.WClusterId, "G_W_CLoginRequest", accountId)
+	SERVER.GetWorldCluster().SendMsg(accountInfo.WClusterId, "G_W_CLoginRequest", accountId, SERVER.GetCluster().Id())
 	return  base.NONE_ERROR
 }
 
@@ -119,7 +118,7 @@ func (this *PlayerManager) Init(num int){
 	})
 
 	//重连世界服务器，账号重新登录
-	this.RegisterCall("World_Relogin", func() {
+	/*this.RegisterCall("World_Relogin", func() {
 		accountMap := make(map [int64] uint32)
 		this.m_Locker.RLock()
 		for i, v := range this.m_AccountMap {
@@ -132,6 +131,6 @@ func (this *PlayerManager) Init(num int){
 				SERVER.GetWorldCluster().SendMsg(v, "G_W_Relogin", &message.RpcHead{Id:i})
 			}
 		}
-	})
+	})*/
 	this.Actor.Start()
 }

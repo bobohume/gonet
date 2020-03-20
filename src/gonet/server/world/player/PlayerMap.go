@@ -6,7 +6,7 @@ import (
 )
 
 func (this *Player) AddMap() {
-	actor.MGR.SendMsg("mapmgr", "LoginMap", 1, this.AccountId, this.GetGateSocketId())
+	actor.MGR.SendMsg("mapmgr", "LoginMap", 1, this.AccountId, this.GetGateClusterId())
 }
 
 func (this *Player) LeaveMap() {

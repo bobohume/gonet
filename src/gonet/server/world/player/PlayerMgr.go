@@ -45,7 +45,7 @@ func (this* PlayerMgr) Init(num int){
 
 	this.RegisterTimer(1000 * 1000 * 1000, this.Update)//定时器
 	//玩家登录
-	this.RegisterCall("G_W_CLoginRequest", func(accountId int64) {
+	this.RegisterCall("G_W_CLoginRequest", func(accountId int64, gateClusterId uint32) {
 		pPlayer := this.GetPlayer(accountId)
 		if pPlayer != nil{
 			pPlayer.SendMsg("Logout", accountId)
@@ -53,7 +53,7 @@ func (this* PlayerMgr) Init(num int){
 		}
 
 		pPlayer = this.AddPlayer(accountId)
-		pPlayer.SendMsg("Login", this.GetSocketId())
+		pPlayer.SendMsg("Login", gateClusterId)
 	})
 
 	//玩家断开链接

@@ -155,11 +155,21 @@ func (this *ServerMgr) GetAccountCluster() *cluster.Cluster{
 }
 
 //发送给客户端
-func SendToClient(socketId int, packet proto.Message){
+func SendToClient(clusterId uint32, packet proto.Message){
 	buff := message.Encode(packet)
 	pakcetHead := packet.(message.Packet).GetPacketHead()
 	if pakcetHead != nil {
 		rpcPacket := &message.RpcPacket{FuncName:message.GetMessageName(packet), ArgLen:1, RpcHead:&message.RpcHead{Id:pakcetHead.Id}, RpcBody:buff}
+		data, _ := proto.Marshal(rpcPacket)
+		SERVER.GetClusterMgr().Send(clusterId, data)
+	}
+}
+
+func SendToClientBySocketId(socketId int, packet proto.Message) {
+	buff := message.Encode(packet)
+	pakcetHead := packet.(message.Packet).GetPacketHead()
+	if pakcetHead != nil {
+		rpcPacket := &message.RpcPacket{FuncName: message.GetMessageName(packet), ArgLen: 1, RpcHead: &message.RpcHead{Id: pakcetHead.Id}, RpcBody: buff}
 		data, _ := proto.Marshal(rpcPacket)
 		SERVER.GetServer().SendById(socketId, data)
 	}

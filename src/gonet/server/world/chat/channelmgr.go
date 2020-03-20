@@ -68,13 +68,13 @@ func (this *ChannelMgr) RemoveAllChannel() {
 	}
 }
 
-func (this *ChannelMgr) AddPlayer(accountId, playerId int64, channelId int64, playerName string, socketId int) {
+func (this *ChannelMgr) AddPlayer(accountId, playerId int64, channelId int64, playerName string, gateClusterId uint32) {
 	pChannel := this.getChannel(channelId)
 	if pChannel == nil{
 		return
 	}
 
-	pChannel.AddPlayer(accountId, playerId, playerName, socketId)
+	pChannel.AddPlayer(accountId, playerId, playerName, gateClusterId)
 	this.m_hmPlayerChannelMap[pChannel.GetMessageType()][playerId] = pChannel.GetId()
 }
 

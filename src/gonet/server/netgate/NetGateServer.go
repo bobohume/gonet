@@ -26,6 +26,7 @@ type(
 		Init() bool
 		GetLog() *base.CLog
 		GetServer() *network.ServerSocket
+		GetCluster () *cluster.Service
 		GetWorldCluster() *cluster.Cluster
 		GetAccountCluster() *cluster.Cluster
 		GetPlayerMgr() *PlayerManager
@@ -54,6 +55,10 @@ func (this *ServerMgr) GetLog() *base.CLog{
 
 func (this *ServerMgr) GetServer() *network.ServerSocket{
  	return this.m_pService
+}
+
+func (this *ServerMgr) GetCluster () *cluster.Service{
+	return this.m_Cluster
 }
 
 func (this *ServerMgr) GetWorldCluster() *cluster.Cluster{

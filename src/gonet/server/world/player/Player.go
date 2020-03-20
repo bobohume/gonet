@@ -34,7 +34,7 @@ func (this* Player) Init(num int){
 	this.m_ItemMgr.Init(this)
 
 	//玩家登录
-	this.RegisterCall("Login", func(socketId int) {
+	this.RegisterCall("Login", func(clusterId uint32) {
 		PlayerSimpleList := LoadSimplePlayerDatas(this.AccountId)
 		this.PlayerSimpleDataList = PlayerSimpleList
 
@@ -46,8 +46,8 @@ func (this* Player) Init(num int){
 		}
 
 		this.m_Log.Println("玩家登录成功")
-		this.SetGateSocketId(socketId)
-		world.SendToClient(socketId, &message.W_C_SelectPlayerResponse{PacketHead: message.BuildPacketHead( this.AccountId,  message.SERVICE_CLIENT),
+		this.SetGateClusterId(clusterId)
+		world.SendToClient(clusterId, &message.W_C_SelectPlayerResponse{PacketHead: message.BuildPacketHead( this.AccountId,  message.SERVICE_CLIENT),
 			AccountId:this.AccountId,
 			PlayerData:PlayerDataList,
 		})
@@ -66,7 +66,7 @@ func (this* Player) Init(num int){
 		//加载到地图
 		this.AddMap()
 		//添加到世界频道
-		actor.MGR.SendMsg("chatmgr", "AddPlayerToChannel", this.AccountId, this.GetPlayerId(), int64(-3000), this.GetPlayerName(), this.GetGateSocketId())
+		actor.MGR.SendMsg("chatmgr", "AddPlayerToChannel", this.AccountId, this.GetPlayerId(), int64(-3000), this.GetPlayerName(), this.GetGateClusterId())
 	})
 
 	//创建玩家
@@ -78,7 +78,7 @@ func (this* Player) Init(num int){
 				player_count := rs.Row().Int("player_count")
 				if player_count >= 1 {
 					this.m_Log.Printf("账号[%d]创建玩家上限", this.AccountId)
-					world.SendToClient(this.GetSocketId(), &message.W_C_CreatePlayerResponse{
+					world.SendToClientBySocketId(this.GetSocketId(), &message.W_C_CreatePlayerResponse{
 						PacketHead:message.BuildPacketHead(this.AccountId, 0 ),
 						Error:int32(1),
 						PlayerId:0,
@@ -100,7 +100,7 @@ func (this* Player) Init(num int){
 			this.PlayerIdList = append(this.PlayerIdList, playerId)
 		}
 
-		world.SendToClient(socketId, &message.W_C_CreatePlayerResponse{
+		world.SendToClientBySocketId(socketId, &message.W_C_CreatePlayerResponse{
 			PacketHead:message.BuildPacketHead(this.AccountId, 0 ),
 			Error:int32(err),
 			PlayerId:playerId,
@@ -110,17 +110,9 @@ func (this* Player) Init(num int){
 	//玩家断开链接
 	this.RegisterCall("Logout", func(accountId int64) {
 		world.SERVER.GetLog().Printf("[%d] 断开链接", accountId)
-		this.SetGateSocketId(0)
+		this.SetGateClusterId(0)
 		this.Stop()
 		this.LeaveMap()
-	})
-
-	//断线重连
-	this.RegisterCall("G_W_Relogin", func() {
-		this.SetGateSocketId(this.GetSocketId())
-		this.ReloginMap(this.GetSocketId())
-		//添加到世界频道
-		actor.MGR.SendMsg("chatmgr", "AddPlayerToChannel", this.AccountId, this.GetPlayerId(), int64(-3000), this.GetPlayerName(), this.GetGateSocketId())
 	})
 
 	this.Actor.Start()

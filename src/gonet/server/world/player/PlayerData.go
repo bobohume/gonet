@@ -35,7 +35,7 @@ type (
 
 		AccountId int64
 		PlayerId int64
-		GateSocketId int
+		GateClusterId uint32
 		AccountName string
 		PlayerNum int
 		PlayerIdList []int64
@@ -48,8 +48,8 @@ type (
 	IPlayerData interface {
 		Init()
 
-		SetGateSocketId(int)
-		GetGateSocketId() int
+		SetGateClusterId(uint32)
+		GetGateClusterId() uint32
 		GetAccountId() int64
 		SetPlayerId(int64) bool
 		GetPlayerId() int64
@@ -74,12 +74,12 @@ func (this *PlayerData) Init(){
 	//this.PlayerSimpleDataList = make([]*SimplePlayerData, 0)
 }
 
-func (this *PlayerData) SetGateSocketId(socketId int){
-	this.GateSocketId = socketId
+func (this *PlayerData) SetGateClusterId(clusterId uint32){
+	this.GateClusterId = clusterId
 }
 
-func (this *PlayerData) GetGateSocketId() int{
-	return this.GateSocketId
+func (this *PlayerData) GetGateClusterId() uint32{
+	return this.GateClusterId
 }
 
 func (this *PlayerData) GetAccountId() int64{
