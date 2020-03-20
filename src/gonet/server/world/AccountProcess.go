@@ -12,23 +12,23 @@ type (
 		actor.Actor
 		m_LostTimer *common.SimpleTimer
 
-		m_Id uint32
+		m_ClusterId uint32
 	}
 
 	IAccountProcess interface {
 		actor.IActor
 
 		RegisterServer(int, string, int)
-		SetSocketId(uint32)
+		SetClusterId(uint32)
 	}
 )
 
-func (this * AccountProcess) SetSocketId(socketId uint32){
-	this.m_Id = socketId
+func (this * AccountProcess) SetClusterId(clusterId uint32){
+	this.m_ClusterId = clusterId
 }
 
 func (this * AccountProcess) RegisterServer(ServerType int, Ip string, Port int)  {
-	SERVER.GetAccountCluster().SendMsg(this.m_Id, "COMMON_RegisterRequest",ServerType, Ip, Port)
+	SERVER.GetAccountCluster().SendMsg(this.m_ClusterId, "COMMON_RegisterRequest",ServerType, Ip, Port)
 }
 
 func (this *AccountProcess) Init(num int) {
@@ -65,6 +65,6 @@ func (this *AccountProcess) Init(num int) {
 
 func (this* AccountProcess) Update(){
 	if this.m_LostTimer.CheckTimer(){
-		SERVER.GetAccountCluster().GetCluster(this.m_Id).Start()
+		SERVER.GetAccountCluster().GetCluster(this.m_ClusterId).Start()
 	}
 }

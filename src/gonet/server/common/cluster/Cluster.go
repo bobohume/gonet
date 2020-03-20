@@ -16,7 +16,7 @@ type(
 		actor.IActor
 
 		RegisterServer(int, string, int)
-		SetSocketId(uint32)
+		SetClusterId(uint32)
 	}
 
 	//集群客户端
@@ -75,7 +75,7 @@ func (this *Cluster) AddCluster(info *common.ClusterInfo){
 	pClient.Init(info.Ip, info.Port)
 	packet :=  reflect.New(reflect.ValueOf(this.m_Packet).Elem().Type()).Interface().(IClusterPacket)
 	packet.Init(1000)
-	packet.SetSocketId(info.Id())
+	packet.SetClusterId(info.Id())
 	pClient.BindPacketFunc(packet.PacketFunc)
 	if this.m_PacketFunc != nil{
 		pClient.BindPacketFunc(this.m_PacketFunc)
@@ -107,9 +107,9 @@ func (this *Cluster) DelCluster(info *common.ClusterInfo){
 	this.m_ClusterLocker.Unlock()
 }
 
-func (this *Cluster) GetCluster(socketId uint32) *network.ClientSocket{
+func (this *Cluster) GetCluster(clusterId uint32) *network.ClientSocket{
 	this.m_ClusterLocker.RLock()
-	pClient, bEx := this.m_ClusterMap[socketId]
+	pClient, bEx := this.m_ClusterMap[clusterId]
 	this.m_ClusterLocker.RUnlock()
 	if bEx{
 		return pClient
@@ -125,8 +125,8 @@ func (this *Cluster) BindPacketFunc(packetFunc network.HandleFunc){
 	this.m_PacketFunc = packetFunc
 }
 
-func (this *Cluster) SendMsg(socketId uint32, funcName string, params  ...interface{}){
-	pClient := this.GetCluster(socketId)
+func (this *Cluster) SendMsg(clusterId uint32, funcName string, params  ...interface{}){
+	pClient := this.GetCluster(clusterId)
 	if pClient != nil{
 		pClient.SendMsg(funcName, params...)
 	}
@@ -151,8 +151,8 @@ func (this *Cluster) BoardCastMsg(funcName string, params  ...interface{}){
 	}
 }
 
-func (this *Cluster) Send(socketId uint32, buff []byte){
-	pClient := this.GetCluster(socketId)
+func (this *Cluster) Send(clusterId uint32, buff []byte){
+	pClient := this.GetCluster(clusterId)
 	if pClient != nil{
 		pClient.Send(buff)
 	}

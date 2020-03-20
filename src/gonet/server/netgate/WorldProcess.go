@@ -14,30 +14,30 @@ type (
 		actor.Actor
 		m_LostTimer *common.SimpleTimer
 
-		m_Id uint32
+		m_ClusterId uint32
 	}
 
 	IWorldlProcess interface {
 		actor.IActor
 
 		RegisterServer(int, string, int)
-		SetSocketId(uint32)
+		SetClusterId(uint32)
 	}
 )
 
 func (this * WorldProcess) RegisterServer(ServerType int, Ip string, Port int)  {
-	SERVER.GetWorldCluster().SendMsg(this.m_Id, "COMMON_RegisterRequest",ServerType, Ip, Port)
+	SERVER.GetWorldCluster().SendMsg(this.m_ClusterId, "COMMON_RegisterRequest",ServerType, Ip, Port)
 }
 
-func (this * WorldProcess) SetSocketId(socketId uint32){
-	this.m_Id = socketId
+func (this * WorldProcess) SetClusterId(clusterId uint32){
+	this.m_ClusterId = clusterId
 }
 
 func (this *WorldProcess) Init(num int) {
 	this.Actor.Init(num)
 	this.m_LostTimer = common.NewSimpleTimer(3)
 	this.m_LostTimer.Start()
-	this.m_Id = 0
+	this.m_ClusterId = 0
 	this.RegisterTimer(1 * 1000 * 1000 * 1000, this.Update)
 	this.RegisterCall("COMMON_RegisterRequest", func() {
 		port,_:=strconv.Atoi(UserNetPort)
@@ -64,7 +64,7 @@ func (this *WorldProcess) Init(num int) {
 
 func (this* WorldProcess) Update(){
 	if this.m_LostTimer.CheckTimer(){
-		SERVER.GetWorldCluster().GetCluster(this.m_Id).Start()
+		SERVER.GetWorldCluster().GetCluster(this.m_ClusterId).Start()
 	}
 }
 
