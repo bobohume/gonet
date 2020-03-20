@@ -35,7 +35,7 @@ type (
 
 		AccountId int64
 		PlayerId int64
-		SocketId int
+		GateSocketId int
 		AccountName string
 		PlayerNum int
 		PlayerIdList []int64
@@ -48,11 +48,12 @@ type (
 	IPlayerData interface {
 		Init()
 
+		SetGateSocketId(int)
 		GetGateSocketId() int
 		GetAccountId() int64
+		SetPlayerId(int64) bool
 		GetPlayerId() int64
 		GetPlayerCount() int
-		SetPlayerId(int64) bool
 		GetPlayerName() string
 
 		LoadPlayerData()//加载其他数据
@@ -73,12 +74,27 @@ func (this *PlayerData) Init(){
 	//this.PlayerSimpleDataList = make([]*SimplePlayerData, 0)
 }
 
+func (this *PlayerData) SetGateSocketId(socketId int){
+	this.GateSocketId = socketId
+}
+
 func (this *PlayerData) GetGateSocketId() int{
-	return this.SocketId
+	return this.GateSocketId
 }
 
 func (this *PlayerData) GetAccountId() int64{
 	return this.AccountId
+}
+
+func (this *PlayerData) SetPlayerId(PlayerId int64) bool{
+	for i := 0; i < len(this.PlayerIdList); i++ {
+		if this.PlayerIdList[i] == PlayerId {
+			this.PlayerId = PlayerId
+			this.SimplePlayerData = *this.PlayerSimpleDataList[i]
+			return  true
+		}
+	}
+	return  false
 }
 
 func (this *PlayerData) GetPlayerId()int64{
@@ -97,17 +113,6 @@ func (this *PlayerData) GetPlayerCount()int{
 		}
 	}
 	return count
-}
-
-func (this *PlayerData) SetPlayerId(PlayerId int64) bool{
-	for i := 0; i < len(this.PlayerIdList); i++ {
-		if this.PlayerIdList[i] == PlayerId {
-			this.PlayerId = PlayerId
-			this.SimplePlayerData = *this.PlayerSimpleDataList[i]
-			return  true
-		}
-	}
-	return  false
 }
 
 func (this *PlayerData) LoadPlayerData() {
