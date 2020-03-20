@@ -29,7 +29,7 @@ type(
 		AccountId int64
 		LastTime int64
 		SocketId int
-		WSocketId uint32
+		WClusterId uint32
 	}
 )
 
@@ -38,7 +38,7 @@ var(
 )
 
 func NewAccountInfo(socket int, accountId int64) *AccountInfo{
-	accountInfo := AccountInfo{LastTime:time.Now().Unix(), SocketId:socket, WSocketId:0, AccountId:accountId}
+	accountInfo := AccountInfo{LastTime:time.Now().Unix(), SocketId:socket, WClusterId:0, AccountId:accountId}
 	return  &accountInfo
 }
 
@@ -60,12 +60,12 @@ func (this *PlayerManager) AddAccountMap(accountId int64, socketId int) int {
 	this.ReleaseSocketMap(Id, Id != socketId)
 
 	accountInfo := NewAccountInfo(socketId, accountId)
-	accountInfo.WSocketId = SERVER.GetWorldCluster().RandomCluster()
+	accountInfo.WClusterId = SERVER.GetWorldCluster().RandomCluster()
 	this.m_Locker.Lock()
 	this.m_AccountMap[accountId] = accountInfo
 	this.m_SocketMap[socketId] = accountId
 	this.m_Locker.Unlock()
-	SERVER.GetWorldCluster().SendMsg(accountInfo.WSocketId, "G_W_CLoginRequest", accountId)
+	SERVER.GetWorldCluster().SendMsg(accountInfo.WClusterId, "G_W_CLoginRequest", accountId)
 	return  base.NONE_ERROR
 }
 
@@ -123,7 +123,7 @@ func (this *PlayerManager) Init(num int){
 		accountMap := make(map [int64] uint32)
 		this.m_Locker.RLock()
 		for i, v := range this.m_AccountMap {
-			accountMap[i] = v.WSocketId
+			accountMap[i] = v.WClusterId
 		}
 		this.m_Locker.RUnlock()
 

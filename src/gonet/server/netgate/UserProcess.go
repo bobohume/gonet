@@ -65,7 +65,7 @@ func (this *UserPrcoess) SwtichSendToWorld(socketId int, packetName string, pack
 	pAccountInfo := this.CheckClientEx(socketId, packetName, packetHead)
 	if pAccountInfo != nil{
 		buff = base.SetTcpEnd(buff)
-		SERVER.GetWorldCluster().Send(pAccountInfo.WSocketId, buff)
+		SERVER.GetWorldCluster().Send(pAccountInfo.WClusterId, buff)
 	}
 }
 
