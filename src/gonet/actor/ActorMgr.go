@@ -17,6 +17,7 @@ type (
 	IActorMgr interface {
 		Init()
 		AddActor(IActor, ...string)
+		GetActor(string) IActor
 		InitActorHandle(network.ISocket)
 		SendMsg(string, string, ...interface{})
 	}
@@ -40,6 +41,15 @@ func (this *ActorMgr) AddActor(pActor IActor,  names ...string) {
 	}
 
 	this.m_ActorMap[name] = pActor
+}
+
+func (this *ActorMgr) GetActor(name string) IActor{
+	name = strings.ToLower(name)
+	pActor, exist := this.m_ActorMap[name]
+	if exist{
+		return pActor
+	}
+	return nil
 }
 
 func (this *ActorMgr) InitActorHandle(pServer network.ISocket){
