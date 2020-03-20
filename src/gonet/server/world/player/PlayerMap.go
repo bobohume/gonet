@@ -13,8 +13,8 @@ func (this *Player) LeaveMap() {
 	actor.MGR.SendMsg("mapmgr", "LogoutMap", 1, this.AccountId)
 }
 
-func (this *Player) ReloginMap(SocketId int) {
-	SendToMap(this.AccountId, "ReloginMap", this.AccountId, SocketId)
+func (this *Player) ReloginMap() {
+	SendToMap(this.AccountId, "ReloginMap", this.AccountId, this.GetGateClusterId())
 }
 
 //--------------发送给客户端----------------------//
