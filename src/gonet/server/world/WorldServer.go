@@ -20,7 +20,6 @@ type(
 		m_Inited bool
 		m_config base.Config
 		m_Log	base.CLog
-		m_Cluster *cluster.Service
 		m_AccountCluster *cluster.Cluster
 		m_SnowFlake *cluster.Snowflake
 	}
@@ -41,8 +40,6 @@ type(
 var(
 	UserNetIP string
 	UserNetPort string
-	AccountServerIp string
-	AccountServerPort string
 	DB_Server string
 	DB_Name string
 	DB_UserId string
@@ -73,7 +70,6 @@ func (this *ServerMgr)Init() bool{
 	this.m_config.Read("GONET_SERVER.CFG")
 	EtcdEndpoints = this.m_config.Get5("Etcd_Cluster", ",")
 	UserNetIP, UserNetPort 	= this.m_config.Get2("World_LANAddress", ":")
-	AccountServerIp, AccountServerPort 	= this.m_config.Get2("Account_LANAddress", ":")
 	DB_Server 	= this.m_config.Get3("WorldDB", "DB_LANIP")
 	DB_Name		= this.m_config.Get3("WorldDB","DB_Name");
 	DB_UserId	= this.m_config.Get3("WorldDB", "DB_UserId");
