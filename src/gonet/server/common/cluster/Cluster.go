@@ -16,13 +16,13 @@ type(
 		actor.IActor
 
 		RegisterServer(int, string, int)
-		SetClusterId(uint32)
+		SetClusterId(int)
 	}
 
 	//集群客户端
 	Cluster struct{
 		actor.Actor
-		m_ClusterMap map[uint32] *network.ClientSocket
+		m_ClusterMap map[int] *network.ClientSocket
 		m_ClusterList base.IVector
 		m_ClusterLocker *sync.RWMutex
 		m_Packet IClusterPacket
@@ -35,25 +35,25 @@ type(
 		Init(num int, MasterType int, IP string, Port int, Endpoints []string)
 		AddCluster(info *common.ClusterInfo)
 		DelCluster(info *common.ClusterInfo)
-		GetCluster(uint32) *network.ClientSocket
+		GetCluster(int) *network.ClientSocket
 
 		BindPacket(IClusterPacket)
 		BindPacketFunc(network.HandleFunc)
-		SendMsg(uint32, string, ...interface{})//发送给集群特定服务器
+		SendMsg(int, string, ...interface{})//发送给集群特定服务器
 		BalanceMsg(string, ...interface{})//负载给集群特定服务器
 		BoardCastMsg(string, ...interface{})//给集群广播
-		Send(uint32, []byte)
+		Send(int, []byte)
 		BalanceSend([]byte)//负载给集群特定服务器
 
-		BalanceCluster()uint32//负载均衡
-		RandomCluster()uint32//随机分配
+		BalanceCluster()int//负载均衡
+		RandomCluster()int//随机分配
 	}
 )
 
 func (this *Cluster) Init(num int, MasterType int, IP string, Port int, Endpoints []string) {
 	this.Actor.Init(num)
 	this.m_ClusterLocker = &sync.RWMutex{}
-	this.m_ClusterMap = make(map[uint32] *network.ClientSocket)
+	this.m_ClusterMap = make(map[int] *network.ClientSocket)
 	this.m_ClusterList = &base.Vector{}
 	this.m_Master = NewMaster(MasterType, Endpoints, &this.Actor)
 
@@ -107,7 +107,7 @@ func (this *Cluster) DelCluster(info *common.ClusterInfo){
 	this.m_ClusterLocker.Unlock()
 }
 
-func (this *Cluster) GetCluster(clusterId uint32) *network.ClientSocket{
+func (this *Cluster) GetCluster(clusterId int) *network.ClientSocket{
 	this.m_ClusterLocker.RLock()
 	pClient, bEx := this.m_ClusterMap[clusterId]
 	this.m_ClusterLocker.RUnlock()
@@ -125,7 +125,7 @@ func (this *Cluster) BindPacketFunc(packetFunc network.HandleFunc){
 	this.m_PacketFunc = packetFunc
 }
 
-func (this *Cluster) SendMsg(clusterId uint32, funcName string, params  ...interface{}){
+func (this *Cluster) SendMsg(clusterId int, funcName string, params  ...interface{}){
 	pClient := this.GetCluster(clusterId)
 	if pClient != nil{
 		pClient.SendMsg(funcName, params...)
@@ -151,7 +151,7 @@ func (this *Cluster) BoardCastMsg(funcName string, params  ...interface{}){
 	}
 }
 
-func (this *Cluster) Send(clusterId uint32, buff []byte){
+func (this *Cluster) Send(clusterId int, buff []byte){
 	pClient := this.GetCluster(clusterId)
 	if pClient != nil{
 		pClient.Send(buff)
@@ -165,8 +165,8 @@ func (this *Cluster) BalanceSend(buff []byte){
 	}
 }
 
-func (this *Cluster) BalanceCluster() uint32{
-	nIndex := uint32(0)
+func (this *Cluster) BalanceCluster() int{
+	nIndex := 0
 	this.m_ClusterLocker.RLock()
 	for _, v := range this.m_ClusterList.Array(){
 		pClusterInfo := v.(*common.ClusterInfo)
@@ -182,8 +182,8 @@ func (this *Cluster) BalanceCluster() uint32{
 	return nIndex
 }
 
-func (this *Cluster) RandomCluster() uint32{
-	nIndex := uint32(0)
+func (this *Cluster) RandomCluster() int{
+	nIndex := 0
 	this.m_ClusterLocker.RLock()
 	if this.m_ClusterList.Len() > 0{
 		nLen := int(math.Max(float64(this.m_ClusterList.Len()-1), 0))

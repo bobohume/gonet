@@ -3,6 +3,7 @@ package player
 import (
 	"gonet/actor"
 	"gonet/message"
+	"gonet/server/world"
 )
 
 func (this *Player) AddMap() {
@@ -14,13 +15,13 @@ func (this *Player) LeaveMap() {
 }
 
 func (this *Player) ReloginMap() {
-	SendToMap(this.AccountId, "ReloginMap", this.AccountId, this.GetGateClusterId())
+	//SendToMap(this.AccountId, "ReloginMap", this.AccountId, this.GetGateClusterId())
 }
 
 //--------------发送给客户端----------------------//
-func SendToMap(Id int64, funcName string, params  ...interface{}){
+func SendToZone(Id int64, ClusterId int, funcName string, params  ...interface{}){
 	params1 := make([]interface{}, len(params)+1)
 	params1[0] = &message.RpcHead{Id:Id}
 	copy(params1[1:], params)
-	actor.MGR.SendMsg("mapmgr", funcName, params1...)
+	world.SERVER.GetClusterMgr().SendMsg(ClusterId, funcName, params1...)
 }

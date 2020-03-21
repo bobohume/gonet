@@ -155,7 +155,7 @@ func (this *ServerMgr) GetAccountCluster() *cluster.Cluster{
 }
 
 //发送给客户端
-func SendToClient(clusterId uint32, packet proto.Message){
+func SendToClient(clusterId int, packet proto.Message){
 	buff := message.Encode(packet)
 	pakcetHead := packet.(message.Packet).GetPacketHead()
 	if pakcetHead != nil {

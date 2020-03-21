@@ -20,18 +20,18 @@ type (
 		actor.Actor
 		m_LostTimer *common.SimpleTimer
 
-		m_ClusterId uint32
+		m_ClusterId int
 	}
 
 	IAccountProcess interface {
 		actor.IActor
 
 		RegisterServer(int, string, int)
-		SetClusterId(uint32)
+		SetClusterId(int)
 	}
 )
 
-func (this * AccountProcess) SetClusterId(clusterId uint32){
+func (this * AccountProcess) SetClusterId(clusterId int){
 	this.m_ClusterId = clusterId
 }
 

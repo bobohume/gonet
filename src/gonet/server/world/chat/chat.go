@@ -33,7 +33,7 @@ type(
 		accountId int64
 		playerId int64
 		playerName string
-		gateClusterId uint32
+		gateClusterId int
 	}
 
 	ChatMgr struct {
@@ -128,7 +128,7 @@ func (this *ChatMgr) Init(num int) {
 	})
 
 	//添加玩家到频道
-	this.RegisterCall("AddPlayerToChannel", func(accoudId, playerId int64, channelId int64, playerName string, gateClusterId uint32) {
+	this.RegisterCall("AddPlayerToChannel", func(accoudId, playerId int64, channelId int64, playerName string, gateClusterId int) {
 		this.GetChannelManager().AddPlayer(accoudId, playerId, channelId, playerName, gateClusterId)
 	})
 

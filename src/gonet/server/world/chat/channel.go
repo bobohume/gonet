@@ -14,7 +14,7 @@ type(
 		GetMessageType() int8
 		HasPlayer(playerId int64) bool
 		GetPlayer(playerId int64) *player
-		AddPlayer(accountId, playerId int64, playername string, gateClusterId uint32)
+		AddPlayer(accountId, playerId int64, playername string, gateClusterId int)
 		RemovePlayer(playerId int64)
 		SendMessage(msg *ChatMessage)
 	}
@@ -33,7 +33,7 @@ func (this *Channel) GetMessageType() int8{
 	return this.m_cMessageType
 }
 
-func (this *Channel) AddPlayer(accountId, playerId int64, playername string, gateClusterId uint32){
+func (this *Channel) AddPlayer(accountId, playerId int64, playername string, gateClusterId int){
 	this.m_playerMap[playerId] = &player{accountId, playerId, playername, gateClusterId}
 }
 

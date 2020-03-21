@@ -45,7 +45,7 @@ func (this* PlayerMgr) Init(num int){
 
 	this.RegisterTimer(1000 * 1000 * 1000, this.Update)//定时器
 	//玩家登录
-	this.RegisterCall("G_W_CLoginRequest", func(accountId int64, gateClusterId uint32) {
+	this.RegisterCall("G_W_CLoginRequest", func(accountId int64, gateClusterId int) {
 		pPlayer := this.GetPlayer(accountId)
 		if pPlayer != nil{
 			pPlayer.SendMsg("Logout", accountId)

@@ -15,14 +15,13 @@ const(
 )
 
 type(
-	HashClusterMap map[uint32] *common.ServerInfo
+	HashClusterMap map[int] *common.ServerInfo
 	HashClusterSocketMap map[int] *common.ServerInfo
 
 	//集群服务器
 	ClusterServer struct{
 		actor.Actor
 		*Service//集群注册
-
 		m_ClusterMap [MAX_CLUSTER_TYPE]HashClusterMap
 		m_ClusterSocketMap [MAX_CLUSTER_TYPE]HashClusterSocketMap
 		m_ClusterList [MAX_CLUSTER_TYPE]base.IVector
@@ -35,18 +34,18 @@ type(
 		RegisterClusterCall()//注册集群通用回调
 		AddCluster(info *common.ServerInfo)
 		DelCluster(info *common.ServerInfo)
-		GetCluster(uint32) *common.ServerInfo
+		GetCluster(int) *common.ServerInfo
 		GetClusterBySocket(int) *common.ServerInfo
 
 		BindServer(*network.ServerSocket)
-		SendMsg(uint32, string, ...interface{})//发送给集群特定服务器
+		SendMsg(int, string, ...interface{})//发送给集群特定服务器
 		BalanceMsg(int, string, ...interface{})//负载给集群特定服务器
 		BoardCastMsg(int, string, ...interface{})//给集群广播
-		Send(uint32, []byte)
+		Send(int, []byte)
 		BalanceSend(int, []byte)//负载给集群特定服务器
 
-		BalanceCluster(int)uint32//负载均衡
-		RandomCluster(int)uint32//随机分配
+		BalanceCluster(int)	int//负载均衡
+		RandomCluster(int)	int//随机分配
 	}
 )
 
@@ -126,7 +125,7 @@ func (this *ClusterServer) DelCluster(info *common.ServerInfo){
 	}
 }
 
-func (this *ClusterServer) GetCluster(clusterId uint32) *common.ServerInfo{
+func (this *ClusterServer) GetCluster(clusterId int) *common.ServerInfo{
 	this.m_ClusterLocker.RLock()
 	defer this.m_ClusterLocker.RUnlock()
 	for i := 0; i < MAX_CLUSTER_TYPE; i++ {
@@ -154,7 +153,7 @@ func (this *ClusterServer) BindServer(pService *network.ServerSocket){
 	this.m_pService = pService
 }
 
-func (this *ClusterServer) SendMsg(clusterId uint32, funcName string, params  ...interface{}){
+func (this *ClusterServer) SendMsg(clusterId int, funcName string, params  ...interface{}){
 	pCluster:= this.GetCluster(clusterId)
 	if pCluster != nil {
 		this.m_pService.SendMsgById(pCluster.SocketId, funcName, params...)
@@ -180,7 +179,7 @@ func (this *ClusterServer) BoardCastMsg(nType int, funcName string, params  ...i
 	}
 }
 
-func (this *ClusterServer) Send(clusterId uint32, buff []byte){
+func (this *ClusterServer) Send(clusterId int, buff []byte){
 	pCluster:= this.GetCluster(clusterId)
 	if pCluster != nil {
 		this.m_pService.SendById(pCluster.SocketId, buff)
@@ -194,8 +193,8 @@ func (this *ClusterServer) BalanceSend(nType int, buff []byte){
 	}
 }
 
-func (this *ClusterServer) BalanceCluster(nType int) uint32{
-	nIndex := uint32(0)
+func (this *ClusterServer) BalanceCluster(nType int) int{
+	nIndex := 0
 	this.m_ClusterLocker.RLock()
 	for _, v := range this.m_ClusterList[nType].Array(){
 		pClusterInfo := v.(*common.ServerInfo)
@@ -211,8 +210,8 @@ func (this *ClusterServer) BalanceCluster(nType int) uint32{
 	return nIndex
 }
 
-func (this *ClusterServer) RandomCluster(nType int) uint32{
-	nIndex := uint32(0)
+func (this *ClusterServer) RandomCluster(nType int) int{
+	nIndex := 0
 	this.m_ClusterLocker.RLock()
 	if this.m_ClusterList[nType].Len() > 0{
 		nLen := int(math.Max(float64(this.m_ClusterList[nType].Len()-1), 0))

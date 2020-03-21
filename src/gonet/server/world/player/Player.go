@@ -34,7 +34,7 @@ func (this* Player) Init(num int){
 	this.m_ItemMgr.Init(this)
 
 	//玩家登录
-	this.RegisterCall("Login", func(clusterId uint32) {
+	this.RegisterCall("Login", func(clusterId int) {
 		PlayerSimpleList := LoadSimplePlayerDatas(this.AccountId)
 		this.PlayerSimpleDataList = PlayerSimpleList
 

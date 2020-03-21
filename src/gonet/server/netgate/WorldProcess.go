@@ -14,14 +14,14 @@ type (
 		actor.Actor
 		m_LostTimer *common.SimpleTimer
 
-		m_ClusterId uint32
+		m_ClusterId int
 	}
 
 	IWorldlProcess interface {
 		actor.IActor
 
 		RegisterServer(int, string, int)
-		SetClusterId(uint32)
+		SetClusterId(int)
 	}
 )
 
@@ -29,7 +29,7 @@ func (this * WorldProcess) RegisterServer(ServerType int, Ip string, Port int)  
 	SERVER.GetWorldCluster().SendMsg(this.m_ClusterId, "COMMON_RegisterRequest",ServerType, Ip, Port)
 }
 
-func (this * WorldProcess) SetClusterId(clusterId uint32){
+func (this * WorldProcess) SetClusterId(clusterId int){
 	this.m_ClusterId = clusterId
 }
 

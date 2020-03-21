@@ -30,8 +30,8 @@ func (this *ClusterInfo) String() string{
 	return ToServiceString(this.Type)
 }
 
-func (this *ClusterInfo) Id() uint32{
-	return base.ToHash(this.IpString())
+func (this *ClusterInfo) Id() int{
+	return int(base.ToHash(this.IpString()))
 }
 
 func ToServiceString(nType int)string{

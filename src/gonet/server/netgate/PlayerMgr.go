@@ -28,7 +28,7 @@ type(
 		AccountId int64
 		LastTime int64
 		SocketId int
-		WClusterId uint32
+		WClusterId int
 	}
 )
 

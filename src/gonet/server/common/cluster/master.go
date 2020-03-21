@@ -13,7 +13,7 @@ import (
 
 //监控服务器
 type Master struct {
-	m_ServiceMap map[uint32]*common.ClusterInfo
+	m_ServiceMap map[int]*common.ClusterInfo
 	m_KeysAPI client.KeysAPI
 	m_Actor actor.IActor
 	m_MasterType int
@@ -40,7 +40,7 @@ func (this *Master) Init(Endpoints []string, pActor actor.IActor) {
 		log.Fatal("Error: cannot connec to etcd:", err)
 	}
 
-	this.m_ServiceMap = make(map[uint32]*common.ClusterInfo)
+	this.m_ServiceMap = make(map[int]*common.ClusterInfo)
 	this.m_KeysAPI =  client.NewKeysAPI(etcdClient)
 	this.BindActor(pActor)
 }
