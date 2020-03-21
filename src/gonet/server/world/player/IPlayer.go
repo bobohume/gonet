@@ -2,6 +2,7 @@ package player
 
 import (
 	"database/sql"
+	"github.com/golang/protobuf/proto"
 	"gonet/actor"
 	"gonet/base"
 )
@@ -21,6 +22,8 @@ type(
 		SetKV(key int, value int64)//设置kv
 		DelKV(key int)//删除key
 		GetKV(key int) int64//获取key
+
+		SendToClient(packet proto.Message)
 
 		GetItemMgr() IItemMgr
 	}

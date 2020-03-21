@@ -3,6 +3,7 @@ package player
 import (
 	"database/sql"
 	"fmt"
+	"github.com/golang/protobuf/proto"
 	"gonet/actor"
 	"gonet/base"
 	"gonet/db"
@@ -23,7 +24,7 @@ type(
 	}
 )
 
-func (this* Player) Init(num int){
+func (this *Player) Init(num int){
 	this.Actor.Init(num)
 	this.PlayerData.Init()
 	this.RegisterTimer(1000 * 1000 * 1000, this.Update)//定时器
@@ -47,7 +48,7 @@ func (this* Player) Init(num int){
 
 		this.m_Log.Println("玩家登录成功")
 		this.SetGateClusterId(clusterId)
-		world.SendToClient(clusterId, &message.W_C_SelectPlayerResponse{PacketHead: message.BuildPacketHead( this.AccountId,  message.SERVICE_CLIENT),
+		this.SendToClient(&message.W_C_SelectPlayerResponse{PacketHead: message.BuildPacketHead( this.AccountId,  message.SERVICE_CLIENT),
 			AccountId:this.AccountId,
 			PlayerData:PlayerDataList,
 		})
@@ -118,14 +119,18 @@ func (this* Player) Init(num int){
 	this.Actor.Start()
 }
 
-func (this* Player)GetDB() *sql.DB{
+func (this *Player)GetDB() *sql.DB{
 	return this.m_db
 }
 
-func (this* Player) GetLog() *base.CLog{
+func (this *Player) GetLog() *base.CLog{
 	return this.m_Log
 }
 
-func (this* Player) Update(){
+func (this *Player) SendToClient(packet proto.Message){
+	world.SendToClient(this.GetGateClusterId(), packet)
+}
+
+func (this *Player) Update(){
 
 }
