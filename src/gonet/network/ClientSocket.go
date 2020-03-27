@@ -39,7 +39,7 @@ func (this *ClientSocket) Start() bool {
 
 	if this.Connect(){
 		this.m_Conn.(*net.TCPConn).SetNoDelay(true)
-		go clientRoutine(this)
+		go this.Run()
 	}
 	//延迟，监听关闭
 	//defer ln.Close()
@@ -52,6 +52,7 @@ func (this *ClientSocket) Stop() bool {
 	}
 
 	this.m_bShuttingDown = true
+	this.Close()
 	return true
 }
 
@@ -115,8 +116,8 @@ func (this *ClientSocket) OnNetFail(int) {
 	this.CallMsg("DISCONNECT", this.m_ClientId)
 }
 
-func clientRoutine(pClient *ClientSocket) bool {
-	if pClient.m_Conn == nil {
+func (this *ClientSocket) Run() bool {
+	if this.m_Conn == nil {
 		return false
 	}
 
@@ -126,29 +127,29 @@ func clientRoutine(pClient *ClientSocket) bool {
 		}
 	}()
 
-	var buff= make([]byte, pClient.m_ReceiveBufferSize)
+	var buff= make([]byte, this.m_ReceiveBufferSize)
 	for {
-		if pClient.m_bShuttingDown {
+		if this.m_bShuttingDown {
 			break
 		}
 
-		n, err := pClient.m_Conn.Read(buff)
+		n, err := this.m_Conn.Read(buff)
 		if err == io.EOF {
-			fmt.Printf("远程链接：%s已经关闭！\n", pClient.m_Conn.RemoteAddr().String())
-			pClient.OnNetFail(0)
+			fmt.Printf("远程链接：%s已经关闭！\n", this.m_Conn.RemoteAddr().String())
+			this.OnNetFail(0)
 			break
 		}
 
 		if err != nil {
 			handleError(err)
-			pClient.OnNetFail(0)
+			this.OnNetFail(0)
 			break
 		}
 		if n > 0 {
-			pClient.ReceivePacket(pClient.m_ClientId, buff[:n])
+			this.ReceivePacket(this.m_ClientId, buff[:n])
 		}
 	}
 
-	pClient.Close()
+	this.Close()
 	return true
 }
