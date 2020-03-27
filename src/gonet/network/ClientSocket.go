@@ -132,7 +132,6 @@ func clientRoutine(pClient *ClientSocket) bool {
 			break
 		}
 
-		//n, err := io.ReadFull(pClient.m_Reader, buff)
 		n, err := pClient.m_Conn.Read(buff)
 		if err == io.EOF {
 			fmt.Printf("远程链接：%s已经关闭！\n", pClient.m_Conn.RemoteAddr().String())

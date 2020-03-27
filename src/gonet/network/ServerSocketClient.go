@@ -26,6 +26,7 @@ type IServerSocketClient interface {
 type ServerSocketClient struct {
 	Socket
 	m_pServer     *ServerSocket
+	m_SendChan	chan []byte//对外缓冲队列
 }
 
 func handleError(err error) {
@@ -33,6 +34,14 @@ func handleError(err error) {
 		return
 	}
 	log.Printf("错误：%s\n", err.Error())
+}
+
+func (this *ServerSocketClient) Init(ip string, port int) bool {
+	if this.m_nConnectType == CLIENT_CONNECT {
+		this.m_SendChan = make(chan []byte, MAX_SEND_CHAN)
+	}
+	this.Socket.Init(ip, port)
+	return true
 }
 
 func (this *ServerSocketClient) Start() bool {
@@ -51,7 +60,10 @@ func (this *ServerSocketClient) Start() bool {
 	this.m_Conn.(*net.TCPConn).SetNoDelay(true)
 	//this.m_Conn.SetKeepAlive(true)
 	//this.m_Conn.SetKeepAlivePeriod(5*time.Second)
-	go serverclientRoutine(this)
+	go this.Run()
+	if this.m_nConnectType == CLIENT_CONNECT {
+		go this.SendLoop()
+	}
 	return true
 }
 
@@ -62,36 +74,59 @@ func (this *ServerSocketClient) Send(buff []byte) int {
 		}
 	}()
 
+	if this.m_nConnectType == CLIENT_CONNECT  {//对外链接send不阻塞
+		select {
+		case this.m_SendChan <- buff:
+		default://网络太卡,tcp send缓存满了并且发送队列也满了
+			this.OnNetFail(1)
+			if this.m_pServer != nil {
+				this.m_pServer.DelClinet(this)
+			}
+		}
+	}else{
+		return this.DoSend(buff)
+	}
+	return 0
+}
+
+func (this *ServerSocketClient) DoSend(buff []byte) int {
+	if this.m_Conn == nil{
+		return 0
+	}
+
 	n, err := this.m_Conn.Write(buff)
 	handleError(err)
 	if n > 0 {
 		return n
 	}
-	//this.m_Writer.Flush()
+
 	return 0
 }
 
 func (this *ServerSocketClient) OnNetFail(error int) {
 	this.Stop()
-	if this.m_nConnectType == SERVER_CONNECT{
-		this.CallMsg("DISCONNECT", this.m_ClientId)
-	}else{//netgate对外格式统一
+	if this.m_nConnectType == CLIENT_CONNECT{//netgate对外格式统一
 		stream := base.NewBitStream(make([]byte, 32), 32)
 		stream.WriteInt(int(DISCONNECTINT), 32)
 		stream.WriteInt(this.m_ClientId, 32)
 		this.HandlePacket(this.m_ClientId, stream.GetBuffer())
+	}else{
+		this.CallMsg("DISCONNECT", this.m_ClientId)
 	}
 }
 
 func (this *ServerSocketClient) Close() {
+	if this.m_nConnectType == CLIENT_CONNECT {
+		close(this.m_SendChan)
+	}
 	this.Socket.Close()
 	if this.m_pServer != nil {
 		this.m_pServer.DelClinet(this)
 	}
 }
 
-func serverclientRoutine(pClient *ServerSocketClient) bool {
-	if pClient.m_Conn == nil {
+func (this *ServerSocketClient) Run() bool {
+	if this.m_Conn == nil {
 		return false
 	}
 
@@ -101,30 +136,43 @@ func serverclientRoutine(pClient *ServerSocketClient) bool {
 		}
 	}()
 
-	var buff= make([]byte, pClient.m_ReceiveBufferSize)
+	var buff= make([]byte, this.m_ReceiveBufferSize)
 	for {
-		if pClient.m_bShuttingDown {
+		if this.m_bShuttingDown {
 			break
 		}
 
-		//n, err := io.ReadFull(pClient.m_Reader, buff)
-		n, err := pClient.m_Conn.Read(buff)
+		n, err := this.m_Conn.Read(buff)
 		if err == io.EOF {
-			fmt.Printf("远程链接：%s已经关闭！\n", pClient.m_Conn.RemoteAddr().String())
-			pClient.OnNetFail(0)
+			fmt.Printf("远程链接：%s已经关闭！\n", this.m_Conn.RemoteAddr().String())
+			this.OnNetFail(0)
 			break
 		}
 		if err != nil {
 			handleError(err)
-			pClient.OnNetFail(0)
+			this.OnNetFail(0)
 			break
 		}
 		if n > 0 {
-			pClient.ReceivePacket(pClient.m_ClientId, buff[:n])
+			this.ReceivePacket(this.m_ClientId, buff[:n])
 		}
 	}
 
-	pClient.Close()
-	fmt.Printf("%s关闭连接", pClient.m_sIP)
+	this.Close()
+	fmt.Printf("%s关闭连接", this.m_sIP)
+	return true
+}
+
+func (this *ServerSocketClient) SendLoop() bool {
+	for {
+		select {
+		case buff := <-this.m_SendChan:
+			if buff == nil{//信道关闭
+				return false
+			}else{
+				this.DoSend(buff)
+			}
+		}
+	}
 	return true
 }

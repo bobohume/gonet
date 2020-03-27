@@ -19,15 +19,13 @@ const (
 )
 
 const (
-	MAX_WRITE_CHAN = 32
+	MAX_SEND_CHAN = 100
 )
 
 type (
 	HandleFunc func(int,[]byte) bool//回调函数
 	Socket struct {
 		m_Conn                 net.Conn
-		//m_Reader				*bufio.Reader
-		//m_Writer				*bufio.Writer
 		m_nPort                int
 		m_sIP                  string
 		m_nState			   int
@@ -56,6 +54,7 @@ type (
 		Init(string, int) bool
 		Start() bool
 		Stop() bool
+		Run() bool
 		Restart() bool
 		Connect() bool
 		Disconnect(bool) bool
@@ -96,19 +95,28 @@ func (this *Socket) Init(string, int) bool {
 func (this *Socket) Start() bool {
 	return true
 }
+
 func (this *Socket) Stop() bool {
 	this.m_bShuttingDown = true
 	return true
 }
+
+func (this *Socket) Run()bool {
+	return true
+}
+
 func (this *Socket) Restart() bool {
 	return true
 }
+
 func (this *Socket) Connect() bool {
 	return true
 }
+
 func (this *Socket) Disconnect(bool) bool {
 	return true
 }
+
 func (this *Socket) OnNetFail(int) {
 	this.Stop()
 }
@@ -135,8 +143,6 @@ func (this *Socket) Clear() {
 	this.m_nState = SSF_SHUT_DOWN
 	//this.m_nConnectType = CLIENT_CONNECT
 	this.m_Conn = nil
-	//this.m_Reader = nil
-	//this.m_Writer = nil
 	this.m_ReceiveBufferSize = 1024
 	this.m_MaxReceiveBufferSize = base.MAX_PACKET
 	this.m_bShuttingDown = false
@@ -173,8 +179,6 @@ func (this *Socket) SetConnectType(nType int){
 
 func (this *Socket) SetTcpConn(conn net.Conn){
 	this.m_Conn = conn
-	//this.m_Reader = bufio.NewReader(conn)
-	//this.m_Writer = bufio.NewWriter(conn)
 }
 
 func (this *Socket) BindPacketFunc(callfunc HandleFunc){

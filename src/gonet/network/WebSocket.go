@@ -102,7 +102,7 @@ func (this *WebSocket) GetClientById(id int) *WebSocketClient {
 func (this *WebSocket) AddClinet(tcpConn *websocket.Conn, addr string, connectType int) *WebSocketClient {
 	pClient := this.LoadClient()
 	if pClient != nil {
-		pClient.Socket.Init("", 0)
+		pClient.Init("", 0)
 		pClient.m_pServer = this
 		pClient.m_ReceiveBufferSize = this.m_ReceiveBufferSize
 		pClient.m_MaxReceiveBufferSize = this.m_MaxReceiveBufferSize
@@ -205,36 +205,16 @@ func (this *WebSocket) Close() {
 
 func (this *WebSocket) wserverRoutine(conn *websocket.Conn){
 	fmt.Printf("客户端：%s已连接！\n", conn.RemoteAddr().String())
-	whandleConn(this, conn, conn.RemoteAddr().String())
+	this.handleConn(conn, conn.RemoteAddr().String())
 }
 
-/*func wtimeRoutine(pServer *WebSocket){
-	for{
-		select {
-		case clientChan := <- pServer.m_ClientChan:
-			if clientChan.state == ADD_CLIENT{
-				if clientChan.pClient != nil {
-					pServer.m_ClientList[clientChan.pClient.m_ClientId] = clientChan.pClient
-				}
-			}else if clientChan.state == DEL_CLIENT{
-				delete(pServer.m_ClientList, clientChan.id)
-			}else if clientChan.state == CLOSE_CLIENT{
-				pClinet := pServer.GetClientById(clientChan.id)
-				if pClinet != nil{
-					pClinet.Stop()
-				}
-			}
-		}
-	}
-}*/
-
-func whandleConn(server *WebSocket, tcpConn *websocket.Conn, addr string) bool {
+func (this *WebSocket) handleConn(tcpConn *websocket.Conn, addr string) bool {
 	if tcpConn == nil {
 		return false
 	}
 
 	tcpConn.PayloadType = websocket.BinaryFrame
-	pClient := server.AddClinet(tcpConn, addr, server.m_nConnectType)
+	pClient := this.AddClinet(tcpConn, addr, this.m_nConnectType)
 	if pClient == nil {
 		return false
 	}

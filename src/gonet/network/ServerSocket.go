@@ -86,7 +86,7 @@ func (this *ServerSocket) Start() bool {
 	//延迟，监听关闭
 	//defer ln.Close()
 	this.m_nState = SSF_ACCEPT
-	go serverRoutine(this)
+	go this.Run()
 	return true
 }
 
@@ -108,7 +108,7 @@ func (this *ServerSocket) GetClientById(id int) *ServerSocketClient {
 func (this *ServerSocket) AddClinet(tcpConn *net.TCPConn, addr string, connectType int) *ServerSocketClient {
 	pClient := this.LoadClient()
 	if pClient != nil {
-		pClient.Socket.Init("", 0)
+		pClient.Init("", 0)
 		pClient.m_pServer = this
 		pClient.m_ReceiveBufferSize = this.m_ReceiveBufferSize
 		pClient.m_MaxReceiveBufferSize = this.m_MaxReceiveBufferSize
@@ -194,27 +194,27 @@ func (this *ServerSocket) Close() {
 	//this.m_Pool.Put(this)
 }
 
-func serverRoutine(server *ServerSocket) {
+func (this *ServerSocket) Run() bool{
 	for {
-		tcpConn, err := server.m_Listen.AcceptTCP()
+		tcpConn, err := this.m_Listen.AcceptTCP()
 		handleError(err)
 		if err != nil {
-			return
+			return false
 		}
 
 		fmt.Printf("客户端：%s已连接！\n", tcpConn.RemoteAddr().String())
 		//延迟，关闭链接
 		//defer tcpConn.Close()
-		handleConn(server, tcpConn, tcpConn.RemoteAddr().String())
+		this.handleConn(tcpConn, tcpConn.RemoteAddr().String())
 	}
 }
 
-func handleConn(server *ServerSocket, tcpConn *net.TCPConn, addr string) bool {
+func (this *ServerSocket) handleConn(tcpConn *net.TCPConn, addr string) bool {
 	if tcpConn == nil {
 		return false
 	}
 
-	pClient := server.AddClinet(tcpConn, addr, server.m_nConnectType)
+	pClient := this.AddClinet(tcpConn, addr, this.m_nConnectType)
 	if pClient == nil {
 		return false
 	}
