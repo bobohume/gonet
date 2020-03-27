@@ -13,7 +13,7 @@ type IWebSocketClient interface {
 type WebSocketClient struct {
 	Socket
 	m_pServer     *WebSocket
-	m_SendChan	chan []byte
+	m_SendChan	chan []byte//对外缓冲队列
 }
 
 func (this *WebSocketClient) Init(ip string, port int) bool {
@@ -37,10 +37,6 @@ func (this *WebSocketClient) Start() bool {
 		this.m_PacketFuncList = this.m_pServer.m_PacketFuncList
 	}
 	this.m_nState = SSF_ACCEPT
-	//x/net/websocket
-	//if it return weboskcet rw buffer will close, this can not return
-	//so it must do not let websocket.Handle return
-	//go wserverclientRoutine(this)
 	go this.Run()
 	if this.m_nConnectType == CLIENT_CONNECT {
 		go this.SendLoop()

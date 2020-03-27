@@ -33,22 +33,14 @@ type WebSocket struct {
 	m_bNagle        bool
 	m_ClientList    map[int]*WebSocketClient
 	m_ClientLocker	*sync.RWMutex
-	//m_ClientChan 	chan WClientChan
 	m_Pool          sync.Pool
 	m_Lock          sync.Mutex
-}
-
-type WClientChan struct{
-	pClient *WebSocketClient
-	state int
-	id int
 }
 
 func (this *WebSocket) Init(ip string, port int) bool {
 	this.Socket.Init(ip, port)
 	this.m_ClientList = make(map[int]*WebSocketClient)
 	this.m_ClientLocker = &sync.RWMutex{}
-	//this.m_ClientChan = make(chan WClientChan, 1000)
 	this.m_sIP = ip
 	this.m_nPort = port
 	this.m_Pool = sync.Pool{
@@ -77,10 +69,7 @@ func (this *WebSocket) Start() bool {
 	}()
 
 	fmt.Printf("WebSocket 启动监听，等待链接！\n")
-	//延迟，监听关闭
-	//defer ln.Close()
 	this.m_nState = SSF_ACCEPT
-	//go wtimeRoutine(this)
 	return true
 }
 
@@ -113,9 +102,6 @@ func (this *WebSocket) AddClinet(tcpConn *websocket.Conn, addr string, connectTy
 		this.m_ClientLocker.Lock()
 		this.m_ClientList[pClient.m_ClientId] = pClient
 		this.m_ClientLocker.Unlock()
-		//this.NotifyActor(pClient, ADD_CLIENT)
-		//x/net/websocket
-		//pClient.Start()
 		this.m_nClientCount++
 		return pClient
 	} else {
@@ -124,22 +110,11 @@ func (this *WebSocket) AddClinet(tcpConn *websocket.Conn, addr string, connectTy
 	return nil
 }
 
-/*func (this *WebSocket) NotifyActor(pClient *WebSocketClient, state int){
-	if pClient != nil {
-		var clientChan WClientChan
-		clientChan.pClient = pClient
-		clientChan.state = state
-		clientChan.id = pClient.m_ClientId
-		this.m_ClientChan <- clientChan
-	}
-}*/
-
 func (this *WebSocket) DelClinet(pClient *WebSocketClient) bool {
 	this.m_Pool.Put(pClient)
 	this.m_ClientLocker.Lock()
 	delete(this.m_ClientList, pClient.m_ClientId)
 	this.m_ClientLocker.Unlock()
-	//this.NotifyActor(pClient, DEL_CLIENT)
 	return true
 }
 
@@ -148,11 +123,6 @@ func (this *WebSocket) StopClient(id int){
 	if pClinet != nil{
 		pClinet.Stop()
 	}
-	/*var clientChan WClientChan
-	clientChan.pClient = nil
-	clientChan.state = CLOSE_CLIENT
-	clientChan.id = id
-	this.m_ClientChan <- clientChan*/
 }
 
 func (this *WebSocket) LoadClient() *WebSocketClient {
@@ -219,7 +189,6 @@ func (this *WebSocket) handleConn(tcpConn *websocket.Conn, addr string) bool {
 		return false
 	}
 
-	//x/net/websocket
 	pClient.Start()
 	return true
 }
