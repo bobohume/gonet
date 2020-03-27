@@ -1,8 +1,8 @@
 package network
 
 import (
-	"gonet/base"
 	"fmt"
+	"gonet/base"
 	"gonet/rpc"
 	"io"
 	"log"
@@ -117,10 +117,6 @@ func (this *ClientSocket) OnNetFail(int) {
 }
 
 func (this *ClientSocket) Run() bool {
-	if this.m_Conn == nil {
-		return false
-	}
-
 	defer func() {
 		if err := recover(); err != nil {
 			base.TraceCode(err)
@@ -129,7 +125,7 @@ func (this *ClientSocket) Run() bool {
 
 	var buff= make([]byte, this.m_ReceiveBufferSize)
 	for {
-		if this.m_bShuttingDown {
+		if this.m_bShuttingDown || this.m_Conn == nil {
 			break
 		}
 

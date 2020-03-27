@@ -126,10 +126,6 @@ func (this *ServerSocketClient) Close() {
 }
 
 func (this *ServerSocketClient) Run() bool {
-	if this.m_Conn == nil {
-		return false
-	}
-
 	defer func() {
 		if err := recover(); err != nil {
 			base.TraceCode(err)
@@ -138,7 +134,7 @@ func (this *ServerSocketClient) Run() bool {
 
 	var buff= make([]byte, this.m_ReceiveBufferSize)
 	for {
-		if this.m_bShuttingDown {
+		if this.m_bShuttingDown || this.m_Conn == nil {
 			break
 		}
 
