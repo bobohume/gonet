@@ -30,9 +30,6 @@ type(
 		GetWorldCluster() *cluster.Cluster
 		GetAccountCluster() *cluster.Cluster
 		GetPlayerMgr() *PlayerManager
-		InitWorldSocket()
-		AddWorldSocket(string, int, int)
-		DelWorldSocket(int)
 		OnServerStart()
 	}
 
