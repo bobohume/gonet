@@ -37,10 +37,10 @@ func (this *WebSocketClient) Start() bool {
 		this.m_PacketFuncList = this.m_pServer.m_PacketFuncList
 	}
 	this.m_nState = SSF_ACCEPT
-	go this.Run()
 	if this.m_nConnectType == CLIENT_CONNECT {
 		go this.SendLoop()
 	}
+	this.Run()
 	return true
 }
 
