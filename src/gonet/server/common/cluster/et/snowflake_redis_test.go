@@ -1,4 +1,4 @@
-package cluster_test
+package et_test
 
 import (
 	"fmt"
@@ -28,7 +28,7 @@ func (this *SnowflakeR) Value() string{
 	return this.m_Ip
 }
 
-func (this *SnowflakeR) Ping(){
+func (this *SnowflakeR) Run(){
 	for {
 	TrySET:
 		//设置key
@@ -70,6 +70,7 @@ func (this *SnowflakeR) Ping(){
 	}
 }
 
+//uuid生成器
 func (this *SnowflakeR) Init(IP string, Port int, endpoints []string){
 	c, err := redis.Dial("tcp", "127.0.0.1:6379")
 	if err != nil {
@@ -78,25 +79,19 @@ func (this *SnowflakeR) Init(IP string, Port int, endpoints []string){
 		//c.Close()
 	}
 	this.m_KeysAPI = c
+	this.Start()
 }
 
 func (this *SnowflakeR) Start(){
-	go this.Ping()
+	go this.Run()
 }
-
-//注册服务器
-func NewSnowflakeR(IP string, Port int, Endpoints []string) *SnowflakeR{
-	uuid := &SnowflakeR{}
-	uuid.Init(IP, Port, Endpoints)
-	uuid.Start()
-	return uuid
-}
-
 
 func TestSnowFlakeRedis(t *testing.T){
 	group := []*SnowflakeR{}
 	for i := 0; i < int(WorkeridMax); i++{
-		group = append(group, NewSnowflakeR("127.0.0.1", i, []string{"http://127.0.0.1:2379"}))
+		v := &SnowflakeR{}
+		v.Init("127.0.0.1", i, []string{"http://127.0.0.1:2379"})
+		group = append(group, v)
 	}
 
 	for{

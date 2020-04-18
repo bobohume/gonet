@@ -1,4 +1,4 @@
-package cluster
+package et
 
 import (
 	"encoding/json"
@@ -12,23 +12,21 @@ import (
 )
 
 //监控服务器
-type Master struct {
-	m_ServiceMap map[int]*common.ClusterInfo
-	m_KeysAPI client.KeysAPI
-	m_Actor actor.IActor
-	m_MasterType int
-}
+type (
+	Master struct {
+		m_ServiceMap map[int]*common.ClusterInfo
+		m_KeysAPI client.KeysAPI
+		m_Actor actor.IActor
+		m_MasterType int
+	}
+
+	IMaster interface {
+		Start()
+	}
+)
 
 //监控服务器
-func NewMaster(Type int, Endpoints []string, pActor actor.IActor) *Master {
-	master := &Master{}
-	master.Init(Endpoints, pActor)
-	master.Start()
-	master.m_MasterType = Type
-	return master
-}
-
-func (this *Master) Init(Endpoints []string, pActor actor.IActor) {
+func (this *Master) Init(Type int, Endpoints []string, pActor actor.IActor) {
 	cfg := client.Config{
 		Endpoints:               Endpoints,
 		Transport:               client.DefaultTransport,
@@ -43,10 +41,12 @@ func (this *Master) Init(Endpoints []string, pActor actor.IActor) {
 	this.m_ServiceMap = make(map[int]*common.ClusterInfo)
 	this.m_KeysAPI =  client.NewKeysAPI(etcdClient)
 	this.BindActor(pActor)
+	this.Start()
+	this.m_MasterType = Type
 }
 
 func (this *Master) Start() {
-	go this.WatchService()
+	go this.Run()
 }
 
 func (this *Master) BindActor(pActor actor.IActor) {
@@ -67,27 +67,18 @@ func (this *Master) DelService(info *common.ClusterInfo) {
 }
 
 func (this *Master) InitService(info *common.ClusterInfo) {
-	res, err :=this.m_KeysAPI.Get(context.Background(), "workers/service/", nil)
-	if err == nil{
-		log.Println(res.Node.Value)
-		list := []common.ClusterInfo{}
-		json.Unmarshal([]byte(res.Node.Value), list)
-		for _, v := range list{
-			this.m_Actor.SendMsg("Cluster_Socket_Add", v)
-		}
-	}
 }
 
-func NodeToService(node *client.Node) *common.ClusterInfo {
+func NodeToService(val []byte) *common.ClusterInfo {
 	info := &common.ClusterInfo{}
-	err := json.Unmarshal([]byte(node.Value), info)
+	err := json.Unmarshal(val, info)
 	if err != nil {
 		log.Print(err)
 	}
 	return info
 }
 
-func (this *Master) WatchService() {
+func (this *Master) Run() {
 	watcher := this.m_KeysAPI.Watcher(ETCD_DIR + common.ToServiceString(this.m_MasterType), &client.WatcherOptions{
 		Recursive: true,
 	})
@@ -99,13 +90,13 @@ func (this *Master) WatchService() {
 			continue
 		}
 		if res.Action == "expire" {
-			info := NodeToService(res.PrevNode)
+			info := NodeToService([]byte(res.PrevNode.Value))
 			this.DelService(info)
 		} else if res.Action == "set" {
-			info := NodeToService(res.Node)
+			info := NodeToService([]byte(res.Node.Value))
 			this.AddService(info)
 		} else if res.Action == "delete" {
-			info := NodeToService(res.Node)
+			info := NodeToService([]byte(res.Node.Value))
 			this.DelService(info)
 		}
 	}

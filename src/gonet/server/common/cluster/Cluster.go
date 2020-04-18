@@ -5,12 +5,16 @@ import (
 	"gonet/base"
 	"gonet/network"
 	"gonet/server/common"
+	"gonet/server/common/cluster/et"
 	"math"
 	"reflect"
 	"sync"
 )
 
 type(
+	Service et.Service
+	Master et.Master
+	Snowflake et.Snowflake
 	//集群包管理
 	IClusterPacket interface {
 		actor.IActor
@@ -49,6 +53,27 @@ type(
 		RandomCluster()int//随机分配
 	}
 )
+
+//注册服务器
+func NewService(Type int, IP string, Port int, Endpoints []string) *Service{
+	service := &et.Service{}
+	service.Init(Type, IP, Port, Endpoints)
+	return (*Service)(service)
+}
+
+//监控服务器
+func NewMaster(Type int, Endpoints []string, pActor actor.IActor) *Master {
+	master := &et.Master{}
+	master.Init(Type, Endpoints, pActor)
+	return (*Master)(master)
+}
+
+//uuid生成器
+func NewSnowflake(Endpoints []string) *Snowflake{
+	uuid := &et.Snowflake{}
+	uuid.Init(Endpoints)
+	return (*Snowflake)(uuid)
+}
 
 func (this *Cluster) Init(num int, MasterType int, IP string, Port int, Endpoints []string) {
 	this.Actor.Init(num)

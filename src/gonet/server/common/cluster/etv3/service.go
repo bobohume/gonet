@@ -1,12 +1,12 @@
-package cluster
+package etv3
 
 import (
 	"encoding/json"
+	"go.etcd.io/etcd/clientv3"
 	"gonet/server/common"
 	"log"
 	"time"
 
-	"go.etcd.io/etcd/client"
 	"golang.org/x/net/context"
 )
 
@@ -17,44 +17,39 @@ const(
 //注册服务器
 type Service struct {
 	*common.ClusterInfo
-	m_KeysAPI client.KeysAPI
+	m_Client *clientv3.Client
+	m_Lease clientv3.Lease
+	m_LeaseId clientv3.LeaseID
 }
 
-func (this *Service) Ping(){
+func (this *Service) Run(){
 	for {
+		leaseResp, _ := this.m_Lease.Grant(context.Background(),10)
+		this.m_LeaseId = leaseResp.ID
 		key := ETCD_DIR + this.String() + "/" + this.IpString()
 		data, _ := json.Marshal(this.ClusterInfo)
-		this.m_KeysAPI.Set(context.Background(), key, string(data), &client.SetOptions{
-			TTL: time.Second * 10,
-		})
-
+		this.m_Client.Put(context.Background(), key, string(data),clientv3.WithLease(this.m_LeaseId))
 		time.Sleep(time.Second * 3)
 	}
 }
 
+//注册服务器
 func (this *Service) Init(Type int, IP string, Port int, endpoints []string){
-	cfg := client.Config{
+	cfg := clientv3.Config{
 		Endpoints:               endpoints,
-		Transport:               client.DefaultTransport,
-		HeaderTimeoutPerRequest: time.Second,
 	}
 
-	etcdClient, err := client.New(cfg)
+	etcdClient, err := clientv3.New(cfg)
 	if err != nil {
 		log.Fatal("Error: cannot connec to etcd:", err)
 	}
+	lease := clientv3.NewLease(etcdClient)
+	this.m_Client = etcdClient
+	this.m_Lease = lease
 	this.ClusterInfo = &common.ClusterInfo{Type, IP, Port, 0}
-	this.m_KeysAPI = client.NewKeysAPI(etcdClient)
+	this.Start()
 }
 
 func (this *Service) Start(){
-	go this.Ping()
-}
-
-//注册服务器
-func NewService(Type int, IP string, Port int, Endpoints []string) *Service{
-	service := &Service{}
-	service.Init(Type, IP, Port, Endpoints)
-	service.Start()
-	return service
+	go this.Run()
 }
