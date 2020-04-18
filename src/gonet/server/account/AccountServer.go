@@ -32,8 +32,6 @@ type(
 		GetClusterMgr() *ClusterManager
 		GetAccountMgr() *AccountMgr
 	}
-
-	BitStream base.BitStream
 )
 
 var(

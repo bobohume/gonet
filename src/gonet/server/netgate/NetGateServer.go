@@ -32,8 +32,6 @@ type(
 		GetPlayerMgr() *PlayerManager
 		OnServerStart()
 	}
-
-	BitStream base.BitStream
 )
 
 var(
