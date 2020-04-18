@@ -20,7 +20,6 @@ type(
 		m_config base.Config
 		m_Log	base.CLog
 		m_AccountMgr *AccountMgr
-		m_Cluster *cluster.Service
 		m_SnowFlake *cluster.Snowflake
 	}
 
