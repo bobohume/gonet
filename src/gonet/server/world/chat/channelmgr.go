@@ -15,7 +15,7 @@ type (
 		RegisterChannel(cMessageType int8, ChannelName string, nId int64)
 		UnregisterChannel(channelid int64)
 
-		AddPlayer(accountId, playerId int64, channelId int64, playerName string, gateClusterId int)
+		AddPlayer(accountId, playerId int64, channelId int64, playerName string, gateClusterId uint32)
 		RemovePlayer(playerId int64, channelId int64)
 		RemoveAllChannel()
 		//getChannel(channelid int64)  *Channel
@@ -68,7 +68,7 @@ func (this *ChannelMgr) RemoveAllChannel() {
 	}
 }
 
-func (this *ChannelMgr) AddPlayer(accountId, playerId int64, channelId int64, playerName string, gateClusterId int) {
+func (this *ChannelMgr) AddPlayer(accountId, playerId int64, channelId int64, playerName string, gateClusterId uint32) {
 	pChannel := this.getChannel(channelId)
 	if pChannel == nil{
 		return

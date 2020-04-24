@@ -1,7 +1,6 @@
  package netgate
 
  import (
-	 "github.com/golang/protobuf/proto"
 	 "gonet/base"
 	 "gonet/message"
 	 "gonet/network"
@@ -19,6 +18,7 @@ type(
 		m_PlayerMgr *PlayerManager
 		m_WorldCluster *cluster.Cluster
 		m_AccountCluster *cluster.Cluster
+		m_ZoneCluster *cluster.Cluster
 		m_Cluster *cluster.Service
 	}
 
@@ -29,6 +29,7 @@ type(
 		GetCluster () *cluster.Service
 		GetWorldCluster() *cluster.Cluster
 		GetAccountCluster() *cluster.Cluster
+		GetZoneCluster() *cluster.Cluster
 		GetPlayerMgr() *PlayerManager
 		OnServerStart()
 	}
@@ -52,8 +53,8 @@ func (this *ServerMgr) GetServer() *network.ServerSocket{
  	return this.m_pService
 }
 
-func (this *ServerMgr) GetCluster () *cluster.Service{
-	return this.m_Cluster
+func (this *ServerMgr) GetCluster () *cluster.Service {
+ 	return this.m_Cluster
 }
 
 func (this *ServerMgr) GetWorldCluster() *cluster.Cluster{
@@ -62,6 +63,10 @@ func (this *ServerMgr) GetWorldCluster() *cluster.Cluster{
 
 func (this *ServerMgr) GetAccountCluster() *cluster.Cluster{
  	return this.m_AccountCluster
+}
+
+func (this *ServerMgr) GetZoneCluster() *cluster.Cluster{
+	return this.m_ZoneCluster
 }
 
 func (this *ServerMgr) GetPlayerMgr() *PlayerManager{
@@ -113,19 +118,25 @@ func (this *ServerMgr)Init() bool{
 	this.m_pService.BindPacketFunc(packet.PacketFunc)
 	this.m_pService.Start()*/
 	//注册到集群服务器
-	this.m_Cluster = cluster.NewService(int(message.SERVICE_GATESERVER), UserNetIP, base.Int(UserNetPort), EtcdEndpoints)
+	this.m_Cluster = cluster.NewService(message.SERVICE_GATESERVER, UserNetIP, base.Int(UserNetPort), EtcdEndpoints)
 
 	//世界服务器集群
 	this.m_WorldCluster = new(cluster.Cluster)
-	this.m_WorldCluster.Init(1000, int(message.SERVICE_WORLDSERVER), UserNetIP, base.Int(UserNetPort), EtcdEndpoints)
+	this.m_WorldCluster.Init(1000, message.SERVICE_WORLDSERVER, UserNetIP, base.Int(UserNetPort), EtcdEndpoints)
 	this.m_WorldCluster.BindPacket(&WorldProcess{})
-	this.m_WorldCluster.BindPacketFunc(DispatchWorldPacketToClient)
+	this.m_WorldCluster.BindPacketFunc(DispatchPacket)
 
 	//账号服务器集群
 	this.m_AccountCluster = new(cluster.Cluster)
-	this.m_AccountCluster.Init(1000, int(message.SERVICE_ACCOUNTSERVER), UserNetIP, base.Int(UserNetPort), EtcdEndpoints)
+	this.m_AccountCluster.Init(1000, message.SERVICE_ACCOUNTSERVER, UserNetIP, base.Int(UserNetPort), EtcdEndpoints)
 	this.m_AccountCluster.BindPacket(&AccountProcess{})
-	this.m_AccountCluster.BindPacketFunc(DispatchAccountPacketToClient)
+	this.m_AccountCluster.BindPacketFunc(DispatchPacket)
+
+	//战斗服务器集群
+	this.m_ZoneCluster = new(cluster.Cluster)
+	this.m_ZoneCluster.Init(1000, message.SERVICE_ZONESERVER, UserNetIP, base.Int(UserNetPort), EtcdEndpoints)
+	this.m_ZoneCluster.BindPacket(&ZoneProcess{})
+	this.m_ZoneCluster.BindPacketFunc(DispatchPacket)
 
 	//初始玩家管理
 	this.m_PlayerMgr = new(PlayerManager)
@@ -135,11 +146,4 @@ func (this *ServerMgr)Init() bool{
 
 func (this *ServerMgr) OnServerStart(){
 	this.m_pService.Start()
-}
-
-func SendToClient(socketId int, packet proto.Message){
-	buff, err := proto.Marshal(packet)
-	if err == nil {
-		SERVER.GetServer().SendById(socketId, buff)
-	}
 }

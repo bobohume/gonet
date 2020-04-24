@@ -10,11 +10,14 @@ import (
 )
 
 //rpc UnmarshalHead
-func UnmarshalHead(buff []byte) *message.RpcPacket{
+func UnmarshalHead(buff []byte) (*message.RpcPacket, RpcHead){
 	rpcPacket := &message.RpcPacket{}
 	proto.Unmarshal(buff, rpcPacket)
+	if rpcPacket.RpcHead == nil{
+		rpcPacket.RpcHead = &message.RpcHead{}
+	}
 	rpcPacket.FuncName = strings.ToLower(rpcPacket.FuncName)
-	return rpcPacket
+	return rpcPacket, *(*RpcHead)(rpcPacket.RpcHead)
 }
 
 //rpc Unmarshal

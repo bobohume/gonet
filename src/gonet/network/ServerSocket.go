@@ -13,12 +13,12 @@ import (
 type IServerSocket interface {
 	ISocket
 
-	AssignClientId() int
-	GetClientById(int) *ServerSocketClient
+	AssignClientId() uint32
+	GetClientById(uint32) *ServerSocketClient
 	LoadClient() *ServerSocketClient
 	AddClinet(*net.TCPConn, string, int) *ServerSocketClient
 	DelClinet(*ServerSocketClient) bool
-	StopClient(int)
+	StopClient(uint32)
 }
 
 type ServerSocket struct {
@@ -26,11 +26,11 @@ type ServerSocket struct {
 	m_nClientCount  int
 	m_nMaxClients   int
 	m_nMinClients   int
-	m_nIdSeed       int32
+	m_nIdSeed       uint32
 	m_bShuttingDown bool
 	m_bCanAccept    bool
 	m_bNagle        bool
-	m_ClientList    map[int]*ServerSocketClient
+	m_ClientList    map[uint32]*ServerSocketClient
 	m_ClientLocker	*sync.RWMutex
 	m_Listen        *net.TCPListener
 	m_Pool          sync.Pool
@@ -50,7 +50,7 @@ type WriteChan struct {
 
 func (this *ServerSocket) Init(ip string, port int) bool {
 	this.Socket.Init(ip, port)
-	this.m_ClientList = make(map[int]*ServerSocketClient)
+	this.m_ClientList = make(map[uint32]*ServerSocketClient)
 	this.m_ClientLocker = &sync.RWMutex{}
 	this.m_sIP = ip
 	this.m_nPort = port
@@ -90,11 +90,11 @@ func (this *ServerSocket) Start() bool {
 	return true
 }
 
-func (this *ServerSocket) AssignClientId() int {
-	return int(atomic.AddInt32(&this.m_nIdSeed, 1))
+func (this *ServerSocket) AssignClientId() uint32 {
+	return atomic.AddUint32(&this.m_nIdSeed, 1)
 }
 
-func (this *ServerSocket) GetClientById(id int) *ServerSocketClient {
+func (this *ServerSocket) GetClientById(id uint32) *ServerSocketClient {
 	this.m_ClientLocker.RLock()
 	client, exist := this.m_ClientList[id]
 	this.m_ClientLocker.RUnlock()
@@ -136,7 +136,7 @@ func (this *ServerSocket) DelClinet(pClient *ServerSocketClient) bool {
 	return true
 }
 
-func (this *ServerSocket) StopClient(id int){
+func (this *ServerSocket) StopClient(id uint32){
 	pClinet := this.GetClientById(id)
 	if pClinet != nil{
 		pClinet.Stop()
@@ -158,18 +158,18 @@ func (this *ServerSocket) Stop() bool {
 	return true
 }
 
-func (this *ServerSocket) SendById(id int, buff  []byte) int{
-	pClient := this.GetClientById(id)
+func (this *ServerSocket) Send(head rpc.RpcHead, buff  []byte) int{
+	pClient := this.GetClientById(head.SocketId)
 	if pClient != nil{
-		pClient.Send(base.SetTcpEnd(buff))
+		pClient.Send(head, buff)
 	}
 	return  0
 }
 
-func (this *ServerSocket) SendMsgById(id int, funcName string, params ...interface{}){
-	pClient := this.GetClientById(id)
+func (this *ServerSocket) SendMsg(head rpc.RpcHead, funcName string, params ...interface{}){
+	pClient := this.GetClientById(head.SocketId)
 	if pClient != nil{
-		pClient.Send(base.SetTcpEnd(rpc.Marshal(funcName, params...)))
+		pClient.Send(head, base.SetTcpEnd(rpc.Marshal(head, funcName, params...)))
 	}
 }
 

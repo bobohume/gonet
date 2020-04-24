@@ -2,6 +2,7 @@ package et
 
 import (
 	"encoding/json"
+	"gonet/message"
 	"gonet/server/common"
 	"log"
 	"time"
@@ -35,7 +36,7 @@ func (this *Service) Run(){
 }
 
 //注册服务器
-func (this *Service) Init(Type int, IP string, Port int, endpoints []string){
+func (this *Service) Init(Type message.SERVICE, IP string, Port int, endpoints []string){
 	cfg := client.Config{
 		Endpoints:               endpoints,
 		Transport:               client.DefaultTransport,
@@ -46,7 +47,7 @@ func (this *Service) Init(Type int, IP string, Port int, endpoints []string){
 	if err != nil {
 		log.Fatal("Error: cannot connec to etcd:", err)
 	}
-	this.ClusterInfo = &common.ClusterInfo{Type, IP, Port, 0}
+	this.ClusterInfo = &common.ClusterInfo{message.ClusterInfo{Type:Type, Ip:IP, Port:int32(Port), Weight:0}}
 	this.m_KeysAPI = client.NewKeysAPI(etcdClient)
 	this.Start()
 }

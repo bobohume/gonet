@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"gonet/actor"
 	"gonet/db"
+	"gonet/rpc"
 	"gonet/server/world"
 	"time"
 )
@@ -54,7 +55,7 @@ func (this* PlayerMgr) Init(num int){
 		}
 
 		//发送人物数据
-		SERVER.GetServer().SendMsgById(this.GetSocketId(), "Load_Player_Finish", accountId, pPlayer.PlayerBlob)
+		SERVER.GetServer().SendMsg(rpc.RpcHead{SocketId:this.GetSocketId()}, "Load_Player_Finish", accountId, pPlayer.PlayerBlob)
 	})
 
 	//save blob

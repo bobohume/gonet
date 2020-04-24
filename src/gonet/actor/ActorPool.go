@@ -68,47 +68,42 @@ func (this *ActorPool) GetActorNum() int{
 func (this *ActorPool) BoardCast(funcName string, params ...interface{}){
 	this.m_ActorLock.RLock()
 	for _, v := range this.m_ActorMap{
-		v.SendMsg(funcName, params...)
+		v.SendMsg(rpc.RpcHead{}, funcName, params...)
 	}
 	this.m_ActorLock.RUnlock()
 }
 
-func (this *ActorPool) SendMsg(funcName string, params ...interface{}) {
-	var io CallIO
-	io.ActorId = this.m_Id
-	io.SocketId = 0
-	buff, rpcPacket := rpc.MarshalEx(funcName, params...)
-	io.Buff = buff
-	if rpcPacket.RpcHead.Id != 0{
-		pActor := this.GetActor(rpcPacket.RpcHead.Id)
+func (this *ActorPool) SendMsg(head rpc.RpcHead,funcName string, params ...interface{}) {
+	buff := rpc.Marshal(head, funcName, params...)
+	head.SocketId = 0
+	if head.Id != 0{
+		pActor := this.GetActor(head.Id)
 		if pActor != nil && pActor.FindCall(funcName) != nil{
-			pActor.Send(io)
+			pActor.Send(head, buff)
 			return
 		}
 	}
-	this.Send(io)
+	this.Send(head, buff)
 }
 
 //actor pool must rewrite PacketFunc
-func (this *ActorPool) PacketFunc(id int, buff []byte) bool{
+func (this *ActorPool) PacketFunc(id uint32, buff []byte) bool{
 	defer func() {
 		if err := recover(); err != nil {
 			base.TraceCode(err)
 		}
 	}()
 
-	var io CallIO
-	io.Buff = buff
-	io.SocketId = id
-
-	rpcPacket := rpc.UnmarshalHead(io.Buff)
+	rpcPacket, head := rpc.UnmarshalHead(buff)
 	if this.FindCall(rpcPacket.FuncName) != nil{
-		this.Send(io)
+		head.SocketId = id
+		this.Send(head, buff)
 		return true
 	}else{
 		pActor := this.GetActor(rpcPacket.RpcHead.Id)
 		if pActor != nil && pActor.FindCall(rpcPacket.FuncName) != nil{
-			pActor.Send(io)
+			head.SocketId = id
+			pActor.Send(head, buff)
 			return true
 		}
 	}

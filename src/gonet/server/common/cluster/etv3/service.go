@@ -3,6 +3,7 @@ package etv3
 import (
 	"encoding/json"
 	"go.etcd.io/etcd/clientv3"
+	"gonet/message"
 	"gonet/server/common"
 	"log"
 	"time"
@@ -34,7 +35,7 @@ func (this *Service) Run(){
 }
 
 //注册服务器
-func (this *Service) Init(Type int, IP string, Port int, endpoints []string){
+func (this *Service) Init(Type message.SERVICE, IP string, Port int, endpoints []string){
 	cfg := clientv3.Config{
 		Endpoints:               endpoints,
 	}
@@ -46,7 +47,7 @@ func (this *Service) Init(Type int, IP string, Port int, endpoints []string){
 	lease := clientv3.NewLease(etcdClient)
 	this.m_Client = etcdClient
 	this.m_Lease = lease
-	this.ClusterInfo = &common.ClusterInfo{Type, IP, Port, 0}
+	this.ClusterInfo = &common.ClusterInfo{message.ClusterInfo{Type:Type, Ip:IP, Port:int32(Port), Weight:0}}
 	this.Start()
 }
 

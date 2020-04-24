@@ -2,6 +2,7 @@ package actor
 
 import (
 	"gonet/base"
+	"gonet/rpc"
 	"log"
 	"gonet/network"
 	"strings"
@@ -19,7 +20,7 @@ type (
 		AddActor(IActor, ...string)
 		GetActor(string) IActor
 		InitActorHandle(network.ISocket)
-		SendMsg(string, string, ...interface{})
+		SendMsg(rpc.RpcHead, string, ...interface{})
 	}
 )
 
@@ -58,11 +59,11 @@ func (this *ActorMgr) InitActorHandle(pServer network.ISocket){
 	}
 }
 
-func (this *ActorMgr) SendMsg(name, funcName string, params  ...interface{}){
-	name = strings.ToLower(name)
+func (this *ActorMgr) SendMsg(head rpc.RpcHead, funcName string, params  ...interface{}){
+	name := strings.ToLower(head.ActorName)
 	pActor, exist := this.m_ActorMap[name]
 	if exist{
-		pActor.SendMsg(funcName, params...)
+		pActor.SendMsg(head, funcName, params...)
 	}
 }
 

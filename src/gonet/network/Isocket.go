@@ -23,7 +23,7 @@ const (
 )
 
 type (
-	HandleFunc func(int,[]byte) bool//回调函数
+	HandleFunc func(uint32,[]byte) bool//回调函数
 	Socket struct {
 		m_Conn                 net.Conn
 		m_nPort                int
@@ -33,7 +33,7 @@ type (
 		m_ReceiveBufferSize    int//单次接受缓存
 		m_MaxReceiveBufferSize int//最大接受缓存
 
-		m_ClientId int
+		m_ClientId uint32
 		m_Seq      int64
 
 		m_TotalNum     int
@@ -61,10 +61,8 @@ type (
 		OnNetFail(int)
 		Clear()
 		Close()
-		Send([]byte) int
-		SendById(int, []byte) int
-		SendMsg(string, ...interface{})
-		SendMsgById(int,string, ...interface{})
+		SendMsg(rpc.RpcHead, string, ...interface{})
+		Send(rpc.RpcHead, []byte) int
 		CallMsg(string, ...interface{})//回调消息处理
 
 		GetState() int
@@ -75,8 +73,8 @@ type (
 		BindPacketFunc(HandleFunc)
 		SetConnectType(int)
 		SetTcpConn(net.Conn)
-		ReceivePacket(int,	[]byte)
-		HandlePacket(int,	[]byte)
+		ReceivePacket(uint32,	[]byte)
+		HandlePacket(uint32,	[]byte)
 	}
 )
 
@@ -125,18 +123,11 @@ func (this *Socket) GetState() int{
 	return  this.m_nState
 }
 
-func (this *Socket) Send([]byte) int{
+func (this *Socket) SendMsg(head rpc.RpcHead, funcName string, params  ...interface{}){
+}
+
+func (this *Socket) Send(rpc.RpcHead, []byte) int{
 	return  0
-}
-
-func (this *Socket) SendById(int, []byte) int{
-	return 0
-}
-
-func (this *Socket) SendMsg(funcName string, params  ...interface{}){
-}
-
-func (this *Socket) SendMsgById(int,string, ...interface{}){
 }
 
 func (this *Socket) Clear() {
@@ -186,11 +177,11 @@ func (this *Socket) BindPacketFunc(callfunc HandleFunc){
 }
 
 func (this *Socket) CallMsg(funcName string, params ...interface{}){
-	buff := rpc.Marshal(funcName, params...)
+	buff := rpc.Marshal(rpc.RpcHead{}, funcName, params...)
 	this.HandlePacket(this.m_ClientId, buff)
 }
 
-func (this *Socket) HandlePacket(Id int, buff []byte){
+func (this *Socket) HandlePacket(Id uint32, buff []byte){
 	for _,v := range this.m_PacketFuncList.Array() {
 		if (v.(HandleFunc)(Id, buff)){
 			break
@@ -198,7 +189,7 @@ func (this *Socket) HandlePacket(Id int, buff []byte){
 	}
 }
 
-func (this *Socket) ReceivePacket(Id int, dat []byte){
+func (this *Socket) ReceivePacket(Id uint32, dat []byte){
 	defer func() {
 		if err := recover(); err != nil {
 			base.TraceCode(err) // 接受包错误

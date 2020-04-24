@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"bufio"
 	"gonet/base"
+	"gonet/rpc"
 	"os"
 	"gonet/actor"
 	"strings"
@@ -55,7 +56,7 @@ func consoleError(buf []byte){
 	}
 
 	if pCmd.FindCall(funcName) != nil{
-		pCmd.SendMsg(funcName, params...)
+		pCmd.SendMsg(rpc.RpcHead{}, funcName, params...)
 	}else{
 		consoleError(command)
 	}

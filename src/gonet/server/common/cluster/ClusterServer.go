@@ -5,6 +5,7 @@ import (
 	"gonet/base"
 	"gonet/message"
 	"gonet/network"
+	"gonet/rpc"
 	"gonet/server/common"
 	"math"
 	"sync"
@@ -12,11 +13,12 @@ import (
 
 const(
 	MAX_CLUSTER_TYPE = int(message.SERVICE_WORLDDBSERVER)
+	DISPATCH_CLUSTER = message.SERVICE_GATESERVER//转发服
 )
 
 type(
-	HashClusterMap map[int] *common.ServerInfo
-	HashClusterSocketMap map[int] *common.ServerInfo
+	HashClusterMap map[uint32] *common.ClusterInfo
+	HashClusterSocketMap map[uint32] *common.ClusterInfo
 
 	//集群服务器
 	ClusterServer struct{
@@ -30,26 +32,27 @@ type(
 	}
 
 	IClusterServer interface{
-		InitService(Type int, IP string, Port int, Endpoints []string)
+		InitService(Type message.SERVICE, IP string, Port int, Endpoints []string)
 		RegisterClusterCall()//注册集群通用回调
-		AddCluster(info *common.ServerInfo)
-		DelCluster(info *common.ServerInfo)
-		GetCluster(int) *common.ServerInfo
-		GetClusterBySocket(int) *common.ServerInfo
+		AddCluster(info *common.ClusterInfo)
+		DelCluster(info *common.ClusterInfo)
+		GetCluster(rpc.RpcHead) *common.ClusterInfo
+		GetClusterBySocket(uint32) *common.ClusterInfo
 
 		BindServer(*network.ServerSocket)
-		SendMsg(int, string, ...interface{})//发送给集群特定服务器
-		BalanceMsg(int, string, ...interface{})//负载给集群特定服务器
-		BoardCastMsg(int, string, ...interface{})//给集群广播
-		Send(int, []byte)
-		BalanceSend(int, []byte)//负载给集群特定服务器
+		SendMsg(rpc.RpcHead, string, ...interface{})//发送给集群特定服务器
+		Send(rpc.RpcHead, []byte)//发送给集群特定服务器
 
-		BalanceCluster(int)	int//负载均衡
-		RandomCluster(int)	int//随机分配
+		BalanceCluster(message.SERVICE)	rpc.RpcHead//负载均衡
+		RandomCluster(message.SERVICE)	rpc.RpcHead//随机分配
+
+		sendPoint(rpc.RpcHead, []byte)//发送给集群特定服务器
+		balanceSend(rpc.RpcHead, []byte)//负载给集群特定服务器
+		boardCastSend(head rpc.RpcHead, buff []byte)//给集群广播
 	}
 )
 
-func (this *ClusterServer) InitService(Type int, IP string, Port int, Endpoints []string) {
+func (this *ClusterServer) InitService(Type message.SERVICE, IP string, Port int, Endpoints []string) {
 	this.m_ClusterLocker = &sync.RWMutex{}
 	//注册服务器
 	this.Service = NewService(Type, IP, Port, Endpoints)
@@ -61,18 +64,15 @@ func (this *ClusterServer) InitService(Type int, IP string, Port int, Endpoints 
 }
 
 func (this *ClusterServer) RegisterClusterCall(){
-	this.RegisterCall("COMMON_RegisterRequest", func(nType int, Ip string, Port int) {
-		pServerInfo := new(common.ServerInfo)
+	this.RegisterCall("COMMON_RegisterRequest", func(info *message.ClusterInfo) {
+		pServerInfo := &common.ClusterInfo{ClusterInfo:*info}
 		pServerInfo.SocketId = this.GetSocketId()
-		pServerInfo.Type = nType
-		pServerInfo.Ip = Ip
-		pServerInfo.Port = Port
 
 		this.AddCluster(pServerInfo)
 	})
 
 	//链接断开
-	this.RegisterCall("DISCONNECT", func(socketId int) {
+	this.RegisterCall("DISCONNECT", func(socketId uint32) {
 		pCluster := this.GetClusterBySocket(socketId)
 		if pCluster != nil{
 			this.DelCluster(pCluster)
@@ -80,24 +80,24 @@ func (this *ClusterServer) RegisterClusterCall(){
 	})
 }
 
-func (this *ClusterServer) AddCluster(info *common.ServerInfo){
+func (this *ClusterServer) AddCluster(info *common.ClusterInfo){
 	this.m_ClusterLocker.Lock()
 	this.m_ClusterMap[info.Type][info.Id()] = info
 	this.m_ClusterSocketMap[info.Type][info.SocketId] = info
 	this.m_ClusterList[info.Type].Push_back(info)
 	this.m_ClusterLocker.Unlock()
-	this.m_pService.SendMsgById(info.SocketId, "COMMON_RegisterResponse")
+	this.m_pService.SendMsg(rpc.RpcHead{SocketId:info.SocketId}, "COMMON_RegisterResponse")
 	switch info.Type {
-	case int(message.SERVICE_GATESERVER):
+	case message.SERVICE_GATESERVER:
 		base.GLOG.Printf("ADD GATE SERVER: [%d]-[%s:%d]", info.SocketId, info.Ip, info.Port)
-	case int(message.SERVICE_WORLDSERVER):
+	case message.SERVICE_WORLDSERVER:
 		base.GLOG.Printf("ADD WORLD SERVER: [%d]-[%s:%d]", info.SocketId, info.Ip, info.Port)
-	case int(message.SERVICE_ZONESERVER):
+	case message.SERVICE_ZONESERVER:
 		base.GLOG.Printf("ADD ZONE SERVER: [%d]-[%s:%d]", info.SocketId, info.Ip, info.Port)
 	}
 }
 
-func (this *ClusterServer) DelCluster(info *common.ServerInfo){
+func (this *ClusterServer) DelCluster(info *common.ClusterInfo){
 	this.m_ClusterLocker.RLock()
 	_, bEx := this.m_ClusterMap[info.Type][info.Id()]
 	this.m_ClusterLocker.RUnlock()
@@ -106,7 +106,7 @@ func (this *ClusterServer) DelCluster(info *common.ServerInfo){
 		delete(this.m_ClusterMap[info.Type], info.Id())
 		delete(this.m_ClusterSocketMap[info.Type], info.SocketId)
 		for i, v := range this.m_ClusterList[info.Type].Array(){
-			if v.(*common.ServerInfo).SocketId == info.SocketId{
+			if v.(*common.ClusterInfo).SocketId == info.SocketId{
 				this.m_ClusterList[info.Type].Erase(i)
 				break
 			}
@@ -116,28 +116,26 @@ func (this *ClusterServer) DelCluster(info *common.ServerInfo){
 
 	base.GLOG.Printf("服务器断开连接socketid[%d]",info.SocketId)
 	switch info.Type {
-	case int(message.SERVICE_GATESERVER):
+	case message.SERVICE_GATESERVER:
 		base.GLOG.Printf("与Gate服务器断开连接,id[%d]",info.SocketId)
-	case int(message.SERVICE_WORLDSERVER):
+	case message.SERVICE_WORLDSERVER:
 		base.GLOG.Printf("与World服务器断开连接,id[%d]",info.SocketId)
-	case int(message.SERVICE_ZONESERVER):
+	case message.SERVICE_ZONESERVER:
 		base.GLOG.Printf("与Zone服务器断开连接,id[%d]",info.SocketId)
 	}
 }
 
-func (this *ClusterServer) GetCluster(clusterId int) *common.ServerInfo{
+func (this *ClusterServer) GetCluster(head rpc.RpcHead) *common.ClusterInfo{
 	this.m_ClusterLocker.RLock()
 	defer this.m_ClusterLocker.RUnlock()
-	for i := 0; i < MAX_CLUSTER_TYPE; i++ {
-		pClient, bEx := this.m_ClusterMap[i][clusterId]
-		if bEx{
-			return pClient
-		}
+	pClient, bEx := this.m_ClusterMap[DISPATCH_CLUSTER][head.ClusterId]
+	if bEx{
+		return pClient
 	}
 	return nil
 }
 
-func (this *ClusterServer) GetClusterBySocket(socketId int) *common.ServerInfo{
+func (this *ClusterServer) GetClusterBySocket(socketId uint32) *common.ClusterInfo{
 	this.m_ClusterLocker.RLock()
 	defer this.m_ClusterLocker.RUnlock()
 	for i := 0; i < MAX_CLUSTER_TYPE; i++ {
@@ -153,71 +151,83 @@ func (this *ClusterServer) BindServer(pService *network.ServerSocket){
 	this.m_pService = pService
 }
 
-func (this *ClusterServer) SendMsg(clusterId int, funcName string, params  ...interface{}){
-	pCluster:= this.GetCluster(clusterId)
+func (this *ClusterServer) sendPoint(head rpc.RpcHead, buff []byte){
+	pCluster:= this.GetCluster(head)
 	if pCluster != nil {
-		this.m_pService.SendMsgById(pCluster.SocketId, funcName, params...)
+		head.SocketId = pCluster.SocketId
+		this.m_pService.Send(head, buff)
 	}
 }
 
-func (this *ClusterServer) BalanceMsg(nType int, funcName string, params  ...interface{}){
-	pCluster:= this.GetCluster(this.RandomCluster(nType))
+func (this *ClusterServer)balanceSend(head rpc.RpcHead, buff []byte){
+	head = this.RandomCluster(DISPATCH_CLUSTER)
+	pCluster := this.GetCluster(head)
 	if pCluster != nil{
-		this.m_pService.SendMsgById(pCluster.SocketId, funcName, params...)
+		this.m_pService.Send(head, buff)
 	}
 }
 
-func (this *ClusterServer) BoardCastMsg(nType int, funcName string, params  ...interface{}){
-	clusterList := []*common.ServerInfo{}
+func (this *ClusterServer) boardCastSend(head rpc.RpcHead, buff []byte){
+	clusterList := []*common.ClusterInfo{}
 	this.m_ClusterLocker.RLock()
-	for _ ,v := range this.m_ClusterMap[nType]{
+	for _ ,v := range this.m_ClusterMap[DISPATCH_CLUSTER]{
 		clusterList = append(clusterList, v)
 	}
 	this.m_ClusterLocker.RUnlock()
 	for _, v := range clusterList{
-		this.m_pService.SendMsgById(v.SocketId, funcName, params...)
+		head.SocketId = v.SocketId
+		this.m_pService.Send(head, buff)
 	}
 }
 
-func (this *ClusterServer) Send(clusterId int, buff []byte){
-	pCluster:= this.GetCluster(clusterId)
-	if pCluster != nil {
-		this.m_pService.SendById(pCluster.SocketId, buff)
+func (this *ClusterServer) SendMsg(head rpc.RpcHead, funcName string, params  ...interface{}){
+	buff := base.SetTcpEnd(rpc.Marshal(head, funcName, params...))
+	this.Send(head, buff)
+}
+
+func (this *ClusterServer) Send(head rpc.RpcHead, buff []byte){
+	if head.DestServerType != DISPATCH_CLUSTER{
+		this.balanceSend(head, buff)
+	}else{
+		switch head.SendType{
+		case message.SEND_BALANCE:
+			this.balanceSend(head, buff)
+		case message.SEND_POINT:
+			this.sendPoint(head, buff)
+		default:
+			this.balanceSend(head, buff)
+		}
 	}
 }
 
-func (this *ClusterServer) BalanceSend(nType int, buff []byte){
-	pCluster := this.GetCluster(this.RandomCluster(nType))
-	if pCluster != nil{
-		this.m_pService.SendById(pCluster.SocketId, buff)
-	}
-}
-
-func (this *ClusterServer) BalanceCluster(nType int) int{
-	nIndex := 0
+func (this *ClusterServer) BalanceCluster(nType message.SERVICE) rpc.RpcHead{
+	head := rpc.RpcHead{}
 	this.m_ClusterLocker.RLock()
 	for _, v := range this.m_ClusterList[nType].Array(){
-		pClusterInfo := v.(*common.ServerInfo)
+		pClusterInfo := v.(*common.ClusterInfo)
 		if pClusterInfo.Weight <= 10000{
-			nIndex = pClusterInfo.Id()
+			head.ClusterId = pClusterInfo.Id()
+			head.SocketId = pClusterInfo.SocketId
 			break
 		}
 	}
 	this.m_ClusterLocker.RUnlock()
-	if nIndex == 0{
-		nIndex = this.RandomCluster(nType)
+	if head.ClusterId == 0{
+		return this.RandomCluster(nType)
 	}
-	return nIndex
+	return head
 }
 
-func (this *ClusterServer) RandomCluster(nType int) int{
-	nIndex := 0
+func (this *ClusterServer) RandomCluster(nType message.SERVICE) rpc.RpcHead{
+	head := rpc.RpcHead{}
 	this.m_ClusterLocker.RLock()
 	if this.m_ClusterList[nType].Len() > 0{
 		nLen := int(math.Max(float64(this.m_ClusterList[nType].Len()-1), 0))
 		nRand := base.RAND.RandI(0, nLen)
-		nIndex = this.m_ClusterList[nType].Get(nRand).(*common.ServerInfo).Id()
+		info := this.m_ClusterList[nType].Get(nRand).(*common.ClusterInfo)
+		head.ClusterId = info.Id()
+		head.SocketId = info.SocketId
 	}
 	this.m_ClusterLocker.RUnlock()
-	return nIndex
+	return head
 }

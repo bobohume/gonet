@@ -2,10 +2,8 @@ package world
 
 import (
 	"database/sql"
-	"github.com/golang/protobuf/proto"
 	"gonet/base"
 	"gonet/db"
-	"gonet/message"
 	"gonet/network"
 	"gonet/rd"
 	"gonet/server/common/cluster"
@@ -20,7 +18,6 @@ type(
 		m_Inited bool
 		m_config base.Config
 		m_Log	base.CLog
-		m_AccountCluster *cluster.Cluster
 		m_SnowFlake *cluster.Snowflake
 	}
 
@@ -30,7 +27,6 @@ type(
 		GetDB() *sql.DB
 		GetLog() *base.CLog
 		GetServer() *network.ServerSocket
-		GetAccountCluster() *cluster.Cluster
 		GetClusterMgr() *ClusterManager
 	}
 )
@@ -107,11 +103,6 @@ func (this *ServerMgr)Init() bool{
 	//snowflake
 	this.m_SnowFlake = cluster.NewSnowflake(this.m_config.Get5("Etcd_SnowFlake_Cluster", ","))
 
-	//账号服务器集群
-	this.m_AccountCluster = new(cluster.Cluster)
-	this.m_AccountCluster.Init(1000, int(message.SERVICE_ACCOUNTSERVER), UserNetIP, base.Int(UserNetPort), EtcdEndpoints)
-	this.m_AccountCluster.BindPacket(&AccountProcess{})
-
 	//本身world集群管理
 	this.m_pClusterMgr = new(ClusterManager)
 	this.m_pClusterMgr.Init(1000)
@@ -146,29 +137,4 @@ func (this *ServerMgr) GetServer() *network.ServerSocket{
 
 func (this *ServerMgr) GetClusterMgr() *ClusterManager{
 	return this.m_pClusterMgr
-}
-
-func (this *ServerMgr) GetAccountCluster() *cluster.Cluster{
- 	return this.m_AccountCluster
-}
-
-//发送给客户端
-func SendToClient(clusterId int, packet proto.Message){
-	buff := message.Encode(packet)
-	pakcetHead := packet.(message.Packet).GetPacketHead()
-	if pakcetHead != nil {
-		rpcPacket := &message.RpcPacket{FuncName:message.GetMessageName(packet), ArgLen:1, RpcHead:&message.RpcHead{Id:pakcetHead.Id}, RpcBody:buff}
-		data, _ := proto.Marshal(rpcPacket)
-		SERVER.GetClusterMgr().Send(clusterId, data)
-	}
-}
-
-func SendToClientBySocketId(socketId int, packet proto.Message) {
-	buff := message.Encode(packet)
-	pakcetHead := packet.(message.Packet).GetPacketHead()
-	if pakcetHead != nil {
-		rpcPacket := &message.RpcPacket{FuncName: message.GetMessageName(packet), ArgLen: 1, RpcHead: &message.RpcHead{Id: pakcetHead.Id}, RpcBody: buff}
-		data, _ := proto.Marshal(rpcPacket)
-		SERVER.GetServer().SendById(socketId, data)
-	}
 }

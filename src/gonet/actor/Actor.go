@@ -36,18 +36,18 @@ type (
 		Start()
 		FindCall(funcName string) *CallFunc
 		RegisterCall(funcName string, call interface{})
-		SendMsg(funcName string, params ...interface{})
-		Send(io CallIO)
-		PacketFunc(id int, buff []byte) bool//回调函数
+		SendMsg(head rpc.RpcHead, funcName string, params ...interface{})
+		Send(head rpc.RpcHead, buff []byte)
+		PacketFunc(id uint32, buff []byte) bool//回调函数
 		RegisterTimer(duration time.Duration, fun interface{})//注册定时器,时间为纳秒 1000 * 1000 * 1000
 		GetId() int64
-		GetSocketId() int//rpc is safe
+		GetSocketId() uint32//rpc is safe
 		GetRpcPacket() *message.RpcPacket//rpc is safe
+		GetRpcHead() rpc.RpcHead//rpc is safe
 	}
 
 	CallIO struct {
-		SocketId int
-		ActorId int64
+		rpc.RpcHead
 		Buff []byte
 	}
 
@@ -72,12 +72,16 @@ func (this *Actor) GetId() int64 {
 	return this.m_Id
 }
 
-func (this *Actor) GetSocketId() int {
-	return int(this.m_RpcPacket.RpcHead.SocketId)
+func (this *Actor) GetSocketId() uint32 {
+	return this.m_RpcPacket.RpcHead.SocketId
 }
 
 func (this *Actor) GetRpcPacket() *message.RpcPacket{
 	return &this.m_RpcPacket
+}
+
+func (this *Actor) GetRpcHead() rpc.RpcHead{
+	return *(*rpc.RpcHead)(this.m_RpcPacket.RpcHead)
 }
 
 func (this *Actor) Init(chanNum int) {
@@ -138,32 +142,29 @@ func (this *Actor) RegisterCall(funcName string, call interface{}) {
 	this.m_CallMap[funcName] = &CallFunc{Func:call, FuncVal:reflect.ValueOf(call), FuncType:reflect.TypeOf(call), FuncParams:reflect.TypeOf(call).String()}
 }
 
-func (this *Actor) SendMsg(funcName string, params ...interface{}) {
-	var io CallIO
-	io.ActorId = this.m_Id
-	io.SocketId = 0
-	io.Buff = rpc.Marshal(funcName, params...)
-	this.Send(io)
+func (this *Actor) SendMsg(head rpc.RpcHead,funcName string, params ...interface{}) {
+	head.SocketId = 0
+	this.Send(head, rpc.Marshal(head, funcName, params...))
 }
 
-func (this *Actor) Send(io CallIO) {
+func (this *Actor) Send(head rpc.RpcHead, buff []byte) {
 	defer func() {
 		if err := recover(); err != nil {
 			base.TraceCode(err)
 		}
 	}()
 
+	var io CallIO
+	io.RpcHead = head
+	io.Buff = buff
 	this.m_CallChan <- io
 }
 
-func (this *Actor) PacketFunc(id int, buff []byte) bool{
-	var io CallIO
-	io.Buff = buff
-	io.SocketId = id
-
-	rpcPacket := rpc.UnmarshalHead(io.Buff)
+func (this *Actor) PacketFunc(id uint32, buff []byte) bool{
+	rpcPacket, head := rpc.UnmarshalHead(buff)
 	if this.FindCall(rpcPacket.FuncName) != nil{
-		this.Send(io)
+		head.SocketId = id
+		this.Send(head, buff)
 		return true
 	}
 
@@ -171,7 +172,7 @@ func (this *Actor) PacketFunc(id int, buff []byte) bool{
 }
 
 func (this *Actor) call(io CallIO) {
-	rpcPacket := rpc.UnmarshalHead(io.Buff)
+	rpcPacket, _ := rpc.UnmarshalHead(io.Buff)
 	funcName := rpcPacket.FuncName
 	pFunc := this.FindCall(funcName)
 	if pFunc != nil {
@@ -181,8 +182,7 @@ func (this *Actor) call(io CallIO) {
 		params := rpc.UnmarshalBody(rpcPacket, k)
 
 		this.m_RpcPacket = *rpcPacket
-		this.m_RpcPacket.RpcHead.SocketId = int32(io.SocketId)
-		this.m_RpcPacket.RpcHead.CallId = io.ActorId
+		this.m_RpcPacket.RpcHead.SocketId = io.SocketId
 
 		if k.NumIn()  != len(params) {
 			log.Printf("func [%s] can not call, func params [%s], params [%v]", funcName, strParams, params)

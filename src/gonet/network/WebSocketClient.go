@@ -3,6 +3,7 @@ package network
 import (
 	"fmt"
 	"gonet/base"
+	"gonet/rpc"
 	"io"
 )
 
@@ -44,7 +45,7 @@ func (this *WebSocketClient) Start() bool {
 	return true
 }
 
-func (this *WebSocketClient) Send(buff []byte) int {
+func (this *WebSocketClient) Send(head rpc.RpcHead,buff []byte) int {
 	defer func() {
 		if err := recover(); err != nil{
 			base.TraceCode(err)
@@ -86,7 +87,7 @@ func (this *WebSocketClient) OnNetFail(error int) {
 	if this.m_nConnectType == CLIENT_CONNECT{//netgate对外格式统一
 		stream := base.NewBitStream(make([]byte, 32), 32)
 		stream.WriteInt(int(DISCONNECTINT), 32)
-		stream.WriteInt(this.m_ClientId, 32)
+		stream.WriteInt(int(this.m_ClientId), 32)
 		this.HandlePacket(this.m_ClientId, stream.GetBuffer())
 	}else{
 		this.CallMsg("DISCONNECT", this.m_ClientId)

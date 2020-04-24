@@ -3,6 +3,7 @@ package chat
 import (
 	"gonet/actor"
 	"gonet/message"
+	"gonet/rpc"
 	"gonet/server/world"
 	player2 "gonet/server/world/player"
 	"time"
@@ -33,7 +34,7 @@ type(
 		accountId int64
 		playerId int64
 		playerName string
-		gateClusterId int
+		gateClusterId uint32
 	}
 
 	ChatMgr struct {
@@ -128,7 +129,7 @@ func (this *ChatMgr) Init(num int) {
 	})
 
 	//添加玩家到频道
-	this.RegisterCall("AddPlayerToChannel", func(accoudId, playerId int64, channelId int64, playerName string, gateClusterId int) {
+	this.RegisterCall("AddPlayerToChannel", func(accoudId, playerId int64, channelId int64, playerName string, gateClusterId uint32) {
 		this.GetChannelManager().AddPlayer(accoudId, playerId, channelId, playerName, gateClusterId)
 	})
 
@@ -164,7 +165,8 @@ func SendMessage(msg *ChatMessage, player *player){
 }
 
 func (this *ChatMgr) SendMessageToAll(msg *ChatMessage){
-	world.SERVER.GetClusterMgr().BoardCastMsg(int(message.SERVICE_GATESERVER), "Chat_SendMessageAll", msg)
+	world.SERVER.GetClusterMgr().SendMsg(rpc.RpcHead{DestServerType:message.SERVICE_GATESERVER, SendType:message.SEND_BOARD_CAST},
+	"Chat_SendMessageAll", msg)
 }
 
 

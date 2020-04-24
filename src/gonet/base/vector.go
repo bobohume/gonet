@@ -62,22 +62,22 @@ func (this *Vector) increment() {
 }
 
 func (this *Vector) decrement() {
-	Assert(this.mElementCount != 0, "Vector<T>::decrement - cannot decrement zero-length vector.");
+	Assert(this.mElementCount != 0, "Vector<T>::decrement - cannot decrement zero-length vector.")
 	this.mElementCount--
 }
 
 func (this *Vector) resize(newCount int) bool{
 	if(newCount > 0){
-		blocks := newCount / VectorBlockSize;
+		blocks := newCount / VectorBlockSize
 		if newCount % VectorBlockSize != 0{
-			blocks++;
+			blocks++
 		}
 
 		this.mElementCount = newCount
-		this.mArraySize = blocks * VectorBlockSize;
+		this.mArraySize = blocks * VectorBlockSize
 		this.mArray = append(this.mArray, make([]interface{}, VectorBlockSize + 1)...)
 	}
-	return  true;
+	return  true
 }
 
 func (this *Vector) Erase(index int) {
@@ -104,7 +104,7 @@ func (this *Vector) Push_back(value interface{}) {
 
 func (this *Vector) Pop_front() {
 	Assert(this.mElementCount != 0, "Vector<T>::pop_front - cannot pop the front of a zero-length vector.")
-	this.Erase(0);
+	this.Erase(0)
 }
 
 func (this *Vector) Pop_back() {
@@ -172,8 +172,8 @@ func (this *Vector) Len() int{
 }
 
 func (this *Vector) Get(index int) interface{}{
-	Assert(index < this.mElementCount, "Vector<T>::operator[] - out of bounds array access!");
-	return this.mArray[index];
+	Assert(index < this.mElementCount, "Vector<T>::operator[] - out of bounds array access!")
+	return this.mArray[index]
 }
 
 func (this *Vector) Array() []interface{}{

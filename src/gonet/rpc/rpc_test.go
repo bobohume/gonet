@@ -126,7 +126,7 @@ func TestMarshalRpc(t *testing.T){
 		aa = append(aa, int32(nValue))
 	}
 	for i := 0; i < ntimes; i++{
-		rpc.Marshal("test", aa)
+		rpc.Marshal(rpc.RpcHead{}, "test", aa)
 	}
 }
 
@@ -136,12 +136,12 @@ func TestUMarshalRpc(t *testing.T){
 		aa = append(aa, int32(nValue))
 	}
 	for i := 0; i < ntimes; i++{
-		buff := rpc.Marshal("test", aa)
+		buff := rpc.Marshal(rpc.RpcHead{}, "test", aa)
 		parse(buff)
 	}
 }
 
 func parse (buff []byte) {
-	rpcPacket := rpc.UnmarshalHead(buff)
+	rpcPacket, _ := rpc.UnmarshalHead(buff)
 	rpc.UnmarshalBody(rpcPacket, nil)
 }

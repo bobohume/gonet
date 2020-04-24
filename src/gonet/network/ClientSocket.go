@@ -56,13 +56,13 @@ func (this *ClientSocket) Stop() bool {
 	return true
 }
 
-func (this *ClientSocket) SendMsg(funcName string, params  ...interface{}){
-	buff := rpc.Marshal(funcName, params...)
+func (this *ClientSocket) SendMsg(head rpc.RpcHead, funcName string, params  ...interface{}){
+	buff := rpc.Marshal(head, funcName, params...)
 	buff = base.SetTcpEnd(buff)
-	this.Send(buff)
+	this.Send(head, buff)
 }
 
-func (this *ClientSocket) Send(buff []byte) int {
+func (this *ClientSocket) Send(head rpc.RpcHead, buff []byte) int {
 	defer func() {
 		if err := recover(); err != nil{
 			base.TraceCode(err)

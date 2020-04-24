@@ -3,6 +3,8 @@ package et
 import (
 	"encoding/json"
 	"gonet/actor"
+	"gonet/message"
+	"gonet/rpc"
 	"gonet/server/common"
 	"log"
 	"time"
@@ -14,10 +16,10 @@ import (
 //监控服务器
 type (
 	Master struct {
-		m_ServiceMap map[int]*common.ClusterInfo
+		m_ServiceMap map[uint32]*common.ClusterInfo
 		m_KeysAPI client.KeysAPI
 		m_Actor actor.IActor
-		m_MasterType int
+		common.ClusterInfo
 	}
 
 	IMaster interface {
@@ -26,7 +28,7 @@ type (
 )
 
 //监控服务器
-func (this *Master) Init(Type int, Endpoints []string, pActor actor.IActor) {
+func (this *Master) Init(Type message.SERVICE, Endpoints []string, pActor actor.IActor) {
 	cfg := client.Config{
 		Endpoints:               Endpoints,
 		Transport:               client.DefaultTransport,
@@ -38,11 +40,11 @@ func (this *Master) Init(Type int, Endpoints []string, pActor actor.IActor) {
 		log.Fatal("Error: cannot connec to etcd:", err)
 	}
 
-	this.m_ServiceMap = make(map[int]*common.ClusterInfo)
+	this.m_ServiceMap = make(map[uint32]*common.ClusterInfo)
 	this.m_KeysAPI =  client.NewKeysAPI(etcdClient)
 	this.BindActor(pActor)
 	this.Start()
-	this.m_MasterType = Type
+	this.Type = Type
 }
 
 func (this *Master) Start() {
@@ -56,14 +58,14 @@ func (this *Master) BindActor(pActor actor.IActor) {
 func (this *Master) AddService(info *common.ClusterInfo) {
 	_, bEx := this.m_ServiceMap[info.Id()]
 	if !bEx{
-		this.m_Actor.SendMsg("Cluster_Add", info)
+		this.m_Actor.SendMsg(rpc.RpcHead{},"Cluster_Add", info)
 	}
 	this.m_ServiceMap[info.Id()] = info
 }
 
 func (this *Master) DelService(info *common.ClusterInfo) {
 	delete(this.m_ServiceMap, info.Id())
-	this.m_Actor.SendMsg("Cluster_Del", info)
+	this.m_Actor.SendMsg(rpc.RpcHead{},"Cluster_Del", info)
 }
 
 func (this *Master) InitService(info *common.ClusterInfo) {
@@ -79,7 +81,7 @@ func NodeToService(val []byte) *common.ClusterInfo {
 }
 
 func (this *Master) Run() {
-	watcher := this.m_KeysAPI.Watcher(ETCD_DIR + common.ToServiceString(this.m_MasterType), &client.WatcherOptions{
+	watcher := this.m_KeysAPI.Watcher(ETCD_DIR + this.Type.String(), &client.WatcherOptions{
 		Recursive: true,
 	})
 

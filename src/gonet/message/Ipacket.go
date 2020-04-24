@@ -60,7 +60,7 @@ func RegisterPacket(packet proto.Message) {
 	val := reflect.ValueOf(packet).Elem()
 	packetFunc := func() proto.Message{
 		packet := reflect.New(val.Type())
-		packet.Elem().Field(0).Set(val.Field(0))
+		packet.Elem().Field(3).Set(val.Field(3))
 		//packet.Elem().Set(val)
 		return packet.Interface().(proto.Message)
 	}
@@ -100,9 +100,11 @@ func Init(){
 	RegisterPacket(&C_G_LogoutResponse{PacketHead:BuildPacketHead(0, SERVICE_GATESERVER)})
 	RegisterPacket(&C_W_CreatePlayerRequest{PacketHead:BuildPacketHead(0, SERVICE_WORLDSERVER)})
 	RegisterPacket(&C_W_Game_LoginRequset{PacketHead:BuildPacketHead(0, SERVICE_WORLDSERVER)})
-	RegisterPacket(&C_W_LoginCopyMap{PacketHead:BuildPacketHead(0, SERVICE_WORLDSERVER)})
-	RegisterPacket(&C_W_Move{PacketHead:BuildPacketHead(0, SERVICE_WORLDSERVER)})
 	RegisterPacket(&C_W_ChatMessage{PacketHead:BuildPacketHead(0, SERVICE_WORLDSERVER)})
+
+	RegisterPacket(&C_Z_LoginCopyMap{PacketHead:BuildPacketHead(0, SERVICE_ZONESERVER)})
+	RegisterPacket(&C_Z_Move{PacketHead:BuildPacketHead(0, SERVICE_ZONESERVER)})
+	RegisterPacket(&C_Z_Skill{PacketHead:BuildPacketHead(0, SERVICE_ZONESERVER)})
 }
 
 //client消息回调
@@ -110,7 +112,8 @@ func InitClient(){
 	//注册消息
 	RegisterPacket(&W_C_SelectPlayerResponse{})
 	RegisterPacket(&W_C_CreatePlayerResponse{})
-	RegisterPacket(&W_C_LoginMap{})
+	RegisterPacket(&Z_C_LoginMap{})
+	RegisterPacket(&Z_C_ENTITY{})
 	RegisterPacket(&W_C_ChatMessage{})
 	RegisterPacket(&A_C_LoginResponse{})
 	RegisterPacket(&A_C_RegisterResponse{})
