@@ -67,7 +67,7 @@ websocket模式下，在netgateserver里面注释回//websocket这段
 
 1.account账号服务，提供注册账号，登录校验，集群服务。
 
-2.natgate网关服务，所有对外都是通过网关转发，集群服务。
+2.natgate网关服务，对外连接，消息防火墙，对内消息转发，集群服务。
 
 3.world世界服务，所有逻辑，集群服务。
 
@@ -79,4 +79,3 @@ QQ群:950288306
 
 # 服务器架构如下：
 ![image](https://github.com/bobohume/go-server/blob/master/框架.jpg)
-<video src="https://github.com/bobohume/gonet-mmo-demo/blob/master/QQ%E8%A7%86%E9%A2%9120200303224312.mp4" controls="controls" width="500" height="300">您的浏览器不支持播放该视频！</video>
