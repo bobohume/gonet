@@ -7,7 +7,7 @@ websocket模式下，在netgateserver里面注释回//websocket这段
 
 代码除了mysql，protobuf，redis, etcd这几个库以外，其他都是自己写的，方便性能和修改，主动权在自己手里
 
-服务器之间rpc，客户端服务器之间protobuf + rpc，客户端tcp遵从如下消息包头(支持json，考虑到性能，两种传输协议不兼容，请切换json分支)
+服务器之间rpc，客户端服务器之间protobuf + rpc，客户端tcp遵从如下消息包头
 
     前四位包体大小,再四位protobuf name 的 crc，中间protobuf字节流
     //另外支持特殊结束标志,前四位 protobuf name 的 crc，中间protobuf字节流， 尾部+结束标志💞♡ (结束标志也可以自己定义在base.TCP_END控制)（搜索tcp粘包特殊结束标志）
