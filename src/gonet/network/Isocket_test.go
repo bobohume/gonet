@@ -23,7 +23,7 @@ func TestFixHead(t *testing.T)  {
 	t.Log("固定长度")
 	buff := []byte{}
 	for j := 0; j < 1; j++{
-		buff = append(buff, SetTcpEnd(rpc.Marshal("test1",[ARRAY_LEN]int64{1,2,3,4,5,6}))...)
+		buff = append(buff, SetTcpEnd(rpc.Marshal(rpc.RpcHead{}, "test1",[ARRAY_LEN]int64{1,2,3,4,5,6}))...)
 	}
 	for i :=0;i < nTimes;i++{
 		ReceivePacket(0,buff)
@@ -34,7 +34,7 @@ func TestEndFlag(t *testing.T)  {
 	t.Log("c语言结束标志", []byte(TCP_END))
 	buff := []byte{}
 	for j := 0; j < 1; j++{
-		buff = append(buff, SetTcpEnd1(rpc.Marshal("test1", [ARRAY_LEN]int64{1,2,3,4,5,6}))...)
+		buff = append(buff, SetTcpEnd1(rpc.Marshal(rpc.RpcHead{},"test1", [ARRAY_LEN]int64{1,2,3,4,5,6}))...)
 	}
 	for i :=0;i < nTimes;i++{
 		ReceivePacket1(0,buff)
