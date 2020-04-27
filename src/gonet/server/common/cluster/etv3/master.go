@@ -72,7 +72,7 @@ func NodeToService(val []byte) *common.ClusterInfo {
 }
 
 func (this *Master) Run() {
-	wch := this.m_Client.Watch(context.Background(), ETCD_DIR+ this.String(), clientv3.WithPrefix(), clientv3.WithPrevKV())
+	wch := this.m_Client.Watch(context.Background(), ETCD_DIR + this.String(), clientv3.WithPrefix(), clientv3.WithPrevKV())
 	for v := range wch{
 		for _, v1 := range v.Events{
 			if v1.Type.String() == "PUT"{
