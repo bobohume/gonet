@@ -33,7 +33,7 @@ func (this *Snowflake) Run(){
 		key := this.Key()
 		tx := this.m_Client.Txn(context.Background())
 		//key no exist
-		leaseResp,err := this.m_Lease.Grant(context.Background(),3)
+		leaseResp,err := this.m_Lease.Grant(context.Background(),60)
 		this.m_LeaseId = leaseResp.ID
 		tx.If(clientv3.Compare(clientv3.CreateRevision(key), "=", 0)).
 			Then(clientv3.OpPut(key, "", clientv3.WithLease(this.m_LeaseId))).
