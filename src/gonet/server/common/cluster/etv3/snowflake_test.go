@@ -35,7 +35,10 @@ func (this *SnowflakeT) Run(){
 		key := this.Key()
 		tx := this.m_Client.Txn(context.Background())
 		//key no exist
-		leaseResp,err := this.m_Lease.Grant(context.Background(),3)
+		leaseResp,err := this.m_Lease.Grant(context.Background(),60)
+		if err != nil{
+			goto TrySET
+		}
 		this.m_LeaseId = leaseResp.ID
 		tx.If(clientv3.Compare(clientv3.CreateRevision(key), "=", 0)).
 			Then(clientv3.OpPut(key, "", clientv3.WithLease(this.m_LeaseId))).
@@ -66,7 +69,7 @@ func (this *SnowflakeT) Run(){
 
 		//保持ttl
 	TryTTL:
-		_, err = this.m_Lease.KeepAlive(context.Background(), this.m_LeaseId)
+		_, err = this.m_Lease.KeepAliveOnce(context.Background(), this.m_LeaseId)
 		if err != nil{
 			goto TrySET
 		}else{
