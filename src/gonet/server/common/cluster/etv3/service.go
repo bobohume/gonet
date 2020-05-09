@@ -25,24 +25,12 @@ type Service struct {
 
 func (this *Service) Run(){
 	for {
-	TrySET:
-		leaseResp, err := this.m_Lease.Grant(context.Background(),10)
-		if err != nil{
-			goto TrySET
-		}
+		leaseResp, _ := this.m_Lease.Grant(context.Background(),10)
 		this.m_LeaseId = leaseResp.ID
 		key := ETCD_DIR + this.String() + "/" + this.IpString()
 		data, _ := json.Marshal(this.ClusterInfo)
 		this.m_Client.Put(context.Background(), key, string(data),clientv3.WithLease(this.m_LeaseId))
-		//保持ttl
-	TryTTL:
-		_, err = this.m_Lease.KeepAliveOnce(context.Background(), this.m_LeaseId)
-		if err != nil{
-			goto TrySET
-		}else{
-			time.Sleep(time.Second * 3)
-			goto TryTTL
-		}
+		time.Sleep(time.Second * 3)
 	}
 }
 
