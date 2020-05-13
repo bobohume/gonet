@@ -15,22 +15,22 @@ func StartConsole(pCmd actor.IActor) {
 	go consoleroutine(pCmd)
 }
 
-func consoleError(buf []byte){
-	fmt.Printf("Command[%s] error, try again.", string(buf))
+func consoleError(command string){
+	fmt.Printf("Command[%s] error, try again.", command)
 }
 
- func ParseConsole(pCmd actor.IActor, command []byte) {
+ func ParseConsole(pCmd actor.IActor, command string) {
 	defer func() {
 		if err := recover(); err != nil{
 			base.TraceCode(err)
 		}
 	}()
 
-	if string(command) == ""{
+	if command == ""{
 		return
 	}
 
-	args := strings.Split(string(command), "(")
+	args := strings.Split(command, "(")
 	if len(args) != 2{
 		consoleError(command)
 		return
@@ -64,11 +64,12 @@ func consoleError(buf []byte){
 
 //linux下面nohup &开启的时候当nohup文件占满磁盘的时候，这个就不会阻塞了，注意
 func consoleroutine(pCmd actor.IActor) {
-	command := make([]byte, 1024)
 	for {
-		reader := bufio.NewReader(os.Stdin)
-		command, _, _ = reader.ReadLine()
-		ParseConsole(pCmd, command)
+		reader := bufio.NewScanner(os.Stdin)
+		for reader.Scan() {
+			command := reader.Text()
+			ParseConsole(pCmd, command)
+		}
 		time.Sleep(100 * time.Millisecond)
 	}
 }

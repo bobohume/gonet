@@ -42,14 +42,14 @@ func (this *SimpleTimer)  CheckTimer() bool {
 
 func (this *SimpleTimer)  Start() {
 	this.m_lastTime = time.Now().Unix()
-	this.m_count    = 0;
-	this.m_isActive = true;
+	this.m_count    = 0
+	this.m_isActive = true
 }
 
 func (this *SimpleTimer) Stop() {
 	this.m_lastTime = time.Now().Unix()
-	this.m_count    = 0;
-	this.m_isActive = false;
+	this.m_count    = 0
+	this.m_isActive = false
 }
 
 func (this *SimpleTimer) GetTimerCount() int {
