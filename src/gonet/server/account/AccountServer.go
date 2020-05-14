@@ -2,9 +2,11 @@
 
  import (
 	 "database/sql"
+	 "gonet/actor"
 	 "gonet/base"
 	 "gonet/db"
 	 "gonet/network"
+	 "gonet/rpc"
 	 "gonet/server/common/cluster"
 	 "log"
  )
@@ -102,6 +104,7 @@ func (this *ServerMgr)Init() bool{
 	//snowflake
 	this.m_SnowFlake = cluster.NewSnowflake(this.m_config.Get5("Etcd_SnowFlake_Cluster", ","))
 
+	rpc.Init(this.m_pClusterMgr, actor.MGR)
 	return  false
 }
 

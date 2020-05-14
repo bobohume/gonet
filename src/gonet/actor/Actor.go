@@ -129,6 +129,8 @@ func (this *Actor) FindCall(funcName string) *CallFunc{
 	fun, exist := this.m_CallMap[funcName]
 	if exist == true {
 		return fun
+	}else if funcName == "sync_call"{
+
 	}
 	return nil
 }
@@ -166,15 +168,19 @@ func (this *Actor) PacketFunc(id uint32, buff []byte) bool{
 		head.SocketId = id
 		this.Send(head, buff)
 		return true
+	}else if head.SeqId > 0{
+		rpc.Sync(head.SeqId, buff)
 	}
 
 	return false
 }
 
 func (this *Actor) call(io CallIO) {
-	rpcPacket, _ := rpc.UnmarshalHead(io.Buff)
+	rpcPacket, head := rpc.UnmarshalHead(io.Buff)
 	funcName := rpcPacket.FuncName
 	pFunc := this.FindCall(funcName)
+	out := []reflect.Value{}
+
 	if pFunc != nil {
 		f := pFunc.FuncVal
 		k := pFunc.FuncType
@@ -201,12 +207,26 @@ func (this *Actor) call(io CallIO) {
 			}
 
 			if bParmasFit{
-				f.Call(in)
+				out = f.Call(in)
 			}else{
 				log.Printf("func [%s] params no fit, func params [%s], params [func(%v)]", funcName, strParams, in)
 			}
 		}else{
-			f.Call(nil)
+			out = f.Call(nil)
+		}
+
+		if head.SeqId > 0{
+			head.DestServerType = head.SrcServerType
+			outParams := make([]interface{}, len(out))
+			for i, v := range out{
+				outParams[i] = v.Interface()
+			}
+
+			if head.ActorName == ""{
+				rpc.SyncMsg(head, "sync_call", outParams...)
+			}else{
+				rpc.Sync(head.SeqId, rpc.Marshal(head, "sync_call", outParams...))
+			}
 		}
 	}
 }

@@ -1,6 +1,6 @@
 package rpc
 
-/*import (
+import (
 	"gonet/message"
 	"log"
 	"reflect"
@@ -10,30 +10,48 @@ package rpc
 )
 
 var (
-	RpcSyncSeq     uint64
-	RpcSyncSeqMap sync.Map
-	CLUSTER_ACTOR IActor
+	RpcSyncSeq     int64
+	RpcSyncSeqMap 	sync.Map
+	ActorMgr IActor//actor mgr
+	ClusterMgr ICluster//cluster mgr
 )
 
 type(
 	RpcSync struct{
 		m_RpcChan chan []byte
-		m_Seq uint64
+		m_Seq int64
 	}
 
 	IActor interface {
 		SendMsg(head RpcHead, funcName string, params ...interface{})
+	}
+
+	ICluster interface {
+		IActor
 		Id() uint32
 		ServiceType() message.SERVICE
 	}
 )
 
+func Init(clusterMgr ICluster, actorMgr IActor){
+	ActorMgr = actorMgr
+	ClusterMgr = clusterMgr
+}
+
+func SyncMsg(head RpcHead, funcName string, params ...interface{}){
+	if head.ActorName == ""{
+		head.SrcClusterId = ClusterMgr.Id()
+		head.SrcServerType = ClusterMgr.ServiceType()
+		ClusterMgr.SendMsg(head, funcName, params...)
+	}else{
+		ActorMgr.SendMsg(head, funcName, params...)
+	}
+}
+
 func SyncCall(call interface{}, head RpcHead, funcName string, params ...interface{}) {
 	req := crateRpcSync()
 	head.SeqId = req.m_Seq
-	head.SrcClusterId = CLUSTER_ACTOR.Id()
-	head.SrcServerType = CLUSTER_ACTOR.ServiceType()
-	CLUSTER_ACTOR.SendMsg(head, funcName, params...)
+	SyncMsg(head, funcName, params...)
 	// 等待同步回复
 	select {
 	case v := <-req.m_RpcChan:
@@ -76,13 +94,13 @@ func SyncCall(call interface{}, head RpcHead, funcName string, params ...interfa
 
 func crateRpcSync() *RpcSync{
 	req := RpcSync{}
-	req.m_Seq = atomic.AddUint64(&RpcSyncSeq, 1)
+	req.m_Seq = atomic.AddInt64(&RpcSyncSeq, 1)
 	req.m_RpcChan = make(chan []byte)
 	RpcSyncSeqMap.Store(req.m_Seq, &req)
 	return &req
 }
 
-func getRpcSync(seq uint64) *RpcSync{
+func getRpcSync(seq int64) *RpcSync{
 	req, bOk := RpcSyncSeqMap.Load(seq)
 	if bOk{
 		RpcSyncSeqMap.Delete(seq)
@@ -91,11 +109,26 @@ func getRpcSync(seq uint64) *RpcSync{
 	return nil
 }
 
-func Sync(seq uint64, data []byte) bool{
+func Sync(seq int64, data []byte) bool{
 	req := getRpcSync(seq)
 	if req != nil{
 		req.m_RpcChan <- data
 		return true
 	}
 	return false
-}*/
+}
+
+//同步Call
+/*
+	this.RegisterCall("test", func(kk int)(int, int) {
+		return 1, 2
+	})
+
+	rpc.SyncCall(func(kk, jj int){
+		fmt.Println(kk, jj)
+	}, rpc.RpcHead{DestServerType:message.SERVICE_ACCOUNTSERVER, SendType:message.SEND_BALANCE}, "test", 2)
+
+	rpc.SyncCall(func(kk, jj int){
+		fmt.Println(kk, jj)
+	}, rpcRpcHead{ActorName:"chatmgr"}, "test", 2)
+*/
