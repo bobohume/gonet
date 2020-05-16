@@ -1,6 +1,7 @@
 package rpc
 
 import (
+	"errors"
 	"gonet/message"
 	"log"
 	"reflect"
@@ -48,7 +49,7 @@ func SyncMsg(head RpcHead, funcName string, params ...interface{}){
 	}
 }
 
-func SyncCall(call interface{}, head RpcHead, funcName string, params ...interface{}) {
+func SyncCall(call interface{}, head RpcHead, funcName string, params ...interface{}) error{
 	req := crateRpcSync()
 	head.SeqId = req.m_Seq
 	SyncMsg(head, funcName, params...)
@@ -63,7 +64,7 @@ func SyncCall(call interface{}, head RpcHead, funcName string, params ...interfa
 		params := UnmarshalBody(rpcPacket, k)
 		if k.NumIn()  != len(params) {
 			log.Printf("func [%s] can not call, func params [%s], params [%v]", funcName, strParams, params)
-			return
+			return errors.New("params no fit")
 		}
 
 		if len(params) >= 1{
@@ -81,14 +82,15 @@ func SyncCall(call interface{}, head RpcHead, funcName string, params ...interfa
 				f.Call(in)
 			}else{
 				log.Printf("func [%s] params no fit, func params [%s], params [func(%v)]", funcName, strParams, in)
+				return errors.New("params no fit")
 			}
 		}else{
 			f.Call(nil)
 		}
-	case <-time.After(3*time.Second):
+	case <-time.After(30*time.Second):
 		// 清理请求
 		getRpcSync(req.m_Seq)
-		return
+		return errors.New("time out")
 	}
 }
 
@@ -130,5 +132,5 @@ func Sync(seq int64, data []byte) bool{
 
 	rpc.SyncCall(func(kk, jj int){
 		fmt.Println(kk, jj)
-	}, rpcRpcHead{ActorName:"chatmgr"}, "test", 2)
+	}, rpc.RpcHead{ActorName:"chatmgr"}, "test", 2)
 */
