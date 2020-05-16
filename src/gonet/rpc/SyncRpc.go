@@ -87,11 +87,12 @@ func SyncCall(call interface{}, head RpcHead, funcName string, params ...interfa
 		}else{
 			f.Call(nil)
 		}
-	case <-time.After(30*time.Second):
+	case <-time.After(3*time.Second):
 		// 清理请求
 		getRpcSync(req.m_Seq)
 		return errors.New("time out")
 	}
+	return nil
 }
 
 func crateRpcSync() *RpcSync{
