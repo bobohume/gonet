@@ -33,7 +33,6 @@ type ServerSocket struct {
 	m_ClientList    map[uint32]*ServerSocketClient
 	m_ClientLocker	*sync.RWMutex
 	m_Listen        *net.TCPListener
-	m_Pool          sync.Pool
 	m_Lock          sync.Mutex
 }
 
@@ -54,12 +53,6 @@ func (this *ServerSocket) Init(ip string, port int) bool {
 	this.m_ClientLocker = &sync.RWMutex{}
 	this.m_sIP = ip
 	this.m_nPort = port
-	this.m_Pool = sync.Pool{
-		New: func() interface{} {
-			var s = &ServerSocketClient{}
-			return s
-		},
-	}
 	return true
 }
 func (this *ServerSocket) Start() bool {
@@ -129,7 +122,6 @@ func (this *ServerSocket) AddClinet(tcpConn *net.TCPConn, addr string, connectTy
 }
 
 func (this *ServerSocket) DelClinet(pClient *ServerSocketClient) bool {
-	this.m_Pool.Put(pClient)
 	this.m_ClientLocker.Lock()
 	delete(this.m_ClientList, pClient.m_ClientId)
 	this.m_ClientLocker.Unlock()
@@ -144,7 +136,7 @@ func (this *ServerSocket) StopClient(id uint32){
 }
 
 func (this *ServerSocket) LoadClient() *ServerSocketClient {
-	s := this.m_Pool.Get().(*ServerSocketClient)
+	s := &ServerSocketClient{}
 	return s
 }
 

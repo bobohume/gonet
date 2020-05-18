@@ -21,5 +21,5 @@ func TraceCode(code ...interface{}) {
 		data += fmt.Sprintf("%v", v)
 	}
 	data += string(buf[:n])
-	fmt.Printf("==> %s\n", data)
+	GLOG.Printf("==> %s\n", data)
 }

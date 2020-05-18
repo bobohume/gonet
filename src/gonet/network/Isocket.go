@@ -73,8 +73,8 @@ type (
 		BindPacketFunc(HandleFunc)
 		SetConnectType(int)
 		SetTcpConn(net.Conn)
-		ReceivePacket(uint32,	[]byte)
 		HandlePacket(uint32,	[]byte)
+		ReceivePacket(uint32,	[]byte) bool
 	}
 )
 
@@ -189,12 +189,7 @@ func (this *Socket) HandlePacket(Id uint32, buff []byte){
 	}
 }
 
-func (this *Socket) ReceivePacket(Id uint32, dat []byte){
-	defer func() {
-		if err := recover(); err != nil {
-			base.TraceCode(err) // 接受包错误
-		}
-	}()
+func (this *Socket) ReceivePacket(Id uint32, dat []byte) bool{
 	//找包结束
 	seekToTcpEnd := func(buff []byte) (bool, int){
 		nLen := len(buff)
@@ -232,16 +227,13 @@ ParsePacekt:
 		this.m_MaxReceiveBuffer = buff[nCurSize:]
 	}else{
 		fmt.Println("超出最大包限制，丢弃该包")
+		return false
 	}
+	return true
 }
 
 //tcp粘包特殊结束标志
-/*func (this *Socket) ReceivePacket(Id int, dat []byte) {
-	defer func() {
-		if err := recover(); err != nil {
-			base.TraceCode(err)
-		}
-	}()
+/*func (this *Socket) ReceivePacket(Id int, dat []byte) bool{
 	//找包结束
 	seekToTcpEnd := func(buff []byte) (bool, int) {
 		nLen := bytes.Index(buff, []byte(base.TCP_END))
@@ -274,5 +266,7 @@ ParsePacekt:
 		this.m_MaxReceiveBuffer = buff[nCurSize:]
 	}else{
 		fmt.Println("超出最大包限制，丢弃该包")
+		return false
 	}
+	return true
 }*/
