@@ -153,6 +153,7 @@ func (this *ServerSocketClient) Run() bool {
 			return false
 		}
 		if n > 0 {
+			//熔断
 			if !this.ReceivePacket(this.m_ClientId, buff[:n]) && this.m_nConnectType == CLIENT_CONNECT{
 				this.OnNetFail(1)
 				return false
