@@ -1,7 +1,6 @@
 package actor
 
 import (
-	"gonet/base"
 	"gonet/rpc"
 	"sync"
 )
@@ -88,12 +87,6 @@ func (this *ActorPool) SendMsg(head rpc.RpcHead,funcName string, params ...inter
 
 //actor pool must rewrite PacketFunc
 func (this *ActorPool) PacketFunc(id uint32, buff []byte) bool{
-	defer func() {
-		if err := recover(); err != nil {
-			base.TraceCode(err)
-		}
-	}()
-
 	rpcPacket, head := rpc.UnmarshalHead(buff)
 	if this.FindCall(rpcPacket.FuncName) != nil{
 		head.SocketId = id

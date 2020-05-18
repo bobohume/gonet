@@ -71,6 +71,8 @@ func (this *ClientSocket) Send(head rpc.RpcHead, buff []byte) int {
 
 	if this.m_Conn == nil{
 		return 0
+	}else if len(buff) > base.MAX_PACKET{
+		panic("send over base.MAX_PACKET")
 	}
 
 	n, err := this.m_Conn.Write(buff)
@@ -117,32 +119,38 @@ func (this *ClientSocket) OnNetFail(int) {
 }
 
 func (this *ClientSocket) Run() bool {
-	defer func() {
-		if err := recover(); err != nil {
-			base.TraceCode(err)
-		}
-	}()
-
 	var buff= make([]byte, this.m_ReceiveBufferSize)
-	for {
-		if this.m_bShuttingDown || this.m_Conn == nil {
-			break
+	loop := func() bool{
+		defer func() {
+			if err := recover(); err != nil {
+				base.TraceCode(err)
+			}
+		}()
+
+		if this.m_bShuttingDown || this.m_Conn == nil{
+			return false
 		}
 
 		n, err := this.m_Conn.Read(buff)
 		if err == io.EOF {
 			fmt.Printf("远程链接：%s已经关闭！\n", this.m_Conn.RemoteAddr().String())
 			this.OnNetFail(0)
-			break
+			return false
 		}
-
 		if err != nil {
 			handleError(err)
 			this.OnNetFail(0)
-			break
+			return false
 		}
 		if n > 0 {
 			this.ReceivePacket(this.m_ClientId, buff[:n])
+		}
+		return true
+	}
+
+	for {
+		if !loop(){
+			break
 		}
 	}
 

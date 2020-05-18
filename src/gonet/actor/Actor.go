@@ -223,19 +223,19 @@ func (this *Actor) loop() bool{
 		this.call(io)
 	case msg := <-this.m_AcotrChan :
 		if msg == DESDORY_EVENT{
-			return true
+			return false
 		}
 	case <- this.m_pTimer.C:
 		if this.m_TimerCall != nil{
 			this.m_TimerCall()
 		}
 	}
-	return false
+	return true
 }
 
 func (this *Actor) run(){
 	for {
-		if this.loop(){
+		if !this.loop(){
 			break
 		}
 	}

@@ -33,7 +33,6 @@ type WebSocket struct {
 	m_bNagle        bool
 	m_ClientList    map[uint32]*WebSocketClient
 	m_ClientLocker	*sync.RWMutex
-	m_Pool          sync.Pool
 	m_Lock          sync.Mutex
 }
 
@@ -43,12 +42,6 @@ func (this *WebSocket) Init(ip string, port int) bool {
 	this.m_ClientLocker = &sync.RWMutex{}
 	this.m_sIP = ip
 	this.m_nPort = port
-	this.m_Pool = sync.Pool{
-		New: func() interface{} {
-			var s = &WebSocketClient{}
-			return s
-		},
-	}
 	return true
 }
 
@@ -111,7 +104,6 @@ func (this *WebSocket) AddClinet(tcpConn *websocket.Conn, addr string, connectTy
 }
 
 func (this *WebSocket) DelClinet(pClient *WebSocketClient) bool {
-	this.m_Pool.Put(pClient)
 	this.m_ClientLocker.Lock()
 	delete(this.m_ClientList, pClient.m_ClientId)
 	this.m_ClientLocker.Unlock()
@@ -126,7 +118,7 @@ func (this *WebSocket) StopClient(id uint32){
 }
 
 func (this *WebSocket) LoadClient() *WebSocketClient {
-	s := this.m_Pool.Get().(*WebSocketClient)
+	s := &WebSocketClient{}
 	return s
 }
 
