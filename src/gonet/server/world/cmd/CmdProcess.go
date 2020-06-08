@@ -1,12 +1,14 @@
 package cmd
 
 import (
-	"gonet/actor"
 	"fmt"
+	"gonet/actor"
+	"gonet/message"
+	"gonet/rpc"
+	"gonet/server/common"
+	"gonet/server/world/toprank"
 	"runtime"
 	"strconv"
-	"gonet/server/world/toprank"
-	"gonet/server/common"
 )
 
 type (
@@ -47,7 +49,15 @@ func (this *CmdProcess) Init(num int) {
 		score, _ := strconv.Atoi(argv3)
 		val0, _ := strconv.Atoi(argv4)
 		val1, _ := strconv.Atoi(argv5)
-		toprank.MGR().SendMsg( "InTopRank", nType, int64(id), name, score, val0, val1)
+		toprank.MGR().SendMsg( rpc.RpcHead{},"InTopRank", nType, int64(id), name, score, val0, val1)
+	})
+
+	this.RegisterCall("showrpc", func() {
+		fmt.Printf("--------------  PACKET  -------------\n")
+		for i, v := range message.Packet_CrcNamesMap{
+			fmt.Printf("packetName[%s], crc[%d]\n", v, i)
+		}
+		fmt.Printf("--------------  PACKET  -------------\n")
 	})
 
 	this.Actor.Start()

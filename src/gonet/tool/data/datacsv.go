@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-func OpenExceLua(filename string){
+func OpenExceCsv(filename string){
 	xlFile, err := xlsx.OpenFile(filename)
 	if err != nil{
 		fmt.Println("open [%s] error", filename)
@@ -79,14 +79,24 @@ func OpenExceLua(filename string){
 				if i == COL_NAME {
 					colNames = append(colNames, cell.String())
 					continue
-				} else if i == COL_CLIENT_NAME{
+				}else if i == COL_CLIENT_NAME {
 					colName := cell.String()
 					dataNames = append(dataNames, colName)
-					if j == 0{
-						stream.WriteString(fmt.Sprintf("%s %s%s","local", filenames[0],"Data = {\n" ))
-					}
 					if colName != "" && colName != "0"{
 						dataColLen = j
+					}
+					//最后一次写入
+					if j == len(row.Cells) - 1{
+						for i1, v := range dataNames{
+							if v != "" && v != "0"{
+								stream.WriteString(fmt.Sprintf("%s",v))
+								if i1 != dataColLen{
+									stream.WriteString(",")
+								}else if i1 == dataColLen {
+									stream.WriteString("\n")
+								}
+							}
+						}
 					}
 					continue
 				}else if i == COL_TYPE{
@@ -143,27 +153,23 @@ func OpenExceLua(filename string){
 					continue
 				}
 
-				if j == 0{
-					stream.WriteString(fmt.Sprintf("\t[%s] = {\n", cell.Value))
-				}
-
 				writeInt := func() {
 					switch cell.Type() {
 					case xlsx.CellTypeString:
-						stream.WriteString(fmt.Sprintf("\t\t%s = %d,\n",dataNames[j], base.Int(cell.String())))
+						stream.WriteString(fmt.Sprintf("%d", base.Int(cell.String())))
 					case xlsx.CellTypeStringFormula:
-						stream.WriteString(fmt.Sprintf("\t\t%s = %d,\n",dataNames[j], base.Int(cell.String())))
+						stream.WriteString(fmt.Sprintf("%d", base.Int(cell.String())))
 					case xlsx.CellTypeNumeric:
-						stream.WriteString(fmt.Sprintf("\t\t%s = %d,\n",dataNames[j], base.Int(cell.Value)))
+						stream.WriteString(fmt.Sprintf("%d", base.Int(cell.Value)))
 					case xlsx.CellTypeBool:
 						bVal := base.Bool(cell.Value)
 						if bVal{
-							stream.WriteString(fmt.Sprintf("\t\t%s = %d,\n",dataNames[j], 1))
+							stream.WriteString(fmt.Sprintf("%d",1))
 						}else{
-							stream.WriteString(fmt.Sprintf("\t\t%s = %d,\n",dataNames[j], 0))
+							stream.WriteString(fmt.Sprintf("%d",0))
 						}
 					case xlsx.CellTypeDate:
-						stream.WriteString(fmt.Sprintf("\t\t%s = %d,\n",dataNames[j], base.Int(cell.Value)))
+						stream.WriteString(fmt.Sprintf("%d", base.Int(cell.Value)))
 					}
 				}
 
@@ -175,27 +181,27 @@ func OpenExceLua(filename string){
 				if dataTypes[j] == base.DType_String{
 					switch cell.Type() {
 					case xlsx.CellTypeString:
-						stream.WriteString(fmt.Sprintf("\t\t%s = \"%s\",\n",dataNames[j], cell.String()))
+						stream.WriteString(fmt.Sprintf("%s", cell.String()))
 					case xlsx.CellTypeStringFormula:
-						stream.WriteString(fmt.Sprintf("\t\t%s = \"%s\",\n",dataNames[j], cell.String()))
+						stream.WriteString(fmt.Sprintf("%s", cell.String()))
 					case xlsx.CellTypeNumeric:
-						stream.WriteString(fmt.Sprintf("\t\t%s = \"%s\",\n",dataNames[j], cell.Value))
+						stream.WriteString(fmt.Sprintf("%s", cell.Value))
 					case xlsx.CellTypeBool:
 						bVal := base.Bool(cell.Value)
 						if bVal{
-							stream.WriteString(fmt.Sprintf("\t\t%s = \"%s\",\n",dataNames[j], "true"))
+							stream.WriteString(fmt.Sprintf("%s", "true"))
 						}else{
-							stream.WriteString(fmt.Sprintf("\t\t%s = \"%s\",\n",dataNames[j], "false"))
+							stream.WriteString(fmt.Sprintf("%s", "false"))
 						}
 					case xlsx.CellTypeDate:
-						stream.WriteString(fmt.Sprintf("\t\t%s = \"%s\",\n",dataNames[j], cell.Value))
+						stream.WriteString(fmt.Sprintf("%s", cell.Value))
 					}
 				}else if dataTypes[j] == base.DType_Enum{
 					val, bEx := enumKVMap[j][strings.ToLower(cell.Value)]
 					if bEx{
-						stream.WriteString(fmt.Sprintf("\t\t%s = %d,\n",dataNames[j], val))
+						stream.WriteString(fmt.Sprintf("%d", val))
 					}else{
-						stream.WriteString(fmt.Sprintf("\t\t%s = %d,\n",dataNames[j], 0))
+						stream.WriteString(fmt.Sprintf("%d", 0))
 					}
 				}else if dataTypes[j] == base.DType_S8{
 					writeInt()
@@ -206,60 +212,64 @@ func OpenExceLua(filename string){
 				}else if dataTypes[j] == base.DType_F32{
 					switch cell.Type() {
 					case xlsx.CellTypeString:
-						stream.WriteString(fmt.Sprintf("\t\t%s = %f,\n",dataNames[j], base.Float32(cell.String())))
+						stream.WriteString(fmt.Sprintf("%f", base.Float32(cell.String())))
 					case xlsx.CellTypeStringFormula:
-						stream.WriteString(fmt.Sprintf("\t\t%s = %f,\n",dataNames[j], base.Float32(cell.String())))
+						stream.WriteString(fmt.Sprintf("%f", base.Float32(cell.String())))
 					case xlsx.CellTypeNumeric:
-						stream.WriteString(fmt.Sprintf("\t\t%s = %f,\n",dataNames[j], base.Float32(cell.Value)))
+						stream.WriteString(fmt.Sprintf("%f", base.Float32(cell.Value)))
 					case xlsx.CellTypeBool:
 						bVal := base.Bool(cell.Value)
 						if bVal{
-							stream.WriteString(fmt.Sprintf("\t\t%s = %f,\n",dataNames[j], 1))
+							stream.WriteString(fmt.Sprintf("%f",1))
 						}else{
-							stream.WriteString(fmt.Sprintf("\t\t%s = %f,\n",dataNames[j], 0))
+							stream.WriteString(fmt.Sprintf("%f",0))
 						}
 					case xlsx.CellTypeDate:
-						stream.WriteString(fmt.Sprintf("\t\t%s = %f,\n",dataNames[j], base.Float32(cell.Value)))
+						stream.WriteString(fmt.Sprintf("%f", base.Float32(cell.Value)))
 					}
 				}else if dataTypes[j] == base.DType_F64{
 					switch cell.Type() {
 					case xlsx.CellTypeString:
-						stream.WriteString(fmt.Sprintf("\t\t%s = %f,\n",dataNames[j], base.Float64(cell.String())))
+						stream.WriteString(fmt.Sprintf("%f", base.Float64(cell.String())))
 					case xlsx.CellTypeStringFormula:
-						stream.WriteString(fmt.Sprintf("\t\t%s = %f,\n",dataNames[j], base.Float64(cell.String())))
+						stream.WriteString(fmt.Sprintf("%f", base.Float64(cell.String())))
 					case xlsx.CellTypeNumeric:
-						stream.WriteString(fmt.Sprintf("\t\t%s = %f,\n",dataNames[j], base.Float64(cell.Value)))
+						stream.WriteString(fmt.Sprintf("%f", base.Float64(cell.Value)))
 					case xlsx.CellTypeBool:
 						bVal := base.Bool(cell.Value)
 						if bVal{
-							stream.WriteString(fmt.Sprintf("\t\t%s = %f,\n",dataNames[j], 1))
+							stream.WriteString(fmt.Sprintf("%f",1))
 						}else{
-							stream.WriteString(fmt.Sprintf("\t\t%s = %f,\n",dataNames[j], 0))
+							stream.WriteString(fmt.Sprintf("%f",0))
 						}
 					case xlsx.CellTypeDate:
-						stream.WriteString(fmt.Sprintf("\t\t%s = %f,\n",dataNames[j], base.Float64(cell.Value)))
+						stream.WriteString(fmt.Sprintf("%f", base.Float64(cell.Value)))
 					}
 				}else if dataTypes[j] == base.DType_S64{
 					writeInt()
 				}
 
-				if j == dataColLen{
-					stream.WriteString("\t},\n")
+				if j != dataColLen{
+					stream.WriteString(",")
+				}else if j == dataColLen{
+					stream.WriteString("\n")
 				}
 			}
 		}
-
-		stream.WriteString("}\n")
-		stream.WriteString(fmt.Sprintf("%s %s%s\n","return", filenames[0],"Data" ))
 	}
 
 	//文件没有可导出
 	if dataColLen == 0{
 		return
 	}
-
+	/*stream.WriteString(fmt.Sprintf("%s %s%s","local", filenames[0],"DataName = {\n" ))
+	for _, v := range dataNames{
+		stream.WriteString(fmt.Sprintf("\t%s,\n", v))
+	}
+	stream.WriteString("}\n")
+	stream.WriteString(fmt.Sprintf("%s %s%s\n","return", filenames[0],"DataName" ))*/
 	//other sheet
-	file, err := os.Create(filenames[0] + ".lua")
+	file, err := os.Create(filenames[0] + ".csv")
 	if err == nil{
 		file.Write(stream.Bytes())
 		file.Close()

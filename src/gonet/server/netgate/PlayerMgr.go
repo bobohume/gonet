@@ -3,6 +3,8 @@ package netgate
 import (
 	"gonet/actor"
 	"gonet/base"
+	"gonet/message"
+	"gonet/rpc"
 	"sync"
 	"time"
 )
@@ -10,25 +12,26 @@ import (
 type(
 	PlayerManager struct {
 		actor.Actor
-		m_SocketMap map[int] int64
+		m_SocketMap map[uint32] int64
 		m_AccountMap map[int64] *AccountInfo
 		m_Locker *sync.RWMutex
 	}
 
 	IPlayerMangaer interface {
 		actor.IActor
-		ReleaseSocketMap(int, bool)
+		ReleaseSocketMap(uint32, bool)
 		AddAccountMap(int, int64) int
-		GetSocket(int64) int
-		GetAccount(int) int64
-		GetAccountInfo(int) *AccountInfo
+		GetSocket(int64) uint32
+		GetAccount(uint32) int64
+		GetAccountInfo(uint32) *AccountInfo
 	}
 
 	AccountInfo struct{
 		AccountId int64
 		LastTime int64
-		SocketId int
-		WClusterId int
+		SocketId uint32
+		WClusterId uint32
+		ZClusterId uint32
 	}
 )
 
@@ -36,12 +39,12 @@ var(
 	g_pAccount = &AccountInfo{}
 )
 
-func NewAccountInfo(socket int, accountId int64) *AccountInfo{
-	accountInfo := AccountInfo{LastTime:time.Now().Unix(), SocketId:socket, WClusterId:0, AccountId:accountId}
+func NewAccountInfo(socket uint32, accountId int64) *AccountInfo{
+	accountInfo := AccountInfo{LastTime:time.Now().Unix(), SocketId:socket, WClusterId:0, AccountId:accountId, ZClusterId:0}
 	return  &accountInfo
 }
 
-func (this *PlayerManager) ReleaseSocketMap(socketId int, bClose bool){
+func (this *PlayerManager) ReleaseSocketMap(socketId uint32, bClose bool){
 	this.m_Locker.RLock()
 	accountId, _ :=  this.m_SocketMap[socketId]
 	this.m_Locker.RUnlock()
@@ -54,22 +57,23 @@ func (this *PlayerManager) ReleaseSocketMap(socketId int, bClose bool){
 	//}
 }
 
-func (this *PlayerManager) AddAccountMap(accountId int64, socketId int) int {
+func (this *PlayerManager) AddAccountMap(accountId int64, socketId uint32) int {
 	Id := this.GetSocket(accountId)
 	this.ReleaseSocketMap(Id, Id != socketId)
 
 	accountInfo := NewAccountInfo(socketId, accountId)
-	accountInfo.WClusterId = SERVER.GetWorldCluster().RandomCluster()
+	accountInfo.WClusterId = SERVER.GetWorldCluster().RandomCluster().ClusterId
+	accountInfo.ZClusterId = SERVER.GetZoneCluster().RandomCluster().ClusterId
 	this.m_Locker.Lock()
 	this.m_AccountMap[accountId] = accountInfo
 	this.m_SocketMap[socketId] = accountId
 	this.m_Locker.Unlock()
-	SERVER.GetWorldCluster().SendMsg(accountInfo.WClusterId, "G_W_CLoginRequest", accountId, SERVER.GetCluster().Id())
+	SERVER.GetWorldCluster().SendMsg(rpc.RpcHead{ClusterId:accountInfo.WClusterId}, "G_W_CLoginRequest", accountId, SERVER.GetCluster().Id(), accountInfo.ZClusterId)
 	return  base.NONE_ERROR
 }
 
-func (this *PlayerManager) GetSocket(accountId int64) int{
-	socketId := 0
+func (this *PlayerManager) GetSocket(accountId int64) uint32{
+	socketId := uint32(0)
 	this.m_Locker.RLock()
 	accountInfo, exist := this.m_AccountMap[accountId]
 	this.m_Locker.RUnlock()
@@ -79,7 +83,7 @@ func (this *PlayerManager) GetSocket(accountId int64) int{
 	return socketId
 }
 
-func (this *PlayerManager) GetAccount(socketId int) int64{
+func (this *PlayerManager) GetAccount(socketId uint32) int64{
 	accoundId := int64(0)
 	this.m_Locker.RLock()
 	id, exist :=  this.m_SocketMap[socketId]
@@ -90,7 +94,7 @@ func (this *PlayerManager) GetAccount(socketId int) int64{
 	return accoundId
 }
 
-func (this *PlayerManager) GetAccountInfo(socketId int) *AccountInfo{
+func (this *PlayerManager) GetAccountInfo(socketId uint32) *AccountInfo{
 	accountId := this.GetAccount(socketId)
 	this.m_Locker.RLock()
 	accountInfo, exist := this.m_AccountMap[accountId]
@@ -103,18 +107,18 @@ func (this *PlayerManager) GetAccountInfo(socketId int) *AccountInfo{
 
 func (this *PlayerManager) Init(num int){
 	this.Actor.Init(num)
-	this.m_SocketMap = make(map[int] int64)
+	this.m_SocketMap = make(map[uint32] int64)
 	this.m_AccountMap = make(map[int64] *AccountInfo)
 	this.m_Locker = &sync.RWMutex{}
-	this.RegisterCall("ADD_ACCOUNT", func(accountId int64, socketId int) {
+	this.RegisterCall("ADD_ACCOUNT", func(accountId int64, socketId uint32) {
 		SERVER.GetLog().Printf("login incoming  Socket:%d Account:%d ",socketId, accountId)
 		this.AddAccountMap(accountId, socketId)
 	})
 
-	this.RegisterCall("DEL_ACCOUNT", func(socketid int) {
+	this.RegisterCall("DEL_ACCOUNT", func(socketid uint32) {
 		accountId := this.GetAccount(socketid)
 		this.ReleaseSocketMap(socketid, true)
-		SERVER.GetAccountCluster().BoardCastMsg("G_ClientLost", accountId)
+		SERVER.GetAccountCluster().SendMsg(rpc.RpcHead{SendType:message.SEND_BOARD_CAST}, "G_ClientLost", accountId)
 	})
 
 	//重连世界服务器，账号重新登录

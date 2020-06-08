@@ -3,6 +3,7 @@ package message
 import (
 	"github.com/golang/protobuf/proto"
 	"gonet/base"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"reflect"
 	"strings"
 )
@@ -10,6 +11,7 @@ import (
 var(
 	Packet_CreateFactorStringMap map[string] func()proto.Message
 	Packet_CreateFactorMap map[uint32] func()proto.Message
+	Packet_CrcNamesMap map[uint32] string
 )
 
 const(
@@ -60,7 +62,7 @@ func RegisterPacket(packet proto.Message) {
 	val := reflect.ValueOf(packet).Elem()
 	packetFunc := func() proto.Message{
 		packet := reflect.New(val.Type())
-		packet.Elem().Field(0).Set(val.Field(0))
+		packet.Elem().Field(3).Set(val.Field(3))
 		//packet.Elem().Set(val)
 		return packet.Interface().(proto.Message)
 	}
@@ -78,8 +80,8 @@ func GetPakcet(packetId uint32) proto.Message{
 	return nil
 }
 
-func GetPakcetByName(packetName string) proto.Message{
-	return GetPakcet(base.GetMessageCode1(packetName))
+func GetPakcetName(packetId uint32) string{
+	return Packet_CrcNamesMap[packetId]
 }
 
 func UnmarshalText(packet proto.Message, packetBuf []byte) error{
@@ -89,10 +91,27 @@ func UnmarshalText(packet proto.Message, packetBuf []byte) error{
 func init(){
 	Packet_CreateFactorStringMap = make(map[string] func()proto.Message)
 	Packet_CreateFactorMap 		 = make(map[uint32] func()proto.Message)
+	Packet_CrcNamesMap			 = make(map[uint32] string)
+}
+
+//统计crc对应string
+func initCrcNames(){
+	protoFiles := []protoreflect.MessageDescriptors{}
+	protoFiles = append(protoFiles, File_message_proto.Messages())
+	protoFiles = append(protoFiles, File_client_proto.Messages())
+	protoFiles = append(protoFiles, File_game_proto.Messages())
+	for _, v := range protoFiles{
+		for i := 0; i < v.Len(); i++{
+			packetName := strings.ToLower(string(v.Get(i).Name()))
+			crcVal := base.GetMessageCode1(packetName)
+			Packet_CrcNamesMap[crcVal] = packetName
+		}
+	}
 }
 
 //网关防火墙
 func Init(){
+	initCrcNames()
 	//注册消息
 	//PacketHead 中的 DestServerType 决定转发到那个服务器
 	RegisterPacket(&C_A_LoginRequest{PacketHead:BuildPacketHead(0, SERVICE_ACCOUNTSERVER)})
@@ -100,17 +119,21 @@ func Init(){
 	RegisterPacket(&C_G_LogoutResponse{PacketHead:BuildPacketHead(0, SERVICE_GATESERVER)})
 	RegisterPacket(&C_W_CreatePlayerRequest{PacketHead:BuildPacketHead(0, SERVICE_WORLDSERVER)})
 	RegisterPacket(&C_W_Game_LoginRequset{PacketHead:BuildPacketHead(0, SERVICE_WORLDSERVER)})
-	RegisterPacket(&C_W_LoginCopyMap{PacketHead:BuildPacketHead(0, SERVICE_WORLDSERVER)})
-	RegisterPacket(&C_W_Move{PacketHead:BuildPacketHead(0, SERVICE_WORLDSERVER)})
 	RegisterPacket(&C_W_ChatMessage{PacketHead:BuildPacketHead(0, SERVICE_WORLDSERVER)})
+
+	RegisterPacket(&C_Z_LoginCopyMap{PacketHead:BuildPacketHead(0, SERVICE_ZONESERVER)})
+	RegisterPacket(&C_Z_Move{PacketHead:BuildPacketHead(0, SERVICE_ZONESERVER)})
+	RegisterPacket(&C_Z_Skill{PacketHead:BuildPacketHead(0, SERVICE_ZONESERVER)})
 }
 
 //client消息回调
 func InitClient(){
+	initCrcNames()
 	//注册消息
 	RegisterPacket(&W_C_SelectPlayerResponse{})
 	RegisterPacket(&W_C_CreatePlayerResponse{})
-	RegisterPacket(&W_C_LoginMap{})
+	RegisterPacket(&Z_C_LoginMap{})
+	RegisterPacket(&Z_C_ENTITY{})
 	RegisterPacket(&W_C_ChatMessage{})
 	RegisterPacket(&A_C_LoginResponse{})
 	RegisterPacket(&A_C_RegisterResponse{})

@@ -9,7 +9,12 @@ import (
 	"strings"
 	"github.com/tealeg/xlsx"
 )
-
+const (
+	COL_NAME = iota
+	COL_CLIENT_NAME
+	COL_TYPE
+	COL_MAX
+)
 type(
 	IDataFile interface {
 		OpenExcel(filename string)
@@ -17,9 +22,9 @@ type(
 	}
 )
 
-//excel第一列 中文名字
-//excel第二列 客户端data下的列名
-//excel第三列 类型
+//excel第一行 中文名字
+//excel第二行 客户端data下的列名
+//excel第三行 类型
 func OpenExcel(filename string){
 	xlFile, err := xlsx.OpenFile(filename)
 	if err != nil{
@@ -74,17 +79,32 @@ func OpenExcel(filename string){
 			}
 			continue
 		}
+
+		//检查行列
+		func(){
+			if sheet.MaxRow != len(sheet.Rows){
+				fmt.Printf("data [%s] 行数不统一", filename,  )
+				return
+			}
+			for i, row := range sheet.Rows {
+				if sheet.MaxCol != len(row.Cells){
+					fmt.Printf("data [%s] 列数不统一,第 [%d] 行", filename,  i)
+					return
+				}
+			}
+		}()
+
 		for i, row := range sheet.Rows {
 			for j, cell := range row.Cells {
 				colTypeName := cell.String()//在data解析到enum时候重新组装枚举到sheet列名
-				if i == 0 {//excel第一列 中文名字
+				if i == COL_NAME {//excel第一列 中文名字
 					colNames = append(colNames, cell.String())
 					stream.WriteString(cell.String())
 					continue
-				}else if i == 1 {//客户端data下的列名
+				}else if i == COL_CLIENT_NAME {//客户端data下的列名
 					stream.WriteString(cell.String())
 					continue
-				}else if i == 2{//类型
+				}else if i == COL_TYPE{//类型
 					coltype := strings.ToLower(cell.String())
 					rd :=  bufio.NewReader(strings.NewReader(coltype))
 					data, _, _ := rd.ReadLine()
@@ -260,12 +280,12 @@ func OpenExcel(filename string){
 
 			//头结束
 			//第一列和第二列都写在头部
-			if i == 1{
-				for i1 := 0; i1 < 8 - (2 * sheet.MaxCol % 8); i1++{
+			if i == COL_CLIENT_NAME{
+				for i1 := 0; i1 < 8 - ((COL_CLIENT_NAME+1) * sheet.MaxCol % 8); i1++{
 					stream.WriteFlag(true)
 				}
 				stream.WriteBits([]byte{'@', '\n'}, 16)
-				stream.WriteInt(sheet.MaxRow - 3, 32)
+				stream.WriteInt(sheet.MaxRow - COL_MAX, 32)
 				stream.WriteInt(sheet.MaxCol, 32)
 				stream.WriteString(sheet.Name)
 			}
@@ -321,21 +341,12 @@ func SaveExcel(filename string){
 	//readstep := RecordNum * ColumNum
 	dataTypes := base.NewVector()
 	xfile := xlsx.NewFile()
-	sheet, err :=xfile.AddSheet(Sheetname)
+	sheet, err := xfile.AddSheet(Sheetname)
 	if err != nil{
 		return
 	}
-	//name
-	{
-		row := sheet.AddRow()
-		for j := 0; j < ColumNum; j++{
-			cell := row.AddCell()
-			cell.SetString(hstream.ReadString())
-		}
-	}
 
-	//客户端data下的列名
-	{
+	for i := 0; i <= COL_CLIENT_NAME; i++{
 		row := sheet.AddRow()
 		for j := 0; j < ColumNum; j++{
 			cell := row.AddCell()
@@ -409,7 +420,7 @@ func SaveExcel(filename string){
 		//得到列的总数
 		columNum := fstream.ReadInt(32)
 		sheetname := fstream.ReadString()
-		sheet, err :=xfile.AddSheet(sheetname)
+		sheet, err := xfile.AddSheet(sheetname)
 		if err != nil{
 			continue
 		}

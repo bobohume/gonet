@@ -8,6 +8,7 @@ import (
 	"gonet/base"
 	"gonet/db"
 	"gonet/message"
+	"gonet/rpc"
 	"gonet/server/common"
 	"gonet/server/world"
 )
@@ -35,7 +36,7 @@ func (this *Player) Init(num int){
 	this.m_ItemMgr.Init(this)
 
 	//玩家登录
-	this.RegisterCall("Login", func(clusterId int) {
+	this.RegisterCall("Login", func(gateClusterId uint32, zoneClusterId uint32) {
 		PlayerSimpleList := LoadSimplePlayerDatas(this.AccountId)
 		this.PlayerSimpleDataList = PlayerSimpleList
 
@@ -47,7 +48,8 @@ func (this *Player) Init(num int){
 		}
 
 		this.m_Log.Println("玩家登录成功")
-		this.SetGateClusterId(clusterId)
+		this.SetGateClusterId(gateClusterId)
+		this.SetZoneClusterId(zoneClusterId)
 		this.SendToClient(&message.W_C_SelectPlayerResponse{PacketHead: message.BuildPacketHead( this.AccountId,  message.SERVICE_CLIENT),
 			AccountId:this.AccountId,
 			PlayerData:PlayerDataList,
@@ -67,7 +69,7 @@ func (this *Player) Init(num int){
 		//加载到地图
 		this.AddMap()
 		//添加到世界频道
-		actor.MGR.SendMsg("chatmgr", "AddPlayerToChannel", this.AccountId, this.GetPlayerId(), int64(-3000), this.GetPlayerName(), this.GetGateClusterId())
+		actor.MGR.SendMsg(rpc.RpcHead{ActorName:"chatmgr"}, "AddPlayerToChannel", this.AccountId, this.GetPlayerId(), int64(-3000), this.GetPlayerName(), this.GetGateClusterId())
 	})
 
 	//创建玩家
@@ -85,14 +87,14 @@ func (this *Player) Init(num int){
 						PlayerId:0,
 					})
 				}else{
-					world.SERVER.GetAccountCluster().BalanceMsg("W_A_CreatePlayer", this.AccountId, packet.GetPlayerName(), packet.GetSex(), this.GetSocketId())
+					world.SendToAccount("W_A_CreatePlayer", this.AccountId, packet.GetPlayerName(), packet.GetSex(), this.GetSocketId())
 				}
 			}
 		}
 	})
 
 	//account创建玩家反馈
-	this.RegisterCall("CreatePlayer", func(playerId int64, socketId int, err int) {
+	this.RegisterCall("CreatePlayer", func(playerId int64, socketId uint32, err int) {
 		//创建成功
 		if err == 0{
 			this.PlayerIdList = []int64{}

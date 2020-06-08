@@ -1,1 +1,0 @@
-mklink /J ..\src\gonet\bin ..\bin

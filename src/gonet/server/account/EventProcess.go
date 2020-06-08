@@ -7,6 +7,7 @@ import (
 	"gonet/base"
 	"gonet/db"
 	"gonet/message"
+	"gonet/rpc"
 	"log"
 )
 
@@ -29,7 +30,7 @@ func (this *EventProcess) Init(num int) {
 		accountName := packet.GetAccountName()
 		//password := *packet.Password
 		password := "123456"
-		socketId := int(this.GetRpcPacket().RpcHead.Id)
+		socketId := uint32(this.GetRpcPacket().RpcHead.ClusterId)
 		nError := 1
 		accountId := base.UUID.UUID()
 		//查找账号存在
@@ -42,7 +43,7 @@ func (this *EventProcess) Init(num int) {
 				if (err == nil) {
 					SERVER.GetLog().Printf("帐号[%s]创建成功", accountName)
 					//登录账号
-					SERVER.GetAccountMgr().SendMsg( "Account_Login", accountName, accountId, socketId, this.GetSocketId())
+					SERVER.GetAccountMgr().SendMsg( rpc.RpcHead{},"Account_Login", accountName, accountId, socketId, this.GetSocketId())
 					nError = 0
 				}
 			}else{//账号存在
@@ -51,10 +52,10 @@ func (this *EventProcess) Init(num int) {
 		}
 
 		if nError != 0 {
-			SendToClient(this.GetSocketId(), &message.A_C_RegisterResponse{
+			SendToClient(rpc.RpcHead{SocketId:this.GetSocketId(), ClusterId:socketId}, &message.A_C_RegisterResponse{
 				PacketHead: message.BuildPacketHead( accountId, 0),
 				Error:      int32(nError),
-			}, &message.RpcHead{Id:this.GetRpcPacket().RpcHead.Id})
+			})
 		}
 	})
 
@@ -64,7 +65,7 @@ func (this *EventProcess) Init(num int) {
 		//password := *packet.Password
 		password := "123456"
 		buildVersion := packet.GetBuildNo()
-		socketId := int(this.GetRpcPacket().RpcHead.Id)
+		socketId := uint32(this.GetRpcPacket().RpcHead.ClusterId)
 		nError := base.NONE_ERROR
 
 		if accountName == ""{
@@ -79,7 +80,7 @@ func (this *EventProcess) Init(num int) {
 					passWd := rs.Row().String("password")
 					if base.MD5(password)== passWd{
 						nError = base.NONE_ERROR
-						SERVER.GetAccountMgr().SendMsg("Account_Login", accountName, accountId, socketId, this.GetSocketId())
+						SERVER.GetAccountMgr().SendMsg(rpc.RpcHead{},"Account_Login", accountName, accountId, socketId, this.GetSocketId())
 					}else{//密码错误
 						nError = base.PASSWORD_ERROR
 					}
@@ -93,20 +94,20 @@ func (this *EventProcess) Init(num int) {
 		}
 
 		if nError != base.NONE_ERROR {
-			SendToClient(this.GetSocketId(), &message.A_C_LoginResponse{
+			SendToClient(rpc.RpcHead{SocketId:this.GetSocketId(), ClusterId:socketId}, &message.A_C_LoginResponse{
 				PacketHead:message.BuildPacketHead( 0, 0 ),
 				Error:int32(nError),
 				AccountName:packet.AccountName,
-			}, &message.RpcHead{Id:this.GetRpcPacket().RpcHead.Id})
+			})
 		}
 	})
 
 	//创建玩家
-	this.RegisterCall("W_A_CreatePlayer", func(accountId int64, playername string, sex int32, socketId int) {
+	this.RegisterCall("W_A_CreatePlayer", func(accountId int64, playername string, sex int32, socketId uint32) {
 		playerId := base.UUID.UUID()
 		_, err := this.m_db.Exec(fmt.Sprintf("insert into tbl_player (account_id, player_name, player_id) values (%d, '%s', %d)", accountId, playername, playerId))
 		if err == nil {
-			SERVER.GetServer().SendMsgById(this.GetSocketId(), "A_W_CreatePlayer", accountId, playerId, playername, sex, socketId)
+			SendToWorld(this.GetRpcPacket().RpcHead.SrcClusterId, "A_W_CreatePlayer", accountId, playerId, playername, sex, socketId)
 		}
 	})
 

@@ -7,7 +7,7 @@ websocket模式下，在netgateserver里面注释回//websocket这段
 
 代码除了mysql，protobuf，redis, etcd这几个库以外，其他都是自己写的，方便性能和修改，主动权在自己手里
 
-服务器之间rpc，客户端服务器之间protobuf + rpc，客户端tcp遵从如下消息包头(支持json，考虑到性能，两种传输协议不兼容，请切换json分支)
+服务器之间rpc，客户端服务器之间protobuf + rpc，客户端tcp遵从如下消息包头
 
     前四位包体大小,再四位protobuf name 的 crc，中间protobuf字节流
     //另外支持特殊结束标志,前四位 protobuf name 的 crc，中间protobuf字节流， 尾部+结束标志💞♡ (结束标志也可以自己定义在base.TCP_END控制)（搜索tcp粘包特殊结束标志）
@@ -67,7 +67,7 @@ websocket模式下，在netgateserver里面注释回//websocket这段
 
 1.account账号服务，提供注册账号，登录校验，集群服务。
 
-2.natgate网关服务，所有对外都是通过网关转发，集群服务。
+2.natgate网关服务，对外连接，消息防火墙，对内消息转发，集群服务。
 
 3.world世界服务，所有逻辑，集群服务。
 
@@ -79,4 +79,3 @@ QQ群:950288306
 
 # 服务器架构如下：
 ![image](https://github.com/bobohume/go-server/blob/master/框架.jpg)
-<video src="https://github.com/bobohume/gonet-mmo-demo/blob/master/QQ%E8%A7%86%E9%A2%9120200303224312.mp4" controls="controls" width="500" height="300">您的浏览器不支持播放该视频！</video>

@@ -1,9 +1,12 @@
 package rpc
 
 import (
+	"gonet/message"
 	"reflect"
 	"strings"
 )
+
+type RpcHead message.RpcHead
 
 const(
 	RPC_BOOL = iota

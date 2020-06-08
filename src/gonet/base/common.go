@@ -33,6 +33,18 @@ func Abs(x float32) float32{
 	return float32(math.Abs(float64(x)))
 }
 
+func Max(a, b int) int{
+	return int(math.Max(float64(a), float64(b)))
+}
+
+func Min(a, b int) int{
+	return int(math.Min(float64(a), float64(b)))
+}
+
+func Clamp(val, low,  high int) int {
+	return int(math.Max(math.Min(float64(val), float64(high)), float64(low)))
+}
+
 func IFAssert(x bool, y string) {
 	if bool(x) == false {
 		log.Fatalf("\nFatal :{%s}", y)

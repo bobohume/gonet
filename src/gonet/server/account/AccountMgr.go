@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"gonet/db"
 	"fmt"
+	"gonet/rpc"
 )
 
 type (
@@ -37,11 +38,11 @@ func (this* AccountMgr) Init(num int){
 	this.m_AccountNameMap = make(map[string] *Account)
 	//this.RegisterTimer(1000 * 1000 * 1000, this.Update)//定时器
 	//账号登录处理
-	this.RegisterCall("Account_Login", func(accountName string, accountId int64, socketId int, id int) {
+	this.RegisterCall("Account_Login", func(accountName string, accountId int64, socketId uint32, id uint32) {
 		LoginAccount := func(pAccount *Account) {
 			if pAccount != nil {
 				SERVER.GetLog().Printf("帐号[%s]返回登录OK", accountName)
-				SERVER.GetServer().SendMsgById(id, "A_G_Account_Login", accountId, socketId)
+				SERVER.GetServer().SendMsg(rpc.RpcHead{SocketId:id}, "A_G_Account_Login", accountId, socketId)
 			}
 		}
 

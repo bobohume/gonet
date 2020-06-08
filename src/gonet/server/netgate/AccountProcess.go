@@ -5,7 +5,6 @@ import (
 	"gonet/base"
 	"gonet/message"
 	"gonet/rpc"
-	"strconv"
 	"gonet/server/common"
 	"strings"
 )
@@ -20,23 +19,18 @@ type (
 		actor.Actor
 		m_LostTimer *common.SimpleTimer
 
-		m_ClusterId int
+		m_ClusterId uint32
 	}
 
 	IAccountProcess interface {
 		actor.IActor
 
-		RegisterServer(int, string, int)
-		SetClusterId(int)
+		SetClusterId(uint32)
 	}
 )
 
-func (this * AccountProcess) SetClusterId(clusterId int){
+func (this * AccountProcess) SetClusterId(clusterId uint32){
 	this.m_ClusterId = clusterId
-}
-
-func (this * AccountProcess)RegisterServer(ServerType int, Ip string, Port int)  {
-	SERVER.GetAccountCluster().GetCluster(this.m_ClusterId).SendMsg("COMMON_RegisterRequest",ServerType, Ip, Port)
 }
 
 func (this *AccountProcess) Init(num int) {
@@ -45,8 +39,7 @@ func (this *AccountProcess) Init(num int) {
 	this.m_LostTimer.Start()
 	this.RegisterTimer(1 * 1000 * 1000 * 1000, this.Update)
 	this.RegisterCall("COMMON_RegisterRequest", func() {
-		port,_:=strconv.Atoi(UserNetPort)
-		this.RegisterServer(int(message.SERVICE_GATESERVER), UserNetIP, port)
+		SERVER.GetAccountCluster().SendMsg(rpc.RpcHead{ClusterId:this.m_ClusterId},"COMMON_RegisterRequest", &message.ClusterInfo{Type:message.SERVICE_GATESERVER, Ip:UserNetIP, Port:int32(base.Int(UserNetPort))})
 	})
 
 	this.RegisterCall("COMMON_RegisterResponse", func() {
@@ -57,12 +50,12 @@ func (this *AccountProcess) Init(num int) {
 		this.Stop()
 	})
 
-	this.RegisterCall("DISCONNECT", func(socketId int) {
+	this.RegisterCall("DISCONNECT", func(socketId uint32) {
 		this.m_LostTimer.Start()
 	})
 
-	this.RegisterCall("A_G_Account_Login", func(accountId int64, socketId int) {
-		SERVER.GetPlayerMgr().SendMsg("ADD_ACCOUNT", accountId, socketId)
+	this.RegisterCall("A_G_Account_Login", func(accountId int64, socketId uint32) {
+		SERVER.GetPlayerMgr().SendMsg(rpc.RpcHead{},"ADD_ACCOUNT", accountId, socketId)
 	})
 
 	this.Actor.Start()
@@ -70,23 +63,6 @@ func (this *AccountProcess) Init(num int) {
 
 func (this* AccountProcess) Update(){
 	if this.m_LostTimer.CheckTimer(){
-		SERVER.GetAccountCluster().GetCluster(this.m_ClusterId).Start()
+		SERVER.GetAccountCluster().GetCluster(rpc.RpcHead{ClusterId:this.m_ClusterId}).Start()
 	}
-}
-
-func DispatchAccountPacketToClient(id int, buff []byte) bool{
-	defer func(){
-		if err := recover(); err != nil{
-			base.TraceCode(err)
-		}
-	}()
-
-	rpcPacket := rpc.UnmarshalHead(buff)
-	if rpcPacket.FuncName == A_C_RegisterResponse || rpcPacket.FuncName == A_C_LoginResponse{
-		SERVER.GetServer().SendById(int(rpcPacket.RpcHead.Id), rpcPacket.RpcBody)
-	}else{
-		socketId := SERVER.GetPlayerMgr().GetSocket(rpcPacket.RpcHead.Id)
-		SERVER.GetServer().SendById(socketId, rpcPacket.RpcBody)
-	}
-	return true
 }

@@ -1,7 +1,8 @@
-package cluster
+package et
 
 import (
 	"encoding/json"
+	"gonet/message"
 	"gonet/server/common"
 	"log"
 	"time"
@@ -15,12 +16,14 @@ const(
 )
 
 //注册服务器
-type Service struct {
-	*common.ClusterInfo
-	m_KeysAPI client.KeysAPI
-}
+type(
+	Service struct {
+		*common.ClusterInfo
+		m_KeysAPI client.KeysAPI
+	}
+)
 
-func (this *Service) Ping(){
+func (this *Service) Run(){
 	for {
 		key := ETCD_DIR + this.String() + "/" + this.IpString()
 		data, _ := json.Marshal(this.ClusterInfo)
@@ -32,7 +35,8 @@ func (this *Service) Ping(){
 	}
 }
 
-func (this *Service) Init(Type int, IP string, Port int, endpoints []string){
+//注册服务器
+func (this *Service) Init(Type message.SERVICE, IP string, Port int, endpoints []string){
 	cfg := client.Config{
 		Endpoints:               endpoints,
 		Transport:               client.DefaultTransport,
@@ -43,18 +47,11 @@ func (this *Service) Init(Type int, IP string, Port int, endpoints []string){
 	if err != nil {
 		log.Fatal("Error: cannot connec to etcd:", err)
 	}
-	this.ClusterInfo = &common.ClusterInfo{Type, IP, Port, 0}
+	this.ClusterInfo = &common.ClusterInfo{message.ClusterInfo{Type:Type, Ip:IP, Port:int32(Port), Weight:0}}
 	this.m_KeysAPI = client.NewKeysAPI(etcdClient)
+	this.Start()
 }
 
 func (this *Service) Start(){
-	go this.Ping()
-}
-
-//注册服务器
-func NewService(Type int, IP string, Port int, Endpoints []string) *Service{
-	service := &Service{}
-	service.Init(Type, IP, Port, Endpoints)
-	service.Start()
-	return service
+	go this.Run()
 }

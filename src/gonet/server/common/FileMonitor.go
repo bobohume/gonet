@@ -3,6 +3,7 @@ package common
 import (
 	"gonet/actor"
 	"fmt"
+	"gonet/rpc"
 	"os"
 	"time"
 	"unsafe"
@@ -46,7 +47,7 @@ func (this *FileMonitor) Init(num int) {
 
 func (this *FileMonitor) AddFile(fileName string, pFunc FileRead){
 	ponit := unsafe.Pointer(&pFunc)
-	this.SendMsg("addfile", fileName, (*int64)(ponit))
+	this.SendMsg(rpc.RpcHead{},"addfile", fileName, (*int64)(ponit))
 }
 
 func (this *FileMonitor) addFile(fileName string, pFunc FileRead){

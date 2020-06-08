@@ -65,12 +65,27 @@ func OpenExceGo(filename string){
 			}
 			continue*/
 		}
+
+		//检查行列
+		func(){
+			if sheet.MaxRow != len(sheet.Rows){
+				fmt.Printf("data [%s] 行数不统一", filename,  )
+				return
+			}
+			for i, row := range sheet.Rows {
+				if sheet.MaxCol != len(row.Cells){
+					fmt.Printf("data [%s] 列数不统一,第 [%d] 行", filename,  i)
+					return
+				}
+			}
+		}()
+
 		for i, row := range sheet.Rows {
 			for j, cell := range row.Cells {
-				if i == 0 {
+				if i == COL_NAME {
 					colNames = append(colNames, cell.String())
 					continue
-				} else if i == 1{
+				} else if i == COL_CLIENT_NAME{
 					colName := cell.String()
 					dataNames = append(dataNames, colName)
 					if colName != "" && colName != "0"{
@@ -80,7 +95,7 @@ func OpenExceGo(filename string){
 						}
 					}
 					continue
-				}else if i == 2{
+				}else if i == COL_TYPE{
 					coltype := strings.ToLower(cell.String())
 					rd :=  bufio.NewReader(strings.NewReader(coltype))
 					data, _, _ := rd.ReadLine()

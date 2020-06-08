@@ -11,25 +11,23 @@ import (
 )
 
 //rpc  Marshal
-//rpc  特定rpc头部设置需求，params[0]传入RpcHead
-func Marshal(funcName string, params ...interface{})[]byte {
-	data, _ := MarshalEx(funcName, params...)
+func Marshal(head RpcHead, funcName string, params ...interface{})[]byte {
+	data, _ := marshal(head, funcName, params...)
 	return data
 }
 
-//rpc  MarshalEx
-//rpc  特定rpc头部设置需求，params[0]传入RpcHead
-func MarshalEx(funcName string, params ...interface{})([]byte, *message.RpcPacket) {
+//rpc  marshal
+func marshal(head RpcHead, funcName string, params ...interface{})([]byte, *message.RpcPacket) {
 	defer func() {
 		if err := recover(); err != nil {
 			base.TraceCode(err)
 		}
 	}()
 
-	rpcPacket := &message.RpcPacket{FuncName:strings.ToLower(funcName), ArgLen:int32(len(params)), RpcHead:&message.RpcHead{}}
+	rpcPacket := &message.RpcPacket{FuncName:strings.ToLower(funcName), ArgLen:int32(len(params)), RpcHead:(*message.RpcHead)(&head)}
 	msg := make([]byte, 1024)
 	bitstream := base.NewBitStream(msg, 1024)
-	for i, param := range params {
+	for _, param := range params {
 		sType := getTypeString(param)
 		switch sType {
 		case "bool":
@@ -1324,15 +1322,6 @@ func MarshalEx(funcName string, params ...interface{})([]byte, *message.RpcPacke
 
 
 		case "*message":
-			//rpc  特定rpc头部设置需求，params[0]传入RpcHead
-			if i == 0{
-				rpcHead, bOk := params[0].(*message.RpcHead)
-				if bOk{
-					rpcPacket.ArgLen--
-					rpcPacket.RpcHead = rpcHead
-					continue
-				}
-			}
 			bitstream.WriteInt(RPC_MESSAGE, 8)
 			marshalPB(bitstream, param.(proto.Message))
 

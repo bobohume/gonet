@@ -14,12 +14,12 @@ import (
 type IWebSocket interface {
 	ISocket
 
-	AssignClientId() int
-	GetClientById(int) *WebSocketClient
+	AssignClientId() uint32
+	GetClientById(uint32) *WebSocketClient
 	LoadClient() *WebSocketClient
 	AddClinet(*websocket.Conn, string, int) *WebSocketClient
 	DelClinet(*WebSocketClient) bool
-	StopClient(int)
+	StopClient(uint32)
 }
 
 type WebSocket struct {
@@ -27,28 +27,21 @@ type WebSocket struct {
 	m_nClientCount  int
 	m_nMaxClients   int
 	m_nMinClients   int
-	m_nIdSeed       int32
+	m_nIdSeed       uint32
 	m_bShuttingDown bool
 	m_bCanAccept    bool
 	m_bNagle        bool
-	m_ClientList    map[int]*WebSocketClient
+	m_ClientList    map[uint32]*WebSocketClient
 	m_ClientLocker	*sync.RWMutex
-	m_Pool          sync.Pool
 	m_Lock          sync.Mutex
 }
 
 func (this *WebSocket) Init(ip string, port int) bool {
 	this.Socket.Init(ip, port)
-	this.m_ClientList = make(map[int]*WebSocketClient)
+	this.m_ClientList = make(map[uint32]*WebSocketClient)
 	this.m_ClientLocker = &sync.RWMutex{}
 	this.m_sIP = ip
 	this.m_nPort = port
-	this.m_Pool = sync.Pool{
-		New: func() interface{} {
-			var s = &WebSocketClient{}
-			return s
-		},
-	}
 	return true
 }
 
@@ -73,11 +66,11 @@ func (this *WebSocket) Start() bool {
 	return true
 }
 
-func (this *WebSocket) AssignClientId() int {
-	return int(atomic.AddInt32(&this.m_nIdSeed, 1))
+func (this *WebSocket) AssignClientId() uint32 {
+	return atomic.AddUint32(&this.m_nIdSeed, 1)
 }
 
-func (this *WebSocket) GetClientById(id int) *WebSocketClient {
+func (this *WebSocket) GetClientById(id uint32) *WebSocketClient {
 	this.m_ClientLocker.RLock()
 	client, exist := this.m_ClientList[id]
 	this.m_ClientLocker.RUnlock()
@@ -111,14 +104,13 @@ func (this *WebSocket) AddClinet(tcpConn *websocket.Conn, addr string, connectTy
 }
 
 func (this *WebSocket) DelClinet(pClient *WebSocketClient) bool {
-	this.m_Pool.Put(pClient)
 	this.m_ClientLocker.Lock()
 	delete(this.m_ClientList, pClient.m_ClientId)
 	this.m_ClientLocker.Unlock()
 	return true
 }
 
-func (this *WebSocket) StopClient(id int){
+func (this *WebSocket) StopClient(id uint32){
 	pClinet := this.GetClientById(id)
 	if pClinet != nil{
 		pClinet.Stop()
@@ -126,7 +118,7 @@ func (this *WebSocket) StopClient(id int){
 }
 
 func (this *WebSocket) LoadClient() *WebSocketClient {
-	s := this.m_Pool.Get().(*WebSocketClient)
+	s := &WebSocketClient{}
 	return s
 }
 
@@ -140,18 +132,18 @@ func (this *WebSocket) Stop() bool {
 	return true
 }
 
-func (this *WebSocket) SendById(id int, buff  []byte) int{
-	pClient := this.GetClientById(id)
+func (this *WebSocket) Send(head rpc.RpcHead, buff  []byte) int{
+	pClient := this.GetClientById(head.SocketId)
 	if pClient != nil{
-		pClient.Send(base.SetTcpEnd(buff))
+		pClient.Send(head, base.SetTcpEnd(buff))
 	}
 	return  0
 }
 
-func (this *WebSocket) SendMsgById(id int, funcName string, params ...interface{}){
-	pClient := this.GetClientById(id)
+func (this *WebSocket) SendMsg(head rpc.RpcHead, funcName string, params ...interface{}){
+	pClient := this.GetClientById(head.SocketId)
 	if pClient != nil{
-		pClient.Send(base.SetTcpEnd(rpc.Marshal(funcName, params...)))
+		pClient.Send(head, base.SetTcpEnd(rpc.Marshal(head, funcName, params...)))
 	}
 }
 
