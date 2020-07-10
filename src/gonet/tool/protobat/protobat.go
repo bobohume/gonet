@@ -12,10 +12,10 @@ var(
 	PATH = "../src/gonet/message"
 	PROTO [2][4]string = [2][4]string{
 		{
-			"protoc --plugin=protoc-gen-go=protoc-gen-go.exe  --go_out=%s  --proto_path=%s	",
-			"::protoc --js_out=%s  --proto_path=%s	",
-			"::protoc --cpp_out=%s/c++  --proto_path=%s	",
-			"::protoc -o %s/pb/client.pb --proto_path=%s	",
+			"protoc.exe --plugin=protoc-gen-go=protoc-gen-go.exe  --go_out=%s  --proto_path=%s	",
+			"::protoc.exe --js_out=%s  --proto_path=%s	",
+			"::protoc.exe --cpp_out=%s/c++  --proto_path=%s	",
+			"::protoc.exe -o %s/pb/client.pb --proto_path=%s	",
 		},//win
 		{
 			"protoc --go_out=%s  --proto_path=%s	",
