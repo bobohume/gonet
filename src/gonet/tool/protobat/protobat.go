@@ -2,30 +2,37 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
 var(
+	PATH = "../src/gonet/message"
 	PROTO [2][4]string = [2][4]string{
 		{
-			"protoc --plugin=protoc-gen-go=protoc-gen-go.exe  --go_out=../src/gonet/message  --proto_path=../src/gonet/message	",
-			"::protoc --js_out=../src/gonet/message  --proto_path=../src/gonet/message	",
-			"::protoc --cpp_out=../src/gonet/message/c++  --proto_path=../src/gonet/message	",
-			"::protoc -o ../src/gonet/message/pb/client.pb --proto_path=../src/gonet/message	",
+			"protoc.exe --plugin=protoc-gen-go=protoc-gen-go.exe  --go_out=%s  --proto_path=%s	",
+			"::protoc.exe --js_out=%s  --proto_path=%s	",
+			"::protoc.exe --cpp_out=%s/c++  --proto_path=%s	",
+			"::protoc.exe -o %s/pb/client.pb --proto_path=%s	",
 		},//win
 		{
-			"protoc --go_out=../src/gonet/message  --proto_path=../src/gonet/message	",
-			"#protoc --js_out=../src/gonet/message  --proto_path=../src/gonet/message	",
-			"#protoc --cpp_out=../src/gonet/message/c++  --proto_path=../src/gonet/message	",
-			"#protoc -o ../src/gonet/message/pb/client.pb --proto_path=../src/gonet/message	",
+			"protoc --go_out=%s  --proto_path=%s	",
+			"#protoc --js_out=%s  --proto_path=%s	",
+			"#protoc --cpp_out=%s/c++  --proto_path=%s	",
+			"#protoc -o %s/pb/client.pb --proto_path=%s	",
 		},//linux
 	}
 )
 
+//args[1] : proto file path
 func main(){
-	files, err := filepath.Glob("../src/gonet/message/*.proto")
+	args := os.Args
+	if len(args) >= 2{
+		PATH = args[1]
+	}
+	files, err := filepath.Glob(PATH + "/*.proto")
 	str := ""
 	if err == nil{
 		files1 := []string{}
@@ -54,7 +61,7 @@ func main(){
 		file, err := os.Create("proto.bat")
 		if err == nil{
 			for _, v := range PROTO[0]{
-				stream.WriteString(v)
+				stream.WriteString(fmt.Sprintf(v, PATH, PATH))
 				stream.WriteString(str)
 				stream.WriteString("\n")
 			}
@@ -67,7 +74,7 @@ func main(){
 		file, err := os.Create("proto.sh")
 		if err == nil{
 			for _, v := range PROTO[1]{
-				stream.WriteString(v)
+				stream.WriteString(fmt.Sprintf(v, PATH, PATH))
 				stream.WriteString(str)
 				stream.WriteString("\n")
 			}
