@@ -195,7 +195,7 @@ func (this *ClusterServer) Send(head rpc.RpcHead, buff []byte){
 		case message.SEND_POINT:
 			this.sendPoint(head, buff)
 		default:
-			this.balanceSend(head, buff)
+			this.boardCastSend(head, buff)
 		}
 	}
 }
