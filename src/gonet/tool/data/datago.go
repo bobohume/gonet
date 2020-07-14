@@ -192,23 +192,7 @@ func OpenExceGo(filename string){
 				}
 
 				writeInt := func() {
-					switch cell.Type() {
-					case xlsx.CellTypeString:
-						stream.WriteString(fmt.Sprintf("\t\t%s : %d,\n",dataNames[j], base.Int(cell.String())))
-					case xlsx.CellTypeStringFormula:
-						stream.WriteString(fmt.Sprintf("\t\t%s : %d,\n",dataNames[j], base.Int(cell.String())))
-					case xlsx.CellTypeNumeric:
-						stream.WriteString(fmt.Sprintf("\t\t%s : %d,\n",dataNames[j], base.Int(cell.Value)))
-					case xlsx.CellTypeBool:
-						bVal := base.Bool(cell.Value)
-						if bVal{
-							stream.WriteString(fmt.Sprintf("\t\t%s : %d,\n",dataNames[j], 1))
-						}else{
-							stream.WriteString(fmt.Sprintf("\t\t%s : %d,\n",dataNames[j], 0))
-						}
-					case xlsx.CellTypeDate:
-						stream.WriteString(fmt.Sprintf("\t\t%s : %d,\n",dataNames[j], base.Int(cell.Value)))
-					}
+					stream.WriteString(fmt.Sprintf("\t\t%s : %d,\n",dataNames[j], base.Int(cell.Value)))
 				}
 
 				//过滤掉不是客户端的数据
@@ -222,23 +206,7 @@ func OpenExceGo(filename string){
 				}
 
 				if dataTypes[j] == base.DType_String{
-					switch cell.Type() {
-					case xlsx.CellTypeString:
-						stream.WriteString(fmt.Sprintf("\t\t%s : \"%s\",\n",dataNames[j], cell.String()))
-					case xlsx.CellTypeStringFormula:
-						stream.WriteString(fmt.Sprintf("\t\t%s : \"%s\",\n",dataNames[j], cell.String()))
-					case xlsx.CellTypeNumeric:
-						stream.WriteString(fmt.Sprintf("\t\t%s : \"%s\",\n",dataNames[j], cell.Value))
-					case xlsx.CellTypeBool:
-						bVal := base.Bool(cell.Value)
-						if bVal{
-							stream.WriteString(fmt.Sprintf("\t\t%s : \"%s\",\n",dataNames[j], "true"))
-						}else{
-							stream.WriteString(fmt.Sprintf("\t\t%s : \"%s\",\n",dataNames[j], "false"))
-						}
-					case xlsx.CellTypeDate:
-						stream.WriteString(fmt.Sprintf("\t\t%s : \"%s\",\n",dataNames[j], cell.Value))
-					}
+					stream.WriteString(fmt.Sprintf("\t\t%s : \"%s\",\n",dataNames[j], cell.Value))
 				}else if dataTypes[j] == base.DType_Enum{
 					val, bEx := enumKVMap[j][strings.ToLower(cell.Value)]
 					if bEx{
@@ -253,43 +221,11 @@ func OpenExceGo(filename string){
 				}else if dataTypes[j] == base.DType_S32{
 					writeInt()
 				}else if dataTypes[j] == base.DType_F32{
-					switch cell.Type() {
-					case xlsx.CellTypeString:
-						stream.WriteString(fmt.Sprintf("\t\t%s : %f,\n",dataNames[j], base.Float32(cell.String())))
-					case xlsx.CellTypeStringFormula:
-						stream.WriteString(fmt.Sprintf("\t\t%s : %f,\n",dataNames[j], base.Float32(cell.String())))
-					case xlsx.CellTypeNumeric:
-						stream.WriteString(fmt.Sprintf("\t\t%s : %f,\n",dataNames[j], base.Float32(cell.Value)))
-					case xlsx.CellTypeBool:
-						bVal := base.Bool(cell.Value)
-						if bVal{
-							stream.WriteString(fmt.Sprintf("\t\t%s : %f,\n",dataNames[j], 1))
-						}else{
-							stream.WriteString(fmt.Sprintf("\t\t%s : %f,\n",dataNames[j], 0))
-						}
-					case xlsx.CellTypeDate:
-						stream.WriteString(fmt.Sprintf("\t\t%s : %f,\n",dataNames[j], base.Float32(cell.Value)))
-					}
+					stream.WriteString(fmt.Sprintf("\t\t%s : %f,\n",dataNames[j], base.Float32(cell.Value)))
 				}else if dataTypes[j] == base.DType_F64{
-					switch cell.Type() {
-					case xlsx.CellTypeString:
-						stream.WriteString(fmt.Sprintf("\t\t%s : %f,\n",dataNames[j], base.Float64(cell.String())))
-					case xlsx.CellTypeStringFormula:
-						stream.WriteString(fmt.Sprintf("\t\t%s : %f,\n",dataNames[j], base.Float64(cell.String())))
-					case xlsx.CellTypeNumeric:
-						stream.WriteString(fmt.Sprintf("\t\t%s : %f,\n",dataNames[j], base.Float64(cell.Value)))
-					case xlsx.CellTypeBool:
-						bVal := base.Bool(cell.Value)
-						if bVal{
-							stream.WriteString(fmt.Sprintf("\t\t%s : %f,\n",dataNames[j], 1))
-						}else{
-							stream.WriteString(fmt.Sprintf("\t\t%s : %f,\n",dataNames[j], 0))
-						}
-					case xlsx.CellTypeDate:
-						stream.WriteString(fmt.Sprintf("\t\t%s : %f,\n",dataNames[j], base.Float64(cell.Value)))
-					}
+					stream.WriteString(fmt.Sprintf("\t\t%s : %f,\n",dataNames[j], base.Float64(cell.Value)))
 				}else if dataTypes[j] == base.DType_S64{
-					writeInt()
+					stream.WriteString(fmt.Sprintf("\t\t%s : %d,\n",dataNames[j], base.Int64(cell.Value)))
 				}
 
 				if j == dataColLen{

@@ -175,39 +175,11 @@ func OpenExcel(filename string){
 				}
 
 				writeInt := func(bitnum int) {
-					switch cell.Type() {
-					case xlsx.CellTypeString:
-						stream.WriteInt(base.Int(cell.String()), bitnum)
-					case xlsx.CellTypeStringFormula:
-						stream.WriteInt(base.Int(cell.String()), bitnum)
-					case xlsx.CellTypeNumeric:
-						stream.WriteInt(base.Int(cell.Value), bitnum)
-					case xlsx.CellTypeBool:
-						bVal := base.Bool(cell.Value)
-						if bVal{
-							stream.WriteInt(1, bitnum)
-						}else{
-							stream.WriteInt(0, bitnum)
-						}
-					case xlsx.CellTypeDate:
-						stream.WriteInt(base.Int(cell.Value), bitnum)
-					}
+					stream.WriteInt(base.Int(cell.Value), bitnum)
 				}
 
-
 				if dataTypes[j] == base.DType_String{
-					switch cell.Type() {
-					case xlsx.CellTypeString:
-						stream.WriteString(cell.String())
-					case xlsx.CellTypeStringFormula:
-						stream.WriteString(cell.String())
-					case xlsx.CellTypeNumeric:
-						stream.WriteString(fmt.Sprintf("%d", base.Int64(cell.Value)))
-					case xlsx.CellTypeBool:
-						stream.WriteString(fmt.Sprintf("%v", cell.Bool()))
-					case xlsx.CellTypeDate:
-						stream.WriteString(cell.Value)
-					}
+					stream.WriteString(cell.Value)
 				}else if dataTypes[j] == base.DType_Enum{
 					val, bEx := enumKVMap[j][strings.ToLower(cell.Value)]
 					if bEx{
@@ -222,59 +194,11 @@ func OpenExcel(filename string){
 				}else if dataTypes[j] == base.DType_S32{
 					writeInt(32)
 				}else if dataTypes[j] == base.DType_F32{
-					switch cell.Type() {
-					case xlsx.CellTypeString:
-						stream.WriteFloat(base.Float32(cell.String()))
-					case xlsx.CellTypeStringFormula:
-						stream.WriteFloat(base.Float32(cell.String()))
-					case xlsx.CellTypeNumeric:
-						stream.WriteFloat(base.Float32(cell.String()))
-					case xlsx.CellTypeBool:
-						bVal := base.Bool(cell.Value)
-						if bVal{
-							stream.WriteFloat(1)
-						}else{
-							stream.WriteFloat(0)
-						}
-					case xlsx.CellTypeDate:
-						stream.WriteFloat(base.Float32(cell.Value))
-					}
+					stream.WriteFloat(base.Float32(cell.Value))
 				}else if dataTypes[j] == base.DType_F64{
-					switch cell.Type() {
-					case xlsx.CellTypeString:
-						stream.WriteFloat64(base.Float64(cell.String()))
-					case xlsx.CellTypeStringFormula:
-						stream.WriteFloat64(base.Float64(cell.String()))
-					case xlsx.CellTypeNumeric:
-						stream.WriteFloat64(base.Float64(cell.String()))
-					case xlsx.CellTypeBool:
-						bVal := base.Bool(cell.Value)
-						if bVal{
-							stream.WriteFloat64(1)
-						}else{
-							stream.WriteFloat64(0)
-						}
-					case xlsx.CellTypeDate:
-						stream.WriteFloat64(base.Float64(cell.Value))
-					}
+					stream.WriteFloat64(base.Float64(cell.Value))
 				}else if dataTypes[j] == base.DType_S64{
-					switch cell.Type() {
-					case xlsx.CellTypeString:
-						stream.WriteInt64(base.Int64(cell.String()), 64)
-					case xlsx.CellTypeStringFormula:
-						stream.WriteInt64(base.Int64(cell.String()), 64)
-					case xlsx.CellTypeNumeric:
-						stream.WriteInt64(base.Int64(cell.Value), 64)
-					case xlsx.CellTypeBool:
-						bVal := base.Bool(cell.Value)
-						if bVal{
-							stream.WriteInt64(1, 64)
-						}else{
-							stream.WriteInt64(0, 64)
-						}
-					case xlsx.CellTypeDate:
-						stream.WriteInt64(base.Int64(cell.Value), 64)
-					}
+					stream.WriteInt64(base.Int64(cell.Value), 64)
 				}
 			}
 
