@@ -173,6 +173,7 @@ func OpenExcel(filename string){
 					case "int64":
 						stream.WriteInt(base.DType_S64, 8)
 						dataTypes = append(dataTypes, base.DType_S64)
+
 					case "[]string":
 						stream.WriteInt(base.DType_StringArray, 8)
 						dataTypes = append(dataTypes, base.DType_StringArray)
@@ -223,6 +224,7 @@ func OpenExcel(filename string){
 					stream.WriteFloat64(base.Float64(cell.Value))
 				case base.DType_S64:
 					stream.WriteInt64(base.Int64(cell.Value), 64)
+
 				case base.DType_StringArray:
 					arr := strings.Split(cell.Value, ARRAY_SPLIT)
 					stream.WriteInt(len(arr), 8)
@@ -396,12 +398,13 @@ func SaveExcel(filename string){
 				cell.SetFloat(fstream.ReadFloat64())
 			case base.DType_S64:
 				cell.SetInt64(fstream.ReadInt64(64))
+
 			case base.DType_StringArray:
 				nLen := fstream.ReadInt(8)
 				str := ""
 				for i := 0; i < nLen; i++{
 					str += fstream.ReadString()
-					if i != nLen -1{
+					if i != nLen-1{
 						str += "|"
 					}
 				}
@@ -411,7 +414,7 @@ func SaveExcel(filename string){
 				str := ""
 				for i := 0; i < nLen; i++{
 					str += fmt.Sprintf("%d", fstream.ReadInt(8))
-					if i != nLen -1{
+					if i != nLen-1{
 						str += "|"
 					}
 				}
@@ -421,7 +424,7 @@ func SaveExcel(filename string){
 				str := ""
 				for i := 0; i < nLen; i++{
 					str += fmt.Sprintf("%d", fstream.ReadInt(16))
-					if i != nLen -1{
+					if i != nLen-1{
 						str += "|"
 					}
 				}
@@ -431,7 +434,7 @@ func SaveExcel(filename string){
 				str := ""
 				for i := 0; i < nLen; i++{
 					str += fmt.Sprintf("%d", fstream.ReadInt(32))
-					if i != nLen -1{
+					if i != nLen-1{
 						str += "|"
 					}
 				}
@@ -441,7 +444,7 @@ func SaveExcel(filename string){
 				str := ""
 				for i := 0; i < nLen; i++{
 					str += fmt.Sprintf("%f", fstream.ReadFloat())
-					if i != nLen -1{
+					if i != nLen-1{
 						str += "|"
 					}
 				}
@@ -451,7 +454,7 @@ func SaveExcel(filename string){
 				str := ""
 				for i := 0; i < nLen; i++{
 					str += fmt.Sprintf("%f", fstream.ReadFloat64())
-					if i != nLen -1{
+					if i != nLen-1{
 						str += "|"
 					}
 				}
@@ -461,7 +464,7 @@ func SaveExcel(filename string){
 				str := ""
 				for i := 0; i < nLen; i++{
 					str += fmt.Sprintf("%d", fstream.ReadInt64(64))
-					if i != nLen -1{
+					if i != nLen-1{
 						str += "|"
 					}
 				}

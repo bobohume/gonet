@@ -147,6 +147,7 @@ func OpenExceCsv(filename string){
 						dataTypes = append(dataTypes, base.DType_F64)
 					case "int64":
 						dataTypes = append(dataTypes, base.DType_S64)
+
 					case "[]string":
 						dataTypes = append(dataTypes, base.DType_StringArray)
 					case "[]int8":

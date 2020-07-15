@@ -190,6 +190,7 @@ func OpenExceLua(filename string){
 					stream.WriteString(fmt.Sprintf("\t\t%s = %f,\n",dataNames[j], base.Float64(cell.Value)))
 				case  base.DType_S64:
 					stream.WriteString(fmt.Sprintf("\t\t%s = %d,\n",dataNames[j], base.Int64(cell.Value)))
+
 				case base.DType_StringArray:
 					arr := strings.Split(cell.Value, ARRAY_SPLIT)
 					stream.WriteString(fmt.Sprintf("\t\t%s = {", dataNames[j]))
