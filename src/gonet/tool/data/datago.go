@@ -249,7 +249,7 @@ func OpenExceGo(filename string){
 					stream.WriteString(fmt.Sprintf("\t\t%s : %d,\n",dataNames[j], base.Int64(cell.Value)))
 
 				case base.DType_StringArray:
-					arr := strings.Split(cell.Value, ARRAY_SPLIT)
+					arr := splitArray(cell.Value)
 					stream.WriteString(fmt.Sprintf("\t\t%s : []string{", dataNames[j]))
 					for i, v := range arr{
 						stream.WriteString(fmt.Sprintf("\"%s\"",v))
@@ -259,7 +259,7 @@ func OpenExceGo(filename string){
 					}
 					stream.WriteString("},\n")
 				case base.DType_S8Array:
-					arr := strings.Split(cell.Value, ARRAY_SPLIT)
+					arr := splitArray(cell.Value)
 					stream.WriteString(fmt.Sprintf("\t\t%s : []int8{", dataNames[j]))
 					for i, v := range arr{
 						stream.WriteString(fmt.Sprintf("%d",base.Int(v)))
@@ -269,7 +269,7 @@ func OpenExceGo(filename string){
 					}
 					stream.WriteString("},\n")
 				case base.DType_S16Array:
-					arr := strings.Split(cell.Value, ARRAY_SPLIT)
+					arr := splitArray(cell.Value)
 					stream.WriteString(fmt.Sprintf("\t\t%s : []int16{", dataNames[j]))
 					for i, v := range arr{
 						stream.WriteString(fmt.Sprintf("%d",base.Int(v)))
@@ -279,7 +279,7 @@ func OpenExceGo(filename string){
 					}
 					stream.WriteString("},\n")
 				case base.DType_S32Array:
-					arr := strings.Split(cell.Value, ARRAY_SPLIT)
+					arr := splitArray(cell.Value)
 					stream.WriteString(fmt.Sprintf("\t\t%s : []int{", dataNames[j]))
 					for i, v := range arr{
 						stream.WriteString(fmt.Sprintf("%d",base.Int(v)))
@@ -289,7 +289,7 @@ func OpenExceGo(filename string){
 					}
 					stream.WriteString("},\n")
 				case base.DType_F32Array:
-					arr := strings.Split(cell.Value, ARRAY_SPLIT)
+					arr := splitArray(cell.Value)
 					stream.WriteString(fmt.Sprintf("\t\t%s : []float32{", dataNames[j]))
 					for i, v := range arr{
 						stream.WriteString(fmt.Sprintf("%f",base.Float32(v)))
@@ -299,7 +299,7 @@ func OpenExceGo(filename string){
 					}
 					stream.WriteString("},\n")
 				case base.DType_F64Array:
-					arr := strings.Split(cell.Value, ARRAY_SPLIT)
+					arr := splitArray(cell.Value)
 					stream.WriteString(fmt.Sprintf("\t\t%s : []float64{", dataNames[j]))
 					for i, v := range arr{
 						stream.WriteString(fmt.Sprintf("%f",base.Float64(v)))
@@ -309,7 +309,7 @@ func OpenExceGo(filename string){
 					}
 					stream.WriteString("},\n")
 				case  base.DType_S64Array:
-					arr := strings.Split(cell.Value, ARRAY_SPLIT)
+					arr := splitArray(cell.Value)
 					stream.WriteString(fmt.Sprintf("\t\t%s : []int64{", dataNames[j]))
 					for i, v := range arr{
 						stream.WriteString(fmt.Sprintf("%d",base.Int64(v)))

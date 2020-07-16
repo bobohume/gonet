@@ -226,37 +226,31 @@ func OpenExcel(filename string){
 					stream.WriteInt64(base.Int64(cell.Value), 64)
 
 				case base.DType_StringArray:
-					arr := strings.Split(cell.Value, ARRAY_SPLIT)
 					stream.WriteInt(len(arr), 8)
 					for _, v := range arr{
 						stream.WriteString(v)
 					}
 				case base.DType_S8Array:
-					arr := strings.Split(cell.Value, ARRAY_SPLIT)
 					stream.WriteInt(len(arr), 8)
 					for _, v := range arr{
 						stream.WriteInt(base.Int(v), 8)
 					}
 				case base.DType_S16Array:
-					arr := strings.Split(cell.Value, ARRAY_SPLIT)
 					stream.WriteInt(len(arr), 8)
 					for _, v := range arr{
 						stream.WriteInt(base.Int(v), 16)
 					}
 				case base.DType_S32Array:
-					arr := strings.Split(cell.Value, ARRAY_SPLIT)
 					stream.WriteInt(len(arr), 8)
 					for _, v := range arr{
 						stream.WriteInt(base.Int(v), 32)
 					}
 				case base.DType_F32Array:
-					arr := strings.Split(cell.Value, ARRAY_SPLIT)
 					stream.WriteInt(len(arr), 8)
 					for _, v := range arr{
 						stream.WriteFloat(base.Float32(v))
 					}
 				case base.DType_F64Array:
-					arr := strings.Split(cell.Value, ARRAY_SPLIT)
 					stream.WriteInt(len(arr), 8)
 					for _, v := range arr{
 						stream.WriteFloat64(base.Float64(v))
@@ -496,4 +490,10 @@ func SaveExcel(filename string){
 	xfile.Save( filenames[0]+ "_temp.xlsx")
 
 	return
+}
+
+	if val == "" || val == "0"{
+		return []string{}
+	}
+	return strings.Split(val, ARRAY_SPLIT)
 }

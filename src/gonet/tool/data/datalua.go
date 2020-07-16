@@ -192,7 +192,7 @@ func OpenExceLua(filename string){
 					stream.WriteString(fmt.Sprintf("\t\t%s = %d,\n",dataNames[j], base.Int64(cell.Value)))
 
 				case base.DType_StringArray:
-					arr := strings.Split(cell.Value, ARRAY_SPLIT)
+					arr := splitArray(cell.Value)
 					stream.WriteString(fmt.Sprintf("\t\t%s = {", dataNames[j]))
 					for i, v := range arr{
 						stream.WriteString(fmt.Sprintf("\"%s\"",v))
@@ -202,7 +202,7 @@ func OpenExceLua(filename string){
 					}
 					stream.WriteString("},\n")
 				case base.DType_S8Array:
-					arr := strings.Split(cell.Value, ARRAY_SPLIT)
+					arr := splitArray(cell.Value)
 					stream.WriteString(fmt.Sprintf("\t\t%s = {", dataNames[j]))
 					for i, v := range arr{
 						stream.WriteString(fmt.Sprintf("%d",base.Int(v)))
@@ -212,7 +212,7 @@ func OpenExceLua(filename string){
 					}
 					stream.WriteString("},\n")
 				case base.DType_S16Array:
-					arr := strings.Split(cell.Value, ARRAY_SPLIT)
+					arr := splitArray(cell.Value)
 					stream.WriteString(fmt.Sprintf("\t\t%s = {", dataNames[j]))
 					for i, v := range arr{
 						stream.WriteString(fmt.Sprintf("%d",base.Int(v)))
@@ -222,7 +222,7 @@ func OpenExceLua(filename string){
 					}
 					stream.WriteString("},\n")
 				case base.DType_S32Array:
-					arr := strings.Split(cell.Value, ARRAY_SPLIT)
+					arr := splitArray(cell.Value)
 					stream.WriteString(fmt.Sprintf("\t\t%s = {", dataNames[j]))
 					for i, v := range arr{
 						stream.WriteString(fmt.Sprintf("%d",base.Int(v)))
@@ -232,7 +232,7 @@ func OpenExceLua(filename string){
 					}
 					stream.WriteString("},\n")
 				case base.DType_F32Array:
-					arr := strings.Split(cell.Value, ARRAY_SPLIT)
+					arr := splitArray(cell.Value)
 					stream.WriteString(fmt.Sprintf("\t\t%s = {", dataNames[j]))
 					for i, v := range arr{
 						stream.WriteString(fmt.Sprintf("%f",base.Float32(v)))
@@ -242,7 +242,7 @@ func OpenExceLua(filename string){
 					}
 					stream.WriteString("},\n")
 				case base.DType_F64Array:
-					arr := strings.Split(cell.Value, ARRAY_SPLIT)
+					arr := splitArray(cell.Value)
 					stream.WriteString(fmt.Sprintf("\t\t%s = {", dataNames[j]))
 					for i, v := range arr{
 						stream.WriteString(fmt.Sprintf("%f",base.Float64(v)))
@@ -252,7 +252,7 @@ func OpenExceLua(filename string){
 					}
 					stream.WriteString("},\n")
 				case  base.DType_S64Array:
-					arr := strings.Split(cell.Value, ARRAY_SPLIT)
+					arr := splitArray(cell.Value)
 					stream.WriteString(fmt.Sprintf("\t\t%s = {", dataNames[j]))
 					for i, v := range arr{
 						stream.WriteString(fmt.Sprintf("%d",base.Int64(v)))
