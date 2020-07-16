@@ -226,31 +226,37 @@ func OpenExcel(filename string){
 					stream.WriteInt64(base.Int64(cell.Value), 64)
 
 				case base.DType_StringArray:
+					arr := splitArray(cell.Value)
 					stream.WriteInt(len(arr), 8)
 					for _, v := range arr{
 						stream.WriteString(v)
 					}
 				case base.DType_S8Array:
+					arr := splitArray(cell.Value)
 					stream.WriteInt(len(arr), 8)
 					for _, v := range arr{
 						stream.WriteInt(base.Int(v), 8)
 					}
 				case base.DType_S16Array:
+					arr := splitArray(cell.Value)
 					stream.WriteInt(len(arr), 8)
 					for _, v := range arr{
 						stream.WriteInt(base.Int(v), 16)
 					}
 				case base.DType_S32Array:
+					arr := splitArray(cell.Value)
 					stream.WriteInt(len(arr), 8)
 					for _, v := range arr{
 						stream.WriteInt(base.Int(v), 32)
 					}
 				case base.DType_F32Array:
+					arr := splitArray(cell.Value)
 					stream.WriteInt(len(arr), 8)
 					for _, v := range arr{
 						stream.WriteFloat(base.Float32(v))
 					}
 				case base.DType_F64Array:
+					arr := splitArray(cell.Value)
 					stream.WriteInt(len(arr), 8)
 					for _, v := range arr{
 						stream.WriteFloat64(base.Float64(v))
@@ -492,6 +498,7 @@ func SaveExcel(filename string){
 	return
 }
 
+func splitArray(val string) []string{
 	if val == "" || val == "0"{
 		return []string{}
 	}
