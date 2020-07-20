@@ -17,6 +17,13 @@ const(
 	DType_F32		= iota
 	DType_F64		= iota
 	DType_S64		= iota
+	DType_StringArray	= iota
+	DType_S8Array		= iota
+	DType_S16Array		= iota
+	DType_S32Array		= iota
+	DType_F32Array		= iota
+	DType_F64Array		= iota
+	DType_S64Array		= iota
 )
 
 type(
@@ -24,13 +31,20 @@ type(
 		m_Type	int
 
 		m_String	string
-		m_Enum int
+		m_Enum	int
 		m_S8	int8
 		m_S16	int16
-		m_S32 int
-		m_F32 float32
-		m_F64 float64
-		m_S64 int64
+		m_S32 	int
+		m_F32	float32
+		m_F64	float64
+		m_S64	int64
+		m_StringArray	[]string
+		m_S8Array	[]int8
+		m_S16Array	[]int16
+		m_S32Array	[]int
+		m_F32Array	[]float32
+		m_F64Array	[]float64
+		m_S64Array	[]int64
 	}
 
 	CDataFile struct{
@@ -116,7 +130,6 @@ func (this *CDataFile) GetData(pData *RData) bool {
 	switch this.dataTypes.Get(this.currentColumnIndex).(int) {
 	case DType_String:
 		pData.m_String = this.fstream.ReadString()
-		//fmt.Println(pData.String, nLen)
 	case DType_S8:
 		pData.m_S8 = int8(this.fstream.ReadInt(8))
 	case DType_S16:
@@ -131,6 +144,49 @@ func (this *CDataFile) GetData(pData *RData) bool {
 		pData.m_F64 = this.fstream.ReadFloat64()
 	case DType_S64:
 		pData.m_S64 = this.fstream.ReadInt64(64)
+
+	case DType_StringArray:
+		nLen := this.fstream.ReadInt(8)
+		pData.m_StringArray = make([]string, nLen)
+		for i := 0; i < nLen; i++{
+			pData.m_StringArray[i] = this.fstream.ReadString()
+		}
+	case DType_S8Array:
+		nLen := this.fstream.ReadInt(8)
+		pData.m_S8Array = make([]int8, nLen)
+		for i := 0; i < nLen; i++ {
+			pData.m_S8Array[i] = int8(this.fstream.ReadInt(8))
+		}
+	case DType_S16Array:
+		nLen := this.fstream.ReadInt(8)
+		pData.m_S16Array = make([]int16, nLen)
+		for i := 0; i < nLen; i++ {
+			pData.m_S16Array[i] = int16(this.fstream.ReadInt(16))
+		}
+	case DType_S32Array:
+		nLen := this.fstream.ReadInt(8)
+		pData.m_S32Array = make([]int, nLen)
+		for i := 0; i < nLen; i++ {
+			pData.m_S32Array[i]  = this.fstream.ReadInt(32)
+		}
+	case DType_F32Array:
+		nLen := this.fstream.ReadInt(8)
+		pData.m_F32Array = make([]float32, nLen)
+		for i := 0; i < nLen; i++ {
+			pData.m_F32Array[i] = this.fstream.ReadFloat()
+		}
+	case DType_F64Array:
+		nLen := this.fstream.ReadInt(8)
+		pData.m_F64Array = make([]float64, nLen)
+		for i := 0; i < nLen; i++ {
+			pData.m_F64Array[i] = this.fstream.ReadFloat64()
+		}
+	case DType_S64Array:
+		nLen := this.fstream.ReadInt(8)
+		pData.m_S64Array = make([]int64, nLen)
+		for i := 0; i < nLen; i++ {
+			pData.m_S64Array[i] = this.fstream.ReadInt64(64)
+		}
 	}
 
 	pData.m_Type = this.dataTypes.Get(this.currentColumnIndex).(int)
@@ -182,3 +238,37 @@ func (this *RData) Int64(dataname, datacol string) int64{
 	return this.m_S64
 }
 
+func (this *RData) StringArray(dataname, datacol string) []string{
+	IFAssert(this.m_Type == DType_StringArray,  fmt.Sprintf("read [%s] col[%s] error", dataname, datacol))
+	return this.m_StringArray
+}
+
+func (this *RData) Int8Array(dataname, datacol string) []int8{
+	IFAssert(this.m_Type == DType_S8Array,  fmt.Sprintf("read [%s] col[%s] error", dataname, datacol))
+	return this.m_S8Array
+}
+
+func (this *RData) Int16Array(dataname, datacol string) []int16{
+	IFAssert(this.m_Type == DType_S16Array,  fmt.Sprintf("read [%s] col[%s] error", dataname, datacol))
+	return this.m_S16Array
+}
+
+func (this *RData) IntArray(dataname, datacol string) []int{
+	IFAssert(this.m_Type == DType_S32Array,  fmt.Sprintf("read [%s] col[%s] error", dataname, datacol))
+	return this.m_S32Array
+}
+
+func (this *RData) Float32Array(dataname, datacol string) []float32{
+	IFAssert(this.m_Type == DType_F32Array,  fmt.Sprintf("read [%s] col[%s] error", dataname, datacol))
+	return this.m_F32Array
+}
+
+func (this *RData) Float64Array(dataname, datacol string) []float64{
+	IFAssert(this.m_Type == DType_F64Array,  fmt.Sprintf("read [%s] col[%s] error", dataname, datacol))
+	return this.m_F64Array
+}
+
+func (this *RData) Int64Array(dataname, datacol string) []int64{
+	IFAssert(this.m_Type == DType_S64Array,  fmt.Sprintf("read [%s] col[%s] error", dataname, datacol))
+	return this.m_S64Array
+}

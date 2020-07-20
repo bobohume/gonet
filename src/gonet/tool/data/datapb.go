@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-func OpenExceLua(filename string){
+func OpenExcePb(filename string){
 	xlFile, err := xlsx.OpenFile(filename)
 	if err != nil{
 		fmt.Println("open [%s] error", filename)
@@ -18,7 +18,7 @@ func OpenExceLua(filename string){
 	}
 
 	dataTypes := []int{}
-	dataColLen := 0//结束列数
+	dataTypeNames := []string{}
 	stream := bytes.NewBuffer([]byte{})
 	filenames := strings.Split(filename, ".")
 	enumKVMap := make(map[int] map[string] int) //列 key val
@@ -82,12 +82,13 @@ func OpenExceLua(filename string){
 				} else if i == COL_CLIENT_NAME{
 					colName := cell.String()
 					dataNames = append(dataNames, colName)
+					//写proto
 					if j == 0{
-						stream.WriteString(fmt.Sprintf("%s %s%s","local", filenames[0],"Data = {\n" ))
+						stream.WriteString("syntax = \"proto3\";\n")
+						stream.WriteString("package message;\n")
+						stream.WriteString("\n")
 					}
-					if colName != "" && colName != "0"{
-						dataColLen = j
-					}
+
 					continue
 				}else if i == COL_TYPE{
 					coltype := strings.ToLower(cell.String())
@@ -124,34 +125,49 @@ func OpenExceLua(filename string){
 					switch coltype {
 					case "string":
 						dataTypes = append(dataTypes, base.DType_String)
+						dataTypeNames = append(dataTypeNames, "string")
 					case "enum":
 						dataTypes = append(dataTypes, base.DType_Enum)
+						dataTypeNames = append(dataTypeNames, "int32")
 					case "int8":
 						dataTypes = append(dataTypes, base.DType_S8)
+						dataTypeNames = append(dataTypeNames, "int32")
 					case "int16":
 						dataTypes = append(dataTypes, base.DType_S16)
+						dataTypeNames = append(dataTypeNames, "int32")
 					case "int":
 						dataTypes = append(dataTypes, base.DType_S32)
+						dataTypeNames = append(dataTypeNames, "int32")
 					case "float":
 						dataTypes = append(dataTypes, base.DType_F32)
+						dataTypeNames = append(dataTypeNames, "float")
 					case "float64":
 						dataTypes = append(dataTypes, base.DType_F64)
+						dataTypeNames = append(dataTypeNames, "double")
 					case "int64":
 						dataTypes = append(dataTypes, base.DType_S64)
+						dataTypeNames = append(dataTypeNames, "int64")
 					case "[]string":
 						dataTypes = append(dataTypes, base.DType_StringArray)
+						dataTypeNames = append(dataTypeNames, "repeated string")
 					case "[]int8":
 						dataTypes = append(dataTypes, base.DType_S8Array)
+						dataTypeNames = append(dataTypeNames, "repeated int32")
 					case "[]int16":
 						dataTypes = append(dataTypes, base.DType_S16Array)
+						dataTypeNames = append(dataTypeNames, "repeated int32")
 					case "[]int":
 						dataTypes = append(dataTypes, base.DType_S32Array)
+						dataTypeNames = append(dataTypeNames, "repeated int32")
 					case "[]float":
 						dataTypes = append(dataTypes, base.DType_F32Array)
+						dataTypeNames = append(dataTypeNames, "repeated float")
 					case "[]float64":
 						dataTypes = append(dataTypes, base.DType_F64Array)
+						dataTypeNames = append(dataTypeNames, "repeated double")
 					case "[]int64":
 						dataTypes = append(dataTypes, base.DType_S64Array)
+						dataTypeNames = append(dataTypeNames, "repeated int64")
 					default:
 						fmt.Printf("data [%s] [%s] col[%d] type not support in[string, enum, int8, int16, int32, float32, float64, []string, []int8, []int16, []int32, []float32, []float64]", filename, coltype, j )
 						return
@@ -159,130 +175,49 @@ func OpenExceLua(filename string){
 					continue
 				}
 
-				if j == 0{
-					stream.WriteString(fmt.Sprintf("\t[%s] = {\n", cell.Value))
-				}
+				//读取excel头部文件
+				{
+					//basedata
+					{
+						stream.WriteString("message ")
+						stream.WriteString(filenames[0])
+						stream.WriteString("Data\n")
+						stream.WriteString("{\n")
+						id := 1
+						for i1, v := range dataTypeNames{
+							//过滤掉不是客户端的数据
+							if dataNames[i1] == "" || dataNames[i1] == "0"{
+								continue
+							}
 
-				//过滤掉不是客户端的数据
-				if dataNames[j] == "" || dataNames[j] == "0"{
-					continue
-				}
+							stream.WriteString(fmt.Sprintf("\t%s\t%s = %d;//%s\n", v, dataNames[i1], id, colNames[i1]))
+							id++
+						}
+						stream.WriteString("}\n\n")
+					}
 
-				switch dataTypes[j] {
-				case base.DType_String:
-					stream.WriteString(fmt.Sprintf("\t\t%s = \"%s\",\n",dataNames[j], cell.Value))
-				case base.DType_Enum:
-					val, bEx := enumKVMap[j][strings.ToLower(cell.Value)]
-					if bEx{
-						stream.WriteString(fmt.Sprintf("\t\t%s = %d,\n",dataNames[j], val))
-					}else{
-						stream.WriteString(fmt.Sprintf("\t\t%s = %d,\n",dataNames[j], 0))
+					//mgr
+					{
+						stream.WriteString("message ")
+						stream.WriteString(filenames[0])
+						stream.WriteString("DataMgr\n")
+						stream.WriteString("{\n")
+						stream.WriteString("\trepeated int64 Keys = 1;\n")
+						stream.WriteString(fmt.Sprintf("\trepeated %sData Items = 2;\n", filenames[0]))
+						stream.WriteString(fmt.Sprintf("\tmap<int64, %sData> ItemsMap = 3;\n", filenames[0]))
+						stream.WriteString("}\n")
 					}
-				case base.DType_S8:
-					stream.WriteString(fmt.Sprintf("\t\t%s = %d,\n",dataNames[j], base.Int(cell.Value)))
-				case base.DType_S16:
-					stream.WriteString(fmt.Sprintf("\t\t%s = %d,\n",dataNames[j], base.Int(cell.Value)))
-				case base.DType_S32:
-					stream.WriteString(fmt.Sprintf("\t\t%s = %d,\n",dataNames[j], base.Int(cell.Value)))
-				case base.DType_F32:
-					stream.WriteString(fmt.Sprintf("\t\t%s = %f,\n",dataNames[j], base.Float32(cell.Value)))
-				case base.DType_F64:
-					stream.WriteString(fmt.Sprintf("\t\t%s = %f,\n",dataNames[j], base.Float64(cell.Value)))
-				case  base.DType_S64:
-					stream.WriteString(fmt.Sprintf("\t\t%s = %d,\n",dataNames[j], base.Int64(cell.Value)))
 
-				case base.DType_StringArray:
-					arr := splitArray(cell.Value)
-					stream.WriteString(fmt.Sprintf("\t\t%s = {", dataNames[j]))
-					for i, v := range arr{
-						stream.WriteString(fmt.Sprintf("\"%s\"",v))
-						if i != len(arr)-1{
-							stream.WriteString(",")
-						}
+					//other sheet
+					file, err := os.Create(filenames[0] + ".proto")
+					if err == nil{
+						file.Write(stream.Bytes())
+						file.Close()
 					}
-					stream.WriteString("},\n")
-				case base.DType_S8Array:
-					arr := splitArray(cell.Value)
-					stream.WriteString(fmt.Sprintf("\t\t%s = {", dataNames[j]))
-					for i, v := range arr{
-						stream.WriteString(fmt.Sprintf("%d",base.Int(v)))
-						if i != len(arr)-1{
-							stream.WriteString(",")
-						}
-					}
-					stream.WriteString("},\n")
-				case base.DType_S16Array:
-					arr := splitArray(cell.Value)
-					stream.WriteString(fmt.Sprintf("\t\t%s = {", dataNames[j]))
-					for i, v := range arr{
-						stream.WriteString(fmt.Sprintf("%d",base.Int(v)))
-						if i != len(arr)-1{
-							stream.WriteString(",")
-						}
-					}
-					stream.WriteString("},\n")
-				case base.DType_S32Array:
-					arr := splitArray(cell.Value)
-					stream.WriteString(fmt.Sprintf("\t\t%s = {", dataNames[j]))
-					for i, v := range arr{
-						stream.WriteString(fmt.Sprintf("%d",base.Int(v)))
-						if i != len(arr)-1{
-							stream.WriteString(",")
-						}
-					}
-					stream.WriteString("},\n")
-				case base.DType_F32Array:
-					arr := splitArray(cell.Value)
-					stream.WriteString(fmt.Sprintf("\t\t%s = {", dataNames[j]))
-					for i, v := range arr{
-						stream.WriteString(fmt.Sprintf("%f",base.Float32(v)))
-						if i != len(arr)-1{
-							stream.WriteString(",")
-						}
-					}
-					stream.WriteString("},\n")
-				case base.DType_F64Array:
-					arr := splitArray(cell.Value)
-					stream.WriteString(fmt.Sprintf("\t\t%s = {", dataNames[j]))
-					for i, v := range arr{
-						stream.WriteString(fmt.Sprintf("%f",base.Float64(v)))
-						if i != len(arr)-1{
-							stream.WriteString(",")
-						}
-					}
-					stream.WriteString("},\n")
-				case  base.DType_S64Array:
-					arr := splitArray(cell.Value)
-					stream.WriteString(fmt.Sprintf("\t\t%s = {", dataNames[j]))
-					for i, v := range arr{
-						stream.WriteString(fmt.Sprintf("%d",base.Int64(v)))
-						if i != len(arr)-1{
-							stream.WriteString(",")
-						}
-					}
-					stream.WriteString("},\n")
-				}
 
-				if j == dataColLen{
-					stream.WriteString("\t},\n")
+					return
 				}
 			}
 		}
-
-		stream.WriteString("}\n")
-		stream.WriteString(fmt.Sprintf("%s %s%s\n","return", filenames[0],"Data" ))
-	}
-
-	//文件没有可导出
-	if dataColLen == 0{
-		return
-	}
-
-	//other sheet
-	file, err := os.Create(filenames[0] + ".lua")
-	if err == nil{
-		file.Write(stream.Bytes())
-		file.Close()
 	}
 }
-

@@ -15,6 +15,11 @@ const (
 	COL_TYPE
 	COL_MAX
 )
+
+const(
+	ARRAY_SPLIT = "|"
+)
+
 type(
 	IDataFile interface {
 		OpenExcel(filename string)
@@ -143,138 +148,121 @@ func OpenExcel(filename string){
 					}
 					//写入列名
 					stream.WriteString(colTypeName)
-					if coltype == "string"{
+					switch coltype {
+					case "string":
 						stream.WriteInt(base.DType_String, 8)
 						dataTypes = append(dataTypes, base.DType_String)
-					}else if coltype == "enum"{
+					case "enum":
 						stream.WriteInt(base.DType_Enum, 8)
 						dataTypes = append(dataTypes, base.DType_Enum)
-					}else if coltype == "int8"{
+					case "int8":
 						stream.WriteInt(base.DType_S8, 8)
 						dataTypes = append(dataTypes, base.DType_S8)
-					}else if coltype == "int16"{
+					case "int16":
 						stream.WriteInt(base.DType_S16, 8)
 						dataTypes = append(dataTypes, base.DType_S16)
-					}else if coltype == "int"{
+					case "int":
 						stream.WriteInt(base.DType_S32, 8)
 						dataTypes = append(dataTypes, base.DType_S32)
-					} else if coltype == "float"{
+					case "float":
 						stream.WriteInt(base.DType_F32, 8)
 						dataTypes = append(dataTypes, base.DType_F32)
-					}else if coltype == "float64"{
+					case "float64":
 						stream.WriteInt(base.DType_F64, 8)
 						dataTypes = append(dataTypes, base.DType_F64)
-					}else if coltype == "int64"{
+					case "int64":
 						stream.WriteInt(base.DType_S64, 8)
 						dataTypes = append(dataTypes, base.DType_S64)
-					}else{
-						fmt.Printf("data [%s] [%s] col[%d] type not support in[string, enum, int8, int16, int32, float32, float64]", filename, coltype, j )
+
+					case "[]string":
+						stream.WriteInt(base.DType_StringArray, 8)
+						dataTypes = append(dataTypes, base.DType_StringArray)
+					case "[]int8":
+						stream.WriteInt(base.DType_S8Array, 8)
+						dataTypes = append(dataTypes, base.DType_S8Array)
+					case "[]int16":
+						stream.WriteInt(base.DType_S16Array, 8)
+						dataTypes = append(dataTypes, base.DType_S16Array)
+					case "[]int":
+						stream.WriteInt(base.DType_S32Array, 8)
+						dataTypes = append(dataTypes, base.DType_S32Array)
+					case "[]float":
+						stream.WriteInt(base.DType_F32Array, 8)
+						dataTypes = append(dataTypes, base.DType_F32Array)
+					case "[]float64":
+						stream.WriteInt(base.DType_F64Array, 8)
+						dataTypes = append(dataTypes, base.DType_F64Array)
+					case "[]int64":
+						stream.WriteInt(base.DType_S64Array, 8)
+						dataTypes = append(dataTypes, base.DType_S64Array)
+					default:
+						fmt.Printf("data [%s] [%s] col[%d] type not support in[string, enum, int8, int16, int32, float32, float64, []string, []int8, []int16, []int32, []float32, []float64]", filename, coltype, j )
 						return
 					}
 					continue
 				}
 
-				writeInt := func(bitnum int) {
-					switch cell.Type() {
-					case xlsx.CellTypeString:
-						stream.WriteInt(base.Int(cell.String()), bitnum)
-					case xlsx.CellTypeStringFormula:
-						stream.WriteInt(base.Int(cell.String()), bitnum)
-					case xlsx.CellTypeNumeric:
-						stream.WriteInt(base.Int(cell.Value), bitnum)
-					case xlsx.CellTypeBool:
-						bVal := base.Bool(cell.Value)
-						if bVal{
-							stream.WriteInt(1, bitnum)
-						}else{
-							stream.WriteInt(0, bitnum)
-						}
-					case xlsx.CellTypeDate:
-						stream.WriteInt(base.Int(cell.Value), bitnum)
-					}
-				}
-
-
-				if dataTypes[j] == base.DType_String{
-					switch cell.Type() {
-					case xlsx.CellTypeString:
-						stream.WriteString(cell.String())
-					case xlsx.CellTypeStringFormula:
-						stream.WriteString(cell.String())
-					case xlsx.CellTypeNumeric:
-						stream.WriteString(fmt.Sprintf("%d", base.Int64(cell.Value)))
-					case xlsx.CellTypeBool:
-						stream.WriteString(fmt.Sprintf("%v", cell.Bool()))
-					case xlsx.CellTypeDate:
-						stream.WriteString(cell.Value)
-					}
-				}else if dataTypes[j] == base.DType_Enum{
+				switch dataTypes[j] {
+				case base.DType_String:
+					stream.WriteString(cell.Value)
+				case base.DType_Enum:
 					val, bEx := enumKVMap[j][strings.ToLower(cell.Value)]
 					if bEx{
 						stream.WriteInt(val, 16)
 					}else{
 						stream.WriteInt(0, 16)
 					}
-				}else if dataTypes[j] == base.DType_S8{
-					writeInt(8)
-				}else if dataTypes[j] == base.DType_S16{
-					writeInt(16)
-				}else if dataTypes[j] == base.DType_S32{
-					writeInt(32)
-				}else if dataTypes[j] == base.DType_F32{
-					switch cell.Type() {
-					case xlsx.CellTypeString:
-						stream.WriteFloat(base.Float32(cell.String()))
-					case xlsx.CellTypeStringFormula:
-						stream.WriteFloat(base.Float32(cell.String()))
-					case xlsx.CellTypeNumeric:
-						stream.WriteFloat(base.Float32(cell.String()))
-					case xlsx.CellTypeBool:
-						bVal := base.Bool(cell.Value)
-						if bVal{
-							stream.WriteFloat(1)
-						}else{
-							stream.WriteFloat(0)
-						}
-					case xlsx.CellTypeDate:
-						stream.WriteFloat(base.Float32(cell.Value))
+				case base.DType_S8:
+					stream.WriteInt(base.Int(cell.Value), 8)
+				case base.DType_S16:
+					stream.WriteInt(base.Int(cell.Value), 16)
+				case base.DType_S32:
+					stream.WriteInt(base.Int(cell.Value), 32)
+				case base.DType_F32:
+					stream.WriteFloat(base.Float32(cell.Value))
+				case base.DType_F64:
+					stream.WriteFloat64(base.Float64(cell.Value))
+				case base.DType_S64:
+					stream.WriteInt64(base.Int64(cell.Value), 64)
+
+				case base.DType_StringArray:
+					arr := splitArray(cell.Value)
+					stream.WriteInt(len(arr), 8)
+					for _, v := range arr{
+						stream.WriteString(v)
 					}
-				}else if dataTypes[j] == base.DType_F64{
-					switch cell.Type() {
-					case xlsx.CellTypeString:
-						stream.WriteFloat64(base.Float64(cell.String()))
-					case xlsx.CellTypeStringFormula:
-						stream.WriteFloat64(base.Float64(cell.String()))
-					case xlsx.CellTypeNumeric:
-						stream.WriteFloat64(base.Float64(cell.String()))
-					case xlsx.CellTypeBool:
-						bVal := base.Bool(cell.Value)
-						if bVal{
-							stream.WriteFloat64(1)
-						}else{
-							stream.WriteFloat64(0)
-						}
-					case xlsx.CellTypeDate:
-						stream.WriteFloat64(base.Float64(cell.Value))
+				case base.DType_S8Array:
+					arr := splitArray(cell.Value)
+					stream.WriteInt(len(arr), 8)
+					for _, v := range arr{
+						stream.WriteInt(base.Int(v), 8)
 					}
-				}else if dataTypes[j] == base.DType_S64{
-					switch cell.Type() {
-					case xlsx.CellTypeString:
-						stream.WriteInt64(base.Int64(cell.String()), 64)
-					case xlsx.CellTypeStringFormula:
-						stream.WriteInt64(base.Int64(cell.String()), 64)
-					case xlsx.CellTypeNumeric:
-						stream.WriteInt64(base.Int64(cell.Value), 64)
-					case xlsx.CellTypeBool:
-						bVal := base.Bool(cell.Value)
-						if bVal{
-							stream.WriteInt64(1, 64)
-						}else{
-							stream.WriteInt64(0, 64)
-						}
-					case xlsx.CellTypeDate:
-						stream.WriteInt64(base.Int64(cell.Value), 64)
+				case base.DType_S16Array:
+					arr := splitArray(cell.Value)
+					stream.WriteInt(len(arr), 8)
+					for _, v := range arr{
+						stream.WriteInt(base.Int(v), 16)
 					}
+				case base.DType_S32Array:
+					arr := splitArray(cell.Value)
+					stream.WriteInt(len(arr), 8)
+					for _, v := range arr{
+						stream.WriteInt(base.Int(v), 32)
+					}
+				case base.DType_F32Array:
+					arr := splitArray(cell.Value)
+					stream.WriteInt(len(arr), 8)
+					for _, v := range arr{
+						stream.WriteFloat(base.Float32(v))
+					}
+				case base.DType_F64Array:
+					arr := splitArray(cell.Value)
+					stream.WriteInt(len(arr), 8)
+					for _, v := range arr{
+						stream.WriteFloat64(base.Float64(v))
+					}
+				case base.DType_S64Array:
+					stream.WriteInt64(base.Int64(cell.Value), 64)
 				}
 			}
 
@@ -410,6 +398,77 @@ func SaveExcel(filename string){
 				cell.SetFloat(fstream.ReadFloat64())
 			case base.DType_S64:
 				cell.SetInt64(fstream.ReadInt64(64))
+
+			case base.DType_StringArray:
+				nLen := fstream.ReadInt(8)
+				str := ""
+				for i := 0; i < nLen; i++{
+					str += fstream.ReadString()
+					if i != nLen-1{
+						str += "|"
+					}
+				}
+				cell.SetString(str)
+			case base.DType_S8Array:
+				nLen := fstream.ReadInt(8)
+				str := ""
+				for i := 0; i < nLen; i++{
+					str += fmt.Sprintf("%d", fstream.ReadInt(8))
+					if i != nLen-1{
+						str += "|"
+					}
+				}
+				cell.SetString(str)
+			case base.DType_S16Array:
+				nLen := fstream.ReadInt(8)
+				str := ""
+				for i := 0; i < nLen; i++{
+					str += fmt.Sprintf("%d", fstream.ReadInt(16))
+					if i != nLen-1{
+						str += "|"
+					}
+				}
+				cell.SetString(str)
+			case base.DType_S32Array:
+				nLen := fstream.ReadInt(8)
+				str := ""
+				for i := 0; i < nLen; i++{
+					str += fmt.Sprintf("%d", fstream.ReadInt(32))
+					if i != nLen-1{
+						str += "|"
+					}
+				}
+				cell.SetString(str)
+			case base.DType_F32Array:
+				nLen := fstream.ReadInt(8)
+				str := ""
+				for i := 0; i < nLen; i++{
+					str += fmt.Sprintf("%f", fstream.ReadFloat())
+					if i != nLen-1{
+						str += "|"
+					}
+				}
+				cell.SetString(str)
+			case base.DType_F64Array:
+				nLen := fstream.ReadInt(8)
+				str := ""
+				for i := 0; i < nLen; i++{
+					str += fmt.Sprintf("%f", fstream.ReadFloat64())
+					if i != nLen-1{
+						str += "|"
+					}
+				}
+				cell.SetString(str)
+			case base.DType_S64Array:
+				nLen := fstream.ReadInt(8)
+				str := ""
+				for i := 0; i < nLen; i++{
+					str += fmt.Sprintf("%d", fstream.ReadInt64(64))
+					if i != nLen-1{
+						str += "|"
+					}
+				}
+				cell.SetString(str)
 			}
 		}
 	}
@@ -437,4 +496,11 @@ func SaveExcel(filename string){
 	xfile.Save( filenames[0]+ "_temp.xlsx")
 
 	return
+}
+
+func splitArray(val string) []string{
+	if val == "" || val == "0"{
+		return []string{}
+	}
+	return strings.Split(val, ARRAY_SPLIT)
 }

@@ -130,47 +130,43 @@ func OpenExceCsv(filename string){
 							}
 						}
 					}
-					if coltype == "string"{
+					switch coltype {
+					case "string":
 						dataTypes = append(dataTypes, base.DType_String)
-					}else if coltype == "enum"{
+					case "enum":
 						dataTypes = append(dataTypes, base.DType_Enum)
-					}else if coltype == "int8"{
+					case "int8":
 						dataTypes = append(dataTypes, base.DType_S8)
-					}else if coltype == "int16"{
+					case "int16":
 						dataTypes = append(dataTypes, base.DType_S16)
-					}else if coltype == "int"{
+					case "int":
 						dataTypes = append(dataTypes, base.DType_S32)
-					} else if coltype == "float"{
+					case "float":
 						dataTypes = append(dataTypes, base.DType_F32)
-					}else if coltype == "float64"{
+					case "float64":
 						dataTypes = append(dataTypes, base.DType_F64)
-					}else if coltype == "int64"{
+					case "int64":
 						dataTypes = append(dataTypes, base.DType_S64)
-					}else{
-						fmt.Printf("data [%s] [%s] col[%d] type not support in[string, enum, int8, int16, int32, float32, float64]", filename, coltype, j )
+
+					case "[]string":
+						dataTypes = append(dataTypes, base.DType_StringArray)
+					case "[]int8":
+						dataTypes = append(dataTypes, base.DType_S8Array)
+					case "[]int16":
+						dataTypes = append(dataTypes, base.DType_S16Array)
+					case "[]int":
+						dataTypes = append(dataTypes, base.DType_S32Array)
+					case "[]float":
+						dataTypes = append(dataTypes, base.DType_F32Array)
+					case "[]float64":
+						dataTypes = append(dataTypes, base.DType_F64Array)
+					case "[]int64":
+						dataTypes = append(dataTypes, base.DType_S64Array)
+					default:
+						fmt.Printf("data [%s] [%s] col[%d] type not support in[string, enum, int8, int16, int32, float32, float64, []string, []int8, []int16, []int32, []float32, []float64]", filename, coltype, j )
 						return
 					}
 					continue
-				}
-
-				writeInt := func() {
-					switch cell.Type() {
-					case xlsx.CellTypeString:
-						stream.WriteString(fmt.Sprintf("%d", base.Int(cell.String())))
-					case xlsx.CellTypeStringFormula:
-						stream.WriteString(fmt.Sprintf("%d", base.Int(cell.String())))
-					case xlsx.CellTypeNumeric:
-						stream.WriteString(fmt.Sprintf("%d", base.Int(cell.Value)))
-					case xlsx.CellTypeBool:
-						bVal := base.Bool(cell.Value)
-						if bVal{
-							stream.WriteString(fmt.Sprintf("%d",1))
-						}else{
-							stream.WriteString(fmt.Sprintf("%d",0))
-						}
-					case xlsx.CellTypeDate:
-						stream.WriteString(fmt.Sprintf("%d", base.Int(cell.Value)))
-					}
 				}
 
 				//过滤掉不是客户端的数据
@@ -178,75 +174,31 @@ func OpenExceCsv(filename string){
 					continue
 				}
 
-				if dataTypes[j] == base.DType_String{
-					switch cell.Type() {
-					case xlsx.CellTypeString:
-						stream.WriteString(fmt.Sprintf("%s", cell.String()))
-					case xlsx.CellTypeStringFormula:
-						stream.WriteString(fmt.Sprintf("%s", cell.String()))
-					case xlsx.CellTypeNumeric:
-						stream.WriteString(fmt.Sprintf("%s", cell.Value))
-					case xlsx.CellTypeBool:
-						bVal := base.Bool(cell.Value)
-						if bVal{
-							stream.WriteString(fmt.Sprintf("%s", "true"))
-						}else{
-							stream.WriteString(fmt.Sprintf("%s", "false"))
-						}
-					case xlsx.CellTypeDate:
-						stream.WriteString(fmt.Sprintf("%s", cell.Value))
-					}
-				}else if dataTypes[j] == base.DType_Enum{
+				switch dataTypes[j]{
+				case base.DType_String:
+					stream.WriteString(cell.Value)
+				case base.DType_Enum:
 					val, bEx := enumKVMap[j][strings.ToLower(cell.Value)]
 					if bEx{
 						stream.WriteString(fmt.Sprintf("%d", val))
 					}else{
 						stream.WriteString(fmt.Sprintf("%d", 0))
 					}
-				}else if dataTypes[j] == base.DType_S8{
-					writeInt()
-				}else if dataTypes[j] == base.DType_S16{
-					writeInt()
-				}else if dataTypes[j] == base.DType_S32{
-					writeInt()
-				}else if dataTypes[j] == base.DType_F32{
-					switch cell.Type() {
-					case xlsx.CellTypeString:
-						stream.WriteString(fmt.Sprintf("%f", base.Float32(cell.String())))
-					case xlsx.CellTypeStringFormula:
-						stream.WriteString(fmt.Sprintf("%f", base.Float32(cell.String())))
-					case xlsx.CellTypeNumeric:
-						stream.WriteString(fmt.Sprintf("%f", base.Float32(cell.Value)))
-					case xlsx.CellTypeBool:
-						bVal := base.Bool(cell.Value)
-						if bVal{
-							stream.WriteString(fmt.Sprintf("%f",1))
-						}else{
-							stream.WriteString(fmt.Sprintf("%f",0))
-						}
-					case xlsx.CellTypeDate:
-						stream.WriteString(fmt.Sprintf("%f", base.Float32(cell.Value)))
-					}
-				}else if dataTypes[j] == base.DType_F64{
-					switch cell.Type() {
-					case xlsx.CellTypeString:
-						stream.WriteString(fmt.Sprintf("%f", base.Float64(cell.String())))
-					case xlsx.CellTypeStringFormula:
-						stream.WriteString(fmt.Sprintf("%f", base.Float64(cell.String())))
-					case xlsx.CellTypeNumeric:
-						stream.WriteString(fmt.Sprintf("%f", base.Float64(cell.Value)))
-					case xlsx.CellTypeBool:
-						bVal := base.Bool(cell.Value)
-						if bVal{
-							stream.WriteString(fmt.Sprintf("%f",1))
-						}else{
-							stream.WriteString(fmt.Sprintf("%f",0))
-						}
-					case xlsx.CellTypeDate:
-						stream.WriteString(fmt.Sprintf("%f", base.Float64(cell.Value)))
-					}
-				}else if dataTypes[j] == base.DType_S64{
-					writeInt()
+				case base.DType_S8:
+					stream.WriteString(fmt.Sprintf("%d", base.Int(cell.Value)))
+				case base.DType_S16:
+					stream.WriteString(fmt.Sprintf("%d", base.Int(cell.Value)))
+				case base.DType_S32:
+					stream.WriteString(fmt.Sprintf("%d", base.Int(cell.Value)))
+				case base.DType_F32:
+					stream.WriteString(fmt.Sprintf("%f", base.Float32(cell.Value)))
+				case base.DType_F64:
+					stream.WriteString(fmt.Sprintf("%f", base.Float64(cell.Value)))
+				case  base.DType_S64:
+					stream.WriteString(fmt.Sprintf("%d", base.Int64(cell.Value)))
+				case base.DType_StringArray, base.DType_S8Array, base.DType_S16Array, base.DType_S32Array,
+					base.DType_F32Array, base.DType_F64Array, base.DType_S64Array:
+					stream.WriteString(cell.Value)
 				}
 
 				if j != dataColLen{

@@ -30,9 +30,9 @@ func main(){
 				waitGroup.Add(1)
 				go func(name string) {
 					OpenExcel(name)
-					//OpenExceLua(name)
+					OpenExceLua(name)
 					//OpenExceGo(name)
-					OpenExceCsv(name)
+					//OpenExceCsv(name)
 					waitGroup.Done()
 				}(v)
 			}
