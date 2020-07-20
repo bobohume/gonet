@@ -179,7 +179,7 @@ func OpenExceGo(filename string){
 						return
 					}
 
-					if j == len(row.Cells) -1 {
+					if j == dataColLen{
 						stream.WriteString("package data\n")
 						stream.WriteString("\n")
 						stream.WriteString("type(\n")
