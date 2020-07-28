@@ -1,6 +1,7 @@
 package account
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"gonet/actor"
@@ -26,11 +27,11 @@ func (this *EventProcess) Init(num int) {
 	this.Actor.Init(num)
 	this.m_db = SERVER.GetDB()
 	//创建账号
-	this.RegisterCall("C_A_RegisterRequest", func(packet *message.C_A_RegisterRequest) {
+	this.RegisterCall("C_A_RegisterRequest", func(ctx context.Context, packet *message.C_A_RegisterRequest) {
 		accountName := packet.GetAccountName()
 		//password := *packet.Password
 		password := "123456"
-		socketId := uint32(this.GetRpcPacket().RpcHead.ClusterId)
+		socketId := uint32(this.GetRpcHead(ctx).ClusterId)
 		nError := 1
 		accountId := base.UUID.UUID()
 		//查找账号存在
@@ -43,7 +44,7 @@ func (this *EventProcess) Init(num int) {
 				if (err == nil) {
 					SERVER.GetLog().Printf("帐号[%s]创建成功", accountName)
 					//登录账号
-					SERVER.GetAccountMgr().SendMsg( rpc.RpcHead{},"Account_Login", accountName, accountId, socketId, this.GetSocketId())
+					SERVER.GetAccountMgr().SendMsg( rpc.RpcHead{},"Account_Login", accountName, accountId, socketId, this.GetRpcHead(ctx).SocketId)
 					nError = 0
 				}
 			}else{//账号存在
@@ -52,7 +53,7 @@ func (this *EventProcess) Init(num int) {
 		}
 
 		if nError != 0 {
-			SendToClient(rpc.RpcHead{SocketId:this.GetSocketId(), ClusterId:socketId}, &message.A_C_RegisterResponse{
+			SendToClient(rpc.RpcHead{SocketId:this.GetRpcHead(ctx).SocketId, ClusterId:socketId}, &message.A_C_RegisterResponse{
 				PacketHead: message.BuildPacketHead( accountId, 0),
 				Error:      int32(nError),
 			})
@@ -60,12 +61,12 @@ func (this *EventProcess) Init(num int) {
 	})
 
 	//登录账号
-	this.RegisterCall("C_A_LoginRequest", func(packet *message.C_A_LoginRequest) {
+	this.RegisterCall("C_A_LoginRequest", func(ctx context.Context, packet *message.C_A_LoginRequest) {
 		accountName := packet.GetAccountName()
 		//password := *packet.Password
 		password := "123456"
 		buildVersion := packet.GetBuildNo()
-		socketId := uint32(this.GetRpcPacket().RpcHead.ClusterId)
+		socketId := uint32(this.GetRpcHead(ctx).ClusterId)
 		nError := base.NONE_ERROR
 
 		if accountName == ""{
@@ -80,7 +81,7 @@ func (this *EventProcess) Init(num int) {
 					passWd := rs.Row().String("password")
 					if base.MD5(password)== passWd{
 						nError = base.NONE_ERROR
-						SERVER.GetAccountMgr().SendMsg(rpc.RpcHead{},"Account_Login", accountName, accountId, socketId, this.GetSocketId())
+						SERVER.GetAccountMgr().SendMsg(rpc.RpcHead{},"Account_Login", accountName, accountId, socketId, this.GetRpcHead(ctx).SocketId)
 					}else{//密码错误
 						nError = base.PASSWORD_ERROR
 					}
@@ -94,7 +95,7 @@ func (this *EventProcess) Init(num int) {
 		}
 
 		if nError != base.NONE_ERROR {
-			SendToClient(rpc.RpcHead{SocketId:this.GetSocketId(), ClusterId:socketId}, &message.A_C_LoginResponse{
+			SendToClient(rpc.RpcHead{SocketId:this.GetRpcHead(ctx).SocketId, ClusterId:socketId}, &message.A_C_LoginResponse{
 				PacketHead:message.BuildPacketHead( 0, 0 ),
 				Error:int32(nError),
 				AccountName:packet.AccountName,
@@ -103,16 +104,16 @@ func (this *EventProcess) Init(num int) {
 	})
 
 	//创建玩家
-	this.RegisterCall("W_A_CreatePlayer", func(accountId int64, playername string, sex int32, socketId uint32) {
+	this.RegisterCall("W_A_CreatePlayer", func(ctx context.Context, accountId int64, playername string, sex int32, socketId uint32) {
 		playerId := base.UUID.UUID()
 		_, err := this.m_db.Exec(fmt.Sprintf("insert into tbl_player (account_id, player_name, player_id) values (%d, '%s', %d)", accountId, playername, playerId))
 		if err == nil {
-			SendToWorld(this.GetRpcPacket().RpcHead.SrcClusterId, "A_W_CreatePlayer", accountId, playerId, playername, sex, socketId)
+			SendToWorld(this.GetRpcHead(ctx).SrcClusterId, "A_W_CreatePlayer", accountId, playerId, playername, sex, socketId)
 		}
 	})
 
 	//删除玩家
-	this.RegisterCall("W_A_DeletePlayer", func(accountId int64, playerId int64) {
+	this.RegisterCall("W_A_DeletePlayer", func(ctx context.Context, accountId int64, playerId int64) {
 		this.m_db.Exec(fmt.Sprintf("update tbl_player set delete_flag = 1 where account_id =%d and player_id=%d", accountId, playerId))
 	})
 

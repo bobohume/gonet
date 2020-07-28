@@ -1,6 +1,7 @@
 package cluster
 
 import (
+	"context"
 	"gonet/actor"
 	"gonet/base"
 	"gonet/message"
@@ -64,15 +65,15 @@ func (this *ClusterServer) InitService(Type message.SERVICE, IP string, Port int
 }
 
 func (this *ClusterServer) RegisterClusterCall(){
-	this.RegisterCall("COMMON_RegisterRequest", func(info *message.ClusterInfo) {
+	this.RegisterCall("COMMON_RegisterRequest", func(ctx context.Context, info *message.ClusterInfo) {
 		pServerInfo := &common.ClusterInfo{ClusterInfo:*info}
-		pServerInfo.SocketId = this.GetSocketId()
+		pServerInfo.SocketId = this.GetRpcHead(ctx).SocketId
 
 		this.AddCluster(pServerInfo)
 	})
 
 	//链接断开
-	this.RegisterCall("DISCONNECT", func(socketId uint32) {
+	this.RegisterCall("DISCONNECT", func(ctx context.Context, socketId uint32) {
 		pCluster := this.GetClusterBySocket(socketId)
 		if pCluster != nil{
 			this.DelCluster(pCluster)

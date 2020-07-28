@@ -1,6 +1,7 @@
 package netgate
 
 import (
+	"context"
 	"gonet/actor"
 	"gonet/base"
 	"gonet/message"
@@ -132,10 +133,10 @@ func (this *UserPrcoess) PacketFunc(socketid uint32, buff []byte) bool{
 
 func (this *UserPrcoess) Init(num int) {
 	this.Actor.Init(num)
-	this.RegisterCall("C_G_LogoutRequest", func(accountId int, UID int){
-		SERVER.GetLog().Printf("logout Socket:%d Account:%d UID:%d ",this.GetSocketId(), accountId,UID )
-		SERVER.GetPlayerMgr().SendMsg(rpc.RpcHead{},"DEL_ACCOUNT", this.GetSocketId())
-		SendToClient(this.GetSocketId(), &message.C_G_LogoutResponse{PacketHead:message.BuildPacketHead( 0, 0)})
+	this.RegisterCall("C_G_LogoutRequest", func(ctx context.Context, accountId int, UID int){
+		SERVER.GetLog().Printf("logout Socket:%d Account:%d UID:%d ",this.GetRpcHead(ctx).SocketId, accountId,UID )
+		SERVER.GetPlayerMgr().SendMsg(rpc.RpcHead{},"DEL_ACCOUNT", this.GetRpcHead(ctx).SocketId)
+		SendToClient(this.GetRpcHead(ctx).SocketId, &message.C_G_LogoutResponse{PacketHead:message.BuildPacketHead( 0, 0)})
 	})
 
 	this.Actor.Start()

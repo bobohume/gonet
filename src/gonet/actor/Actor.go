@@ -1,8 +1,8 @@
 package actor
 
 import (
+	"context"
 	"gonet/base"
-	"gonet/message"
 	"gonet/rpc"
 	"log"
 	"reflect"
@@ -27,7 +27,6 @@ type (
 		m_pTimer 	 *time.Ticker//定时器
 		m_TimerCall	func()//定时器触发函数
 		m_bStart	bool
-		m_RpcPacket message.RpcPacket
 	}
 
 	IActor interface {
@@ -41,9 +40,7 @@ type (
 		PacketFunc(id uint32, buff []byte) bool//回调函数
 		RegisterTimer(duration time.Duration, fun interface{})//注册定时器,时间为纳秒 1000 * 1000 * 1000
 		GetId() int64
-		GetSocketId() uint32//rpc is safe
-		GetRpcPacket() *message.RpcPacket//rpc is safe
-		GetRpcHead() rpc.RpcHead//rpc is safe
+		GetRpcHead(ctx context.Context) rpc.RpcHead//rpc is safe
 	}
 
 	CallIO struct {
@@ -72,16 +69,9 @@ func (this *Actor) GetId() int64 {
 	return this.m_Id
 }
 
-func (this *Actor) GetSocketId() uint32 {
-	return this.m_RpcPacket.RpcHead.SocketId
-}
-
-func (this *Actor) GetRpcPacket() *message.RpcPacket{
-	return &this.m_RpcPacket
-}
-
-func (this *Actor) GetRpcHead() rpc.RpcHead{
-	return *(*rpc.RpcHead)(this.m_RpcPacket.RpcHead)
+func (this *Actor) GetRpcHead(ctx context.Context) rpc.RpcHead{
+	rpcHead := ctx.Value("rpcHead").(rpc.RpcHead)
+	return rpcHead
 }
 
 func (this *Actor) Init(chanNum int) {
@@ -91,7 +81,6 @@ func (this *Actor) Init(chanNum int) {
 	this.m_CallMap = make(map[string] *CallFunc)
 	this.m_pTimer = time.NewTicker(1<<63-1)//默认没有定时器
 	this.m_TimerCall = nil
-	this.m_RpcPacket = message.RpcPacket{RpcHead:&message.RpcHead{}}
 }
 
 func (this *Actor)  RegisterTimer(duration time.Duration, fun interface{}){
@@ -102,7 +91,6 @@ func (this *Actor)  RegisterTimer(duration time.Duration, fun interface{}){
 
 func (this *Actor) clear() {
 	this.m_Id = 0
-	this.m_RpcPacket = message.RpcPacket{RpcHead:&message.RpcHead{}}
 	this.m_bStart = false
 	close(this.m_AcotrChan)
 	close(this.m_CallChan)
@@ -179,34 +167,24 @@ func (this *Actor) call(io CallIO) {
 		f := pFunc.FuncVal
 		k := pFunc.FuncType
 		strParams := pFunc.FuncParams
+		rpcPacket.RpcHead.SocketId = io.SocketId
 		params := rpc.UnmarshalBody(rpcPacket, k)
 
-		this.m_RpcPacket = *rpcPacket
-		this.m_RpcPacket.RpcHead.SocketId = io.SocketId
-
-		if k.NumIn()  != len(params) {
+		if k.NumIn()  != len(params){
 			log.Printf("func [%s] can not call, func params [%s], params [%v]", funcName, strParams, params)
 			return
 		}
 
 		if len(params) >= 1{
-			bParmasFit := true
 			in := make([]reflect.Value, len(params))
 			for i, param := range params {
 				in[i] = reflect.ValueOf(param)
-				//params no fit
-				if k.In(i).Kind() != in[i].Kind(){
-					bParmasFit = false
-				}
 			}
 
-			if bParmasFit{
-				f.Call(in)
-			}else{
-				log.Printf("func [%s] params no fit, func params [%s], params [func(%v)]", funcName, strParams, in)
-			}
+			f.Call(in)
 		}else{
-			f.Call(nil)
+			log.Printf("func [%s] params at least one context", funcName)
+			//f.Call([]reflect.Value{reflect.ValueOf(ctx)})
 		}
 	}
 }

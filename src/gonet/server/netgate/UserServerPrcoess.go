@@ -14,7 +14,7 @@ type (
 
 func (this *UserServerProcess) Init(num int) {
 	this.Actor.Init(num)
-	this.RegisterCall("DISCONNECT", func(socketId uint32) {
+	this.RegisterCall("DISCONNECT", func(ctx context.Context, socketId uint32) {
 		SERVER.GetPlayerMgr().SendMsg("DEL_ACCOUNT", socketId)
 	})
 

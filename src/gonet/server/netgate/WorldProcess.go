@@ -1,6 +1,7 @@
 package netgate
 
 import (
+	"context"
 	"gonet/actor"
 	"gonet/base"
 	"gonet/message"
@@ -33,21 +34,21 @@ func (this *WorldProcess) Init(num int) {
 	this.m_LostTimer.Start()
 	this.m_ClusterId = 0
 	this.RegisterTimer(1 * 1000 * 1000 * 1000, this.Update)
-	this.RegisterCall("COMMON_RegisterRequest", func() {
+	this.RegisterCall("COMMON_RegisterRequest", func(ctx context.Context) {
 		SERVER.GetWorldCluster().SendMsg(rpc.RpcHead{ClusterId:this.m_ClusterId},"COMMON_RegisterRequest", &message.ClusterInfo{Type:message.SERVICE_GATESERVER, Ip:UserNetIP, Port:int32(base.Int(UserNetPort))})
 	})
 
-	this.RegisterCall("COMMON_RegisterResponse", func() {
+	this.RegisterCall("COMMON_RegisterResponse", func(ctx context.Context) {
 		//收到worldserver对自己注册的反馈
 		this.m_LostTimer.Stop()
 		SERVER.GetLog().Println("收到world对自己注册的反馈")
 	})
 
-	this.RegisterCall("STOP_ACTOR", func() {
+	this.RegisterCall("STOP_ACTOR", func(ctx context.Context) {
 		this.Stop()
 	})
 
-	this.RegisterCall("DISCONNECT", func(socketId uint32) {
+	this.RegisterCall("DISCONNECT", func(ctx context.Context, socketId uint32) {
 		this.m_LostTimer.Start()
 	})
 

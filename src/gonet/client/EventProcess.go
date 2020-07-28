@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	"gonet/actor"
@@ -59,7 +60,7 @@ func (this *EventProcess) PacketFunc(socketid uint32, buff []byte) bool {
 
 func (this *EventProcess) Init(num int) {
 	this.Actor.Init(num)
-	this.RegisterCall("W_C_SelectPlayerResponse", func(packet *message.W_C_SelectPlayerResponse) {
+	this.RegisterCall("W_C_SelectPlayerResponse", func(ctx context.Context, packet *message.W_C_SelectPlayerResponse) {
 		this.AccountId = packet.GetAccountId()
 		nLen := len(packet.GetPlayerData())
 		//fmt.Println(len(packet.PlayerData), this.AccountId, packet.PlayerData)
@@ -74,7 +75,7 @@ func (this *EventProcess) Init(num int) {
 		}
 	})
 
-	this.RegisterCall("W_C_CreatePlayerResponse", func(packet *message.W_C_CreatePlayerResponse) {
+	this.RegisterCall("W_C_CreatePlayerResponse", func(ctx context.Context, packet *message.W_C_CreatePlayerResponse) {
 		if packet.GetError() == 0 {
 			this.PlayerId = packet.GetPlayerId()
 			this.LoginGame()
@@ -83,7 +84,7 @@ func (this *EventProcess) Init(num int) {
 		}
 	})
 
-	this.RegisterCall("A_C_LoginResponse", func(packet *message.A_C_LoginResponse) {
+	this.RegisterCall("A_C_LoginResponse", func(ctx context.Context, packet *message.A_C_LoginResponse) {
 		if packet.GetError() == base.ACCOUNT_NOEXIST {
 			packet1 := &message.C_A_RegisterRequest{PacketHead:message.BuildPacketHead( 0, message.SERVICE_GATESERVER),
 				AccountName: packet.AccountName}
@@ -91,23 +92,23 @@ func (this *EventProcess) Init(num int) {
 		}
 	})
 
-	this.RegisterCall("A_C_RegisterResponse", func(packet *message.A_C_RegisterResponse) {
+	this.RegisterCall("A_C_RegisterResponse", func(ctx context.Context, packet *message.A_C_RegisterResponse) {
 		//注册失败
 		if packet.GetError() != 0 {
 		}
 	})
 
-	this.RegisterCall("W_C_ChatMessage", func(packet *message.W_C_ChatMessage) {
+	this.RegisterCall("W_C_ChatMessage", func(ctx context.Context, packet *message.W_C_ChatMessage) {
 		fmt.Println("收到【", packet.GetSenderName(), "】发送的消息[", packet.GetMessage()+"]")
 	})
 
 	//map
-	this.RegisterCall("Z_C_LoginMap", func(packet *message.Z_C_LoginMap) {
+	this.RegisterCall("Z_C_LoginMap", func(ctx context.Context, packet *message.Z_C_LoginMap) {
 		this.SimId = packet.GetId()
 		//fmt.Println("login map")
 	})
 
-	this.RegisterCall("Z_C_ENTITY", func(packet *message.Z_C_ENTITY) {
+	this.RegisterCall("Z_C_ENTITY", func(ctx context.Context, packet *message.Z_C_ENTITY) {
 		for _, v := range packet.EntityInfo{
 			if v.Data != nil{
 				if v.Data.RemoveFlag{

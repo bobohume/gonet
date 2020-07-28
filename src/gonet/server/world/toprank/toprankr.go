@@ -1,6 +1,7 @@
 package toprank
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -68,7 +69,7 @@ func (this *TopMgrR) Init(num int){
 	actor.MGR.AddActor(this)
 
 	this.RegisterTimer(1000 * 1000 * 1000, this.update)//定时器
-	this.RegisterCall("InTopRank", func(nType int, id int64, name string, score,val0,val1 int) {
+	this.RegisterCall("InTopRank", func(ctx context.Context, nType int, id int64, name string, score,val0,val1 int) {
 		this.newInData(nType, id, name, score, val0, val1)
 	})
 
