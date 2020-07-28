@@ -59,7 +59,7 @@ actor消息队列
         
 actor消息队列回调
 
-    actor.RegisterCall(funcName string, call interface{})//actor靠他来进行消息回调
+    actor.RegisterCall(ctx context.Context, funcName string, call interface{})//actor靠他来进行消息回调
     
     funcName为回调函数名字
     
@@ -86,11 +86,11 @@ actor列子
     	
     	this.m_Locker		= &sync.RWMutex{}
     	
-    	this.RegisterCall("COMMON_RegisterRequest", func(nType int, Ip string, Port int) {
+    	this.RegisterCall("COMMON_RegisterRequest", func(ctx context.Context, nType int, Ip string, Port int) {
     	
     		pServerInfo := new(common.ServerInfo)
     		
-    		pServerInfo.SocketId = this.GetSocketId()
+    		pServerInfo.SocketId = this.GetRpcHead(ctx).SocketId
     		
     		pServerInfo.Type = nType
     		
@@ -104,7 +104,7 @@ actor列子
     		
     		case int(message.SERVICE_GATESERVER):
     		
-    			SERVER.GetServer().SendMsgByID(this.GetSocketId(), "COMMON_RegisterResponse")
+    			SERVER.GetServer().SendMsgByID(this.GetRpcHead(ctx).SocketId, "COMMON_RegisterResponse")
     		
     		}
     	

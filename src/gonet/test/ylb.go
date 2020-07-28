@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"gonet/actor"
 	"gonet/base"
 	"gonet/db"
@@ -93,21 +94,21 @@ func (this *CmdProcess) Init(num int) {
 		i += 1
 	}
 	this.Actor.Init(num)
-	this.RegisterCall("cpus", func() {
+	this.RegisterCall("cpus", func(ctx context.Context, ) {
 		fmt.Println(runtime.NumCPU(), " cpus and ", runtime.GOMAXPROCS(0), " in use")
 	})
 
-	this.RegisterCall("routines", func() {
+	this.RegisterCall("routines", func(ctx context.Context, ) {
 		fmt.Println("Current number of goroutines: ", runtime.NumGoroutine())
 	})
 
-	this.RegisterCall("setcpus", func(args string) {
+	this.RegisterCall("setcpus", func(ctx context.Context, args string) {
 		n, _ := strconv.Atoi(args)
 		runtime.GOMAXPROCS(n)
 		fmt.Println(runtime.NumCPU(), " cpus and ", runtime.GOMAXPROCS(0), " in use")
 	})
 
-	this.RegisterCall("startgc", func() {
+	this.RegisterCall("startgc", func(ctx context.Context) {
 		runtime.GC()
 		fmt.Println("gc finished")
 	})

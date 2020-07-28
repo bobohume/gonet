@@ -1,6 +1,7 @@
 package netgate
 
 import (
+	"context"
 	"gonet/actor"
 	"gonet/base"
 	"gonet/message"
@@ -38,23 +39,23 @@ func (this *AccountProcess) Init(num int) {
 	this.m_LostTimer = common.NewSimpleTimer(3)
 	this.m_LostTimer.Start()
 	this.RegisterTimer(1 * 1000 * 1000 * 1000, this.Update)
-	this.RegisterCall("COMMON_RegisterRequest", func() {
+	this.RegisterCall("COMMON_RegisterRequest", func(ctx context.Context) {
 		SERVER.GetAccountCluster().SendMsg(rpc.RpcHead{ClusterId:this.m_ClusterId},"COMMON_RegisterRequest", &message.ClusterInfo{Type:message.SERVICE_GATESERVER, Ip:UserNetIP, Port:int32(base.Int(UserNetPort))})
 	})
 
-	this.RegisterCall("COMMON_RegisterResponse", func() {
+	this.RegisterCall("COMMON_RegisterResponse", func(ctx context.Context) {
 		this.m_LostTimer.Stop()
 	})
 
-	this.RegisterCall("STOP_ACTOR", func() {
+	this.RegisterCall("STOP_ACTOR", func(ctx context.Context) {
 		this.Stop()
 	})
 
-	this.RegisterCall("DISCONNECT", func(socketId uint32) {
+	this.RegisterCall("DISCONNECT", func(ctx context.Context, socketId uint32) {
 		this.m_LostTimer.Start()
 	})
 
-	this.RegisterCall("A_G_Account_Login", func(accountId int64, socketId uint32) {
+	this.RegisterCall("A_G_Account_Login", func(ctx context.Context, accountId int64, socketId uint32) {
 		SERVER.GetPlayerMgr().SendMsg(rpc.RpcHead{},"ADD_ACCOUNT", accountId, socketId)
 	})
 

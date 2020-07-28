@@ -7,6 +7,7 @@ import (
 )
 
 type RpcHead message.RpcHead
+type RpcPacket message.RpcPacket
 
 const(
 	RPC_BOOL = iota

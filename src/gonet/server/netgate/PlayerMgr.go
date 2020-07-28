@@ -1,6 +1,7 @@
 package netgate
 
 import (
+	"context"
 	"gonet/actor"
 	"gonet/base"
 	"gonet/message"
@@ -110,19 +111,19 @@ func (this *PlayerManager) Init(num int){
 	this.m_SocketMap = make(map[uint32] int64)
 	this.m_AccountMap = make(map[int64] *AccountInfo)
 	this.m_Locker = &sync.RWMutex{}
-	this.RegisterCall("ADD_ACCOUNT", func(accountId int64, socketId uint32) {
+	this.RegisterCall("ADD_ACCOUNT", func(ctx context.Context, accountId int64, socketId uint32) {
 		SERVER.GetLog().Printf("login incoming  Socket:%d Account:%d ",socketId, accountId)
 		this.AddAccountMap(accountId, socketId)
 	})
 
-	this.RegisterCall("DEL_ACCOUNT", func(socketid uint32) {
+	this.RegisterCall("DEL_ACCOUNT", func(ctx context.Context, socketid uint32) {
 		accountId := this.GetAccount(socketid)
 		this.ReleaseSocketMap(socketid, true)
 		SERVER.GetAccountCluster().SendMsg(rpc.RpcHead{SendType:message.SEND_BOARD_CAST}, "G_ClientLost", accountId)
 	})
 
 	//重连世界服务器，账号重新登录
-	/*this.RegisterCall("World_Relogin", func() {
+	/*this.RegisterCall("World_Relogin", func(ctx context.Context) {
 		accountMap := make(map [int64] uint32)
 		this.m_Locker.RLock()
 		for i, v := range this.m_AccountMap {

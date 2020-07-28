@@ -1,6 +1,7 @@
 package cluster
 
 import (
+	"context"
 	"gonet/actor"
 	"gonet/base"
 	"gonet/message"
@@ -84,12 +85,12 @@ func (this *Cluster) Init(num int, MasterType message.SERVICE, IP string, Port i
 	this.m_Master = NewMaster(MasterType, Endpoints, &this.Actor)
 
 	//集群新加member
-	this.RegisterCall("Cluster_Add", func(info *common.ClusterInfo){
+	this.RegisterCall("Cluster_Add", func(ctx context.Context, info *common.ClusterInfo){
 		this.AddCluster(info)
 	})
 
 	//集群删除member
-	this.RegisterCall("Cluster_Del", func(info *common.ClusterInfo){
+	this.RegisterCall("Cluster_Del", func(ctx context.Context, info *common.ClusterInfo){
 		this.DelCluster(info)
 	})
 
