@@ -68,25 +68,16 @@ func SyncCall(call interface{}, head RpcHead, funcName string, params ...interfa
 		}
 
 		if len(params) >= 1{
-			bParmasFit := true
 			in := make([]reflect.Value, len(params))
 			for i, param := range params {
 				in[i] = reflect.ValueOf(param)
-				//params no fit
-				if k.In(i).Kind() != in[i].Kind(){
-					bParmasFit = false
-				}
 			}
 
-			if bParmasFit{
-				f.Call(in)
-			}else{
-				log.Printf("func [%s] params no fit, func params [%s], params [func(%v)]", funcName, strParams, in)
-				return errors.New("params no fit")
-			}
+			f.Call(in)
 		}else{
-			f.Call(nil)
+			log.Printf("func [%s] params at least one context", funcName)
 		}
+
 	case <-time.After(3*time.Second):
 		// 清理请求
 		getRpcSync(req.m_Seq)
