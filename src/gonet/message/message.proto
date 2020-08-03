@@ -43,14 +43,12 @@ message PlayerData{
 //rpc 包头
 message RpcHead{
     int64  Id = 1;//token
-    int64   SeqId = 2;
-    uint32  SocketId = 3;
-    uint32  SrcClusterId = 4;//源集群id
-    uint32  ClusterId = 5;//目标集群id
-    SERVICE SrcServerType = 6;//
-    SERVICE  DestServerType = 7;//目标集群
-    SEND SendType = 8;
-    string ActorName = 9;
+    uint32  SocketId = 2;
+    uint32  SrcClusterId = 3;//源集群id
+    uint32  ClusterId = 4;//目标集群id
+    SERVICE  DestServerType = 5;//目标集群
+    SEND SendType = 6;
+    string ActorName = 7;
 }
 
 //rpc 包

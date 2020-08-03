@@ -2,12 +2,10 @@ package world
 
 import (
 	"database/sql"
-	"gonet/actor"
 	"gonet/base"
 	"gonet/db"
 	"gonet/network"
 	"gonet/rd"
-	"gonet/rpc"
 	"gonet/server/common/cluster"
 	"log"
 )
@@ -115,7 +113,6 @@ func (this *ServerMgr)Init() bool{
 	this.m_pService.BindPacketFunc(packet.PacketFunc)
 	this.m_pService.BindPacketFunc(this.m_pClusterMgr.PacketFunc)
 
-	rpc.Init(this.m_pClusterMgr, actor.MGR)
 	return  false
 }
 

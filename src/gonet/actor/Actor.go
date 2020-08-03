@@ -7,6 +7,7 @@ import (
 	"log"
 	"reflect"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -26,6 +27,7 @@ type (
 		m_CallMap	 map[string] *CallFunc//rpc
 		m_pTimer 	 *time.Ticker//定时器
 		m_TimerCall	func()//定时器触发函数
+		m_Locker	sync.Locker
 		m_bStart	bool
 	}
 
@@ -81,6 +83,7 @@ func (this *Actor) Init(chanNum int) {
 	this.m_CallMap = make(map[string] *CallFunc)
 	this.m_pTimer = time.NewTicker(1<<63-1)//默认没有定时器
 	this.m_TimerCall = nil
+	this.m_Locker = &sync.Mutex{}
 }
 
 func (this *Actor)  RegisterTimer(duration time.Duration, fun interface{}){
@@ -117,9 +120,8 @@ func (this *Actor) FindCall(funcName string) *CallFunc{
 	fun, exist := this.m_CallMap[funcName]
 	if exist == true {
 		return fun
-	}else if funcName == "sync_call"{
-
 	}
+
 	return nil
 }
 
@@ -156,18 +158,19 @@ func (this *Actor) PacketFunc(id uint32, buff []byte) bool{
 		head.SocketId = id
 		this.Send(head, buff)
 		return true
-	}else if head.SeqId > 0{
-		rpc.Sync(head.SeqId, buff)
 	}
 
 	return false
 }
 
+	this.m_Locker.Lock()
+	defer this.m_Locker.Unlock()
+}
+
 func (this *Actor) call(io CallIO) {
-	rpcPacket, head := rpc.UnmarshalHead(io.Buff)
+	rpcPacket, _ := rpc.UnmarshalHead(io.Buff)
 	funcName := rpcPacket.FuncName
 	pFunc := this.FindCall(funcName)
-	out := []reflect.Value{}
 
 	if pFunc != nil {
 		f := pFunc.FuncVal
@@ -187,23 +190,9 @@ func (this *Actor) call(io CallIO) {
 				in[i] = reflect.ValueOf(param)
 			}
 
-			out = f.Call(in)
+			f.Call(in)
 		}else{
 			log.Printf("func [%s] params at least one context", funcName)
-		}
-
-		if head.SeqId > 0{
-			head.DestServerType = head.SrcServerType
-			outParams := make([]interface{}, len(out))
-			for i, v := range out{
-				outParams[i] = v.Interface()
-			}
-
-			if head.ActorName == ""{
-				rpc.SyncMsg(head, "sync_call", outParams...)
-			}else{
-				rpc.Sync(head.SeqId, rpc.Marshal(head, "sync_call", outParams...))
-			}
 		}
 	}
 }
@@ -214,6 +203,9 @@ func (this *Actor) loop() bool{
 			base.TraceCode(err)
 		}
 	}()
+
+	this.m_Locker.Lock()
+	defer this.m_Locker.Unlock()
 
 	select {
 	case io := <-this.m_CallChan:
