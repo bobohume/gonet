@@ -3,6 +3,7 @@ package rpc
 import (
 	"sync"
 	"sync/atomic"
+	"time"
 )
 
 var (
@@ -15,6 +16,10 @@ type(
 		RpcChan chan []interface{}
 		Seq int64
 	}
+)
+
+const(
+	MAX_RPC_TIMEOUT = 3*time.Second
 )
 
 func CrateRpcSync() *RpcSync{

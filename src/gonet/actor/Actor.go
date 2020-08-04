@@ -145,7 +145,7 @@ func (this *Actor) SyncMsg(head rpc.RpcHead,funcName string, params ...interface
 	select {
 	case v := <-req.RpcChan:
 		return v
-	case <-time.After(3*time.Second):
+	case <-time.After(rpc.MAX_RPC_TIMEOUT):
 		// 清理请求
 		rpc.GetRpcSync(req.Seq)
 	}
