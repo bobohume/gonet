@@ -49,6 +49,7 @@ message RpcHead{
     SERVICE  DestServerType = 5;//目标集群
     SEND SendType = 6;
     string ActorName = 7;
+    int64  SeqId = 8;
 }
 
 //rpc 包
