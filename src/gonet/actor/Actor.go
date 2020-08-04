@@ -7,7 +7,6 @@ import (
 	"log"
 	"reflect"
 	"strings"
-	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -27,7 +26,6 @@ type (
 		m_CallMap	 map[string] *CallFunc//rpc
 		m_pTimer 	 *time.Ticker//定时器
 		m_TimerCall	func()//定时器触发函数
-		m_Locker	sync.Locker
 		m_bStart	bool
 	}
 
@@ -83,7 +81,6 @@ func (this *Actor) Init(chanNum int) {
 	this.m_CallMap = make(map[string] *CallFunc)
 	this.m_pTimer = time.NewTicker(1<<63-1)//默认没有定时器
 	this.m_TimerCall = nil
-	this.m_Locker = &sync.Mutex{}
 }
 
 func (this *Actor)  RegisterTimer(duration time.Duration, fun interface{}){
@@ -163,10 +160,6 @@ func (this *Actor) PacketFunc(id uint32, buff []byte) bool{
 	return false
 }
 
-	this.m_Locker.Lock()
-	defer this.m_Locker.Unlock()
-}
-
 func (this *Actor) call(io CallIO) {
 	rpcPacket, _ := rpc.UnmarshalHead(io.Buff)
 	funcName := rpcPacket.FuncName
@@ -203,9 +196,6 @@ func (this *Actor) loop() bool{
 			base.TraceCode(err)
 		}
 	}()
-
-	this.m_Locker.Lock()
-	defer this.m_Locker.Unlock()
 
 	select {
 	case io := <-this.m_CallChan:

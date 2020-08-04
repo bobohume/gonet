@@ -109,19 +109,6 @@ func (this* PlayerMgr) Init(num int){
 		}
 	})
 
-	this.RegisterCall("C_W_ChangeItem", func(ctx context.Context, srcAccountId, tarAccountId int64) {
-		pSrcPlayer := this.GetPlayer(srcAccountId)
-		pTarPlayer := this.GetPlayer(tarAccountId)
-		if pSrcPlayer != nil && pTarPlayer != nil{
-			pSrcPlayer.Sync(func() {
-				pSrcPlayer.(IPlayer).GetItemMgr().AddItem(1001, 1)
-			})
-			pTarPlayer.Sync(func() {
-				pTarPlayer.(IPlayer).GetItemMgr().AddItem(1001, -1)
-			})
-		}
-	})
-
 	//this.RegisterTimer(1000 * 1000 * 1000, this.Update)//定时器
 	this.Actor.Start()
 }

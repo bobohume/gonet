@@ -1,20 +1,12 @@
 package rpc
 
 import (
-	"errors"
-	"gonet/message"
-	"log"
-	"reflect"
 	"sync"
-	"sync/atomic"
-	"time"
 )
 
 var (
 	RpcSyncSeq     int64
 	RpcSyncSeqMap 	sync.Map
-	ActorMgr IActor//actor mgr
-	ClusterMgr ICluster//cluster mgr
 )
 
 type(
@@ -22,34 +14,9 @@ type(
 		m_RpcChan chan []byte
 		m_Seq int64
 	}
-
-	IActor interface {
-		SendMsg(head RpcHead, funcName string, params ...interface{})
-	}
-
-	ICluster interface {
-		IActor
-		Id() uint32
-		ServiceType() message.SERVICE
-	}
 )
 
-func Init(clusterMgr ICluster, actorMgr IActor){
-	ActorMgr = actorMgr
-	ClusterMgr = clusterMgr
-}
-
-func SyncMsg(head RpcHead, funcName string, params ...interface{}){
-	if head.ActorName == ""{
-		head.SrcClusterId = ClusterMgr.Id()
-		head.SrcServerType = ClusterMgr.ServiceType()
-		ClusterMgr.SendMsg(head, funcName, params...)
-	}else{
-		ActorMgr.SendMsg(head, funcName, params...)
-	}
-}
-
-func SyncCall(call interface{}, head RpcHead, funcName string, params ...interface{}) error{
+/*func SyncCall(call interface{}, head RpcHead, funcName string, params ...interface{}) error{
 	req := crateRpcSync()
 	head.SeqId = req.m_Seq
 	SyncMsg(head, funcName, params...)
@@ -110,7 +77,7 @@ func Sync(seq int64, data []byte) bool{
 		return true
 	}
 	return false
-}
+}*/
 
 //同步Call
 /*
