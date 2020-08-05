@@ -13,8 +13,13 @@ var (
 
 type(
 	RpcSync struct{
-		RpcChan chan []interface{}
+		RpcChan chan RetInfo
 		Seq int64
+	}
+
+	RetInfo struct {
+		Err error
+		Ret []interface{}
 	}
 )
 
@@ -25,7 +30,7 @@ const(
 func CrateRpcSync() *RpcSync{
 	req := RpcSync{}
 	req.Seq = atomic.AddInt64(&RpcSyncSeq, 1)
-	req.RpcChan = make(chan []interface{})
+	req.RpcChan = make(chan RetInfo)
 	RpcSyncSeqMap.Store(req.Seq, &req)
 	return &req
 }
@@ -39,10 +44,10 @@ func GetRpcSync(seq int64) *RpcSync{
 	return nil
 }
 
-func Sync(seq int64, data []interface{}) bool{
+func Sync(seq int64, ret RetInfo) bool{
 	req := GetRpcSync(seq)
 	if req != nil{
-		req.RpcChan <- data
+		req.RpcChan <- ret
 		return true
 	}
 	return false
@@ -52,7 +57,7 @@ func Sync(seq int64, data []interface{}) bool{
 /*
 	resut := pPlayer.SyncMsg(rpc.RpcHead{}, "rpctest", gateClusterId, zoneClusterId)
 
-	this.RegisterCall("rpctest", func(ctx context.Context, gateClusterId uint32, zoneClusterId uint32) (error, uint32, uint32){
-		return nil ,gateClusterId, zoneClusterId
+	this.RegisterCall("rpctest", func(ctx context.Context, gateClusterId uint32, zoneClusterId uint32) rpc.RetInfo{
+		return rpc.RetInfo{nil, []interface{}{gateClusterId, zoneClusterId}}
 	})
 */

@@ -2,6 +2,7 @@ package actor
 
 import (
 	"context"
+	"errors"
 	"gonet/base"
 	"gonet/rpc"
 	"log"
@@ -36,7 +37,7 @@ type (
 		FindCall(funcName string) *CallFunc
 		RegisterCall(funcName string, call interface{})
 		SendMsg(head rpc.RpcHead, funcName string, params ...interface{})
-		SyncMsg(head rpc.RpcHead, funcName string, params ...interface{}) []interface{}
+		SyncMsg(head rpc.RpcHead, funcName string, params ...interface{}) rpc.RetInfo
 		Send(head rpc.RpcHead, buff []byte)
 		PacketFunc(id uint32, buff []byte) bool//回调函数
 		RegisterTimer(duration time.Duration, fun interface{})//注册定时器,时间为纳秒 1000 * 1000 * 1000
@@ -137,7 +138,7 @@ func (this *Actor) SendMsg(head rpc.RpcHead,funcName string, params ...interface
 	this.Send(head, rpc.Marshal(head, funcName, params...))
 }
 
-func (this *Actor) SyncMsg(head rpc.RpcHead,funcName string, params ...interface{}) []interface{}{
+func (this *Actor) SyncMsg(head rpc.RpcHead,funcName string, params ...interface{}) rpc.RetInfo{
 	head.SocketId = 0
 	req := rpc.CrateRpcSync()
 	head.SeqId = req.Seq
@@ -149,7 +150,8 @@ func (this *Actor) SyncMsg(head rpc.RpcHead,funcName string, params ...interface
 		// 清理请求
 		rpc.GetRpcSync(req.Seq)
 	}
-	return []interface{}{}
+
+	return rpc.RetInfo{Err:errors.New("timeout"), Ret:[]interface{}{}, }
 }
 
 func (this *Actor) Send(head rpc.RpcHead, buff []byte) {
@@ -205,12 +207,17 @@ func (this *Actor) call(io CallIO) {
 			log.Printf("func [%s] params at least one context", funcName)
 		}
 
-		if head.SeqId != 0{
-			outParams := make([]interface{}, len(out))
-			for i, v := range out{
-				outParams[i] = v.Interface()
+		if head.SeqId != 0 {
+			if len(out) == 1{
+				ret, bOk := out[0].Interface().(rpc.RetInfo)
+				if bOk{
+					rpc.Sync(head.SeqId, ret)
+					return
+				}
 			}
-			rpc.Sync(head.SeqId, outParams)
+
+			rpc.Sync(head.SeqId, rpc.RetInfo{Err:errors.New("return is not rpc.RetInfo")})
+			log.Printf("func sync [%s] return is not rpc.RetInfo", funcName)
 		}
 	}
 }
