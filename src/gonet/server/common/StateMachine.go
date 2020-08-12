@@ -9,7 +9,7 @@ type (
 	TimerHandle func()
 	State struct{
 		OnEnter TimerHandle
-		OnLeave TimerHandle
+		OnExit TimerHandle
 		OnExec TimerHandle
 	}
 
@@ -31,7 +31,7 @@ type (
 )
 
 func (this *StateMachine) Init(_maxState int){
-	this.m_curState = -1
+	this.m_curState = 0
 	this.m_maxState = _maxState
 	this.m_states = make([]State, _maxState)
 }
@@ -47,15 +47,12 @@ func (this *StateMachine) SetStateHandle(state int, pState *State){
 	if pState.OnExec != nil{
 		this.m_states[state].OnExec   = pState.OnExec
 	}
-	if pState.OnLeave != nil{
-		this.m_states[state].OnLeave  = pState.OnLeave
+	if pState.OnExit != nil{
+		this.m_states[state].OnExit  = pState.OnExit
 	}
 }
 
 func (this *StateMachine) GetState() int{
-	if this.m_curState < 0{
-		return 0
-	}
 	return this.m_curState
 }
 
@@ -66,10 +63,10 @@ func (this *StateMachine) SetState(state int){
 		return
 	}
 
-	if -1 != this.m_curState && this.m_curState != state{
+	if this.m_curState != state{
 		s := this.m_states[this.m_curState]
-		if s.OnLeave != nil{
-			s.OnLeave()
+		if s.OnExit != nil{
+			s.OnExit()
 		}
 	}
 
@@ -88,10 +85,6 @@ func (this *StateMachine) GetPreState()int{
 }
 
 func (this *StateMachine) Update(){
-	if (-1 == this.m_curState){
-		return
-	}
-
 	s := this.m_states[this.m_curState]
 	if (nil != s.OnExec){
 		s.OnExec()
