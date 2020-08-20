@@ -2,6 +2,7 @@ package actor
 
 import (
 	"context"
+	"errors"
 	"gonet/base"
 	"gonet/rpc"
 	"log"
@@ -36,6 +37,7 @@ type (
 		FindCall(funcName string) *CallFunc
 		RegisterCall(funcName string, call interface{})
 		SendMsg(head rpc.RpcHead, funcName string, params ...interface{})
+		SyncMsg(head rpc.RpcHead, funcName string, params ...interface{}) rpc.RetInfo
 		Send(head rpc.RpcHead, buff []byte)
 		PacketFunc(id uint32, buff []byte) bool//回调函数
 		RegisterTimer(duration time.Duration, fun interface{})//注册定时器,时间为纳秒 1000 * 1000 * 1000
@@ -118,6 +120,7 @@ func (this *Actor) FindCall(funcName string) *CallFunc{
 	if exist == true {
 		return fun
 	}
+
 	return nil
 }
 
@@ -133,6 +136,22 @@ func (this *Actor) RegisterCall(funcName string, call interface{}) {
 func (this *Actor) SendMsg(head rpc.RpcHead,funcName string, params ...interface{}) {
 	head.SocketId = 0
 	this.Send(head, rpc.Marshal(head, funcName, params...))
+}
+
+func (this *Actor) SyncMsg(head rpc.RpcHead,funcName string, params ...interface{}) rpc.RetInfo{
+	head.SocketId = 0
+	req := rpc.CrateRpcSync()
+	head.SeqId = req.Seq
+	this.Send(head, rpc.Marshal(head, funcName, params...))
+	select {
+	case v := <-req.RpcChan:
+		return v
+	case <-time.After(rpc.MAX_RPC_TIMEOUT):
+		// 清理请求
+		rpc.GetRpcSync(req.Seq)
+	}
+
+	return rpc.RetInfo{Err:errors.New("timeout"), Ret:[]interface{}{}, }
 }
 
 func (this *Actor) Send(head rpc.RpcHead, buff []byte) {
@@ -160,9 +179,11 @@ func (this *Actor) PacketFunc(id uint32, buff []byte) bool{
 }
 
 func (this *Actor) call(io CallIO) {
-	rpcPacket, _ := rpc.UnmarshalHead(io.Buff)
+	rpcPacket, head := rpc.UnmarshalHead(io.Buff)
 	funcName := rpcPacket.FuncName
 	pFunc := this.FindCall(funcName)
+
+	out := []reflect.Value{}
 	if pFunc != nil {
 		f := pFunc.FuncVal
 		k := pFunc.FuncType
@@ -181,10 +202,22 @@ func (this *Actor) call(io CallIO) {
 				in[i] = reflect.ValueOf(param)
 			}
 
-			f.Call(in)
+			out = f.Call(in)
 		}else{
 			log.Printf("func [%s] params at least one context", funcName)
-			//f.Call([]reflect.Value{reflect.ValueOf(ctx)})
+		}
+
+		if head.SeqId != 0 {
+			if len(out) == 1{
+				ret, bOk := out[0].Interface().(rpc.RetInfo)
+				if bOk{
+					rpc.Sync(head.SeqId, ret)
+					return
+				}
+			}
+
+			rpc.Sync(head.SeqId, rpc.RetInfo{Err:errors.New("return is not rpc.RetInfo")})
+			log.Printf("func sync [%s] return is not rpc.RetInfo", funcName)
 		}
 	}
 }

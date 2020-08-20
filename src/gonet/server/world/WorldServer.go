@@ -112,6 +112,7 @@ func (this *ServerMgr)Init() bool{
 	packet.Init(1000)
 	this.m_pService.BindPacketFunc(packet.PacketFunc)
 	this.m_pService.BindPacketFunc(this.m_pClusterMgr.PacketFunc)
+
 	return  false
 }
 

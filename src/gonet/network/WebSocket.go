@@ -28,7 +28,6 @@ type WebSocket struct {
 	m_nMaxClients   int
 	m_nMinClients   int
 	m_nIdSeed       uint32
-	m_bShuttingDown bool
 	m_bCanAccept    bool
 	m_bNagle        bool
 	m_ClientList    map[uint32]*WebSocketClient
