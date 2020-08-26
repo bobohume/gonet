@@ -19,7 +19,6 @@ type Snowflake struct {
 	m_Client *clientv3.Client
 	m_Lease clientv3.Lease
 	m_LeaseId clientv3.LeaseID
-	m_UUID base.Snowflake
 }
 
 func (this *Snowflake) Key() string{
@@ -63,7 +62,7 @@ func (this *Snowflake) Run(){
 			goto TrySET
 		}
 
-		this.m_UUID.Init(this.m_Id)//设置uuid
+		base.UUID.Init(this.m_Id)//设置uuid
 
 		//保持ttl
 	TryTTL:
