@@ -21,7 +21,7 @@ type(
 	IPlayerMangaer interface {
 		actor.IActor
 		ReleaseSocketMap(uint32, bool)
-		AddAccountMap(int, int64) int
+		AddAccountMap(int64, uint32) int
 		GetSocket(int64) uint32
 		GetAccount(uint32) int64
 		GetAccountInfo(uint32) *AccountInfo
