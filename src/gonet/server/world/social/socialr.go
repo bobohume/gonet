@@ -135,11 +135,9 @@ func (this *SocialMgrR) makeLink(PlayerId, TargetId int64, Type int8) int{
 	}
 
 	SocialMap := SOCIALITEMMAP{}
-	datas := [][]byte{}
-	var err error
-	rd.Do(world.RdID, func(c redis.Conn) {
-		datas, err = redis.ByteSlices(c.Do("HVALS", RdKey(PlayerId)))
-	})
+	datas, err := redis.ByteSlices(rd.Do(world.RdID, func(c redis.Conn) (reply interface{}, err error) {
+		return  c.Do("HVALS", RdKey(PlayerId))
+	}))
 
 	for _, v := range datas{
 		pData := &SocialItem{}
@@ -195,10 +193,11 @@ func (this *SocialMgrR) makeLink(PlayerId, TargetId int64, Type int8) int{
 			Item.FriendValue = 0
 			this.m_db.Exec(db.UpdateSql(Item, sqlTable))
 			data, _ := json.Marshal(&Item)
-			rd.Do(world.RdID, func(c redis.Conn) {
+			rd.Do(world.RdID, func(c redis.Conn) (reply interface{}, err error) {
 				c.Send("HSET", RdKey(PlayerId), TargetId, data)
 				c.Send("EXPIRE", RdKey(PlayerId), 5*60)
 				c.Flush()
+				return nil, nil
 			})
 			this.m_Log.Printf("更新社会关系playerId=%d,destPlayerId=%d,newType=%d", PlayerId, TargetId, Item.Type)
 			return SocialError_None
@@ -213,10 +212,11 @@ func (this *SocialMgrR) makeLink(PlayerId, TargetId int64, Type int8) int{
 		SocialMap[TargetId] = Item
 		this.m_db.Exec(db.InsertSql(Item, sqlTable))
 		data, _ := json.Marshal(&Item)
-		rd.Do(world.RdID, func(c redis.Conn) {
+		rd.Do(world.RdID, func(c redis.Conn) (reply interface{}, err error){
 			c.Send("HSET", RdKey(PlayerId), TargetId, data)
 			c.Send("EXPIRE", RdKey(PlayerId), 5*60)
 			c.Flush()
+			return nil, nil
 		})
 		this.m_Log.Printf("新增社会关系playerId=%d,destPlayerId=%d,type=%d", PlayerId, TargetId, Item.Type)
 		return SocialError_None
@@ -239,8 +239,9 @@ func (this *SocialMgrR) destoryLink(PlayerId, TargetId int64, Type int8) int{
 
 	if Item.Type == Friend || Item.Type == Mute || Item.Type == Temp || Item.Type == Enemy{
 		this.m_db.Exec(db.DeleteSql(Item, sqlTable))
-		rd.Do(world.RdID, func(c redis.Conn) {
+		rd.Do(world.RdID, func(c redis.Conn) (reply interface{}, err error) {
 			c.Do("HDEL", RdKey(PlayerId), TargetId)
+			return nil, nil
 		})
 		return SocialError_None
 	}
@@ -266,12 +267,13 @@ func (this *SocialMgrR) addFriendValue(PlayerId, TargetId int64, Value int) int{
 	this.m_db.Exec(db.UpdateSqlEx(Item2, sqlTable, "friend_value"))
 	data, _ := json.Marshal(&Item1)
 	data1, _ := json.Marshal(&Item2)
-	rd.Do(world.RdID, func(c redis.Conn) {
+	rd.Do(world.RdID, func(c redis.Conn) (reply interface{}, err error){
 		c.Send("HSET", RdKey(PlayerId), TargetId, data)
 		c.Send("EXPIRE", RdKey(PlayerId), 5*60)
 		c.Send("HSET", RdKey(TargetId), PlayerId, data1)
 		c.Send("EXPIRE", RdKey(TargetId), 5*60)
 		c.Flush()
+		return nil, nil
 	})
 	return Value
 }

@@ -34,10 +34,9 @@ func HRdKey(nType int) string{
 
 func (this *TopMgrR) loadDB(nType int) {
 	this.m_Log.Println("读取排行榜")
-	result := int64(0)
-	rd.Do(world.RdID, func(c redis.Conn) {
-		result, _ = redis.Int64(c.Do("ZCARD", ZRdKey(nType)))
-	})
+	result, _ := redis.Int64(rd.Do(world.RdID, func(c redis.Conn) (reply interface{}, err error){
+		return c.Do("ZCARD", ZRdKey(nType))
+	}))
 	if result == 0{
 		fmt.Println(db.LoadSql(&TopRank{}, sqlTable, fmt.Sprintf("type = %d order by `score` limit 0, %d", nType,TOP_RANK_MAX)))
 		rows, err := this.m_db.Query(db.LoadSql(&TopRank{}, sqlTable, fmt.Sprintf("type = %d order by `score` limit 0, %d", nType,TOP_RANK_MAX)));
@@ -49,10 +48,11 @@ func (this *TopMgrR) loadDB(nType int) {
 		rs.Obj(&topList)
 		for _, v := range topList{
 			data, _ := json.Marshal(v)
-			rd.Do(world.RdID, func(c redis.Conn) {
+			rd.Do(world.RdID, func(c redis.Conn) (reply interface{}, err error) {
 				c.Send("ZADD", ZRdKey(nType), v.Score, v.Id)
 				c.Send("HSET", HRdKey(nType), v.Id, data)
 				c.Flush()
+				return nil, nil
 			})
 		}
 	}
@@ -83,9 +83,10 @@ func (this *TopMgrR) Init(num int){
 func (this *TopMgrR) newInData(nType int, id int64, name string, score,val0,val1 int){
 	pData := this.createRank(nType, id, name, score, val0, val1)
 	data, _ := json.Marshal(pData)
-	rd.Do(world.RdID, func(c redis.Conn) {
+	rd.Do(world.RdID, func(c redis.Conn) (reply interface{}, err error) {
 		c.Send("ZADD", ZRdKey(nType), score, id)
 		c.Send("HSET", HRdKey(nType), id, data)
+		return nil, nil
 	})
 	bExist := false
 	row := this.m_db.QueryRow(fmt.Sprintf("select 1 from %s where id=%d and type=%d", sqlTable, id, nType))
@@ -101,20 +102,20 @@ func (this *TopMgrR) newInData(nType int, id int64, name string, score,val0,val1
 }
 
 func (this *TopMgrR) clearTop(nType int){
-	rd.Do(world.RdID, func(c redis.Conn) {
+	rd.Do(world.RdID, func(c redis.Conn) (reply interface{}, err error) {
 		c.Send("DEL", ZRdKey(nType))
 		c.Send("DEL", HRdKey(nType))
 		c.Flush()
+		return nil, nil
 	})
 	this.m_db.Exec(fmt.Sprintf("delete %s where type=%d", sqlTable, nType))
 }
 
 func (this *TopMgrR) getRank(nType int, id int64) *TopRank{
 	pData := &TopRank{}
-	data := []byte{}
-	rd.Do(world.RdID, func(c redis.Conn) {
-		data, _ = redis.Bytes(c.Do("HGET", HRdKey(nType), id))
-	})
+	data, _  := redis.Bytes(rd.Do(world.RdID, func(c redis.Conn) (reply interface{}, err error)  {
+		return  c.Do("HGET", HRdKey(nType), id)
+	}))
 
 	if json.Unmarshal(data, pData) == nil{
 		return pData
@@ -135,10 +136,9 @@ func (this *TopMgrR) createRank(nType int, id int64, name string, score,val0,val
 }
 
 func (this* TopMgrR) getPlayerRank(nType int, playerId int64) int{
-	rank := int(-1)
-	rd.Do(world.RdID, func(c redis.Conn) {
-		rank, _ =redis.Int(c.Do("ZREVRANK", ZRdKey(nType), playerId))
-	})
+	rank, _ := redis.Int(rd.Do(world.RdID, func(c redis.Conn) (reply interface{}, err error)  {
+		return  c.Do("ZREVRANK", ZRdKey(nType), playerId)
+	}))
 	return rank
 }
 

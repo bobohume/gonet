@@ -39,12 +39,12 @@ func OpenRedisPool(ip, pwd string) error {
 }
 
 ///Do a func can do no defer close
-func Do(database int, pFunc func(c redis.Conn)){
+func Do(database int, pFunc func(c redis.Conn) (reply interface{}, err error)) (reply interface{}, err error){
 	c := POOL.Get()
 	defer c.Close()
 
 	c.Do("SELECT", database)
-	pFunc(c)
+	return pFunc(c)
 }
 
 ///Get 获取一个值

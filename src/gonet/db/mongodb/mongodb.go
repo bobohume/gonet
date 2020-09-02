@@ -121,6 +121,13 @@ func (c *DialContext) UnRef(s *Session) {
 }
 
 // goroutine safe
+func (c *DialContext) Do(pFunc func(s *Session ) error) error{
+	s := c.Ref()
+	defer c.UnRef(s)
+	return pFunc(s)
+}
+
+// goroutine safe
 func (c *DialContext) EnsureCounter(db string, collection string, id string) error {
 	s := c.Ref()
 	defer c.UnRef(s)
