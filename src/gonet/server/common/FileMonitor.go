@@ -1,8 +1,10 @@
 package common
 
 import (
+	"context"
 	"gonet/actor"
 	"fmt"
+	"gonet/rpc"
 	"os"
 	"time"
 	"unsafe"
@@ -33,12 +35,12 @@ func (this *FileMonitor) Init(num int) {
 	this.Actor.Init(num)
 	this.m_FilesMap = map[string] *FileInfo{}
 	this.RegisterTimer(3 * time.Second, this.update)
-	this.RegisterCall("addfile", func(fileName string, p *int64) {
+	this.RegisterCall("addfile", func(ctx context.Context, fileName string, p *int64) {
 		pFunc := (*FileRead)(unsafe.Pointer(p))
 		this.addFile(fileName, *pFunc)
 	})
 
-	this.RegisterCall("delfile", func(fileName string) {
+	this.RegisterCall("delfile", func(ctx context.Context, fileName string) {
 		this.delFile(fileName)
 	})
 	this.Actor.Start()
@@ -46,7 +48,7 @@ func (this *FileMonitor) Init(num int) {
 
 func (this *FileMonitor) AddFile(fileName string, pFunc FileRead){
 	ponit := unsafe.Pointer(&pFunc)
-	this.SendMsg("addfile", fileName, (*int64)(ponit))
+	this.SendMsg(rpc.RpcHead{},"addfile", fileName, (*int64)(ponit))
 }
 
 func (this *FileMonitor) addFile(fileName string, pFunc FileRead){

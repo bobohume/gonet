@@ -1,8 +1,8 @@
 package actor
 
 import (
+	"context"
 	"gonet/base"
-	"gonet/message"
 	"gonet/rpc"
 	"log"
 	"reflect"
@@ -27,7 +27,6 @@ type (
 		m_pTimer 	 *time.Ticker//定时器
 		m_TimerCall	func()//定时器触发函数
 		m_bStart	bool
-		m_RpcPacket message.RpcPacket
 	}
 
 	IActor interface {
@@ -36,18 +35,16 @@ type (
 		Start()
 		FindCall(funcName string) *CallFunc
 		RegisterCall(funcName string, call interface{})
-		SendMsg(funcName string, params ...interface{})
-		Send(io CallIO)
-		PacketFunc(id int, buff []byte) bool//回调函数
+		SendMsg(head rpc.RpcHead, funcName string, params ...interface{})
+		Send(head rpc.RpcHead, buff []byte)
+		PacketFunc(id uint32, buff []byte) bool//回调函数
 		RegisterTimer(duration time.Duration, fun interface{})//注册定时器,时间为纳秒 1000 * 1000 * 1000
 		GetId() int64
-		GetSocketId() int//rpc is safe
-		GetRpcPacket() *message.RpcPacket//rpc is safe
+		GetRpcHead(ctx context.Context) rpc.RpcHead//rpc is safe
 	}
 
 	CallIO struct {
-		SocketId int
-		ActorId int64
+		rpc.RpcHead
 		Buff []byte
 	}
 
@@ -72,12 +69,9 @@ func (this *Actor) GetId() int64 {
 	return this.m_Id
 }
 
-func (this *Actor) GetSocketId() int {
-	return int(this.m_RpcPacket.RpcHead.SocketId)
-}
-
-func (this *Actor) GetRpcPacket() *message.RpcPacket{
-	return &this.m_RpcPacket
+func (this *Actor) GetRpcHead(ctx context.Context) rpc.RpcHead{
+	rpcHead := ctx.Value("rpcHead").(rpc.RpcHead)
+	return rpcHead
 }
 
 func (this *Actor) Init(chanNum int) {
@@ -87,7 +81,6 @@ func (this *Actor) Init(chanNum int) {
 	this.m_CallMap = make(map[string] *CallFunc)
 	this.m_pTimer = time.NewTicker(1<<63-1)//默认没有定时器
 	this.m_TimerCall = nil
-	this.m_RpcPacket = message.RpcPacket{RpcHead:&message.RpcHead{}}
 }
 
 func (this *Actor)  RegisterTimer(duration time.Duration, fun interface{}){
@@ -98,7 +91,6 @@ func (this *Actor)  RegisterTimer(duration time.Duration, fun interface{}){
 
 func (this *Actor) clear() {
 	this.m_Id = 0
-	this.m_RpcPacket = message.RpcPacket{RpcHead:&message.RpcHead{}}
 	this.m_bStart = false
 	close(this.m_AcotrChan)
 	close(this.m_CallChan)
@@ -126,6 +118,7 @@ func (this *Actor) FindCall(funcName string) *CallFunc{
 	if exist == true {
 		return fun
 	}
+
 	return nil
 }
 
@@ -138,32 +131,29 @@ func (this *Actor) RegisterCall(funcName string, call interface{}) {
 	this.m_CallMap[funcName] = &CallFunc{Func:call, FuncVal:reflect.ValueOf(call), FuncType:reflect.TypeOf(call), FuncParams:reflect.TypeOf(call).String()}
 }
 
-func (this *Actor) SendMsg(funcName string, params ...interface{}) {
-	var io CallIO
-	io.ActorId = this.m_Id
-	io.SocketId = 0
-	io.Buff = rpc.Marshal(funcName, params...)
-	this.Send(io)
+func (this *Actor) SendMsg(head rpc.RpcHead,funcName string, params ...interface{}) {
+	head.SocketId = 0
+	this.Send(head, rpc.Marshal(head, funcName, params...))
 }
 
-func (this *Actor) Send(io CallIO) {
+func (this *Actor) Send(head rpc.RpcHead, buff []byte) {
 	defer func() {
 		if err := recover(); err != nil {
 			base.TraceCode(err)
 		}
 	}()
 
+	var io CallIO
+	io.RpcHead = head
+	io.Buff = buff
 	this.m_CallChan <- io
 }
 
-func (this *Actor) PacketFunc(id int, buff []byte) bool{
-	var io CallIO
-	io.Buff = buff
-	io.SocketId = id
-
-	rpcPacket := rpc.UnmarshalHead(io.Buff)
+func (this *Actor) PacketFunc(id uint32, buff []byte) bool{
+	rpcPacket, head := rpc.UnmarshalHead(buff)
 	if this.FindCall(rpcPacket.FuncName) != nil{
-		this.Send(io)
+		head.SocketId = id
+		this.Send(head, buff)
 		return true
 	}
 
@@ -171,42 +161,32 @@ func (this *Actor) PacketFunc(id int, buff []byte) bool{
 }
 
 func (this *Actor) call(io CallIO) {
-	rpcPacket := rpc.UnmarshalHead(io.Buff)
+	rpcPacket, _ := rpc.UnmarshalHead(io.Buff)
 	funcName := rpcPacket.FuncName
 	pFunc := this.FindCall(funcName)
+
 	if pFunc != nil {
 		f := pFunc.FuncVal
 		k := pFunc.FuncType
 		strParams := pFunc.FuncParams
+		rpcPacket.RpcHead.SocketId = io.SocketId
 		params := rpc.UnmarshalBody(rpcPacket, k)
 
-		this.m_RpcPacket = *rpcPacket
-		this.m_RpcPacket.RpcHead.SocketId = int32(io.SocketId)
-		this.m_RpcPacket.RpcHead.CallId = io.ActorId
-
-		if k.NumIn()  != len(params) {
+		if k.NumIn()  != len(params){
 			log.Printf("func [%s] can not call, func params [%s], params [%v]", funcName, strParams, params)
 			return
 		}
 
 		if len(params) >= 1{
-			bParmasFit := true
 			in := make([]reflect.Value, len(params))
 			for i, param := range params {
 				in[i] = reflect.ValueOf(param)
-				//params no fit
-				if k.In(i).Kind() != in[i].Kind(){
-					bParmasFit = false
-				}
 			}
 
-			if bParmasFit{
-				f.Call(in)
-			}else{
-				log.Printf("func [%s] params no fit, func params [%s], params [func(%v)]", funcName, strParams, in)
-			}
+			f.Call(in)
 		}else{
-			f.Call(nil)
+			log.Printf("func [%s] params at least one context", funcName)
+			//f.Call([]reflect.Value{reflect.ValueOf(ctx)})
 		}
 	}
 }
@@ -223,19 +203,19 @@ func (this *Actor) loop() bool{
 		this.call(io)
 	case msg := <-this.m_AcotrChan :
 		if msg == DESDORY_EVENT{
-			return true
+			return false
 		}
 	case <- this.m_pTimer.C:
 		if this.m_TimerCall != nil{
 			this.m_TimerCall()
 		}
 	}
-	return false
+	return true
 }
 
 func (this *Actor) run(){
 	for {
-		if this.loop(){
+		if !this.loop(){
 			break
 		}
 	}

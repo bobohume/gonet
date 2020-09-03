@@ -26,8 +26,6 @@ type(
 		GetServer() *network.ServerSocket
 		GetWorldSocket() *network.ClientSocket
 	}
-
-	BitStream base.BitStream
 )
 
 var(

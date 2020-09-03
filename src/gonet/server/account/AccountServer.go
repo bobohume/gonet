@@ -2,10 +2,8 @@
 
  import (
 	 "database/sql"
-	 "github.com/golang/protobuf/proto"
 	 "gonet/base"
 	 "gonet/db"
-	 "gonet/message"
 	 "gonet/network"
 	 "gonet/server/common/cluster"
 	 "log"
@@ -20,7 +18,6 @@ type(
 		m_config base.Config
 		m_Log	base.CLog
 		m_AccountMgr *AccountMgr
-		m_Cluster *cluster.Service
 		m_SnowFlake *cluster.Snowflake
 	}
 
@@ -33,8 +30,6 @@ type(
 		GetClusterMgr() *ClusterManager
 		GetAccountMgr() *AccountMgr
 	}
-
-	BitStream base.BitStream
 )
 
 var(
@@ -136,17 +131,4 @@ func (this *ServerMgr) GetClusterMgr() *ClusterManager{
 
 func (this *ServerMgr) GetAccountMgr() *AccountMgr{
 	return this.m_AccountMgr
-}
-
-func SendToClient(socketId int, packet proto.Message, rpcHead ...*message.RpcHead){
-	buff := message.Encode(packet)
-	pakcetHead := packet.(message.Packet).GetPacketHead()
-	var rpcPacket *message.RpcPacket
-	if rpcHead != nil{
-		rpcPacket = &message.RpcPacket{FuncName:message.GetMessageName(packet), ArgLen:1, RpcHead:rpcHead[0], RpcBody:buff}
-	}else if pakcetHead != nil {
-		rpcPacket = &message.RpcPacket{FuncName:message.GetMessageName(packet), ArgLen:1, RpcHead:&message.RpcHead{Id:pakcetHead.Id}, RpcBody:buff}
-	}
-	data, _ := proto.Marshal(rpcPacket)
-	SERVER.GetServer().SendById(socketId, data)
 }

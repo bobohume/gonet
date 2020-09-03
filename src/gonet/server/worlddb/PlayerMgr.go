@@ -1,9 +1,11 @@
 package worlddb
 
 import (
+	"context"
 	"database/sql"
 	"gonet/actor"
 	"gonet/db"
+	"gonet/rpc"
 	"gonet/server/world"
 	"time"
 )
@@ -37,7 +39,7 @@ func (this* PlayerMgr) Init(num int){
 	this.m_PlayerMap = make(map[int64] *Player)
 	this.RegisterTimer(1000 * 1000 * 1000, this.Update)//定时器
 	//load blob
-	this.RegisterCall("Load_Player", func(playerId int64, accountId int64) {
+	this.RegisterCall("Load_Player", func(ctx context.Context, playerId int64, accountId int64) {
 		pPlayer, bEx := this.m_PlayerMap[playerId]
 		if !bEx {
 			//加载人物数据
@@ -54,11 +56,11 @@ func (this* PlayerMgr) Init(num int){
 		}
 
 		//发送人物数据
-		SERVER.GetServer().SendMsgById(this.GetSocketId(), "Load_Player_Finish", accountId, pPlayer.PlayerBlob)
+		SERVER.GetServer().SendMsg(rpc.RpcHead{SocketId:this.GetRpcHead(ctx).SocketId}, "Load_Player_Finish", accountId, pPlayer.PlayerBlob)
 	})
 
 	//save blob
-	this.RegisterCall("Save_Player", func(playerId int64, playerBlob []byte, accountId int64) {
+	this.RegisterCall("Save_Player", func(ctx context.Context, playerId int64, playerBlob []byte, accountId int64) {
 		pPlayer, bEx := this.m_PlayerMap[playerId]
 		if bEx {
 			pPlayer.PlayerBlob = playerBlob

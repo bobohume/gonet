@@ -1,11 +1,13 @@
 package player
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"gonet/actor"
 	"gonet/base"
 	"gonet/db"
+	"gonet/rpc"
 	"gonet/server/common"
 	"gonet/server/world"
 )
@@ -45,29 +47,29 @@ func (this* PlayerMgr) Init(num int){
 
 	this.RegisterTimer(1000 * 1000 * 1000, this.Update)//定时器
 	//玩家登录
-	this.RegisterCall("G_W_CLoginRequest", func(accountId int64, gateClusterId int) {
+	this.RegisterCall("G_W_CLoginRequest", func(ctx context.Context, accountId int64, gateClusterId uint32, zoneClusterId uint32) {
 		pPlayer := this.GetPlayer(accountId)
 		if pPlayer != nil{
-			pPlayer.SendMsg("Logout", accountId)
+			pPlayer.SendMsg(rpc.RpcHead{},"Logout", accountId)
 			this.RemovePlayer(accountId)
 		}
 
 		pPlayer = this.AddPlayer(accountId)
-		pPlayer.SendMsg("Login", gateClusterId)
+		pPlayer.SendMsg(rpc.RpcHead{},"Login", gateClusterId, zoneClusterId)
 	})
 
 	//玩家断开链接
-	this.RegisterCall("G_ClientLost", func(accountId int64) {
+	this.RegisterCall("G_ClientLost", func(ctx context.Context, accountId int64) {
 		pPlayer := this.GetPlayer(accountId)
 		if pPlayer != nil{
-			pPlayer.SendMsg("Logout", accountId)
+			pPlayer.SendMsg(rpc.RpcHead{},"Logout", accountId)
 		}
 
 		this.RemovePlayer(accountId)
 	})
 
 	//account创建玩家反馈， 考虑到在创建角色的时候退出的情况
-	this.RegisterCall("A_W_CreatePlayer", func(accountId int64, playerId int64, playername string, sex int32, socketId int) {
+	this.RegisterCall("A_W_CreatePlayer", func(ctx context.Context, accountId int64, playerId int64, playername string, sex int32, socketId uint32) {
 		//查询playerid是否唯一
 		error := 1
 		rows, err := this.m_db.Query(fmt.Sprintf("select 1 from tbl_player where player_id = %d", playerId))
@@ -93,7 +95,7 @@ func (this* PlayerMgr) Init(num int){
 							//通知玩家`
 							pPlayer := this.GetPlayer(accountId)
 							if pPlayer != nil {
-								pPlayer.SendMsg("CreatePlayer", playerId, socketId, error)
+								pPlayer.SendMsg(rpc.RpcHead{},"CreatePlayer", playerId, socketId, error)
 							}
 						}
 					}
@@ -103,7 +105,7 @@ func (this* PlayerMgr) Init(num int){
 
 		if error == 1 {//创建失败通知accout删除player
 			this.m_Log.Printf("账号[%d]创建玩家[%d]失败", accountId, playerId)
-			world.SERVER.GetAccountCluster().BalanceMsg("W_A_DeletePlayer", accountId, playerId)
+			world.SendToAccount("W_A_DeletePlayer", accountId, playerId)
 		}
 	})
 

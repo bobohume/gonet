@@ -12,7 +12,8 @@ type(
 	IPlayer interface {
 		actor.IActor
 
-		GetGateClusterId() int//获取网关id
+		GetGateClusterId() uint32//获取网关集群id
+		GetZoneClusterId() uint32//获取战斗集群id
 		GetPlayerId() int64//获取playerid
 		GetAccountId() int64//获取账号id
 
@@ -23,6 +24,13 @@ type(
 		DelKV(key int)//删除key
 		GetKV(key int) int64//获取key
 
+		AddBuff(Orgint int, BuffId int)//添加buff
+		RemoveBuff(BuffId int)//删除buff
+
+		AddBuffS(Orgint int, BuffId []int)//批量添加buff
+		RemoveBuffS(BuffId []int)//批量删除buff
+
+		SendToZone(funcName string, params  ...interface{})
 		SendToClient(packet proto.Message)
 
 		GetItemMgr() IItemMgr

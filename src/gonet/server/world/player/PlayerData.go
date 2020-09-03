@@ -35,7 +35,8 @@ type (
 
 		AccountId int64
 		PlayerId int64
-		GateClusterId int
+		GateClusterId uint32
+		ZoneClusterId uint32
 		AccountName string
 		PlayerNum int
 		PlayerIdList []int64
@@ -48,12 +49,14 @@ type (
 	IPlayerData interface {
 		Init()
 
-		SetGateClusterId(int)
-		GetGateClusterId() int
+		SetGateClusterId(uint32)
+		GetGateClusterId() uint32
+		SetZoneClusterId(uint32)
+		GetZoneClusterId() uint32
 		GetAccountId() int64
+		GetPlayerCount() int
 		SetPlayerId(int64) bool
 		GetPlayerId() int64
-		GetPlayerCount() int
 		GetPlayerName() string
 
 		LoadPlayerData()//加载其他数据
@@ -74,11 +77,19 @@ func (this *PlayerData) Init(){
 	//this.PlayerSimpleDataList = make([]*SimplePlayerData, 0)
 }
 
-func (this *PlayerData) SetGateClusterId(clusterId int){
+func (this *PlayerData) SetZoneClusterId(clusterId uint32){
+	this.ZoneClusterId = clusterId
+}
+
+func (this *PlayerData) GetZoneClusterId() uint32{
+	return this.ZoneClusterId
+}
+
+func (this *PlayerData) SetGateClusterId(clusterId uint32){
 	this.GateClusterId = clusterId
 }
 
-func (this *PlayerData) GetGateClusterId() int{
+func (this *PlayerData) GetGateClusterId() uint32{
 	return this.GateClusterId
 }
 

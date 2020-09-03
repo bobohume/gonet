@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"gonet/actor"
 	"gonet/message"
 	"gonet/server/common"
@@ -18,7 +19,7 @@ type (
 
 func (this *CmdProcess) Init(num int) {
 	this.Actor.Init(num)
-	this.RegisterCall("msg", func(args string) {
+	this.RegisterCall("msg", func(ctx context.Context, args string) {
 		packet1 := &message.C_W_ChatMessage{PacketHead:message.BuildPacketHead( PACKET.AccountId, message.SERVICE_GATESERVER),
 			Sender:PACKET.PlayerId,
 			Recver:0,

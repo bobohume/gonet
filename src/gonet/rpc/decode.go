@@ -1,6 +1,7 @@
 package rpc
 
 import (
+	"context"
 	"github.com/golang/protobuf/proto"
 	"github.com/json-iterator/go"
 	"gonet/base"
@@ -10,11 +11,14 @@ import (
 )
 
 //rpc UnmarshalHead
-func UnmarshalHead(buff []byte) *message.RpcPacket{
+func UnmarshalHead(buff []byte) (*message.RpcPacket, RpcHead){
 	rpcPacket := &message.RpcPacket{}
 	proto.Unmarshal(buff, rpcPacket)
+	if rpcPacket.RpcHead == nil{
+		rpcPacket.RpcHead = &message.RpcHead{}
+	}
 	rpcPacket.FuncName = strings.ToLower(rpcPacket.FuncName)
-	return rpcPacket
+	return rpcPacket, *(*RpcHead)(rpcPacket.RpcHead)
 }
 
 //rpc Unmarshal
@@ -22,8 +26,9 @@ func UnmarshalHead(buff []byte) *message.RpcPacket{
 func UnmarshalBody(rpcPacket *message.RpcPacket, pFuncType reflect.Type) []interface{}{
 	bitstream := base.NewBitStream(rpcPacket.RpcBody, len(rpcPacket.RpcBody))
 	nCurLen := int(rpcPacket.ArgLen)
-	params := make([]interface{}, nCurLen)
-	for i := 0; i < nCurLen; i++  {
+	params := make([]interface{}, nCurLen+1)
+	params[0] = context.WithValue(context.Background(), "rpcHead", *(*RpcHead)(rpcPacket.RpcHead))
+	for i := 1; i <= nCurLen; i++  {
 		switch bitstream.ReadInt(8) {
 		case RPC_BOOL:
 			params[i] = bitstream.ReadFlag()

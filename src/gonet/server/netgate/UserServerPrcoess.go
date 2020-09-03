@@ -14,7 +14,7 @@ type (
 
 func (this *UserServerProcess) Init(num int) {
 	this.Actor.Init(num)
-	this.RegisterCall("DISCONNECT", func(socketId int) {
+	this.RegisterCall("DISCONNECT", func(ctx context.Context, socketId uint32) {
 		SERVER.GetPlayerMgr().SendMsg("DEL_ACCOUNT", socketId)
 	})
 
@@ -26,7 +26,7 @@ func (this *UserServerProcess) PacketFunc(id int, buff []byte) bool{
 	io.Buff = buff
 	io.SocketId = id
 
-	rpcPacket := rpc.UnmarshalHead(io.Buff)
+	rpcPacket, head := rpc.UnmarshalHead(io.Buff)
 	if this.FindCall(rpcPacket.FuncName) != nil{
 		this.Send(io)
 		return true

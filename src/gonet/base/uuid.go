@@ -67,24 +67,24 @@ func (this *Snowflake) Init(workerid int64){
 }
 
 // Generate creates and returns a unique snowflake ID
-func (s *Snowflake) UUID() int64 {
-	s.Lock()
+func (this *Snowflake) UUID() int64 {
+	this.Lock()
 	now := time.Now().UnixNano() / 1000000
-	if s.timestamp == now {
-		s.sequence = (s.sequence + 1) & sequenceMask
+	if this.timestamp == now {
+		this.sequence = (this.sequence + 1) & sequenceMask
 
-		if s.sequence == 0 {
-			for now <= s.timestamp {
+		if this.sequence == 0 {
+			for now <= this.timestamp {
 				now = time.Now().UnixNano() / 1000000
 			}
 		}
 	} else {
-		s.sequence = 0
+		this.sequence = 0
 	}
 
-	s.timestamp = now
-	r := int64((now-twepoch)<<timestampShift | (s.workerid << workeridShift) | (s.sequence))
-	s.Unlock()
+	this.timestamp = now
+	r := int64((now-twepoch)<<timestampShift | (this.workerid << workeridShift) | (this.sequence))
+	this.Unlock()
 	return r
 }
 

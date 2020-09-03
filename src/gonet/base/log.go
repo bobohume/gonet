@@ -63,7 +63,7 @@ func (this *CLog) GetSuffix(nType LG_TYPE) string{
 	}
 }
 
-func (this *CLog)Write(nType LG_TYPE){
+func (this *CLog) Write(nType LG_TYPE){
 	this.WriteFile(nType)
 	tTime := time.Now()
 	this.m_Logger[nType].SetPrefix(fmt.Sprintf("[%04d-%02d-%02d %02d:%02d:%02d]",tTime.Year(), tTime.Month(), tTime.Day(),
@@ -76,7 +76,7 @@ func (this *CLog) Println(v1 ...interface{}) {
 	for i,v := range v1{
 		params[i] = v
 	}
-	params[len(v1)] = "\r\n"
+	params[len(v1)] = "\r"
 	this.m_Logger[LG_WARN].Output(2, fmt.Sprintln(params...))
 	log.Println(params...)
 }
@@ -105,7 +105,7 @@ func (this *CLog) Fatalln(v1 ...interface{}) {
 	for i,v := range v1{
 		params[i] = v
 	}
-	params[len(v1)] = "\r\n"
+	params[len(v1)] = "\r"
 	this.m_Logger[LG_ERROR].Output(2, fmt.Sprintln(params...))
 }
 

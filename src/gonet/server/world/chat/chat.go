@@ -1,8 +1,10 @@
 package chat
 
 import (
+	"context"
 	"gonet/actor"
 	"gonet/message"
+	"gonet/rpc"
 	"gonet/server/world"
 	player2 "gonet/server/world/player"
 	"time"
@@ -33,7 +35,7 @@ type(
 		accountId int64
 		playerId int64
 		playerName string
-		gateClusterId int
+		gateClusterId uint32
 	}
 
 	ChatMgr struct {
@@ -65,7 +67,7 @@ func (this *ChatMgr) Init(num int) {
 	actor.MGR.AddActor(this)
 	this.m_channelManager.Init()
 	//聊天信息
-	this.RegisterCall("C_W_ChatMessage", func(packet *message.C_W_ChatMessage){
+	this.RegisterCall("C_W_ChatMessage", func(ctx context.Context, packet *message.C_W_ChatMessage){
 		playerId := packet.GetSender()
 		accountId := packet.GetPacketHead().GetId()
 		if accountId == 0{
@@ -111,7 +113,7 @@ func (this *ChatMgr) Init(num int) {
 	})
 
 	//注册频道
-	this.RegisterCall("RegisterChannel", func(messageType int8, channelId int64) {
+	this.RegisterCall("RegisterChannel", func(ctx context.Context, messageType int8, channelId int64) {
 		this.GetChannelManager().RegisterChannel(messageType, "", channelId)
 
 		if 0 == channelId{
@@ -123,17 +125,17 @@ func (this *ChatMgr) Init(num int) {
 	})
 
 	//销毁频道
-	this.RegisterCall("UnRegisterChannel", func(channelId int64) {
+	this.RegisterCall("UnRegisterChannel", func(ctx context.Context, channelId int64) {
 		this.GetChannelManager().UnregisterChannel(channelId)
 	})
 
 	//添加玩家到频道
-	this.RegisterCall("AddPlayerToChannel", func(accoudId, playerId int64, channelId int64, playerName string, gateClusterId int) {
+	this.RegisterCall("AddPlayerToChannel", func(ctx context.Context, accoudId, playerId int64, channelId int64, playerName string, gateClusterId uint32) {
 		this.GetChannelManager().AddPlayer(accoudId, playerId, channelId, playerName, gateClusterId)
 	})
 
 	//删除玩家到频道
-	this.RegisterCall("RemovePlayerToChannel", func(playerId int64, channelId int64) {
+	this.RegisterCall("RemovePlayerToChannel", func(ctx context.Context, playerId int64, channelId int64) {
 		this.GetChannelManager().RemovePlayer(playerId, channelId)
 	})
 	
@@ -164,7 +166,8 @@ func SendMessage(msg *ChatMessage, player *player){
 }
 
 func (this *ChatMgr) SendMessageToAll(msg *ChatMessage){
-	world.SERVER.GetClusterMgr().BoardCastMsg(int(message.SERVICE_GATESERVER), "Chat_SendMessageAll", msg)
+	world.SERVER.GetClusterMgr().SendMsg(rpc.RpcHead{DestServerType:message.SERVICE_GATESERVER, SendType:message.SEND_BOARD_CAST},
+	"Chat_SendMessageAll", msg)
 }
 
 

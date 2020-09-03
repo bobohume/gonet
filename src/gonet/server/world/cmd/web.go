@@ -10,7 +10,7 @@ func cmdHandle(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	cmd := r.FormValue("cmd")
 	if cmd != ""{
-		common.ParseConsole(g_Cmd, []byte(cmd))
+		common.ParseConsole(g_Cmd, (cmd))
 	}
 }
 

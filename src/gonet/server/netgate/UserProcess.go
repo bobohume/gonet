@@ -1,6 +1,7 @@
 package netgate
 
 import (
+	"context"
 	"gonet/actor"
 	"gonet/base"
 	"gonet/message"
@@ -10,7 +11,7 @@ import (
 )
 
 var(
-	C_A_LoginRequest 		 = strings.ToLower("C_A_LoginRequest")
+	C_A_LoginRequest = strings.ToLower("C_A_LoginRequest")
 	C_A_RegisterRequest 	 = strings.ToLower("C_A_RegisterRequest")
 )
 
@@ -22,61 +23,63 @@ type(
 	IUserPrcoess interface {
 		actor.IActor
 
-		CheckClient(int, string, *message.Ipacket)bool
-		CheckClientEx(int, string, *message.Ipacket) *AccountInfo
-		SwtichSendToWorld(int, string, *message.Ipacket, []byte)
-		SwtichSendToAccount(int, string, *message.Ipacket, []byte)
+		CheckClientEx(uint32, string, rpc.RpcHead)bool
+		CheckClient(uint32, string,  rpc.RpcHead) *AccountInfo
+		SwtichSendToWorld(uint32, string, rpc.RpcHead, []byte)
+		SwtichSendToAccount(uint32, string,  rpc.RpcHead, []byte)
+		SwtichSendToZone(uint32, string,  rpc.RpcHead, []byte)
 	}
 )
 
-func (this *UserPrcoess) CheckClient(sockId int, packetName string, packetHead *message.Ipacket) bool{
-	if packetHead != nil{
-		if IsCheckClient(packetName){
-			return  true
-		}
-
-		accountId := SERVER.GetPlayerMgr().GetAccount(sockId)
-		if accountId <= 0 || accountId != packetHead.Id {
-			SERVER.GetLog().Fatalf("Old socket communication or viciousness[%d].", sockId)
-			return false
-		}
+func (this *UserPrcoess) CheckClientEx(sockId uint32, packetName string, head rpc.RpcHead) bool{
+	if IsCheckClient(packetName){
 		return  true
 	}
-	return  false
-}
 
-func (this *UserPrcoess) CheckClientEx(sockId int, packetName string, packetHead *message.Ipacket) *AccountInfo{
-	if packetHead != nil{
-		if IsCheckClient(packetName){
-			return  nil
-		}
-
-		pAccountInfo := SERVER.GetPlayerMgr().GetAccountInfo(sockId)
-		if pAccountInfo != nil && (pAccountInfo.AccountId <= 0 || pAccountInfo.AccountId != packetHead.Id){
-			SERVER.GetLog().Fatalf("Old socket communication or viciousness[%d].", sockId)
-			return nil
-		}
-		return pAccountInfo
+	accountId := SERVER.GetPlayerMgr().GetAccount(sockId)
+	if accountId <= 0 || accountId != head.Id {
+		SERVER.GetLog().Fatalf("Old socket communication or viciousness[%d].", sockId)
+		return false
 	}
-	return nil
+	return  true
 }
 
-func (this *UserPrcoess) SwtichSendToWorld(socketId int, packetName string, packetHead *message.Ipacket, buff []byte){
-	pAccountInfo := this.CheckClientEx(socketId, packetName, packetHead)
+func (this *UserPrcoess) CheckClient(sockId uint32, packetName string, head rpc.RpcHead) *AccountInfo{
+	pAccountInfo := SERVER.GetPlayerMgr().GetAccountInfo(sockId)
+	if pAccountInfo != nil && (pAccountInfo.AccountId <= 0 || pAccountInfo.AccountId != head.Id){
+		SERVER.GetLog().Fatalf("Old socket communication or viciousness[%d].", sockId)
+		return nil
+	}
+	return pAccountInfo
+}
+
+func (this *UserPrcoess) SwtichSendToWorld(socketId uint32, packetName string, head rpc.RpcHead, buff []byte){
+	pAccountInfo := this.CheckClient(socketId, packetName, head)
 	if pAccountInfo != nil{
 		buff = base.SetTcpEnd(buff)
-		SERVER.GetWorldCluster().Send(pAccountInfo.WClusterId, buff)
+		head.ClusterId = pAccountInfo.WClusterId
+		SERVER.GetWorldCluster().Send(head, buff)
 	}
 }
 
-func (this *UserPrcoess) SwtichSendToAccount(socketId int, packetName string, packetHead *message.Ipacket, buff []byte){
-	if this.CheckClient(socketId, packetName, packetHead) == true {
+func (this *UserPrcoess) SwtichSendToAccount(socketId uint32, packetName string, head rpc.RpcHead, buff []byte){
+	if this.CheckClientEx(socketId, packetName, head) == true {
 		buff = base.SetTcpEnd(buff)
-		SERVER.GetAccountCluster().BalanceSend(buff)
+		head.SendType = message.SEND_BALANCE
+		SERVER.GetAccountCluster().Send(head, buff)
 	}
 }
 
-func (this *UserPrcoess) PacketFunc(socketid int, buff []byte) bool{
+func (this *UserPrcoess) SwtichSendToZone(socketId uint32, packetName string, head rpc.RpcHead, buff []byte){
+	pAccountInfo := this.CheckClient(socketId, packetName, head)
+	if pAccountInfo != nil{
+		buff = base.SetTcpEnd(buff)
+		head.ClusterId = pAccountInfo.ZClusterId
+		SERVER.GetZoneCluster().Send(head, buff)
+	}
+}
+
+func (this *UserPrcoess) PacketFunc(socketid uint32, buff []byte) bool{
 	packetId, data := message.Decode(buff)
 	packet := message.GetPakcet(packetId)
 	if packet == nil{
@@ -84,7 +87,7 @@ func (this *UserPrcoess) PacketFunc(socketid int, buff []byte) bool{
 		if packetId == network.DISCONNECTINT{
 			stream := base.NewBitStream(buff, len(buff))
 			stream.ReadInt(32)
-			SERVER.GetPlayerMgr().SendMsg("DEL_ACCOUNT", stream.ReadInt(32))
+			SERVER.GetPlayerMgr().SendMsg(rpc.RpcHead{},"DEL_ACCOUNT", uint32(stream.ReadInt(32)))
 		}else{
 			SERVER.GetLog().Printf("包解析错误1  socket=%d", socketid)
 		}
@@ -107,20 +110,22 @@ func (this *UserPrcoess) PacketFunc(socketid int, buff []byte) bool{
 	}
 
 	packetName := message.GetMessageName(packet)
-	rpcHead := &message.RpcHead{Id:packetHead.Id}
+	head := rpc.RpcHead{Id:packetHead.Id}
 	if packetName  == C_A_LoginRequest{
-		rpcHead.Id = int64(socketid)
+		head.ClusterId = socketid
 	}else if packetName  == C_A_RegisterRequest {
-		rpcHead.Id = int64(socketid)
+		head.ClusterId = socketid
 	}
 
 	//解析整个包
 	if packetHead.DestServerType == message.SERVICE_WORLDSERVER{
-		this.SwtichSendToWorld(socketid, packetName, packetHead, rpc.Marshal(packetName, rpcHead, packet))
+		this.SwtichSendToWorld(socketid, packetName, head, rpc.Marshal(head, packetName,packet))
 	}else if packetHead.DestServerType == message.SERVICE_ACCOUNTSERVER{
-		this.SwtichSendToAccount(socketid, packetName, packetHead, rpc.Marshal(packetName, rpcHead, packet))
+		this.SwtichSendToAccount(socketid, packetName, head, rpc.Marshal(head, packetName,packet))
+	}else if packetHead.DestServerType == message.SERVICE_ZONESERVER{
+		this.SwtichSendToZone(socketid, packetName, head, rpc.Marshal(head, packetName, packet))
 	}else{
-		this.Actor.PacketFunc(socketid, rpc.Marshal(packetName, rpcHead, packet))
+		this.Actor.PacketFunc(socketid, rpc.Marshal(head, packetName, packet))
 	}
 
 	return true
@@ -128,10 +133,10 @@ func (this *UserPrcoess) PacketFunc(socketid int, buff []byte) bool{
 
 func (this *UserPrcoess) Init(num int) {
 	this.Actor.Init(num)
-	this.RegisterCall("C_G_LogoutRequest", func(accountId int, UID int){
-		SERVER.GetLog().Printf("logout Socket:%d Account:%d UID:%d ",this.GetSocketId(), accountId,UID )
-		SERVER.GetPlayerMgr().SendMsg("DEL_ACCOUNT", this.GetSocketId())
-		SendToClient(this.GetSocketId(), &message.C_G_LogoutResponse{PacketHead:message.BuildPacketHead( 0, 0)})
+	this.RegisterCall("C_G_LogoutRequest", func(ctx context.Context, accountId int, UID int){
+		SERVER.GetLog().Printf("logout Socket:%d Account:%d UID:%d ",this.GetRpcHead(ctx).SocketId, accountId,UID )
+		SERVER.GetPlayerMgr().SendMsg(rpc.RpcHead{},"DEL_ACCOUNT", this.GetRpcHead(ctx).SocketId)
+		SendToClient(this.GetRpcHead(ctx).SocketId, &message.C_G_LogoutResponse{PacketHead:message.BuildPacketHead( 0, 0)})
 	})
 
 	this.Actor.Start()

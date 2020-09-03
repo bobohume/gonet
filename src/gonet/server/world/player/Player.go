@@ -1,6 +1,7 @@
 package player
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"github.com/golang/protobuf/proto"
@@ -8,6 +9,7 @@ import (
 	"gonet/base"
 	"gonet/db"
 	"gonet/message"
+	"gonet/rpc"
 	"gonet/server/common"
 	"gonet/server/world"
 )
@@ -35,7 +37,7 @@ func (this *Player) Init(num int){
 	this.m_ItemMgr.Init(this)
 
 	//玩家登录
-	this.RegisterCall("Login", func(clusterId int) {
+	this.RegisterCall("Login", func(ctx context.Context, gateClusterId uint32, zoneClusterId uint32) {
 		PlayerSimpleList := LoadSimplePlayerDatas(this.AccountId)
 		this.PlayerSimpleDataList = PlayerSimpleList
 
@@ -47,7 +49,8 @@ func (this *Player) Init(num int){
 		}
 
 		this.m_Log.Println("玩家登录成功")
-		this.SetGateClusterId(clusterId)
+		this.SetGateClusterId(gateClusterId)
+		this.SetZoneClusterId(zoneClusterId)
 		this.SendToClient(&message.W_C_SelectPlayerResponse{PacketHead: message.BuildPacketHead( this.AccountId,  message.SERVICE_CLIENT),
 			AccountId:this.AccountId,
 			PlayerData:PlayerDataList,
@@ -55,7 +58,7 @@ func (this *Player) Init(num int){
 	})
 
 	//玩家登录到游戏
-	this.RegisterCall("C_W_Game_LoginRequset", func(packet *message.C_W_Game_LoginRequset) {
+	this.RegisterCall("C_W_Game_LoginRequset", func(ctx context.Context, packet *message.C_W_Game_LoginRequset) {
 		nPlayerId := packet.GetPlayerId()
 		if !this.SetPlayerId(nPlayerId){
 			this.m_Log.Printf("帐号[%d]登入的玩家[%d]不存在", this.AccountId, nPlayerId)
@@ -67,11 +70,11 @@ func (this *Player) Init(num int){
 		//加载到地图
 		this.AddMap()
 		//添加到世界频道
-		actor.MGR.SendMsg("chatmgr", "AddPlayerToChannel", this.AccountId, this.GetPlayerId(), int64(-3000), this.GetPlayerName(), this.GetGateClusterId())
+		actor.MGR.SendMsg(rpc.RpcHead{ActorName:"chatmgr"}, "AddPlayerToChannel", this.AccountId, this.GetPlayerId(), int64(-3000), this.GetPlayerName(), this.GetGateClusterId())
 	})
 
 	//创建玩家
-	this.RegisterCall("C_W_CreatePlayerRequest", func(packet *message.C_W_CreatePlayerRequest){
+	this.RegisterCall("C_W_CreatePlayerRequest", func(ctx context.Context, packet *message.C_W_CreatePlayerRequest){
 		rows, err := this.m_db.Query(fmt.Sprintf("select count(player_id) as player_count from tbl_player where account_id = %d", this.AccountId))
 		if err == nil {
 			rs := db.Query(rows, err)
@@ -79,20 +82,20 @@ func (this *Player) Init(num int){
 				player_count := rs.Row().Int("player_count")
 				if player_count >= 1 {
 					this.m_Log.Printf("账号[%d]创建玩家上限", this.AccountId)
-					world.SendToClientBySocketId(this.GetSocketId(), &message.W_C_CreatePlayerResponse{
+					world.SendToClientBySocketId(this.GetRpcHead(ctx).SocketId, &message.W_C_CreatePlayerResponse{
 						PacketHead:message.BuildPacketHead(this.AccountId, 0 ),
 						Error:int32(1),
 						PlayerId:0,
 					})
 				}else{
-					world.SERVER.GetAccountCluster().BalanceMsg("W_A_CreatePlayer", this.AccountId, packet.GetPlayerName(), packet.GetSex(), this.GetSocketId())
+					world.SendToAccount("W_A_CreatePlayer", this.AccountId, packet.GetPlayerName(), packet.GetSex(), this.GetRpcHead(ctx).SocketId)
 				}
 			}
 		}
 	})
 
 	//account创建玩家反馈
-	this.RegisterCall("CreatePlayer", func(playerId int64, socketId int, err int) {
+	this.RegisterCall("CreatePlayer", func(ctx context.Context, playerId int64, socketId uint32, err int) {
 		//创建成功
 		if err == 0{
 			this.PlayerIdList = []int64{}
@@ -109,7 +112,7 @@ func (this *Player) Init(num int){
 	})
 
 	//玩家断开链接
-	this.RegisterCall("Logout", func(accountId int64) {
+	this.RegisterCall("Logout", func(ctx context.Context, accountId int64) {
 		world.SERVER.GetLog().Printf("[%d] 断开链接", accountId)
 		this.SetGateClusterId(0)
 		this.Stop()

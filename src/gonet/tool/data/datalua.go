@@ -59,12 +59,27 @@ func OpenExceLua(filename string){
 			}
 			continue*/
 		}
+
+		//检查行列
+		func(){
+			if sheet.MaxRow != len(sheet.Rows){
+				fmt.Printf("data [%s] 行数不统一", filename,  )
+				return
+			}
+			for i, row := range sheet.Rows {
+				if sheet.MaxCol != len(row.Cells){
+					fmt.Printf("data [%s] 列数不统一,第 [%d] 行", filename,  i)
+					return
+				}
+			}
+		}()
+
 		for i, row := range sheet.Rows {
 			for j, cell := range row.Cells {
-				if i == 0 {
+				if i == COL_NAME {
 					colNames = append(colNames, cell.String())
 					continue
-				} else if i == 1{
+				} else if i == COL_CLIENT_NAME{
 					colName := cell.String()
 					dataNames = append(dataNames, colName)
 					if j == 0{
@@ -74,7 +89,7 @@ func OpenExceLua(filename string){
 						dataColLen = j
 					}
 					continue
-				}else if i == 2{
+				}else if i == COL_TYPE{
 					coltype := strings.ToLower(cell.String())
 					rd :=  bufio.NewReader(strings.NewReader(coltype))
 					data, _, _ := rd.ReadLine()
@@ -105,24 +120,40 @@ func OpenExceLua(filename string){
 							}
 						}
 					}
-					if coltype == "string"{
+
+					switch coltype {
+					case "string":
 						dataTypes = append(dataTypes, base.DType_String)
-					}else if coltype == "enum"{
+					case "enum":
 						dataTypes = append(dataTypes, base.DType_Enum)
-					}else if coltype == "int8"{
+					case "int8":
 						dataTypes = append(dataTypes, base.DType_S8)
-					}else if coltype == "int16"{
+					case "int16":
 						dataTypes = append(dataTypes, base.DType_S16)
-					}else if coltype == "int"{
+					case "int":
 						dataTypes = append(dataTypes, base.DType_S32)
-					} else if coltype == "float"{
+					case "float":
 						dataTypes = append(dataTypes, base.DType_F32)
-					}else if coltype == "float64"{
+					case "float64":
 						dataTypes = append(dataTypes, base.DType_F64)
-					}else if coltype == "int64"{
+					case "int64":
 						dataTypes = append(dataTypes, base.DType_S64)
-					}else{
-						fmt.Printf("data [%s] [%s] col[%d] type not support in[string, enum, int8, int16, int32, float32, float64]", filename, coltype, j )
+					case "[]string":
+						dataTypes = append(dataTypes, base.DType_StringArray)
+					case "[]int8":
+						dataTypes = append(dataTypes, base.DType_S8Array)
+					case "[]int16":
+						dataTypes = append(dataTypes, base.DType_S16Array)
+					case "[]int":
+						dataTypes = append(dataTypes, base.DType_S32Array)
+					case "[]float":
+						dataTypes = append(dataTypes, base.DType_F32Array)
+					case "[]float64":
+						dataTypes = append(dataTypes, base.DType_F64Array)
+					case "[]int64":
+						dataTypes = append(dataTypes, base.DType_S64Array)
+					default:
+						fmt.Printf("data [%s] [%s] col[%d] type not support in[string, enum, int8, int16, int32, float32, float64, []string, []int8, []int16, []int32, []float32, []float64]", filename, coltype, j )
 						return
 					}
 					continue
@@ -132,100 +163,104 @@ func OpenExceLua(filename string){
 					stream.WriteString(fmt.Sprintf("\t[%s] = {\n", cell.Value))
 				}
 
-				writeInt := func() {
-					switch cell.Type() {
-					case xlsx.CellTypeString:
-						stream.WriteString(fmt.Sprintf("\t\t%s = %d,\n",dataNames[j], base.Int(cell.String())))
-					case xlsx.CellTypeStringFormula:
-						stream.WriteString(fmt.Sprintf("\t\t%s = %d,\n",dataNames[j], base.Int(cell.String())))
-					case xlsx.CellTypeNumeric:
-						stream.WriteString(fmt.Sprintf("\t\t%s = %d,\n",dataNames[j], base.Int(cell.Value)))
-					case xlsx.CellTypeBool:
-						bVal := base.Bool(cell.Value)
-						if bVal{
-							stream.WriteString(fmt.Sprintf("\t\t%s = %d,\n",dataNames[j], 1))
-						}else{
-							stream.WriteString(fmt.Sprintf("\t\t%s = %d,\n",dataNames[j], 0))
-						}
-					case xlsx.CellTypeDate:
-						stream.WriteString(fmt.Sprintf("\t\t%s = %d,\n",dataNames[j], base.Int(cell.Value)))
-					}
-				}
-
 				//过滤掉不是客户端的数据
 				if dataNames[j] == "" || dataNames[j] == "0"{
 					continue
 				}
 
-				if dataTypes[j] == base.DType_String{
-					switch cell.Type() {
-					case xlsx.CellTypeString:
-						stream.WriteString(fmt.Sprintf("\t\t%s = \"%s\",\n",dataNames[j], cell.String()))
-					case xlsx.CellTypeStringFormula:
-						stream.WriteString(fmt.Sprintf("\t\t%s = \"%s\",\n",dataNames[j], cell.String()))
-					case xlsx.CellTypeNumeric:
-						stream.WriteString(fmt.Sprintf("\t\t%s = \"%s\",\n",dataNames[j], cell.Value))
-					case xlsx.CellTypeBool:
-						bVal := base.Bool(cell.Value)
-						if bVal{
-							stream.WriteString(fmt.Sprintf("\t\t%s = \"%s\",\n",dataNames[j], "true"))
-						}else{
-							stream.WriteString(fmt.Sprintf("\t\t%s = \"%s\",\n",dataNames[j], "false"))
-						}
-					case xlsx.CellTypeDate:
-						stream.WriteString(fmt.Sprintf("\t\t%s = \"%s\",\n",dataNames[j], cell.Value))
-					}
-				}else if dataTypes[j] == base.DType_Enum{
+				switch dataTypes[j] {
+				case base.DType_String:
+					stream.WriteString(fmt.Sprintf("\t\t%s = \"%s\",\n",dataNames[j], cell.Value))
+				case base.DType_Enum:
 					val, bEx := enumKVMap[j][strings.ToLower(cell.Value)]
 					if bEx{
 						stream.WriteString(fmt.Sprintf("\t\t%s = %d,\n",dataNames[j], val))
 					}else{
 						stream.WriteString(fmt.Sprintf("\t\t%s = %d,\n",dataNames[j], 0))
 					}
-				}else if dataTypes[j] == base.DType_S8{
-					writeInt()
-				}else if dataTypes[j] == base.DType_S16{
-					writeInt()
-				}else if dataTypes[j] == base.DType_S32{
-					writeInt()
-				}else if dataTypes[j] == base.DType_F32{
-					switch cell.Type() {
-					case xlsx.CellTypeString:
-						stream.WriteString(fmt.Sprintf("\t\t%s = %f,\n",dataNames[j], base.Float32(cell.String())))
-					case xlsx.CellTypeStringFormula:
-						stream.WriteString(fmt.Sprintf("\t\t%s = %f,\n",dataNames[j], base.Float32(cell.String())))
-					case xlsx.CellTypeNumeric:
-						stream.WriteString(fmt.Sprintf("\t\t%s = %f,\n",dataNames[j], base.Float32(cell.Value)))
-					case xlsx.CellTypeBool:
-						bVal := base.Bool(cell.Value)
-						if bVal{
-							stream.WriteString(fmt.Sprintf("\t\t%s = %f,\n",dataNames[j], 1))
-						}else{
-							stream.WriteString(fmt.Sprintf("\t\t%s = %f,\n",dataNames[j], 0))
+				case base.DType_S8:
+					stream.WriteString(fmt.Sprintf("\t\t%s = %d,\n",dataNames[j], base.Int(cell.Value)))
+				case base.DType_S16:
+					stream.WriteString(fmt.Sprintf("\t\t%s = %d,\n",dataNames[j], base.Int(cell.Value)))
+				case base.DType_S32:
+					stream.WriteString(fmt.Sprintf("\t\t%s = %d,\n",dataNames[j], base.Int(cell.Value)))
+				case base.DType_F32:
+					stream.WriteString(fmt.Sprintf("\t\t%s = %f,\n",dataNames[j], base.Float32(cell.Value)))
+				case base.DType_F64:
+					stream.WriteString(fmt.Sprintf("\t\t%s = %f,\n",dataNames[j], base.Float64(cell.Value)))
+				case  base.DType_S64:
+					stream.WriteString(fmt.Sprintf("\t\t%s = %d,\n",dataNames[j], base.Int64(cell.Value)))
+
+				case base.DType_StringArray:
+					arr := splitArray(cell.Value)
+					stream.WriteString(fmt.Sprintf("\t\t%s = {", dataNames[j]))
+					for i, v := range arr{
+						stream.WriteString(fmt.Sprintf("\"%s\"",v))
+						if i != len(arr)-1{
+							stream.WriteString(",")
 						}
-					case xlsx.CellTypeDate:
-						stream.WriteString(fmt.Sprintf("\t\t%s = %f,\n",dataNames[j], base.Float32(cell.Value)))
 					}
-				}else if dataTypes[j] == base.DType_F64{
-					switch cell.Type() {
-					case xlsx.CellTypeString:
-						stream.WriteString(fmt.Sprintf("\t\t%s = %f,\n",dataNames[j], base.Float64(cell.String())))
-					case xlsx.CellTypeStringFormula:
-						stream.WriteString(fmt.Sprintf("\t\t%s = %f,\n",dataNames[j], base.Float64(cell.String())))
-					case xlsx.CellTypeNumeric:
-						stream.WriteString(fmt.Sprintf("\t\t%s = %f,\n",dataNames[j], base.Float64(cell.Value)))
-					case xlsx.CellTypeBool:
-						bVal := base.Bool(cell.Value)
-						if bVal{
-							stream.WriteString(fmt.Sprintf("\t\t%s = %f,\n",dataNames[j], 1))
-						}else{
-							stream.WriteString(fmt.Sprintf("\t\t%s = %f,\n",dataNames[j], 0))
+					stream.WriteString("},\n")
+				case base.DType_S8Array:
+					arr := splitArray(cell.Value)
+					stream.WriteString(fmt.Sprintf("\t\t%s = {", dataNames[j]))
+					for i, v := range arr{
+						stream.WriteString(fmt.Sprintf("%d",base.Int(v)))
+						if i != len(arr)-1{
+							stream.WriteString(",")
 						}
-					case xlsx.CellTypeDate:
-						stream.WriteString(fmt.Sprintf("\t\t%s = %f,\n",dataNames[j], base.Float64(cell.Value)))
 					}
-				}else if dataTypes[j] == base.DType_S64{
-					writeInt()
+					stream.WriteString("},\n")
+				case base.DType_S16Array:
+					arr := splitArray(cell.Value)
+					stream.WriteString(fmt.Sprintf("\t\t%s = {", dataNames[j]))
+					for i, v := range arr{
+						stream.WriteString(fmt.Sprintf("%d",base.Int(v)))
+						if i != len(arr)-1{
+							stream.WriteString(",")
+						}
+					}
+					stream.WriteString("},\n")
+				case base.DType_S32Array:
+					arr := splitArray(cell.Value)
+					stream.WriteString(fmt.Sprintf("\t\t%s = {", dataNames[j]))
+					for i, v := range arr{
+						stream.WriteString(fmt.Sprintf("%d",base.Int(v)))
+						if i != len(arr)-1{
+							stream.WriteString(",")
+						}
+					}
+					stream.WriteString("},\n")
+				case base.DType_F32Array:
+					arr := splitArray(cell.Value)
+					stream.WriteString(fmt.Sprintf("\t\t%s = {", dataNames[j]))
+					for i, v := range arr{
+						stream.WriteString(fmt.Sprintf("%f",base.Float32(v)))
+						if i != len(arr)-1{
+							stream.WriteString(",")
+						}
+					}
+					stream.WriteString("},\n")
+				case base.DType_F64Array:
+					arr := splitArray(cell.Value)
+					stream.WriteString(fmt.Sprintf("\t\t%s = {", dataNames[j]))
+					for i, v := range arr{
+						stream.WriteString(fmt.Sprintf("%f",base.Float64(v)))
+						if i != len(arr)-1{
+							stream.WriteString(",")
+						}
+					}
+					stream.WriteString("},\n")
+				case  base.DType_S64Array:
+					arr := splitArray(cell.Value)
+					stream.WriteString(fmt.Sprintf("\t\t%s = {", dataNames[j]))
+					for i, v := range arr{
+						stream.WriteString(fmt.Sprintf("%d",base.Int64(v)))
+						if i != len(arr)-1{
+							stream.WriteString(",")
+						}
+					}
+					stream.WriteString("},\n")
 				}
 
 				if j == dataColLen{

@@ -1,10 +1,12 @@
 package account
 
 import (
+	"context"
 	"gonet/actor"
 	"database/sql"
 	"gonet/db"
 	"fmt"
+	"gonet/rpc"
 )
 
 type (
@@ -37,11 +39,11 @@ func (this* AccountMgr) Init(num int){
 	this.m_AccountNameMap = make(map[string] *Account)
 	//this.RegisterTimer(1000 * 1000 * 1000, this.Update)//定时器
 	//账号登录处理
-	this.RegisterCall("Account_Login", func(accountName string, accountId int64, socketId int, id int) {
+	this.RegisterCall("Account_Login", func(ctx context.Context, accountName string, accountId int64, socketId uint32, id uint32) {
 		LoginAccount := func(pAccount *Account) {
 			if pAccount != nil {
 				SERVER.GetLog().Printf("帐号[%s]返回登录OK", accountName)
-				SERVER.GetServer().SendMsgById(id, "A_G_Account_Login", accountId, socketId)
+				SERVER.GetServer().SendMsg(rpc.RpcHead{SocketId:id}, "A_G_Account_Login", accountId, socketId)
 			}
 		}
 
@@ -60,7 +62,7 @@ func (this* AccountMgr) Init(num int){
 	})
 
 	//账号断开连接
-	this.RegisterCall("G_ClientLost", func(accountId int64) {
+	this.RegisterCall("G_ClientLost", func(ctx context.Context, accountId int64) {
 		SERVER.GetLog().Printf("账号[%d] 断开链接", accountId)
 		this.RemoveAccount(accountId, false)
 	})

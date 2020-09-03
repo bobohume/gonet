@@ -3,6 +3,7 @@ package network
 import (
 	"fmt"
 	"gonet/base"
+	"gonet/rpc"
 	"io"
 )
 
@@ -37,14 +38,14 @@ func (this *WebSocketClient) Start() bool {
 		this.m_PacketFuncList = this.m_pServer.m_PacketFuncList
 	}
 	this.m_nState = SSF_ACCEPT
-	go this.Run()
 	if this.m_nConnectType == CLIENT_CONNECT {
 		go this.SendLoop()
 	}
+	this.Run()
 	return true
 }
 
-func (this *WebSocketClient) Send(buff []byte) int {
+func (this *WebSocketClient) Send(head rpc.RpcHead,buff []byte) int {
 	defer func() {
 		if err := recover(); err != nil{
 			base.TraceCode(err)
@@ -56,9 +57,6 @@ func (this *WebSocketClient) Send(buff []byte) int {
 		case this.m_SendChan <- buff:
 		default://网络太卡,tcp send缓存满了并且发送队列也满了
 			this.OnNetFail(1)
-			if this.m_pServer != nil {
-				this.m_pServer.DelClinet(this)
-			}
 		}
 	}else{
 		return this.DoSend(buff)
@@ -69,6 +67,8 @@ func (this *WebSocketClient) Send(buff []byte) int {
 func (this *WebSocketClient) DoSend(buff []byte) int {
 	if this.m_Conn == nil{
 		return 0
+	}else if len(buff) > base.MAX_PACKET{
+		panic("send over base.MAX_PACKET")
 	}
 
 	n, err := this.m_Conn.Write(buff)
@@ -86,10 +86,13 @@ func (this *WebSocketClient) OnNetFail(error int) {
 	if this.m_nConnectType == CLIENT_CONNECT{//netgate对外格式统一
 		stream := base.NewBitStream(make([]byte, 32), 32)
 		stream.WriteInt(int(DISCONNECTINT), 32)
-		stream.WriteInt(this.m_ClientId, 32)
+		stream.WriteInt(int(this.m_ClientId), 32)
 		this.HandlePacket(this.m_ClientId, stream.GetBuffer())
 	}else{
 		this.CallMsg("DISCONNECT", this.m_ClientId)
+	}
+	if this.m_pServer != nil {
+		this.m_pServer.DelClinet(this)
 	}
 }
 
@@ -104,31 +107,38 @@ func (this *WebSocketClient) Close() {
 }
 
 func (this *WebSocketClient) Run() bool {
-	defer func() {
-		if err := recover(); err != nil {
-			base.TraceCode(err)
-		}
-	}()
-
 	var buff= make([]byte, this.m_ReceiveBufferSize)
-	for {
+	loop := func() bool{
+		defer func() {
+			if err := recover(); err != nil {
+				base.TraceCode(err)
+			}
+		}()
+
 		if this.m_bShuttingDown || this.m_Conn == nil{
-			break
+			return false
 		}
 
 		n, err := this.m_Conn.Read(buff)
 		if err == io.EOF {
 			fmt.Printf("远程链接：%s已经关闭！\n", this.m_Conn.RemoteAddr().String())
 			this.OnNetFail(0)
-			break
+			return false
 		}
 		if err != nil {
 			handleError(err)
 			this.OnNetFail(0)
-			break
+			return false
 		}
 		if n > 0 {
 			this.ReceivePacket(this.m_ClientId, buff[:n])
+		}
+		return true
+	}
+
+	for {
+		if !loop(){
+			break
 		}
 	}
 
