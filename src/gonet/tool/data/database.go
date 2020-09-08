@@ -262,7 +262,11 @@ func OpenExcel(filename string){
 						stream.WriteFloat64(base.Float64(v))
 					}
 				case base.DType_S64Array:
-					stream.WriteInt64(base.Int64(cell.Value), 64)
+					arr := splitArray(cell.Value)
+					stream.WriteInt(len(arr), 8)
+					for _, v := range arr{
+						stream.WriteInt64(base.Int64(v), 64)
+					}
 				}
 			}
 
