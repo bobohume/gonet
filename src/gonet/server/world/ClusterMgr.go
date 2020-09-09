@@ -51,7 +51,7 @@ func SendToClientBySocketId(socketId uint32, packet proto.Message) {
 	if pakcetHead != nil {
 		rpcPacket := &message.RpcPacket{FuncName: message.GetMessageName(packet), ArgLen: 1, RpcHead: &message.RpcHead{Id: pakcetHead.Id}, RpcBody: buff}
 		data, _ := proto.Marshal(rpcPacket)
-		SERVER.GetServer().Send(rpc.RpcHead{DestServerType:message.SERVICE_GATESERVER, SocketId:socketId}, base.SetTcpEnd(data))
+		SERVER.GetClusterMgr().Send(rpc.RpcHead{DestServerType:message.SERVICE_GATESERVER, SocketId:socketId}, base.SetTcpEnd(data))
 	}
 }
 

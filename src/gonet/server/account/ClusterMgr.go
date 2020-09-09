@@ -53,5 +53,5 @@ func SendToClient(head rpc.RpcHead, packet proto.Message){
 	head.DestServerType = message.SERVICE_GATESERVER
 	rpcPacket := &message.RpcPacket{FuncName:message.GetMessageName(packet), ArgLen:1, RpcHead:(*message.RpcHead)(&head), RpcBody:buff}
 	data, _ := proto.Marshal(rpcPacket)
-	SERVER.GetServer().Send(head, base.SetTcpEnd(data))
+	SERVER.GetClusterMgr().Send(head, base.SetTcpEnd(data))
 }
