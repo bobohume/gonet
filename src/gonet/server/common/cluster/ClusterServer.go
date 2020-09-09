@@ -175,13 +175,17 @@ func (this *ClusterServer) SendMsg(head rpc.RpcHead, funcName string, params  ..
 }
 
 func (this *ClusterServer) Send(head rpc.RpcHead, buff []byte){
-	switch head.SendType{
-	case message.SEND_BALANCE:
+	if head.DestServerType != message.SERVICE_GATESERVER{
 		this.balanceSend(head, buff)
-	case message.SEND_POINT:
-		this.sendPoint(head, buff)
-	default:
-		this.boardCastSend(head, buff)
+	}else{
+		switch head.SendType{
+		case message.SEND_BALANCE:
+			this.balanceSend(head, buff)
+		case message.SEND_POINT:
+			this.sendPoint(head, buff)
+		default:
+			this.boardCastSend(head, buff)
+		}
 	}
 }
 
