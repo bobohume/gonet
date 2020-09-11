@@ -38,8 +38,8 @@ type (
 		Add(elt string)
 		Remove(elt string)
 		Members() []string
-		Get(name string) (error, uint32)
-		GetS(name string) (error, string)
+		Get(name string) (error, string)
+		Get64(val int64) (error, uint32)
 	}
 )
 
@@ -136,18 +136,18 @@ func (this *HashRing) Members() []string {
 }
 
 // Get returns an element close to where name hashes to in the ring.
-func (this *HashRing) Get(name string) (error, uint32) {
+func (this *HashRing) Get64(val int64)  (error, uint32) {
 	this.RLock()
 	defer this.RUnlock()
 	if len(this.m_RingMap) == 0 {
 		return ErrEmptyRing, 0
 	}
-	key := this.hashKey(name)
+	key := this.hashKey(strconv.FormatInt(val, 10))
 	i := this.search(key)
 	return nil, this.m_SortedKeys.Get(i).(uint32)
 }
 
-func (this *HashRing) GetS(name string) (error, string) {
+func (this *HashRing) Get(name string) (error, string) {
 	this.RLock()
 	defer this.RUnlock()
 	if len(this.m_RingMap) == 0 {
