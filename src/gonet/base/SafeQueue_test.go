@@ -1,6 +1,7 @@
-package base
+package base_test
 
 import (
+	"gonet/base"
 	"sync/atomic"
 	"testing"
 )
@@ -10,7 +11,7 @@ var(
 )
 
 func TestSafeQueue(t *testing.T)  {
-	a := SafeQueue{}
+	a := base.SafeQueue{}
 	a.Init(int64(1024))
 	go func() {
 		i := 0
