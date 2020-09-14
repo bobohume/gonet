@@ -158,6 +158,7 @@ func (this *ClusterServer) balanceSend(head rpc.RpcHead, buff []byte){
 	_, head.ClusterId = this.m_HashRing.Get64(head.Id)
 	pCluster := this.GetCluster(head)
 	if pCluster != nil{
+		head.SocketId = pCluster.SocketId
 		this.m_pService.Send(head, buff)
 	}
 }
