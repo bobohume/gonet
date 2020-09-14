@@ -27,6 +27,7 @@ type(
 		m_ClusterList vector.IVector
 		m_ClusterLocker *sync.RWMutex
 		m_pService *network.ServerSocket//socket管理
+		m_HashRing	*base.HashRing//hash一致性
 	}
 
 	IClusterServer interface{
@@ -57,6 +58,7 @@ func (this *ClusterServer) InitService(Type message.SERVICE, IP string, Port int
 	this.m_ClusterMap = make(HashClusterMap)
 	this.m_ClusterSocketMap = make(HashClusterSocketMap)
 	this.m_ClusterList  = &vector.Vector{}
+	this.m_HashRing = base.NewHashRing()
 }
 
 func (this *ClusterServer) RegisterClusterCall(){
@@ -82,6 +84,7 @@ func (this *ClusterServer) AddCluster(info *common.ClusterInfo){
 	this.m_ClusterSocketMap[info.SocketId] = info
 	this.m_ClusterList.PushBack(info)
 	this.m_ClusterLocker.Unlock()
+	this.m_HashRing.Add(info.IpString())
 	this.m_pService.SendMsg(rpc.RpcHead{SocketId:info.SocketId}, "COMMON_RegisterResponse")
 	switch info.Type {
 	case message.SERVICE_GATESERVER:
@@ -106,6 +109,7 @@ func (this *ClusterServer) DelCluster(info *common.ClusterInfo){
 		this.m_ClusterLocker.Unlock()
 	}
 
+	this.m_HashRing.Remove(info.IpString())
 	base.GLOG.Printf("服务器断开连接socketid[%d]",info.SocketId)
 	switch info.Type {
 	case message.SERVICE_GATESERVER:
@@ -150,7 +154,8 @@ func (this *ClusterServer) sendPoint(head rpc.RpcHead, buff []byte){
 }
 
 func (this *ClusterServer) balanceSend(head rpc.RpcHead, buff []byte){
-	head = this.RandomCluster()
+	//head = this.RandomCluster()
+	_, head.ClusterId = this.m_HashRing.Get64(head.Id)
 	pCluster := this.GetCluster(head)
 	if pCluster != nil{
 		this.m_pService.Send(head, buff)

@@ -34,6 +34,7 @@ type(
 		m_Packet IClusterPacket
 		m_PacketFunc network.HandleFunc
 		m_Master  *Master
+		m_HashRing	*base.HashRing//hash一致性
 	}
 
 	ICluster interface{
@@ -84,6 +85,7 @@ func (this *Cluster) Init(num int, MasterType message.SERVICE, IP string, Port i
 	this.m_ClusterMap = make(map[uint32] *network.ClientSocket)
 	this.m_ClusterList = &vector.Vector{}
 	this.m_Master = NewMaster(MasterType, Endpoints, &this.Actor)
+	this.m_HashRing = base.NewHashRing()
 
 	//集群新加member
 	this.RegisterCall("Cluster_Add", func(ctx context.Context, info *common.ClusterInfo){
@@ -112,6 +114,7 @@ func (this *Cluster) AddCluster(info *common.ClusterInfo){
 	this.m_ClusterMap[info.Id()] = pClient
 	this.m_ClusterList.PushBack(info)
 	this.m_ClusterLocker.Unlock()
+	this.m_HashRing.Add(info.IpString())
 	pClient.Start()
 }
 
@@ -133,6 +136,7 @@ func (this *Cluster) DelCluster(info *common.ClusterInfo){
 		}
 	}
 	this.m_ClusterLocker.Unlock()
+	this.m_HashRing.Remove(info.IpString())
 }
 
 func (this *Cluster) GetCluster(head rpc.RpcHead) *network.ClientSocket{
@@ -161,7 +165,8 @@ func (this *Cluster) sendPoint(head rpc.RpcHead, buff []byte){
 }
 
 func (this *Cluster) balanceSend(head rpc.RpcHead, buff []byte){
-	head = this.RandomCluster()
+	//head = this.RandomCluster()
+	_, head.ClusterId = this.m_HashRing.Get64(head.Id)
 	pClient := this.GetCluster(head)
 	if pClient != nil{
 		pClient.Send(head, buff)
