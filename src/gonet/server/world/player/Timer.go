@@ -84,6 +84,7 @@ func (this *TimerMgr) DelTimer(Id int){
 			if v != nil && (v).(*Timer).Id == Id{
 				delete(this.m_TimerMap, Id)
 				this.m_TimerSet.Erase(itr.Index())
+				itr.Prev()
 				this.GetDB().Exec(db.DeleteSql((v).(*Timer), "tbl_timerset"))
 				break
 			}
@@ -100,6 +101,7 @@ func (this *TimerMgr) Update() {
 		if v != nil && (v).(*Timer).ExpireTime <= nCurTime{//活动过期
 			delete(this.m_TimerMap, (v).(*Timer).Id)
 			this.m_TimerSet.Erase(itr.Index())
+			itr.Prev()
 			this.GetDB().Exec(db.DeleteSql((v).(*Timer), "tbl_timerset"))
 			continue
 		}else{
