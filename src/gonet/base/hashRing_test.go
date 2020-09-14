@@ -3,6 +3,7 @@ package base_test
 import (
 	"fmt"
 	"gonet/base"
+	"gonet/base/vector"
 	"testing"
 )
 
@@ -23,9 +24,9 @@ func TestHashRing(t *testing.T)  {
 }
 
 func TestRandom(t *testing.T)  {
-	vec := base.NewVector()
+	vec := vector.NewVector()
 	for i := 0; i < nHashRingSize * base.REPLICASNUM; i++ {
-		vec.Push_back(i)
+		vec.PushBack(i)
 	}
 	for i := 0; i < int(nHashRingTimes); i++ {
 		nRand := base.RAND.RandI(0, vec.Len()-1)
@@ -34,9 +35,9 @@ func TestRandom(t *testing.T)  {
 }
 
 func TestMod(t *testing.T)  {
-	vec := base.NewVector()
+	vec := vector.NewVector()
 	for i := 0; i < nHashRingSize * base.REPLICASNUM; i++ {
-		vec.Push_back(i)
+		vec.PushBack(i)
 	}
 	for i := 0; i < int(nHashRingTimes); i++ {
 		nRand := i % vec.Size()

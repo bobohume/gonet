@@ -111,9 +111,15 @@ func (this *HashRing) Get(name string) (error, string) {
 		return ErrEmptyRing, ""
 	}
 	key := this.hashKey(name)
+	node, bOk := this.m_SortedKeys.Ceiling(key)
 	if !bOk{
+		itr := this.m_SortedKeys.Iterator()
+		if itr.First(){
+			return nil, this.m_RingMap[itr.Key().(uint32)]
+		}
 		return ErrEmptyRing, ""
 	}
+	return nil, this.m_RingMap[node.Key.(uint32)]
 }
 
 func (this *HashRing) Get64(val int64)  (error, uint32) {
@@ -123,7 +129,13 @@ func (this *HashRing) Get64(val int64)  (error, uint32) {
 		return ErrEmptyRing, 0
 	}
 	key := this.hashKey(strconv.FormatInt(val, 10))
+	node, bOk := this.m_SortedKeys.Ceiling(key)
 	if !bOk{
+		itr := this.m_SortedKeys.Iterator()
+		if itr.First(){
+			return nil, this.hashKey(this.m_RingMap[itr.Key().(uint32)])
+		}
 		return ErrEmptyRing, 0
 	}
+	return nil, this.hashKey(this.m_RingMap[node.Key.(uint32)])
 }
