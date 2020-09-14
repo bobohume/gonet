@@ -4,6 +4,7 @@ import (
 	"context"
 	"gonet/actor"
 	"gonet/base"
+	"gonet/base/vector"
 	"gonet/message"
 	"gonet/network"
 	"gonet/rpc"
@@ -28,7 +29,7 @@ type(
 	Cluster struct{
 		actor.Actor
 		m_ClusterMap map[uint32] *network.ClientSocket
-		m_ClusterList base.IVector
+		m_ClusterList vector.IVector
 		m_ClusterLocker *sync.RWMutex
 		m_Packet IClusterPacket
 		m_PacketFunc network.HandleFunc
@@ -81,7 +82,7 @@ func (this *Cluster) Init(num int, MasterType message.SERVICE, IP string, Port i
 	this.Actor.Init(num)
 	this.m_ClusterLocker = &sync.RWMutex{}
 	this.m_ClusterMap = make(map[uint32] *network.ClientSocket)
-	this.m_ClusterList = &base.Vector{}
+	this.m_ClusterList = &vector.Vector{}
 	this.m_Master = NewMaster(MasterType, Endpoints, &this.Actor)
 
 	//集群新加member
@@ -109,7 +110,7 @@ func (this *Cluster) AddCluster(info *common.ClusterInfo){
 	}
 	this.m_ClusterLocker.Lock()
 	this.m_ClusterMap[info.Id()] = pClient
-	this.m_ClusterList.Push_back(info)
+	this.m_ClusterList.PushBack(info)
 	this.m_ClusterLocker.Unlock()
 	pClient.Start()
 }
@@ -125,7 +126,7 @@ func (this *Cluster) DelCluster(info *common.ClusterInfo){
 
 	this.m_ClusterLocker.Lock()
 	delete(this.m_ClusterMap, info.Id())
-	for i, v := range this.m_ClusterList.Array(){
+	for i, v := range this.m_ClusterList.Values(){
 		if v.(*common.ClusterInfo).Id() == info.Id(){
 			this.m_ClusterList.Erase(i)
 			break
@@ -198,7 +199,7 @@ func (this *Cluster) Send(head rpc.RpcHead, buff []byte){
 func (this *Cluster) BalanceCluster() rpc.RpcHead{
 	head := rpc.RpcHead{}
 	this.m_ClusterLocker.RLock()
-	for _, v := range this.m_ClusterList.Array(){
+	for _, v := range this.m_ClusterList.Values(){
 		pClusterInfo := v.(*common.ClusterInfo)
 		if pClusterInfo.Weight <= 10000{
 			head.ClusterId = pClusterInfo.Id()

@@ -1,6 +1,7 @@
 package base
 
 import (
+	"gonet/base/vector"
 	"log"
 	"sync"
 	"time"
@@ -45,7 +46,7 @@ type(
 
 	WorkIdQue struct {//workid que
 		m_WorkMap map[uint32] int
-		m_IdelVec *Vector
+		m_IdelVec *vector.Vector
 		m_Id 	 int
 	}
 
@@ -99,7 +100,7 @@ func ParseUUID(id int64) (ts int64, workerId int64, seq int64) {
 //----------WorkIdQue----------//
 func (this *WorkIdQue) Init(id int){
 	this.m_WorkMap	= make(map[uint32] int)
-	this.m_IdelVec	= NewVector()
+	this.m_IdelVec	= vector.NewVector()
 	this.m_Id		= id
 }
 
@@ -113,7 +114,7 @@ func (this *WorkIdQue) Add(val string) int{
 	if !this.m_IdelVec.Empty(){
 		back := this.m_IdelVec.Back()
 		nId = back.(int)
-		this.m_IdelVec.Pop_back()
+		this.m_IdelVec.PopBack()
 		this.m_WorkMap[nVal] = nId
 		return back.(int)
 	}
@@ -131,7 +132,7 @@ func (this *WorkIdQue) Del(val string) int{
 		return -1
 	}
 	delete(this.m_WorkMap, nVal)
-	this.m_IdelVec.Push_front(nId)
+	this.m_IdelVec.PushFront(nId)
 	return nId
 }
 

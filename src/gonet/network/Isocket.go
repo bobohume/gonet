@@ -3,6 +3,7 @@ package network
 import (
 	"fmt"
 	"gonet/base"
+	"gonet/base/vector"
 	"gonet/rpc"
 	"net"
 )
@@ -43,7 +44,7 @@ type (
 		m_SendTimes     int
 		m_ReceiveTimes  int
 		m_bShuttingDown bool
-		m_PacketFuncList	*base.Vector//call back
+		m_PacketFuncList	*vector.Vector//call back
 
 		m_bHalf		bool
 		m_nHalfSize int
@@ -80,7 +81,7 @@ type (
 
 // virtual
 func (this *Socket) Init(string, int) bool {
-	this.m_PacketFuncList = base.NewVector()
+	this.m_PacketFuncList = vector.NewVector()
 	this.m_nState = SSF_SHUT_DOWN
 	this.m_ReceiveBufferSize =1024
 	this.m_MaxReceiveBufferSize = base.MAX_PACKET
@@ -173,7 +174,7 @@ func (this *Socket) SetTcpConn(conn net.Conn){
 }
 
 func (this *Socket) BindPacketFunc(callfunc HandleFunc){
-	this.m_PacketFuncList.Push_back(callfunc)
+	this.m_PacketFuncList.PushBack(callfunc)
 }
 
 func (this *Socket) CallMsg(funcName string, params ...interface{}){
@@ -182,7 +183,7 @@ func (this *Socket) CallMsg(funcName string, params ...interface{}){
 }
 
 func (this *Socket) HandlePacket(Id uint32, buff []byte){
-	for _,v := range this.m_PacketFuncList.Array() {
+	for _,v := range this.m_PacketFuncList.Values() {
 		if (v.(HandleFunc)(Id, buff)){
 			break
 		}

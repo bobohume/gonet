@@ -2,6 +2,7 @@ package base
 
 import (
 	"fmt"
+	"gonet/base/vector"
 	"io/ioutil"
 	"os"
 )
@@ -53,7 +54,7 @@ type(
 
 		fstream		*BitStream
 		readstep	int//控制读的总数量
-		dataTypes   Vector
+		dataTypes   vector.Vector
 		currentColumnIndex int
 	}
 
@@ -107,7 +108,7 @@ func (this *CDataFile) ReadDataFile(fileName string) bool{
 		//col name
 		this.fstream.ReadString()
 		nDataType := this.fstream.ReadInt(8)
-		this.dataTypes.Push_back(int(nDataType))
+		this.dataTypes.PushBack(int(nDataType))
 	}
 	return true
 }

@@ -3,7 +3,7 @@ package base
 import (
 	"errors"
 	"hash/crc32"
-	"sort"
+	"gonet/base/maps"
 	"strconv"
 	"sync"
 )
@@ -11,15 +11,6 @@ import (
 const(
 	REPLICASNUM = 5
 )
-
-type HashKey struct {
-	Vector
-}
-
-// Less returns true if element i is less than element j.
-func (this *HashKey) Less(i, j int) bool {
-	return this.Get(i).(uint32) < this.Get(j).(uint32)
-}
 
 // ErrEmptyRing is the error returned when trying to get an element when nothing has been added to hash.
 var ErrEmptyRing = errors.New("empty ring")
@@ -29,7 +20,7 @@ type (
 	HashRing struct {
 		m_RingMap           map[uint32] string
 		m_MemberMap         map[string] bool
-		m_SortedKeys    	HashKey
+		m_SortedKeys    	*maps.Map
 		m_Scratch          	[64]byte// prevent false sharing of the sequence cursor by padding the CPU cache line with 64 *bytes* of data.
 		sync.RWMutex
 	}
@@ -49,6 +40,7 @@ func NewHashRing() *HashRing {
 	pRing := new(HashRing)
 	pRing.m_RingMap = make(map[uint32]string)
 	pRing.m_MemberMap = make(map[string]bool)
+	pRing.m_SortedKeys = maps.NewWithUInt32Comparator()
 	return pRing
 }
 
@@ -63,10 +55,9 @@ func (this *HashRing) add(elt string) {
 	for i := 0; i < REPLICASNUM; i++ {
 		Id := this.hashKey(this.eltKey(elt, i))
 		this.m_RingMap[Id] = elt
-		this.m_SortedKeys.Push_back(Id)
+		this.m_SortedKeys.Put(Id, true)
 	}
 	this.m_MemberMap[elt] = true
-	sort.Sort(&this.m_SortedKeys)
 }
 
 // need c.Lock() before calling
@@ -74,32 +65,9 @@ func (this *HashRing) remove(elt string) {
 	for i := 0; i < REPLICASNUM; i++ {
 		Id := this.hashKey(this.eltKey(elt, i))
 		delete(this.m_RingMap, Id)
-		i := this.searcheq(Id)
-		this.m_SortedKeys.Erase(i)
+		this.m_SortedKeys.Remove(Id)
 	}
 	delete(this.m_MemberMap, elt)
-}
-
-func (this *HashRing) search(key uint32) (i int) {
-	f := func(x int) bool {
-		return this.m_SortedKeys.Get(x).(uint32) > key
-	}
-	i = sort.Search(this.m_SortedKeys.Len(), f)
-	if i >= this.m_SortedKeys.Len() {
-		i = 0
-	}
-	return
-}
-
-func (this *HashRing) searcheq(key uint32) (i int) {
-	f := func(x int) bool {
-		return this.m_SortedKeys.Get(x).(uint32) == key
-	}
-	i = sort.Search(this.m_SortedKeys.Len(), f)
-	if i >= this.m_SortedKeys.Len() {
-		i = 0
-	}
-	return
 }
 
 func (this *HashRing) hashKey(key string) uint32 {
@@ -136,17 +104,6 @@ func (this *HashRing) Members() []string {
 }
 
 // Get returns an element close to where name hashes to in the ring.
-func (this *HashRing) Get64(val int64)  (error, uint32) {
-	this.RLock()
-	defer this.RUnlock()
-	if len(this.m_RingMap) == 0 {
-		return ErrEmptyRing, 0
-	}
-	key := this.hashKey(strconv.FormatInt(val, 10))
-	i := this.search(key)
-	return nil, this.m_SortedKeys.Get(i).(uint32)
-}
-
 func (this *HashRing) Get(name string) (error, string) {
 	this.RLock()
 	defer this.RUnlock()
@@ -154,6 +111,19 @@ func (this *HashRing) Get(name string) (error, string) {
 		return ErrEmptyRing, ""
 	}
 	key := this.hashKey(name)
-	i := this.search(key)
-	return nil, this.m_RingMap[this.m_SortedKeys.Get(i).(uint32)]
+	if !bOk{
+		return ErrEmptyRing, ""
+	}
+}
+
+func (this *HashRing) Get64(val int64)  (error, uint32) {
+	this.RLock()
+	defer this.RUnlock()
+	if len(this.m_RingMap) == 0 {
+		return ErrEmptyRing, 0
+	}
+	key := this.hashKey(strconv.FormatInt(val, 10))
+	if !bOk{
+		return ErrEmptyRing, 0
+	}
 }

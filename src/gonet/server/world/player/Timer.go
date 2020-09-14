@@ -1,7 +1,7 @@
 package player
 
 import (
-	"gonet/base"
+	"gonet/base/vector"
 	"gonet/db"
 	"sort"
 	"time"
@@ -21,7 +21,7 @@ type(
 	}
 
 	TimerSet struct {
-		base.Vector
+		vector.Vector
 	}//定时器序列
 
 	TimerMgr struct {
@@ -67,7 +67,7 @@ func (this *TimerMgr) AddTimer(Id int, Flag int64, ExpireTime int64){
 		pTimer.PlayerId = this.GetPlayerId()
 		pTimer.ExpireTime = ExpireTime
 		pTimer.Flag = Flag
-		this.m_TimerSet.Push_back(pTimer)
+		this.m_TimerSet.PushBack(pTimer)
 		this.m_TimerMap[Id] = pTimer
 		this.sort()
 		this.GetDB().Exec(db.InsertSql(pTimer, "tbl_timerset"))
@@ -77,12 +77,14 @@ func (this *TimerMgr) AddTimer(Id int, Flag int64, ExpireTime int64){
 func (this *TimerMgr) DelTimer(Id int){
 	_, bEx := this.m_TimerMap[Id]
 	if bEx{
-		for i, v := 0, this.m_TimerSet.Begin(); v != this.m_TimerSet.End(); v = this.m_TimerSet.Next(&i) {
-			if v != nil && (*v).(*Timer).Id == Id{
+		itr := this.m_TimerSet.Iterator()
+		itr.Begin()
+		for itr.Next(){
+			v := itr.Value()
+			if v != nil && (v).(*Timer).Id == Id{
 				delete(this.m_TimerMap, Id)
-				this.m_TimerSet.Erase(i)
-				i--
-				this.GetDB().Exec(db.DeleteSql((*v).(*Timer), "tbl_timerset"))
+				this.m_TimerSet.Erase(itr.Index())
+				this.GetDB().Exec(db.DeleteSql((v).(*Timer), "tbl_timerset"))
 				break
 			}
 		}
@@ -92,12 +94,13 @@ func (this *TimerMgr) DelTimer(Id int){
 func (this *TimerMgr) Update() {
 	nCurTime := time.Now().Unix()
 	//定时器排过期时间排序
-	for i, v := 0, this.m_TimerSet.Begin(); v != this.m_TimerSet.End(); v = this.m_TimerSet.Next(&i) {
-		if v != nil && (*v).(*Timer).ExpireTime <= nCurTime{//活动过期
-			delete(this.m_TimerMap, (*v).(*Timer).Id)
-			this.m_TimerSet.Erase(i)
-			i--
-			this.GetDB().Exec(db.DeleteSql((*v).(*Timer), "tbl_timerset"))
+	itr := this.m_TimerSet.Iterator()
+	for itr.Next() {
+		v := itr.Value()
+		if v != nil && (v).(*Timer).ExpireTime <= nCurTime{//活动过期
+			delete(this.m_TimerMap, (v).(*Timer).Id)
+			this.m_TimerSet.Erase(itr.Index())
+			this.GetDB().Exec(db.DeleteSql((v).(*Timer), "tbl_timerset"))
 			continue
 		}else{
 			break

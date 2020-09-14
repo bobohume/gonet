@@ -4,6 +4,7 @@ import (
 	"context"
 	"gonet/actor"
 	"gonet/base"
+	"gonet/base/vector"
 	"gonet/message"
 	"gonet/network"
 	"gonet/rpc"
@@ -23,7 +24,7 @@ type(
 		*Service //集群注册
 		m_ClusterMap HashClusterMap
 		m_ClusterSocketMap HashClusterSocketMap
-		m_ClusterList base.IVector
+		m_ClusterList vector.IVector
 		m_ClusterLocker *sync.RWMutex
 		m_pService *network.ServerSocket//socket管理
 	}
@@ -55,7 +56,7 @@ func (this *ClusterServer) InitService(Type message.SERVICE, IP string, Port int
 	this.Service = NewService(Type, IP, Port, Endpoints)
 	this.m_ClusterMap = make(HashClusterMap)
 	this.m_ClusterSocketMap = make(HashClusterSocketMap)
-	this.m_ClusterList  = &base.Vector{}
+	this.m_ClusterList  = &vector.Vector{}
 }
 
 func (this *ClusterServer) RegisterClusterCall(){
@@ -79,7 +80,7 @@ func (this *ClusterServer) AddCluster(info *common.ClusterInfo){
 	this.m_ClusterLocker.Lock()
 	this.m_ClusterMap[info.Id()] = info
 	this.m_ClusterSocketMap[info.SocketId] = info
-	this.m_ClusterList.Push_back(info)
+	this.m_ClusterList.PushBack(info)
 	this.m_ClusterLocker.Unlock()
 	this.m_pService.SendMsg(rpc.RpcHead{SocketId:info.SocketId}, "COMMON_RegisterResponse")
 	switch info.Type {
@@ -96,7 +97,7 @@ func (this *ClusterServer) DelCluster(info *common.ClusterInfo){
 		this.m_ClusterLocker.Lock()
 		delete(this.m_ClusterMap, info.Id())
 		delete(this.m_ClusterSocketMap, info.SocketId)
-		for i, v := range this.m_ClusterList.Array(){
+		for i, v := range this.m_ClusterList.Values(){
 			if v.(*common.ClusterInfo).SocketId == info.SocketId{
 				this.m_ClusterList.Erase(i)
 				break
@@ -192,7 +193,7 @@ func (this *ClusterServer) Send(head rpc.RpcHead, buff []byte){
 func (this *ClusterServer) BalanceCluster() rpc.RpcHead{
 	head := rpc.RpcHead{}
 	this.m_ClusterLocker.RLock()
-	for _, v := range this.m_ClusterList.Array(){
+	for _, v := range this.m_ClusterList.Values(){
 		pClusterInfo := v.(*common.ClusterInfo)
 		if pClusterInfo.Weight <= 10000{
 			head.ClusterId = pClusterInfo.Id()
