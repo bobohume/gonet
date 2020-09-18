@@ -1,8 +1,8 @@
 package tile
 
 import (
-	"gonet/base"
 	"container/heap"
+	"gonet/base/vector"
 	"math"
 )
 
@@ -28,7 +28,7 @@ type(
 	}
 
 	OpenHeap struct {
-		m_Nodes base.Vector//权值队列
+		m_Nodes vector.Vector//权值队列
 	}
 
 	IOpenHeap interface {
@@ -98,11 +98,11 @@ func (t *OpenHeap) Less(i, j int) bool{
 }
 
 func (t *OpenHeap) Push(x interface{}){
-	t.m_Nodes.Push_back(x)
+	t.m_Nodes.PushBack(x)
 }
 
 func (t *OpenHeap) Pop()  interface{} {
 	top := t.m_Nodes.Back()
-	t.m_Nodes.Pop_back()
+	t.m_Nodes.PopBack()
 	return top
 }

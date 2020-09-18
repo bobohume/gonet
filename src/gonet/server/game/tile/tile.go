@@ -5,7 +5,8 @@ import (
 	"container/heap"
 	"fmt"
 	"gonet/base"
-	"gonet/server/zone/game/lmath"
+	"gonet/base/vector"
+	"gonet/server/game/lmath"
 	"io/ioutil"
 	"math"
 	"os"
@@ -42,9 +43,9 @@ type(
 	INavigationMesh interface {
 		Init(rows, cols int)//初始化
 		Load(fileName string) bool//读取网格信息
-		FindPath(start, end lmath.Point3F, path *base.Vector) bool
+		FindPath(start, end lmath.Point3F, path *vector.Vector) bool
 		GetGridFlag(row, col int) int
-		GetTile(tile *Tile) base.Vector//a星获取周边网格
+		GetTile(tile *Tile) vector.Vector//a星获取周边网格
 		CanReach(lmath.Point3F) bool//能够移动到网格
 		LineTestCloseToEnd(start, end lmath.Point3F, pos *lmath.Point3F) bool
 		GetGridId(x, y int) int//x,y转化位tile一维数组标号
@@ -194,13 +195,13 @@ func (this *NavigationMesh) GetGridFlag(row, col int) int{
 	return 0
 }
 
-func (this *NavigationMesh) GetTile(tile *Tile) (roundVec base.Vector) {
+func (this *NavigationMesh) GetTile(tile *Tile) (roundVec vector.Vector) {
 	xmin, xmax := lmath.ClampI(tile.x - 1, 0, this.GetSizeX() - 1), lmath.ClampI(tile.x + 1, 0, this.GetSizeX() - 1)
 	ymin, ymax := lmath.ClampI(tile.y - 1, 0, this.GetSizeY() - 1), lmath.ClampI(tile.y + 1, 0, this.GetSizeY() - 1)
 	for x := xmin; x <= xmax; x++{
 		for y := ymin; y <= ymax; y++{
 			if x != tile.x || y != tile.y{
-				roundVec.Push_back(&Tile{x, y})
+				roundVec.PushBack(&Tile{x, y})
 			}
 		}
 	}
@@ -216,7 +217,7 @@ func (this *NavigationMesh) GetTile(tile *Tile) (roundVec base.Vector) {
 	return roundVec*/
 }
 
-func (this *NavigationMesh) FindPath(start, end lmath.Point3F, path *base.Vector) bool {
+func (this *NavigationMesh) FindPath(start, end lmath.Point3F, path *vector.Vector) bool {
 	//openList := &OpenHeap{}
 	openList := this.m_OpenList
 	openList.m_Nodes.Clear()
@@ -246,20 +247,20 @@ func (this *NavigationMesh) FindPath(start, end lmath.Point3F, path *base.Vector
 		//超出最大寻径
 		if searchNum > ms_maxSearchNode{
 			for curPoint.father != nil{
-				path.Push_front(GeneratePosition(curPoint.x, curPoint.y))
+				path.PushFront(GeneratePosition(curPoint.x, curPoint.y))
 				curPoint = curPoint.father
 			}
 			return true
 		}
 
-		for _, t := range roundVec.Array(){
+		for _, t := range roundVec.Values(){
 			tile := *t.(*Tile)
 			curTile := NewATile(tile, curPoint, endTile)
 			id := this.GetGridId(tile.x, tile.y)
 			if curTile.IsEqual(endTile){
 				// 找出路径了, 标记路径
 				for curTile.father != nil{
-					path.Push_front(GeneratePosition(curTile.x, curTile.y))
+					path.PushFront(GeneratePosition(curTile.x, curTile.y))
 					curTile = curTile.father
 				}
 				return true
