@@ -203,7 +203,7 @@ func (this *Cluster) Send(head rpc.RpcHead, buff []byte){
 }
 
 func (this *Cluster) RandomCluster() rpc.RpcHead{
-	head := rpc.RpcHead{Id:int64(uint32(base.RAND.RandI(0, 0xFFFFFFFF)))}
+	head := rpc.RpcHead{Id:int64(uint32(base.RAND.RandI(1, 0xFFFFFFFF)))}
 	_, head.ClusterId = this.m_HashRing.Get64(head.Id)
 	pCluster := this.GetCluster(head)
 	if pCluster != nil{
