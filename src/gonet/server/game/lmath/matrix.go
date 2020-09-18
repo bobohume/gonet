@@ -59,7 +59,7 @@ type(
 		Mulp(*Point3F) ///< M * p -> p (assume w = 1.0f)
 		Mulpp(*Point3F, *Point3F)///< M * p -> d (assume w = 1.0f)
 		Mulb(*Box3F)
-		ToF32() []*float32
+		ToF() []float32
 	}
 )
 
@@ -68,12 +68,12 @@ func Idx(i int, j int) int{
 }
 
 func (this *MatrixF) Set(p Point3F) *MatrixF{
-	M_matF_set_euler_C(p.ToF32(), this.ToF32())
+	M_matF_set_euler_C(p.ToF(), this.ToF())
 	return this
 }
 
 func (this *MatrixF) SetP(e Point3F, p Point3F) *MatrixF{
-	M_matF_set_euler_point_C(e.ToF32(), p.ToF32(), this.ToF32())
+	M_matF_set_euler_point_C(e.ToF(), p.ToF(), this.ToF())
 	return this
 }
 
@@ -142,22 +142,22 @@ func (this *MatrixF) Identity() *MatrixF{
 }
 
 func (this *MatrixF) Inverse() *MatrixF{
-	M_matF_identity_C(this.ToF32())
+	M_matF_identity_C(this.ToF())
 	return this
 }
 
 func (this *MatrixF) AffineInverse() *MatrixF{
-	M_matF_affineInverse_C(this.ToF32())
+	M_matF_affineInverse_C(this.ToF())
 	return this
 }
 
 func (this *MatrixF) Transpose() *MatrixF{
-	M_matF_transpose_C(this.ToF32())
+	M_matF_transpose_C(this.ToF())
 	return this
 }
 
 func (this *MatrixF) Scale(p Point3F) *MatrixF{
-	M_matF_scale_C(this.ToF32(), p.ToF32())
+	M_matF_scale_C(this.ToF(), p.ToF())
 	return this
 }
 
@@ -170,17 +170,17 @@ func (this *MatrixF) GetScale() *Point3F{
 }
 
 func (this *MatrixF) Normalize(){
-	M_matF_normalize_C(this.ToF32())
+	M_matF_normalize_C(this.ToF())
 }
 
 func (this *MatrixF) Mulm(a *MatrixF) *MatrixF{
 	tempThis := *this
-	Default_matF_x_matF_C(tempThis.ToF32(), a.ToF32(), this.ToF32())
+	Default_matF_x_matF_C(tempThis.ToF(), a.ToF(), this.ToF())
 	return this
 }
 
 func (this *MatrixF) Mulmm(a *MatrixF, b *MatrixF) *MatrixF{
-	Default_matF_x_matF_C(a.ToF32(), b.ToF32(), this.ToF32())
+	Default_matF_x_matF_C(a.ToF(), b.ToF(), this.ToF())
 	return this
 }
 
@@ -199,16 +199,16 @@ func (this *MatrixF) Mulmf(a *MatrixF, b float32) *MatrixF{
 
 func (this *MatrixF) Mulp(p *Point3F){
 	var d Point3F
-	M_matF_x_point3F_C(this.ToF32(), p.ToF32(), d.ToF32())
+	M_matF_x_point3F_C(this.ToF(), p.ToF(), d.ToF())
 	*p = d
 }
 
 func (this *MatrixF) Mulpp(p *Point3F, d *Point3F){
-	M_matF_x_point3F_C(this.ToF32(), p.ToF32(), d.ToF32())
+	M_matF_x_point3F_C(this.ToF(), p.ToF(), d.ToF())
 }
 
 func (this *MatrixF) Mulb(b *Box3F){
-	M_matF_x_box3F_C(this.ToF32(), b.Min.ToF32(), b.Max.ToF32())
+	M_matF_x_box3F_C(this.ToF(), b.Min.ToF(), b.Max.ToF())
 }
 
 func (this *MatrixF) GetRow(row int, cptr *Point3F){
@@ -252,16 +252,16 @@ func (this *MatrixF) GetColumn(col int, cptr *Point3F){
 }
 
 func (this *MatrixF) ToPoint() *Point3F{
-	mat := this.ToF32()
+	mat := this.ToF()
 	var r Point3F
-	r.X = float32(math.Sin(float64(*mat[Idx(2, 1)])))
+	r.X = float32(math.Sin(float64(mat[Idx(2, 1)])))
 
 	if math.Cos(float64(r.X)) != 0.0{
-		r.Y = float32(math.Tan(float64(-*mat[Idx(2, 0)]) / float64(*mat[Idx(2, 2)])))
-		r.Z = float32(math.Tan(float64(-*mat[Idx(0, 1)]) / float64(*mat[Idx(1, 1)])))
+		r.Y = float32(math.Tan(float64(-mat[Idx(2, 0)]) / float64(mat[Idx(2, 2)])))
+		r.Z = float32(math.Tan(float64(-mat[Idx(0, 1)]) / float64(mat[Idx(1, 1)])))
 	}else{
 		r.Y = 0.0
-		r.Z = float32(math.Tan(float64(*mat[Idx(1, 0)]) / float64(*mat[Idx(0, 0)])))
+		r.Z = float32(math.Tan(float64(mat[Idx(1, 0)]) / float64(mat[Idx(0, 0)])))
 	}
 
 	return &r
@@ -352,10 +352,6 @@ func (this *MatrixF) TransposeTo(matrix []*float32){
 }
 
 
-func (this *MatrixF) ToF32() []*float32{
-	return  []*float32{&this[0], &this[1], &this[2], &this[3], &this[4], &this[5], &this[6], &this[7], &this[8], &this[9], &this[10], &this[11], &this[12], &this[13], &this[14], &this[15] }
-}
-
-func F16ToF32(M [16]float32) []*float32{
-	return  []*float32{&M[0], &M[1], &M[2], &M[3], &M[4], &M[5], &M[6], &M[7], &M[8], &M[9], &M[10], &M[11], &M[12], &M[13], &M[14], &M[15] }
+func (this *MatrixF) ToF() []float32{
+	return this[:]
 }

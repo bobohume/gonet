@@ -2,8 +2,8 @@ package detour_test
 
 import (
 	"gonet/base"
-	"gonet/server/zone/game/lmath"
-	detour "gonet/server/zone/game/nav"
+	"gonet/server/game/lmath"
+	detour "gonet/server/game/nav"
 	"testing"
 )
 

@@ -217,47 +217,47 @@ func (this *Box3F) GetCenter(b Point3F) {
 
 func (this *Box3F) CollideLineff(start *Point3F, end *Point3F, t *float32, n *Point3F) bool{
 	var st, et, fst, fet float32
-	bmin, bmax, si, ei := this.Min.ToF32(), this.Max.ToF32(), start.ToF32(), end.ToF32()
+	bmin, bmax, si, ei := this.Min.ToF(), this.Max.ToF(), start.ToF(), end.ToF()
 
 	na := [3]Point3F {Point3F{1.0, 0.0, 0.0}, Point3F{0.0, 1.0, 0.0}, Point3F{0.0, 0.0, 1.0}}
 	var finalNormal Point3F
 
 	for i := 0; i < 3; i++{
 		n_neg := false
-		if *si[i] < *ei[i] {
-			if *si[i] > *bmax[i] || *ei[i] < *bmin[i]{
+		if si[i] < ei[i] {
+			if si[i] > bmax[i] || ei[i] < bmin[i]{
 				return false
 			}
 
 			var di float32
-			di = *ei[i] - *si[i]
-			if *si[i] < *bmin[i]{
-				st = (*bmin[i] - *si[i]) / di
+			di = ei[i] - si[i]
+			if si[i] < bmin[i]{
+				st = (bmin[i] - si[i]) / di
 			}else{
 				st = 0.0
 			}
 
-			if *ei[i] > *bmax[i]{
-				et = (*bmax[i] - *si[i]) / di
+			if ei[i] > bmax[i]{
+				et = (bmax[i] - si[i]) / di
 			}else{
 				et = 1.0
 			}
 			n_neg = true
 		}else{
-			if *ei[i] > *bmax[i] || *si[i] < *bmin[i]{
+			if ei[i] > bmax[i] || si[i] < bmin[i]{
 				return false
 			}
 
 			var di float32
-			di = *ei[i] - *si[i]
-			if *si[i] > *bmax[i]{
-				st = (*bmax[i] - *si[i]) / di
+			di = ei[i] - si[i]
+			if si[i] > bmax[i]{
+				st = (bmax[i] - si[i]) / di
 			}else{
 				st = 0.0
 			}
 
-			if *ei[i] < *bmin[i]{
-				et = (*bmin[i] - *ei[i]) / di
+			if ei[i] < bmin[i]{
+				et = (bmin[i] - ei[i]) / di
 			}else{
 				et = 1.0
 			}
@@ -308,91 +308,91 @@ func (this *Box3F) CollideOrientedBox(bRadii *Point3F, toA *MatrixF) bool{
 	var absYX,absYY,absYZ float32
 	var absZX,absZY,absZZ float32
 
-    f := toA.ToF32();
+    f := toA.ToF();
 
-	absXX = float32(math.Abs(float64(*f[0])))
-	absYX = float32(math.Abs(float64(*f[1])))
-	absZX = float32(math.Abs(float64(*f[2])))
+	absXX = float32(math.Abs(float64(f[0])))
+	absYX = float32(math.Abs(float64(f[1])))
+	absZX = float32(math.Abs(float64(f[2])))
 
 	if (aRadii.X + bRadii.X * absXX + bRadii.Y * absYX + bRadii.Z * absZX - float32(math.Abs(float64(p.X)))<0.0){
 		return false
 	}
 
-	absXY = float32(math.Abs(float64(*f[4])))
-	absYY = float32(math.Abs(float64(*f[5])))
-	absZY = float32(math.Abs(float64(*f[6])))
+	absXY = float32(math.Abs(float64(f[4])))
+	absYY = float32(math.Abs(float64(f[5])))
+	absZY = float32(math.Abs(float64(f[6])))
 	if (aRadii.Y + bRadii.X * absXY +	bRadii.Y * absYY +	bRadii.Z * absZY - float32(math.Abs(float64(p.Y)))<0.0){
 		return false
 	}
 
-	absXZ = float32(math.Abs(float64(*f[8])))
-	absYZ = float32(math.Abs(float64(*f[9])))
-	absZZ = float32(math.Abs(float64(*f[10])))
+	absXZ = float32(math.Abs(float64(f[8])))
+	absYZ = float32(math.Abs(float64(f[9])))
+	absZZ = float32(math.Abs(float64(f[10])))
 	if (aRadii.Z + bRadii.X * absXZ + bRadii.Y * absYZ +	bRadii.Z * absZZ - float32(math.Abs(float64(p.Z)))<0.0){
 		return false
 	}
 
-	if (aRadii.X*absXX + aRadii.Y*absXY + aRadii.Z*absXZ + bRadii.X - float32(math.Abs(float64(p.X**f[0] + p.Y**f[4] + p.Z**f[8])))<0.0){
+	if (aRadii.X*absXX + aRadii.Y*absXY + aRadii.Z*absXZ + bRadii.X - float32(math.Abs(float64(p.X*f[0] + p.Y*f[4] + p.Z*f[8])))<0.0){
 		return false
 	}
 
-	if (aRadii.X*absYX + aRadii.Y*absYY + aRadii.Z*absYZ + bRadii.Y - float32(math.Abs(float64(p.X**f[1] + p.Y**f[5] + p.Z**f[9])))<0.0) {
+	if (aRadii.X*absYX + aRadii.Y*absYY + aRadii.Z*absYZ + bRadii.Y - float32(math.Abs(float64(p.X*f[1] + p.Y*f[5] + p.Z*f[9])))<0.0) {
 		return false
 	}
 
-	if (aRadii.X*absZX + aRadii.Y*absZY + aRadii.Z*absZZ + bRadii.Z - float32(math.Abs(float64(p.X**f[2] + p.Y**f[6] + p.Z**f[10])))<0.0) {
+	if (aRadii.X*absZX + aRadii.Y*absZY + aRadii.Z*absZZ + bRadii.Z - float32(math.Abs(float64(p.X*f[2] + p.Y*f[6] + p.Z*f[10])))<0.0) {
 		return false
 	}
 
-	if (float32(math.Abs(float64(p.Z*(*f[4]) - p.Y*(*f[8])))) >
+	if (float32(math.Abs(float64(p.Z*(f[4]) - p.Y*(f[8])))) >
 		aRadii.Y * absXZ + aRadii.Z * absXY +
 			bRadii.Y * absZX + bRadii.Z * absYX){
 				return false
 	}
 
-	if (float32(math.Abs(float64(p.Z**f[5] - p.Y**f[9]))) >
+	if (float32(math.Abs(float64(p.Z*f[5] - p.Y*f[9]))) >
 		aRadii.Y * absYZ + aRadii.Z * absYY +
 			bRadii.X * absZX + bRadii.Z * absXX){
 				return false
 	}
 
-	if (float32(math.Abs(float64(p.Z**f[6] - p.Y**f[10]))) >
+	if (float32(math.Abs(float64(p.Z*f[6] - p.Y*f[10]))) >
 		aRadii.Y * absZZ + aRadii.Z * absZY +
 			bRadii.X * absYX + bRadii.Y * absXX){
 				return false
 	}
 
-	if (float32(math.Abs(float64(p.X**f[8] - p.Z**f[0]))) >
+	if (float32(math.Abs(float64(p.X*f[8] - p.Z*f[0]))) >
 		aRadii.X * absXZ + aRadii.Z * absXX +
 			bRadii.Y * absZY + bRadii.Z * absYY){
 				return false
 	}
 
-	if (float32(math.Abs(float64(p.X**f[9] - p.Z**f[1]))) >
+	if (float32(math.Abs(float64(p.X*f[9] - p.Z*f[1]))) >
 		aRadii.X * absYZ + aRadii.Z * absYX +
 			bRadii.X * absZY + bRadii.Z * absXY){
 				return false
 	}
 
-	if (float32(math.Abs(float64(p.X**f[10] - p.Z**f[2]))) >
+	if (float32(math.Abs(float64(p.X*f[10] - p.Z*f[2]))) >
 		aRadii.X * absZZ + aRadii.Z * absZX +
 			bRadii.X * absYY + bRadii.Y * absXY){
 				return false
 	}
 
-	if (float32(math.Abs(float64(p.Y**f[0] - p.X**f[4]))) >
+	if (float32(math.Abs(float64(p.Y*f[0] - p.X*f[4]))) >
 		aRadii.X * absXY + aRadii.Y * absXX +
 			bRadii.Y * absZZ + bRadii.Z * absYZ){
 				return false
 	}
 
-	if (float32(math.Abs(float64(p.Y**f[1] - p.X**f[5]))) >
+	if (float32(math.Abs(float64(p.Y*f[1] - p.X*f[5]))) >
 		aRadii.X * absYY + aRadii.Y * absYX +
 			bRadii.X * absZZ + bRadii.Z * absXZ){
 				return false
 	}
 
-	if (float32(math.Abs(float64(p.Y**f[2] - p.X**f[6]))) >
+	if (float32(math.Abs(float64(p.Y*f[2] - p.X*f[6]))) >
 		aRadii.X * absZY + aRadii.Y * absZX +
 			bRadii.X * absYZ + bRadii.Y * absXZ){
 				return false

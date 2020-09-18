@@ -2,7 +2,8 @@ package detour
 
 import (
 	"gonet/base"
-	"gonet/server/zone/game/lmath"
+	"gonet/base/vector"
+	"gonet/server/game/lmath"
 	"io/ioutil"
 	"math"
 	"strings"
@@ -29,8 +30,8 @@ type (
 
 	IDetour interface {
 		Load(path string) int//加载mesh
-		FindPath(start, end lmath.Point3F, path *base.Vector) bool//巡径
-		RayCast(start, end lmath.Point3F, path *base.Vector) bool//射线
+		FindPath(start, end lmath.Point3F, path *vector.Vector) bool//巡径
+		RayCast(start, end lmath.Point3F, path *vector.Vector) bool//射线
 		RandomPosition() (bool, lmath.Point3F)//随机点
 		GetPoly(pos lmath.Point3F) bool//获取路径点
 		GetPolyPos(pos lmath.Point3F)(bool, lmath.Point3F)//获取路径带高度
@@ -92,7 +93,7 @@ func (this *Detour) Load(path string) int {
 	return 0
 }
 
-func (this *Detour) FindPath(start, end lmath.Point3F, path *base.Vector) bool {
+func (this *Detour) FindPath(start, end lmath.Point3F, path *vector.Vector) bool {
 	filter := DtAllocDtQueryFilter()
 	extents := []float32{1, 100, 1}
 
@@ -135,14 +136,14 @@ func (this *Detour) FindPath(start, end lmath.Point3F, path *base.Vector) bool {
 			pos.Y = straightPath[i]
 			i++
 			//fmt.Println(pos)
-			path.Push_back(pos)
+			path.PushBack(pos)
 		}
 	}
 
 	return true
 }
 
-func (this *Detour) RayCast(start, end lmath.Point3F, path *base.Vector) bool {
+func (this *Detour) RayCast(start, end lmath.Point3F, path *vector.Vector) bool {
 	if this.mQuery == nil {
 		return false
 	}
@@ -178,7 +179,7 @@ func (this *Detour) RayCast(start, end lmath.Point3F, path *base.Vector) bool {
 	}
 	pos := lmath.Point3F{}
 	SetF(&pos, hitPos[:])
-	path.Push_back(pos)
+	path.PushBack(pos)
 	return true
 }
 
@@ -307,7 +308,7 @@ func (this *Detour) TryMove(start, end lmath.Point3F) (bool, lmath.Point3F){
 }
 
 func (this *Detour) LineTestCloseToEnd(start, end lmath.Point3F, pos *lmath.Point3F) bool{
-	path := base.NewVector()
+	path := vector.NewVector()
 	if this.RayCast(start, end, path) != true{
 		return false
 	}

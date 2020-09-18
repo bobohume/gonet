@@ -3,6 +3,7 @@ package lmath
 import (
 	"math"
 	"gonet/base"
+	"unsafe"
 )
 
 const(
@@ -47,7 +48,6 @@ type(
 		Perp2D(u  Point3F) float32
 		Dot2D(u  Point3F) float32
 
-		ToF32() []*float32
 		ToF() []float32
 	}
 )
@@ -183,12 +183,8 @@ func (this *Point3F) Div(f float32) *Point3F{
 	return &Point3F{this.X / f, this.Y / f, this.Z / f}
 }
 
-func (this *Point3F) ToF32() []*float32{
-	return  []*float32{&this.X, &this.Y, &this.Z}
-}
-
 func (this *Point3F) ToF() []float32{
-	return  []float32{this.X, this.Z, this.Y}
+	return (*[3]float32)(unsafe.Pointer(this))[:]
 }
 
 func (this *Point3F) Cross(p Point3F) Point3F{
@@ -199,14 +195,12 @@ func (this *Point3F) Dot(p Point3F) float32 {
 	return this.X * p.X + this.Y * p.Y +this.Z * p.Z
 }
 
-func CrossFFF(a []*float32, b []*float32, c []*float32){
-	p1 := Point3F{*a[0], *a[1], *a[2]}
-	p2 := Point3F{*b[0], *b[1], *b[2]}
+func CrossFFF(a []float32, b []float32, c []float32){
+	p1 := Point3F{a[0], a[1], a[2]}
+	p2 := Point3F{b[0], b[1], b[2]}
 	pos := p1.Cross(p2)
-	p3 := pos.ToF32()
-	for i,v := range p3{
-		*c[i] = *v
-	}
+	p3 := pos.ToF()
+	copy(c, p3)
 }
 
 func DotPP(p1 Point3F, p2 Point3F) float32{

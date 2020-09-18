@@ -3,6 +3,7 @@ package lmath
 import (
 	"gonet/base"
 	"math"
+	"unsafe"
 )
 
 type(
@@ -39,7 +40,6 @@ type(
 		Cross(p Point2F) float32
 		Dot(p Point2F) float32
 
-		ToF32() []*float32
 		ToF() []float32
 	}
 )
@@ -162,12 +162,8 @@ func (this *Point2F) Div(f float32) *Point2F{
 	return &Point2F{this.X / f, this.Y / f}
 }
 
-func (this *Point2F) ToF32() []*float32{
-	return  []*float32{&this.X, &this.Y}
-}
-
-func (this *Point2F) ToF() []float32{
-	return  []float32{this.X, this.Y}
+func (this *Point2F) ToF32() []float32{
+	return (*[2]float32)(unsafe.Pointer(this))[:]
 }
 
 func (this *Point2F) Cross(p Point2F) float32{
