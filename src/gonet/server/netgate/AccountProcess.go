@@ -53,6 +53,7 @@ func (this *AccountProcess) Init(num int) {
 
 	this.RegisterCall("DISCONNECT", func(ctx context.Context, socketId uint32) {
 		this.m_LostTimer.Start()
+		SERVER.GetAccountCluster().Actor.SendMsg(rpc.RpcHead{},"DISCONNECT", this.m_ClusterId)
 	})
 
 	this.RegisterCall("A_G_Account_Login", func(ctx context.Context, accountId int64, socketId uint32) {

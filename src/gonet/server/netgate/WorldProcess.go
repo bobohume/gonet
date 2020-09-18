@@ -50,6 +50,7 @@ func (this *WorldProcess) Init(num int) {
 
 	this.RegisterCall("DISCONNECT", func(ctx context.Context, socketId uint32) {
 		this.m_LostTimer.Start()
+		SERVER.GetWorldCluster().Actor.SendMsg(rpc.RpcHead{},"DISCONNECT", this.m_ClusterId)
 	})
 
 	this.Actor.Start()

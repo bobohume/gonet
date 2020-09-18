@@ -25,10 +25,15 @@ type(
 		SetClusterId(uint32)
 	}
 
+	ClusterNode struct {
+		*network.ClientSocket
+		*common.ClusterInfo
+	}
+
 	//集群客户端
 	Cluster struct{
 		actor.Actor
-		m_ClusterMap map[uint32] *network.ClientSocket
+		m_ClusterMap map[uint32] *ClusterNode
 		m_ClusterList vector.IVector
 		m_ClusterLocker *sync.RWMutex
 		m_Packet IClusterPacket
@@ -42,7 +47,7 @@ type(
 		Init(num int, MasterType message.SERVICE, IP string, Port int, Endpoints []string)
 		AddCluster(info *common.ClusterInfo)
 		DelCluster(info *common.ClusterInfo)
-		GetCluster(rpc.RpcHead) *network.ClientSocket
+		GetCluster(rpc.RpcHead) ClusterNode
 
 		BindPacket(IClusterPacket)
 		BindPacketFunc(network.HandleFunc)
@@ -82,7 +87,7 @@ func NewSnowflake(Endpoints []string) *Snowflake{
 func (this *Cluster) Init(num int, MasterType message.SERVICE, IP string, Port int, Endpoints []string) {
 	this.Actor.Init(num)
 	this.m_ClusterLocker = &sync.RWMutex{}
-	this.m_ClusterMap = make(map[uint32] *network.ClientSocket)
+	this.m_ClusterMap = make(map[uint32] *ClusterNode)
 	this.m_ClusterList = &vector.Vector{}
 	this.m_Master = NewMaster(MasterType, Endpoints, &this.Actor)
 	this.m_HashRing = base.NewHashRing()
@@ -95,6 +100,14 @@ func (this *Cluster) Init(num int, MasterType message.SERVICE, IP string, Port i
 	//集群删除member
 	this.RegisterCall("Cluster_Del", func(ctx context.Context, info *common.ClusterInfo){
 		this.DelCluster(info)
+	})
+
+	//链接断开
+	this.RegisterCall("DISCONNECT", func(ctx context.Context, ClusterId uint32) {
+		pCluster := this.GetCluster(rpc.RpcHead{ClusterId:ClusterId})
+		if pCluster != nil{
+			this.DelCluster(pCluster.ClusterInfo)
+		}
 	})
 
 	this.Actor.Start()
@@ -111,7 +124,7 @@ func (this *Cluster) AddCluster(info *common.ClusterInfo){
 		pClient.BindPacketFunc(this.m_PacketFunc)
 	}
 	this.m_ClusterLocker.Lock()
-	this.m_ClusterMap[info.Id()] = pClient
+	this.m_ClusterMap[info.Id()] = &ClusterNode{ClientSocket:pClient, ClusterInfo:info}
 	this.m_ClusterList.PushBack(info)
 	this.m_ClusterLocker.Unlock()
 	this.m_HashRing.Add(info.IpString())
@@ -120,11 +133,11 @@ func (this *Cluster) AddCluster(info *common.ClusterInfo){
 
 func (this *Cluster) DelCluster(info *common.ClusterInfo){
 	this.m_ClusterLocker.RLock()
-	pClient, bEx := this.m_ClusterMap[info.Id()]
+	pCluster, bEx := this.m_ClusterMap[info.Id()]
 	this.m_ClusterLocker.RUnlock()
 	if bEx{
-		pClient.CallMsg("STOP_ACTOR")
-		pClient.Stop()
+		pCluster.CallMsg("STOP_ACTOR")
+		pCluster.Stop()
 	}
 
 	this.m_ClusterLocker.Lock()
@@ -139,12 +152,12 @@ func (this *Cluster) DelCluster(info *common.ClusterInfo){
 	this.m_HashRing.Remove(info.IpString())
 }
 
-func (this *Cluster) GetCluster(head rpc.RpcHead) *network.ClientSocket{
+func (this *Cluster) GetCluster(head rpc.RpcHead) *ClusterNode{
 	this.m_ClusterLocker.RLock()
-	pClient, bEx := this.m_ClusterMap[head.ClusterId]
+	pCluster, bEx := this.m_ClusterMap[head.ClusterId]
 	this.m_ClusterLocker.RUnlock()
 	if bEx{
-		return pClient
+		return pCluster
 	}
 	return nil
 }
@@ -158,9 +171,9 @@ func (this *Cluster) BindPacketFunc(packetFunc network.HandleFunc){
 }
 
 func (this *Cluster) sendPoint(head rpc.RpcHead, buff []byte){
-	pClient := this.GetCluster(head)
-	if pClient != nil{
-		pClient.Send(head, buff)
+	pCluster := this.GetCluster(head)
+	if pCluster != nil{
+		pCluster.Send(head, buff)
 	}
 }
 
@@ -174,7 +187,7 @@ func (this *Cluster) balanceSend(head rpc.RpcHead, buff []byte){
 }
 
 func (this *Cluster) boardCastSend(head rpc.RpcHead, buff []byte){
-	clusterList := []*network.ClientSocket{}
+	clusterList := []*ClusterNode{}
 	this.m_ClusterLocker.RLock()
 	for _ ,v := range this.m_ClusterMap{
 		clusterList = append(clusterList, v)
