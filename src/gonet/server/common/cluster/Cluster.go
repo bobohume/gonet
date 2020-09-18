@@ -4,13 +4,11 @@ import (
 	"context"
 	"gonet/actor"
 	"gonet/base"
-	"gonet/base/vector"
 	"gonet/message"
 	"gonet/network"
 	"gonet/rpc"
 	"gonet/server/common"
 	"gonet/server/common/cluster/etv3"
-	"math"
 	"reflect"
 	"sync"
 )
@@ -34,7 +32,6 @@ type(
 	Cluster struct{
 		actor.Actor
 		m_ClusterMap map[uint32] *ClusterNode
-		m_ClusterList vector.IVector
 		m_ClusterLocker *sync.RWMutex
 		m_Packet IClusterPacket
 		m_PacketFunc network.HandleFunc
@@ -54,7 +51,6 @@ type(
 		SendMsg(rpc.RpcHead, string, ...interface{})//发送给集群特定服务器
 		Send(rpc.RpcHead, []byte)//发送给集群特定服务器
 
-		BalanceCluster()rpc.RpcHead//负载均衡
 		RandomCluster()rpc.RpcHead///随机分配
 
 		sendPoint(rpc.RpcHead, []byte)//发送给集群特定服务器
@@ -88,7 +84,6 @@ func (this *Cluster) Init(num int, MasterType message.SERVICE, IP string, Port i
 	this.Actor.Init(num)
 	this.m_ClusterLocker = &sync.RWMutex{}
 	this.m_ClusterMap = make(map[uint32] *ClusterNode)
-	this.m_ClusterList = &vector.Vector{}
 	this.m_Master = NewMaster(MasterType, Endpoints, &this.Actor)
 	this.m_HashRing = base.NewHashRing()
 
@@ -125,7 +120,6 @@ func (this *Cluster) AddCluster(info *common.ClusterInfo){
 	}
 	this.m_ClusterLocker.Lock()
 	this.m_ClusterMap[info.Id()] = &ClusterNode{ClientSocket:pClient, ClusterInfo:info}
-	this.m_ClusterList.PushBack(info)
 	this.m_ClusterLocker.Unlock()
 	this.m_HashRing.Add(info.IpString())
 	pClient.Start()
@@ -142,12 +136,6 @@ func (this *Cluster) DelCluster(info *common.ClusterInfo){
 
 	this.m_ClusterLocker.Lock()
 	delete(this.m_ClusterMap, info.Id())
-	for i, v := range this.m_ClusterList.Values(){
-		if v.(*common.ClusterInfo).Id() == info.Id(){
-			this.m_ClusterList.Erase(i)
-			break
-		}
-	}
 	this.m_ClusterLocker.Unlock()
 	this.m_HashRing.Remove(info.IpString())
 }
@@ -214,34 +202,12 @@ func (this *Cluster) Send(head rpc.RpcHead, buff []byte){
 	}
 }
 
-func (this *Cluster) BalanceCluster() rpc.RpcHead{
-	head := rpc.RpcHead{}
-	this.m_ClusterLocker.RLock()
-	for _, v := range this.m_ClusterList.Values(){
-		pClusterInfo := v.(*common.ClusterInfo)
-		if pClusterInfo.Weight <= 10000{
-			head.ClusterId = pClusterInfo.Id()
-			head.SocketId = pClusterInfo.SocketId
-			break
-		}
-	}
-	this.m_ClusterLocker.RUnlock()
-	if head.ClusterId == 0{
-		return this.RandomCluster()
-	}
-	return head
-}
-
 func (this *Cluster) RandomCluster() rpc.RpcHead{
-	head := rpc.RpcHead{}
-	this.m_ClusterLocker.RLock()
-	if this.m_ClusterList.Len() > 0{
-		nLen := int(math.Max(float64(this.m_ClusterList.Len()-1), 0))
-		nRand := base.RAND.RandI(0, nLen)
-		info := this.m_ClusterList.Get(nRand).(*common.ClusterInfo)
-		head.ClusterId = info.Id()
-		head.SocketId = info.SocketId
+	head := rpc.RpcHead{Id:int64(uint32(base.RAND.RandI(0, 0xFFFFFFFF)))}
+	_, head.ClusterId = this.m_HashRing.Get64(head.Id)
+	pCluster := this.GetCluster(head)
+	if pCluster != nil{
+		head.SocketId = pCluster.SocketId
 	}
-	this.m_ClusterLocker.RUnlock()
 	return head
 }
