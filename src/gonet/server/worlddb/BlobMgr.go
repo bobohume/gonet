@@ -3,13 +3,13 @@ package worlddb
 import (
 	"fmt"
 	"github.com/golang/protobuf/proto"
-	"gonet/base"
+	"gonet/base/vector"
 	"sort"
 )
 
 type(
 	CoverList struct {
-		base.Vector
+		vector.Vector
 	}
 
 	CoverInfo struct {
@@ -59,12 +59,12 @@ func (this *BlobMgr) RegisterCoverBlob(v1 int, v2 int, pFunc CoverBlobFunc){
 	if v1 >= v2{
 		panic(fmt.Sprintf("CoverBlob verison [%d] to [%d]", v1, v2))
 	}
-	this.m_BlobCoverList.Push_back(&CoverInfo{v1, v2, pFunc})
+	this.m_BlobCoverList.PushBack(&CoverInfo{v1, v2, pFunc})
 }
 
 //blob转换
 func (this *BlobMgr) GetBlob(version int, blob proto.Message) (int, proto.Message){
-	for _, v := range this.m_BlobCoverList.Array(){
+	for _, v := range this.m_BlobCoverList.Values(){
 		pCover := v.(*CoverInfo)
 		if pCover.srcV <= version &&  pCover.destV > version{
 			version, blob = pCover.pFunc(pCover.srcV, blob, pCover.destV, this.m_BlobMap[pCover.destV]())
