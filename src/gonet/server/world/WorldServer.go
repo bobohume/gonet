@@ -2,15 +2,12 @@ package world
 
 import (
 	"database/sql"
-	"fmt"
 	"gonet/base"
 	"gonet/db"
 	"gonet/network"
 	"gonet/rd"
 	"gonet/server/common/cluster"
-	"gonet/server/game/lmath"
 	"log"
-	"unsafe"
 )
 
 type(
@@ -116,21 +113,7 @@ func (this *ServerMgr)Init() bool{
 	this.m_pService.BindPacketFunc(packet.PacketFunc)
 	this.m_pService.BindPacketFunc(this.m_pClusterMgr.PacketFunc)
 
-	aaa := []int{1, 2, 3}
-	ppp := lmath.Point3F{1, 2, 3}
-	kkk := (*[3]float32)(unsafe.Pointer(&ppp))[:]
-	kkk[0] = 200
-	fmt.Println(&ppp, &kkk)
-	aaa[1], aaa[2] = aaa[2], aaa[1]
-	test(aaa[:])
-
-	var temp[16] int
-	copy(temp[:], aaa)
 	return  false
-}
-
-func test(a []int){
-	a[0] = 222
 }
 
 func (this *ServerMgr)InitDB() bool{
