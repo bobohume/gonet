@@ -2,6 +2,7 @@ package common
 
 import (
 	"gonet/base"
+	"gonet/base/vector"
 	"math"
 	"strings"
 )
@@ -35,7 +36,7 @@ func (this *RandGroup) Rand() *RandUnit{
 //不重复随机属性
 func (this *RandGroup) RandEx(Id []int32, need int) []*RandUnit{
 	randomBuff := []*RandUnit{}
-	buffVec := base.NewVector()
+	buffVec := vector.NewVector()
 	for _, v := range this.Units{
 		//招到重复的
 		bFind := false
@@ -46,7 +47,7 @@ func (this *RandGroup) RandEx(Id []int32, need int) []*RandUnit{
 			}
 		}
 		if !bFind{
-			buffVec.Push_back(v)
+			buffVec.PushBack(v)
 		}
 	}
 	nNeed := math.Min(float64(need), float64(buffVec.Len()))

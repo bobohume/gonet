@@ -4,6 +4,7 @@ import (
 	"gonet/base"
 	"bufio"
 	"fmt"
+	"gonet/base/vector"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -331,7 +332,7 @@ func SaveExcel(filename string){
 	ColumNum := fstream.ReadInt(32)
 	Sheetname := fstream.ReadString()
 	//readstep := RecordNum * ColumNum
-	dataTypes := base.NewVector()
+	dataTypes := vector.NewVector()
 	xfile := xlsx.NewFile()
 	sheet, err := xfile.AddSheet(Sheetname)
 	if err != nil{
@@ -371,7 +372,7 @@ func SaveExcel(filename string){
 				}
 			}
 			nDataType := fstream.ReadInt(8)
-			dataTypes.Push_back(int(nDataType))
+			dataTypes.PushBack(int(nDataType))
 		}
 	}
 
