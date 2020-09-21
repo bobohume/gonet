@@ -1,7 +1,7 @@
 package betree
 
 import (
-	"gonet/base"
+	"gonet/base/vector"
 	"sort"
 )
 
@@ -12,7 +12,7 @@ import (
 //  * Action Node
 type(
 	BehaviorList struct {
-		base.Vector
+		vector.Vector
 	}
 
 	IBehaviorList interface {
@@ -52,7 +52,7 @@ func (this *BehaviorList) AddChild(name string, pNode IBaseNode){
 		}
 	}else{
 		pNode.SetName(name)
-		this.Push_front(pNode)
+		this.PushFront(pNode)
 		sort.Sort(this)
 	}
 }
@@ -84,7 +84,7 @@ func (this *BehaviorTree) Init(){
 }
 
 func (this *BehaviorTree) OnExec(tick int64){
-	for _,v := range this.Array() {
+	for _,v := range this.Values() {
 		v.(IBaseNode).OnExec(tick)
 	}
 }

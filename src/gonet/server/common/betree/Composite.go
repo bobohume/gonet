@@ -39,7 +39,7 @@ func (this *Composite) Init() {
 //    本Node向自己的Parent Node也返回True；否则所有Child Node都返回False，
 //    那本Node向自己的Parent Node返回False。
 func (this *Sequence) OnExec(tick int64) bool {
-	for _,v := range this.BehaviorList.Array() {
+	for _,v := range this.BehaviorList.Values() {
 		if v.(IBaseNode).OnExec(tick){
 			return true
 		}
@@ -52,7 +52,7 @@ func (this *Sequence) OnExec(tick int64) bool {
 //    本Node向自己的Parent Node也返回False；否则所有Child Node都返回True，
 //    那本Node向自己的Parent Node返回True。
 func (this *Selector) OnExec(tick int64) bool {
-	for _,v := range this.BehaviorList.Array() {
+	for _,v := range this.BehaviorList.Values() {
 		if !v.(IBaseNode).OnExec(tick){
 			return false
 		}
@@ -66,7 +66,7 @@ func (this *Selector) OnExec(tick int64) bool {
 //    那本Node向自己的Parent Node返回False。
 func (this *PSequence) OnExec(tick int64) bool {
 	bScuess := true
-	for _,v := range this.BehaviorList.Array() {
+	for _,v := range this.BehaviorList.Values() {
 		if !v.(IBaseNode).OnExec(tick){
 			bScuess = false
 		}
@@ -80,7 +80,7 @@ func (this *PSequence) OnExec(tick int64) bool {
 //    那本Node向自己的Parent Node返回True。
 func (this *PSelector) OnExec(tick int64) bool {
 	bScuess := false
-	for _,v := range this.BehaviorList.Array() {
+	for _,v := range this.BehaviorList.Values() {
 		if v.(IBaseNode).OnExec(tick){
 			bScuess = true
 		}
