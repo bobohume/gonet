@@ -129,7 +129,7 @@ func Benchmark_TestMarshalRpc(b *testing.B){
 		aa = append(aa, int32(nValue))
 	}
 	for i := 0; i < ntimes; i++{
-		rpc.Marshal("test", aa)
+		rpc.Marshal(rpc.RpcHead{}, "test", aa)
 	}
 	b.StopTimer()
 }
@@ -141,7 +141,7 @@ func Benchmark_TestUMarshalRpc(b *testing.B){
 		aa = append(aa, int32(nValue))
 	}
 	for i := 0; i < ntimes; i++{
-		buff := rpc.Marshal("test", aa)
+		buff := rpc.Marshal(rpc.RpcHead{}, "test", aa)
 		parse(buff)
 	}
 	b.StopTimer()
