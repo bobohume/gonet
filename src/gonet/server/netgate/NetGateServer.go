@@ -38,8 +38,6 @@ type(
 var(
 	UserNetIP string
 	UserNetPort string
-	AccountServerIp string
-	AccountServerPort string
 	EtcdEndpoints []string
 
 	SERVER ServerMgr
@@ -85,12 +83,10 @@ func (this *ServerMgr)Init() bool{
 
 	EtcdEndpoints = this.m_config.Get5("Etcd_Cluster", ",")
 	UserNetIP, UserNetPort 	= this.m_config.Get2("NetGate_WANAddress", ":")
-	AccountServerIp, AccountServerPort 	= this.m_config.Get2("Account_LANAddress", ":")
 	ShowMessage := func(){
 		this.m_Log.Println("**********************************************************")
 		this.m_Log.Printf("\tNetGateServer Version:\t%s",base.BUILD_NO)
 		this.m_Log.Printf("\tNetGateServerIP(LAN):\t%s:%s", UserNetIP, UserNetPort)
-		this.m_Log.Printf("\tAccountServerIP(LAN):\t%s:%s", AccountServerIp, AccountServerPort)
 		this.m_Log.Println("**********************************************************");
 	}
 	ShowMessage()

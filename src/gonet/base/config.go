@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"net"
 	"os"
 	"strconv"
 	"strings"
@@ -83,7 +84,19 @@ func (this *Config) Get2(key string, sep string) (string, string){
 		second := buf[index+1:]
 		return  first,second
 	}
-	return  split(this.Get(key), sep)
+	ip, port := split(this.Get(key), sep)
+	if ip == "0.0.0.0"{
+		addrs, _ := net.InterfaceAddrs()
+		for _, address := range addrs {
+			if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+				if ipnet.IP.To4() != nil {
+					ip = ipnet.IP.String()
+					return ip, port
+				}
+			}
+		}
+	}
+	return ip, port
 }
 
 func (this *Config) Get3(seciton string, key string, sectionid ...int) string{
