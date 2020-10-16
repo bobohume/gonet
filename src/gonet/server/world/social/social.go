@@ -103,8 +103,8 @@ func (this *SocialMgr) Init(num int) {
 	actor.MGR.AddActor(this)
 
 	this.RegisterCall("C_W_MakeLinkRequest", func(ctx context.Context, PlayerId, TargetId int64, Type int8) {
-		pPlayer := player.PLAYERSIMPLEMGR.GetPlayerDataById(PlayerId)
-		pTarget	:= player.PLAYERSIMPLEMGR.GetPlayerDataById(TargetId)
+		pPlayer := player.SIMPLEMGR.GetPlayerDataById(PlayerId)
+		pTarget	:= player.SIMPLEMGR.GetPlayerDataById(TargetId)
 		if pPlayer == nil || pTarget == nil{
 			this.m_Log.Printf("查询玩家id[%d][%d]数据为空", PlayerId, TargetId)
 			return

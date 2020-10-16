@@ -76,11 +76,11 @@ func (this *ChatMgr) Init(num int) {
 
 		msg := &ChatMessage{}
 		msg.Sender = playerId
-		msg.SenderName = player2.PLAYERSIMPLEMGR.GetPlayerName(msg.Sender)
+		msg.SenderName = player2.SIMPLEMGR.GetPlayerName(msg.Sender)
 		msg.Message = packet.GetMessage()
 		msg.Recver = packet.GetRecver()
 		msg.MessageType = int8(packet.GetMessageType())
-		msg.RecverName = player2.PLAYERSIMPLEMGR.GetPlayerName(msg.Recver)
+		msg.RecverName = player2.SIMPLEMGR.GetPlayerName(msg.Recver)
 		//替换屏蔽字库
 		//data.ReplaceBanWord(msg.Message, "*")
 
