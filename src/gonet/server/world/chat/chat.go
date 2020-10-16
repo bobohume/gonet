@@ -57,7 +57,7 @@ type(
 )
 
 var(
-	CHATMGR ChatMgr
+	MGR ChatMgr
 )
 
 func (this *ChatMgr) Init(num int) {

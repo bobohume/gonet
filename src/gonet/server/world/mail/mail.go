@@ -48,7 +48,7 @@ type (
 )
 
 var(
-	MAILMGR CMailMgr
+	MGR CMailMgr
 )
 
 func (this *CMailMgr) Init(num int) {

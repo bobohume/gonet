@@ -15,7 +15,7 @@ import (
 // 玩家管理
 //********************************************************
 var(
-	PLAYERMGR PlayerMgr
+	MGR PlayerMgr
 )
 
 type(

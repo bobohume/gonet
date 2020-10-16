@@ -33,7 +33,7 @@ type(
 )
 
 var(
-	PLAYERSIMPLEMGR PlayerSimpleMgr
+	SIMPLEMGR PlayerSimpleMgr
 )
 
 func loadSimple(row db.IRow, s *SimplePlayerData){
