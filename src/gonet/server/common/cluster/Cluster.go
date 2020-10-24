@@ -101,7 +101,7 @@ func (this *Cluster) Init(num int, MasterType message.SERVICE, IP string, Port i
 	this.RegisterCall("DISCONNECT", func(ctx context.Context, ClusterId uint32) {
 		pCluster := this.GetCluster(rpc.RpcHead{ClusterId:ClusterId})
 		if pCluster != nil{
-			this.DelCluster(pCluster.ClusterInfo)
+			(*etv3.Master)(this.m_Master).DelService(pCluster.ClusterInfo)
 		}
 	})
 
