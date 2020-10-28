@@ -38,11 +38,11 @@ func (this *BehaviorList) Less(i, j int) bool{
 }
 
 func (this *BehaviorList) AddChild(name string, pNode IBaseNode){
+	pNode.Init()
 	if pNode.GetType() != COMPOSITE && pNode.GetType() != DECORATOR && pNode.GetType() != ACTION && pNode.GetType() != CONDITION{
 		return
 	}
 
-	//pNode.Init()
 	pCurNode := this.GetChild(name)
 	if pCurNode != nil{
 		if pCurNode.GetType() == COMPOSITE && pNode.(IComposite) != nil{

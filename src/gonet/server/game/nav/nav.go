@@ -22,10 +22,6 @@ type (
 		mMaxNode     int
 		mMesh        *DtNavMesh
 		mQuery       *DtNavMeshQuery
-
-		mBounds 	  	  lmath.Box3F //地图大小
-		mTileWidth  	  float32    ///< The width of each tile. (the max x-axis or y-axis )
-		mOrig       	  lmath.Point3F ///< The world space origin of the navigation mesh's tile space. [(x, y, z)]
 	}
 
 	IDetour interface {
@@ -336,15 +332,15 @@ func (this *Detour) createStaticMesh(path string, errCode *int) *DtNavMesh {
 }
 
 func (this *Detour) GetAreaWidth() float32{
-	return  float32(math.Max(float64(this.mTileWidth), float64(1)))
+	return  float32(math.Max(float64(this.mMesh.mTileWidth), float64(1)))
 }
 
 func (this *Detour) GetAreaNumX() int{
-	return int(this.mBounds.Len_x() / this.mTileWidth)+1
+	return int(this.mMesh.mBounds.Len_x() / this.mMesh.mTileWidth)+1
 }
 
 func (this *Detour) GetAreaNumY() int{
-	return int(this.mBounds.Len_y() / this.mTileWidth)+1
+	return int(this.mMesh.mBounds.Len_y() / this.mMesh.mTileWidth)+1
 }
 
 func (this *Detour) GetAreaNum() int{
@@ -352,8 +348,8 @@ func (this *Detour) GetAreaNum() int{
 }
 
 func (this *Detour) GetAreaPos(pos lmath.Point3F)(int, int){
-	x := int(math.Floor(float64(pos.X-this.mOrig.X) / float64(this.mTileWidth)))
-	y := int(math.Floor(float64(pos.Y-this.mOrig.Y) / float64(this.mTileWidth)))
+	x := int(math.Floor(float64(pos.X-this.mMesh.mOrig.X) / float64(this.mMesh.mTileWidth)))
+	y := int(math.Floor(float64(pos.Y-this.mMesh.mOrig.Y) / float64(this.mMesh.mTileWidth)))
 	return x, y
 }
 
@@ -442,34 +438,34 @@ func (this *Detour) loadStaticMesh(path string, errCode *int) *DtNavMesh {
 		d += tileHeader.dataSize
 	}
 
-	this.mTileWidth = float32(math.Max(float64(header.params.TileWidth), float64(header.params.TileHeight)))
-	this.mBounds.Min.SetMax(lmath.Point3F{0xFFFFFFF,0xFFFFFFF, 0xFFFFFFF })
-	this.mOrig.SetF(header.params.Orig[:])
+	mesh.mTileWidth = float32(math.Max(float64(header.params.TileWidth), float64(header.params.TileHeight)))
+	mesh.mBounds.Min.SetMax(lmath.Point3F{0xFFFFFFF,0xFFFFFFF, 0xFFFFFFF })
+	mesh.mOrig.SetF(header.params.Orig[:])
 	// 获取地图大小
 	for _, v := range mesh.m_tiles {
 		if v.Header == nil{
 			continue
 		}
-		if this.mBounds.Min.X > v.Header.Bmin[0]{
-			this.mBounds.Min.X = v.Header.Bmin[0]
+		if mesh.mBounds.Min.X > v.Header.Bmin[0]{
+			mesh.mBounds.Min.X = v.Header.Bmin[0]
 		}
-		if this.mBounds.Min.Z > v.Header.Bmin[1]{
-			this.mBounds.Min.Z = v.Header.Bmin[1]
+		if mesh.mBounds.Min.Z > v.Header.Bmin[1]{
+			mesh.mBounds.Min.Z = v.Header.Bmin[1]
 		}
-		if this.mBounds.Min.Y > v.Header.Bmin[2]{
-			this.mBounds.Min.Y = v.Header.Bmin[2]
+		if mesh.mBounds.Min.Y > v.Header.Bmin[2]{
+			mesh.mBounds.Min.Y = v.Header.Bmin[2]
 		}
-		if this.mBounds.Max.X < v.Header.Bmax[0]{
-			this.mBounds.Max.X = v.Header.Bmax[0]
+		if mesh.mBounds.Max.X < v.Header.Bmax[0]{
+			mesh.mBounds.Max.X = v.Header.Bmax[0]
 		}
-		if this.mBounds.Max.Z < v.Header.Bmax[1]{
-			this.mBounds.Max.Z = v.Header.Bmax[1]
+		if mesh.mBounds.Max.Z < v.Header.Bmax[1]{
+			mesh.mBounds.Max.Z = v.Header.Bmax[1]
 		}
-		if this.mBounds.Max.Y < v.Header.Bmax[2]{
-			this.mBounds.Max.Y = v.Header.Bmax[2]
+		if mesh.mBounds.Max.Y < v.Header.Bmax[2]{
+			mesh.mBounds.Max.Y = v.Header.Bmax[2]
 		}
 	}
-	this.mOrig = this.mBounds.Min
+	mesh.mOrig = mesh.mBounds.Min
 
 	return mesh
 }

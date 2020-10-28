@@ -18,6 +18,8 @@
 
 package detour
 
+import "gonet/server/game/lmath"
+
 /// A handle to a polygon within a navigation mesh tile.
 /// @ingroup detour
 type DtPolyRef uint32
@@ -286,6 +288,10 @@ type(
 		m_saltBits uint32 ///< Number of salt bits in the tile ID.
 		m_tileBits uint32 ///< Number of tile bits in the tile ID.
 		m_polyBits uint32 ///< Number of poly bits in the tile ID.
+
+		mBounds 	  	  lmath.Box3F //地图大小
+		mTileWidth  	  float32    ///< The width of each tile. (the max x-axis or y-axis )
+		mOrig       	  lmath.Point3F ///< The world space origin of the navigation mesh's tile space. [(x, y, z)]
 	}
 )
 /// @}
