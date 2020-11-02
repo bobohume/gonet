@@ -92,8 +92,8 @@ func (this *Actor)  RegisterTimer(duration time.Duration, fun interface{}){
 func (this *Actor) clear() {
 	this.m_Id = 0
 	this.m_bStart = false
-	close(this.m_AcotrChan)
-	close(this.m_CallChan)
+	//close(this.m_AcotrChan)
+	//close(this.m_CallChan)
 	if this.m_pTimer != nil{
 		this.m_pTimer.Stop()
 	}

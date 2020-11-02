@@ -120,7 +120,7 @@ func (this *ServerSocketClient) OnNetFail(error int) {
 
 func (this *ServerSocketClient) Close() {
 	if this.m_nConnectType == CLIENT_CONNECT {
-		close(this.m_SendChan)
+		//close(this.m_SendChan)
 	}
 	this.Socket.Close()
 	if this.m_pServer != nil {

@@ -98,7 +98,7 @@ func (this *WebSocketClient) OnNetFail(error int) {
 
 func (this *WebSocketClient) Close() {
 	if this.m_nConnectType == CLIENT_CONNECT {
-		close(this.m_SendChan)
+		//close(this.m_SendChan)
 	}
 	this.Socket.Close()
 	if this.m_pServer != nil {
