@@ -15,7 +15,7 @@ type(
 )
 
 func (this *ClusterInfo) IpString() string{
-	return this.Ip + fmt.Sprintf(":%d", this.Port)
+	return fmt.Sprintf("%s:%d", this.Ip, this.Port)
 }
 
 func (this *ClusterInfo) String() string{
