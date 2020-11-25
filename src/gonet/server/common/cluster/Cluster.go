@@ -41,10 +41,10 @@ type(
 
 	ICluster interface{
 		//actor.IActor
-		Init(num int, MasterType message.SERVICE, IP string, Port int, Endpoints []string)
+		Init(num int, info *common.ClusterInfo, Endpoints []string)
 		AddCluster(info *common.ClusterInfo)
 		DelCluster(info *common.ClusterInfo)
-		GetCluster(rpc.RpcHead) ClusterNode
+		GetCluster(rpc.RpcHead) *ClusterNode
 
 		BindPacket(IClusterPacket)
 		BindPacketFunc(network.HandleFunc)
@@ -60,16 +60,16 @@ type(
 )
 
 //注册服务器
-func NewService(Type message.SERVICE, IP string, Port int, Endpoints []string) *Service{
+func NewService(info *common.ClusterInfo, Endpoints []string) *Service{
 	service := &etv3.Service{}
-	service.Init(Type, IP, Port, Endpoints)
+	service.Init(info, Endpoints)
 	return (*Service)(service)
 }
 
 //监控服务器
-func NewMaster(Type message.SERVICE, Endpoints []string, pActor actor.IActor) *Master {
+func NewMaster(info *common.ClusterInfo, Endpoints []string, pActor actor.IActor) *Master {
 	master := &etv3.Master{}
-	master.Init(Type, Endpoints, pActor)
+	master.Init(info, Endpoints, pActor)
 	return (*Master)(master)
 }
 
@@ -80,11 +80,11 @@ func NewSnowflake(Endpoints []string) *Snowflake{
 	return (*Snowflake)(uuid)
 }
 
-func (this *Cluster) Init(num int, MasterType message.SERVICE, IP string, Port int, Endpoints []string) {
+func (this *Cluster) Init(num int, info *common.ClusterInfo, Endpoints []string) {
 	this.Actor.Init(num)
 	this.m_ClusterLocker = &sync.RWMutex{}
 	this.m_ClusterMap = make(map[uint32] *ClusterNode)
-	this.m_Master = NewMaster(MasterType, Endpoints, &this.Actor)
+	this.m_Master = NewMaster(info, Endpoints, &this.Actor)
 	this.m_HashRing = base.NewHashRing()
 
 	//集群新加member

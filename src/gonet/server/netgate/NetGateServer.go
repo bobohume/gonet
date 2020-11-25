@@ -4,6 +4,7 @@
 	 "gonet/base"
 	 "gonet/message"
 	 "gonet/network"
+	 "gonet/server/common"
 	 "gonet/server/common/cluster"
 	 "time"
  )
@@ -114,23 +115,23 @@ func (this *ServerMgr)Init() bool{
 	this.m_pService.BindPacketFunc(packet.PacketFunc)
 	this.m_pService.Start()*/
 	//注册到集群服务器
-	this.m_Cluster = cluster.NewService(message.SERVICE_GATESERVER, UserNetIP, base.Int(UserNetPort), EtcdEndpoints)
+	this.m_Cluster = cluster.NewService( &common.ClusterInfo{Type:message.SERVICE_GATESERVER, Ip:UserNetIP, Port:int32(base.Int(UserNetPort))}, EtcdEndpoints)
 
 	//世界服务器集群
 	this.m_WorldCluster = new(cluster.Cluster)
-	this.m_WorldCluster.Init(1000, message.SERVICE_WORLDSERVER, UserNetIP, base.Int(UserNetPort), EtcdEndpoints)
+	this.m_WorldCluster.Init(1000, &common.ClusterInfo{Type:message.SERVICE_WORLDSERVER}, EtcdEndpoints)
 	this.m_WorldCluster.BindPacket(&WorldProcess{})
 	this.m_WorldCluster.BindPacketFunc(DispatchPacket)
 
 	//账号服务器集群
 	this.m_AccountCluster = new(cluster.Cluster)
-	this.m_AccountCluster.Init(1000, message.SERVICE_ACCOUNTSERVER, UserNetIP, base.Int(UserNetPort), EtcdEndpoints)
+	this.m_AccountCluster.Init(1000, &common.ClusterInfo{Type:message.SERVICE_ACCOUNTSERVER}, EtcdEndpoints)
 	this.m_AccountCluster.BindPacket(&AccountProcess{})
 	this.m_AccountCluster.BindPacketFunc(DispatchPacket)
 
 	//战斗服务器集群
 	this.m_ZoneCluster = new(cluster.Cluster)
-	this.m_ZoneCluster.Init(1000, message.SERVICE_ZONESERVER, UserNetIP, base.Int(UserNetPort), EtcdEndpoints)
+	this.m_ZoneCluster.Init(1000, &common.ClusterInfo{Type:message.SERVICE_ZONESERVER}, EtcdEndpoints)
 	this.m_ZoneCluster.BindPacket(&ZoneProcess{})
 	this.m_ZoneCluster.BindPacketFunc(DispatchPacket)
 

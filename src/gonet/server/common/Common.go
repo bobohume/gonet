@@ -9,9 +9,7 @@ import (
 
 type(
 	//集群信息
-	ClusterInfo struct {
-		message.ClusterInfo
-	}
+	ClusterInfo message.ClusterInfo
 )
 
 func (this *ClusterInfo) IpString() string{

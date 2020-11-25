@@ -28,7 +28,7 @@ type(
 	}
 
 	IClusterServer interface{
-		InitService(Type message.SERVICE, IP string, Port int, Endpoints []string)
+		InitService(info *common.ClusterInfo, Endpoints []string)
 		RegisterClusterCall()//注册集群通用回调
 		AddCluster(info *common.ClusterInfo)
 		DelCluster(info *common.ClusterInfo)
@@ -47,18 +47,18 @@ type(
 	}
 )
 
-func (this *ClusterServer) InitService(Type message.SERVICE, IP string, Port int, Endpoints []string) {
+func (this *ClusterServer) InitService(info *common.ClusterInfo, Endpoints []string) {
 	this.m_ClusterLocker = &sync.RWMutex{}
 	//注册服务器
-	this.Service = NewService(Type, IP, Port, Endpoints)
+	this.Service = NewService(info, Endpoints)
 	this.m_ClusterMap = make(HashClusterMap)
 	this.m_ClusterSocketMap = make(HashClusterSocketMap)
 	this.m_HashRing = base.NewHashRing()
 }
 
 func (this *ClusterServer) RegisterClusterCall(){
-	this.RegisterCall("COMMON_RegisterRequest", func(ctx context.Context, info *message.ClusterInfo) {
-		pServerInfo := &common.ClusterInfo{ClusterInfo:*info}
+	this.RegisterCall("COMMON_RegisterRequest", func(ctx context.Context, info *common.ClusterInfo) {
+		pServerInfo := info
 		pServerInfo.SocketId = this.GetRpcHead(ctx).SocketId
 
 		this.AddCluster(pServerInfo)

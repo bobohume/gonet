@@ -6,6 +6,7 @@ import (
 	"gonet/base"
 	"gonet/message"
 	"gonet/rpc"
+	"gonet/server/common"
 	"gonet/server/common/cluster"
 )
 
@@ -23,7 +24,7 @@ type (
 func (this *ClusterManager) Init(num int){
 	this.Actor.Init(num)
 	//注册account集群
-	this.InitService(message.SERVICE_ACCOUNTSERVER, UserNetIP, base.Int(UserNetPort), EtcdEndpoints)
+	this.InitService(&common.ClusterInfo{Type:message.SERVICE_ACCOUNTSERVER, Ip:UserNetIP, Port:int32(base.Int(UserNetPort))}, EtcdEndpoints)
 	this.RegisterClusterCall()
 
 	this.Actor.Start()

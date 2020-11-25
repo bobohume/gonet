@@ -27,7 +27,7 @@ func (this *WorldProcess) Init(num int) {
 	this.m_LostTimer.Start()
 	this.RegisterTimer(1 * 1000 * 1000 * 1000, this.Update)
 	this.RegisterCall("COMMON_RegisterRequest", func(ctx context.Context) {
-		SERVER.GetWorldSocket().SendMsg(rpc.RpcHead{},"COMMON_RegisterRequest", &message.ClusterInfo{Type:message.SERVICE_WORLDDBSERVER, Ip:UserNetIP, Port:int32(base.Int(UserNetPort))})
+		SERVER.GetWorldSocket().SendMsg(rpc.RpcHead{},"COMMON_RegisterRequest", &common.ClusterInfo{Type:message.SERVICE_WORLDDBSERVER, Ip:UserNetIP, Port:int32(base.Int(UserNetPort))})
 	})
 
 	this.RegisterCall("COMMON_RegisterResponse", func(ctx context.Context) {

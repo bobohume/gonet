@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"go.etcd.io/etcd/clientv3"
 	"gonet/actor"
-	"gonet/message"
 	"gonet/rpc"
 	"gonet/server/common"
 	"log"
@@ -17,11 +16,11 @@ type Master struct {
 	m_ServiceMap map[uint32]*common.ClusterInfo
 	m_Client *clientv3.Client
 	m_Actor actor.IActor
-	common.ClusterInfo
+	*common.ClusterInfo
 }
 
 //监控服务器
-func (this *Master) Init(Type message.SERVICE, Endpoints []string, pActor actor.IActor) {
+func (this *Master) Init(info *common.ClusterInfo, Endpoints []string, pActor actor.IActor) {
 	cfg := clientv3.Config{
 		Endpoints:               Endpoints,
 	}
@@ -35,7 +34,7 @@ func (this *Master) Init(Type message.SERVICE, Endpoints []string, pActor actor.
 	this.m_Client = etcdClient
 	this.BindActor(pActor)
 	this.Start()
-	this.Type = Type
+	this.ClusterInfo = info
 }
 
 func (this *Master) Start() {

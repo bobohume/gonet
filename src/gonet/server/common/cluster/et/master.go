@@ -3,7 +3,6 @@ package et
 import (
 	"encoding/json"
 	"gonet/actor"
-	"gonet/message"
 	"gonet/rpc"
 	"gonet/server/common"
 	"log"
@@ -19,7 +18,7 @@ type (
 		m_ServiceMap map[uint32]*common.ClusterInfo
 		m_KeysAPI client.KeysAPI
 		m_Actor actor.IActor
-		common.ClusterInfo
+		*common.ClusterInfo
 	}
 
 	IMaster interface {
@@ -28,7 +27,7 @@ type (
 )
 
 //监控服务器
-func (this *Master) Init(Type message.SERVICE, Endpoints []string, pActor actor.IActor) {
+func (this *Master) Init(info *common.ClusterInfo, Endpoints []string, pActor actor.IActor) {
 	cfg := client.Config{
 		Endpoints:               Endpoints,
 		Transport:               client.DefaultTransport,
@@ -44,7 +43,7 @@ func (this *Master) Init(Type message.SERVICE, Endpoints []string, pActor actor.
 	this.m_KeysAPI =  client.NewKeysAPI(etcdClient)
 	this.BindActor(pActor)
 	this.Start()
-	this.Type = Type
+	this.ClusterInfo = info
 }
 
 func (this *Master) Start() {
