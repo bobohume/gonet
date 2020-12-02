@@ -3,7 +3,9 @@ package base
 import (
 	"encoding/binary"
 	"fmt"
+	"gonet/base/vector"
 	"hash/crc32"
+	"io/ioutil"
 	"log"
 	"math"
 	"os"
@@ -284,5 +286,21 @@ func ToString(value interface{}) string {
 		return strconv.FormatBool(value.(bool))
 	default:
 		return fmt.Sprintf("%+v", value)
+	}
+}
+
+//---------遍历子目录------------//
+func WalkDir(dirpath string, filesVec *vector.Vector){
+	files, err := ioutil.ReadDir(dirpath)//读取目录下文件
+	if err != nil{
+		return
+	}
+	for _, file := range files{
+		if file.IsDir(){
+			WalkDir(dirpath + "/" + file.Name(), filesVec)
+			continue
+		}else{
+			filesVec.PushBack(file)
+		}
 	}
 }
