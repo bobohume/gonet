@@ -21,7 +21,6 @@ type (
 		m_RingMap           map[uint32] string
 		m_MemberMap         map[string] bool
 		m_SortedKeys    	*maps.Map
-		m_Scratch          	[64]byte// prevent false sharing of the sequence cursor by padding the CPU cache line with 64 *bytes* of data.
 		sync.RWMutex
 	}
 
