@@ -13,15 +13,15 @@ var(
 
 func ExampleDial() {
 	origin := "http://localhost/"
-	url := "ws://localhost:31700/ws"
+	url := "ws://192.168.215.107:31700/ws"
 	ws, err := websocket.Dial(url, "", origin)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	AccountName := fmt.Sprintf("test%d", 1)
-	packet1 := &message.C_A_LoginRequest{PacketHead: message.BuildPacketHead(0, int(message.SERVICE_ACCOUNTSERVER)),
-		AccountName: AccountName, BuildNo: base.BUILD_NO, SocketId: 0}
+	packet1 := &message.C_A_LoginRequest{PacketHead: message.BuildPacketHead(0, message.SERVICE_ACCOUNTSERVER),
+		AccountName: AccountName, BuildNo: base.BUILD_NO}
 	buff := message.Encode(packet1)
 	buff = base.SetTcpEnd(buff)
 	if _, err := ws.Write(buff); err != nil {
