@@ -39,7 +39,7 @@ type(
 		SendMsg(rpc.RpcHead, string, ...interface{})//发送给集群特定服务器
 		Send(rpc.RpcHead, []byte)//发送给集群特定服务器
 
-		RandomCluster()	rpc.RpcHead//随机分配
+		RandomCluster(head rpc.RpcHead)	rpc.RpcHead//随机分配
 
 		sendPoint(rpc.RpcHead, []byte)//发送给集群特定服务器
 		balanceSend(rpc.RpcHead, []byte)//负载给集群特定服务器
@@ -142,7 +142,6 @@ func (this *ClusterServer) sendPoint(head rpc.RpcHead, buff []byte){
 }
 
 func (this *ClusterServer) balanceSend(head rpc.RpcHead, buff []byte){
-	//head = this.RandomCluster()
 	_, head.ClusterId = this.m_HashRing.Get64(head.Id)
 	pCluster := this.GetCluster(head)
 	if pCluster != nil{
@@ -184,8 +183,10 @@ func (this *ClusterServer) Send(head rpc.RpcHead, buff []byte){
 	}
 }
 
-func (this *ClusterServer) RandomCluster() rpc.RpcHead{
-	head := rpc.RpcHead{Id:int64(uint32(base.RAND.RandI(1, 0xFFFFFFFF)))}
+func (this *ClusterServer) RandomCluster(head rpc.RpcHead) rpc.RpcHead{
+	if head.Id == 0{
+		head.Id = int64(uint32(base.RAND.RandI(1, 0xFFFFFFFF)))
+	}
 	_, head.ClusterId = this.m_HashRing.Get64(head.Id)
 	pCluster := this.GetCluster(head)
 	if pCluster != nil{

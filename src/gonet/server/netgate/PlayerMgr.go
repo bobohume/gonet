@@ -63,8 +63,8 @@ func (this *PlayerManager) AddAccountMap(accountId int64, socketId uint32) int {
 	this.ReleaseSocketMap(Id, Id != socketId)
 
 	accountInfo := NewAccountInfo(socketId, accountId)
-	accountInfo.WClusterId = SERVER.GetWorldCluster().RandomCluster().ClusterId
-	accountInfo.ZClusterId = SERVER.GetZoneCluster().RandomCluster().ClusterId
+	accountInfo.WClusterId = SERVER.GetWorldCluster().RandomCluster(rpc.RpcHead{Id:accountId}).ClusterId
+	accountInfo.ZClusterId = SERVER.GetZoneCluster().RandomCluster(rpc.RpcHead{Id:accountId}).ClusterId
 	this.m_Locker.Lock()
 	this.m_AccountMap[accountId] = accountInfo
 	this.m_SocketMap[socketId] = accountId
