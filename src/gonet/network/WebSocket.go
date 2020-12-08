@@ -159,7 +159,6 @@ func (this *WebSocket) OnNetFail(int) {
 
 func (this *WebSocket) Close() {
 	this.Clear()
-	//this.m_Pool.Put(this)
 }
 
 func (this *WebSocket) wserverRoutine(conn *websocket.Conn){

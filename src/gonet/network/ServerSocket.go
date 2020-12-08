@@ -180,7 +180,6 @@ func (this *ServerSocket) OnNetFail(int) {
 func (this *ServerSocket) Close() {
 	defer this.m_Listen.Close()
 	this.Clear()
-	//this.m_Pool.Put(this)
 }
 
 func (this *ServerSocket) Run() bool{
