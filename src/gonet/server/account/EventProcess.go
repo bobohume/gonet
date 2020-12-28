@@ -23,6 +23,10 @@ type (
 	}
 )
 
+func ToSlat(pwd string, salt int64) string{
+	return fmt.Sprintf("%s__%d", pwd, salt)
+}
+
 func (this *EventProcess) Init(num int) {
 	this.Actor.Init(num)
 	this.m_db = SERVER.GetDB()
@@ -40,7 +44,7 @@ func (this *EventProcess) Init(num int) {
 			rs := db.Query(rows, err)
 			if !rs.Next(){
 				//创建账号
-				_, err := this.m_db.Exec(fmt.Sprintf("insert into tbl_account (account_name, password, account_id) values('%s', '%s', %d)", accountName, base.MD5(password), accountId))
+				_, err := this.m_db.Exec(fmt.Sprintf("insert into tbl_account (account_name, password, account_id) values('%s', '%s', %d)", accountName, base.MD5(ToSlat(password, accountId)), accountId))
 				if (err == nil) {
 					SERVER.GetLog().Printf("帐号[%s]创建成功", accountName)
 					//登录账号
@@ -79,7 +83,7 @@ func (this *EventProcess) Init(num int) {
 				if rs.Next(){
 					accountId := rs.Row().Int64("account_id")
 					passWd := rs.Row().String("password")
-					if base.MD5(password)== passWd{
+					if base.MD5(ToSlat(password, accountId))== passWd{
 						nError = base.NONE_ERROR
 						SERVER.GetAccountMgr().SendMsg(rpc.RpcHead{},"Account_Login", accountName, accountId, socketId, this.GetRpcHead(ctx).SocketId)
 					}else{//密码错误
