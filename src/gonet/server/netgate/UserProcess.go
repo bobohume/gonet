@@ -18,6 +18,7 @@ var(
 type(
 	UserPrcoess struct{
 		actor.Actor
+		m_KeyMap map[uint32] *base.Dh
 	}
 
 	IUserPrcoess interface {
@@ -28,6 +29,9 @@ type(
 		SwtichSendToWorld(uint32, string, rpc.RpcHead, []byte)
 		SwtichSendToAccount(uint32, string,  rpc.RpcHead, []byte)
 		SwtichSendToZone(uint32, string,  rpc.RpcHead, []byte)
+
+		addKey(uint32, *base.Dh)
+		delKey(uint32)
 	}
 )
 
@@ -91,6 +95,7 @@ func (this *UserPrcoess) PacketFunc(socketid uint32, buff []byte) bool{
 		}else{
 			SERVER.GetLog().Printf("包解析错误1  socket=%d", socketid)
 		}
+		this.delKey(socketid)
 		return true
 	}
 
@@ -131,12 +136,43 @@ func (this *UserPrcoess) PacketFunc(socketid uint32, buff []byte) bool{
 	return true
 }
 
+func (this *UserPrcoess) addKey(SocketId uint32, pDh *base.Dh){
+	this.m_KeyMap[SocketId] = pDh
+}
+
+func (this *UserPrcoess) delKey(SocketId uint32){
+	delete(this.m_KeyMap, SocketId)
+}
+
 func (this *UserPrcoess) Init(num int) {
 	this.Actor.Init(num)
+	this.m_KeyMap = map[uint32]*base.Dh{}
 	this.RegisterCall("C_G_LogoutRequest", func(ctx context.Context, accountId int, UID int){
 		SERVER.GetLog().Printf("logout Socket:%d Account:%d UID:%d ",this.GetRpcHead(ctx).SocketId, accountId,UID )
 		SERVER.GetPlayerMgr().SendMsg(rpc.RpcHead{},"DEL_ACCOUNT", this.GetRpcHead(ctx).SocketId)
 		SendToClient(this.GetRpcHead(ctx).SocketId, &message.C_G_LogoutResponse{PacketHead:message.BuildPacketHead( 0, 0)})
+	})
+
+	this.RegisterCall("C_G_LoginResquest", func(ctx context.Context, packet *message.C_G_LoginResquest){
+		head := this.GetRpcHead(ctx)
+		dh := base.Dh{}
+		dh.Init()
+		dh.ExchangePubk(packet.GetKey())
+		this.addKey(head.SocketId, &dh)
+		SendToClient(head.SocketId, &message.G_C_LoginResponse{PacketHead:message.BuildPacketHead( 0, 0), Key:dh.PubKey()})
+	})
+
+	this.RegisterCall("C_A_LoginRequest", func(ctx context.Context, packet *message.C_A_LoginRequest){
+		head := this.GetRpcHead(ctx)
+		dh, bEx :=  this.m_KeyMap[head.SocketId]
+		if bEx{
+			if dh.ShareKey() == packet.GetKey(){
+				this.delKey(head.SocketId)
+				this.SwtichSendToAccount(head.SocketId, base.ToLower("C_A_LoginRequest"), head, rpc.Marshal(head, base.ToLower("C_A_LoginRequest"), packet))
+			}else{
+				SERVER.GetLog().Println("client key cheat",dh.ShareKey(), packet.GetKey())
+			}
+		}
 	})
 
 	this.Actor.Start()

@@ -3,11 +3,25 @@ package message;
 import "message.proto";
 
 //登录
+message C_G_LoginResquest{
+    Ipacket PacketHead = 1;
+	int64 Key = 2;
+}
+
+//登录
+message G_C_LoginResponse{
+    Ipacket PacketHead = 1;
+	int64 Key = 2;
+}
+
+//登录
 message C_A_LoginRequest{
     Ipacket PacketHead = 1;
     string AccountName = 2;
-    string BuildNo = 3;
-    //string Password = 5;
+	string Password = 3;
+	string BuildNo = 5;
+	int64 Key = 6;
+	//uint32 Crc = 7;
 }
 
 //登录反馈
@@ -21,7 +35,7 @@ message A_C_LoginResponse{
 message C_A_RegisterRequest{
     Ipacket PacketHead = 1;
     string AccountName = 2;
-    //string Password = 4;
+    string Password = 3;
 }
 
 //注册反馈

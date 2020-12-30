@@ -114,7 +114,8 @@ func Init(){
 	initCrcNames()
 	//注册消息
 	//PacketHead 中的 DestServerType 决定转发到那个服务器
-	RegisterPacket(&C_A_LoginRequest{PacketHead:BuildPacketHead(0, SERVICE_ACCOUNTSERVER)})
+	RegisterPacket(&C_A_LoginRequest{PacketHead:BuildPacketHead(0, SERVICE_GATESERVER)})
+	RegisterPacket(&C_G_LoginResquest{PacketHead:BuildPacketHead(0, SERVICE_GATESERVER)})
 	RegisterPacket(&C_A_RegisterRequest{PacketHead:BuildPacketHead(0, SERVICE_ACCOUNTSERVER)})
 	RegisterPacket(&C_G_LogoutResponse{PacketHead:BuildPacketHead(0, SERVICE_GATESERVER)})
 	RegisterPacket(&C_W_CreatePlayerRequest{PacketHead:BuildPacketHead(0, SERVICE_WORLDSERVER)})
@@ -137,4 +138,5 @@ func InitClient(){
 	RegisterPacket(&W_C_ChatMessage{})
 	RegisterPacket(&A_C_LoginResponse{})
 	RegisterPacket(&A_C_RegisterResponse{})
+	RegisterPacket(&G_C_LoginResponse{})
 }

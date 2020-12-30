@@ -27,12 +27,12 @@ func main() {
 	CLIENT.BindPacketFunc(PACKET.PacketFunc)
 	PACKET.Client = CLIENT
 	if CLIENT.Start(){
-		PACKET.LoginAccount()
+		PACKET.LoginGate()
 	}
 
 	InitCmd()
 
-	/*for i := 0; i < 10000; i++{
+	for i := 0; i < 1000; i++{
 		client := new(network.ClientSocket)
 		client.Init(UserNetIP, port)
 		packet := new(EventProcess)
@@ -40,13 +40,13 @@ func main() {
 		client.BindPacketFunc(packet.PacketFunc)
 		packet.Client = client
 		if client.Start(){
-			packet.LoginAccount()
+			packet.LoginGate()
 		}
 		//time.Sleep(1 * time.Microsecond)
-	}*/
+	}
 	//PACKET.LoginGame()
 	//for{
-	//	PACKET.LoginAccount()
+	//	PACKET.LoginGate()
 	//}
 
 	c := make(chan os.Signal, 1)

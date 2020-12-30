@@ -20,7 +20,9 @@ type (
 		AccountId int64
 		PlayerId int64
 		AccountName string
+		PassWd string
 		SimId int64
+		m_Dh base.Dh
 	}
 
 	IEventProcess interface {
@@ -30,6 +32,14 @@ type (
 		SendPacket(proto.Message)
 	}
 )
+
+func ToSlat(accountName string, pwd string) string{
+	return fmt.Sprintf("%s__%s", accountName, pwd)
+}
+
+func ToCrc(accountName string, pwd string, buildNo string, nKey int64) uint32{
+	return base.GetMessageCode1(fmt.Sprintf("%s_%s_%s_%d", accountName, pwd, buildNo, nKey))
+}
 
 func SendPacket(packet proto.Message){
 	buff := message.Encode(packet)
@@ -60,6 +70,7 @@ func (this *EventProcess) PacketFunc(socketid uint32, buff []byte) bool {
 
 func (this *EventProcess) Init(num int) {
 	this.Actor.Init(num)
+	this.m_Dh.Init()
 	this.RegisterCall("W_C_SelectPlayerResponse", func(ctx context.Context, packet *message.W_C_SelectPlayerResponse) {
 		this.AccountId = packet.GetAccountId()
 		nLen := len(packet.GetPlayerData())
@@ -84,10 +95,15 @@ func (this *EventProcess) Init(num int) {
 		}
 	})
 
+	this.RegisterCall("G_C_LoginResponse", func(ctx context.Context, packet *message.G_C_LoginResponse) {
+		this.m_Dh.ExchangePubk(packet.GetKey())
+		this.LoginAccount()
+	})
+
 	this.RegisterCall("A_C_LoginResponse", func(ctx context.Context, packet *message.A_C_LoginResponse) {
 		if packet.GetError() == base.ACCOUNT_NOEXIST {
 			packet1 := &message.C_A_RegisterRequest{PacketHead:message.BuildPacketHead( 0, message.SERVICE_GATESERVER),
-				AccountName: packet.AccountName}
+				AccountName: packet.AccountName, Password:this.PassWd}
 			this.SendPacket(packet1)
 		}
 	})
@@ -140,9 +156,16 @@ var(
 func (this *EventProcess)  LoginAccount() {
 	id := atomic.AddInt32(&id, 1)
 	this.AccountName = fmt.Sprintf("test%d", id)
+	this.PassWd = base.MD5(ToSlat(this.AccountName, "123456"))
 	//this.AccountName = fmt.Sprintf("test%d", base.RAND.RandI(0, 7000))
 	packet1 := &message.C_A_LoginRequest{PacketHead: message.BuildPacketHead(0, message.SERVICE_GATESERVER),
-		AccountName: this.AccountName, BuildNo: base.BUILD_NO}
+		AccountName: this.AccountName, Password:this.PassWd,  BuildNo: base.BUILD_NO, Key:this.m_Dh.ShareKey()}
+	this.SendPacket(packet1)
+}
+
+func (this *EventProcess)  LoginGate() {
+	packet1 := &message.C_G_LoginResquest{PacketHead: message.BuildPacketHead(0, message.SERVICE_GATESERVER),
+		Key:this.m_Dh.PubKey()}
 	this.SendPacket(packet1)
 }
 

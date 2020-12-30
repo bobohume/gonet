@@ -8,10 +8,7 @@ import (
 )
 
 func SendToClient(socketId uint32, packet proto.Message){
-	buff, err := proto.Marshal(packet)
-	if err == nil {
-		SERVER.GetServer().Send(rpc.RpcHead{SocketId:socketId}, base.SetTcpEnd(buff))
-	}
+	SERVER.GetServer().Send(rpc.RpcHead{SocketId:socketId}, base.SetTcpEnd(message.Encode(packet)))
 }
 
 func DispatchPacket(id uint32, buff []byte) bool{

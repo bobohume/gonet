@@ -23,8 +23,12 @@ type (
 	}
 )
 
-func ToSlat(pwd string, salt int64) string{
-	return fmt.Sprintf("%s__%d", pwd, salt)
+func ToSlat(accountName string, pwd string) string{
+	return fmt.Sprintf("%s__%s", accountName, pwd)
+}
+
+func ToCrc(accountName string, pwd string, buildNo string, nKey int64) uint32{
+	return base.GetMessageCode1(fmt.Sprintf("%s_%s_%s_%d", accountName, pwd, buildNo, nKey))
 }
 
 func (this *EventProcess) Init(num int) {
@@ -33,8 +37,7 @@ func (this *EventProcess) Init(num int) {
 	//创建账号
 	this.RegisterCall("C_A_RegisterRequest", func(ctx context.Context, packet *message.C_A_RegisterRequest) {
 		accountName := packet.GetAccountName()
-		//password := *packet.Password
-		password := "123456"
+		password := packet.GetPassword()
 		socketId := uint32(this.GetRpcHead(ctx).ClusterId)
 		nError := 1
 		accountId := base.UUID.UUID()
@@ -44,7 +47,7 @@ func (this *EventProcess) Init(num int) {
 			rs := db.Query(rows, err)
 			if !rs.Next(){
 				//创建账号
-				_, err := this.m_db.Exec(fmt.Sprintf("insert into tbl_account (account_name, password, account_id) values('%s', '%s', %d)", accountName, base.MD5(ToSlat(password, accountId)), accountId))
+				_, err := this.m_db.Exec(fmt.Sprintf("insert into tbl_account (account_name, password, account_id) values('%s', '%s', %d)", accountName, password, accountId))
 				if (err == nil) {
 					SERVER.GetLog().Printf("帐号[%s]创建成功", accountName)
 					//登录账号
@@ -55,7 +58,6 @@ func (this *EventProcess) Init(num int) {
 				SERVER.GetLog().Printf("帐号[%s]已存在", accountName)
 			}
 		}
-
 		if nError != 0 {
 			SendToClient(rpc.RpcHead{SocketId:this.GetRpcHead(ctx).SocketId, ClusterId:socketId}, &message.A_C_RegisterResponse{
 				PacketHead: message.BuildPacketHead( accountId, 0),
@@ -67,8 +69,7 @@ func (this *EventProcess) Init(num int) {
 	//登录账号
 	this.RegisterCall("C_A_LoginRequest", func(ctx context.Context, packet *message.C_A_LoginRequest) {
 		accountName := packet.GetAccountName()
-		//password := *packet.Password
-		password := "123456"
+		password := packet.GetPassword()
 		buildVersion := packet.GetBuildNo()
 		socketId := uint32(this.GetRpcHead(ctx).ClusterId)
 		nError := base.NONE_ERROR
@@ -83,7 +84,7 @@ func (this *EventProcess) Init(num int) {
 				if rs.Next(){
 					accountId := rs.Row().Int64("account_id")
 					passWd := rs.Row().String("password")
-					if base.MD5(ToSlat(password, accountId))== passWd{
+					if password== passWd{
 						nError = base.NONE_ERROR
 						SERVER.GetAccountMgr().SendMsg(rpc.RpcHead{},"Account_Login", accountName, accountId, socketId, this.GetRpcHead(ctx).SocketId)
 					}else{//密码错误

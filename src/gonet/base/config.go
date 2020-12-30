@@ -44,6 +44,7 @@ type(
 		Get2(key string, sep string)(string, string)//获取ip
 		Get3(section string, key string, secitonId ...int) string//根据section, key, sectionid(从0开始)
 		Get5(key string, sep string)[]string//获取数组
+		Get6(section string, key string, sep string)[]string//获取数组
 		Int(key string) int
 		Int64(key string) int64
 		Float32(key string) float32
@@ -116,8 +117,12 @@ func (this *Config) Get3(seciton string, key string, sectionid ...int) string{
 	return "";
 }
 
-func (this *Config)Get5(key string, sep string)[]string{
+func (this *Config) Get5(key string, sep string)[]string{
 	return  strings.Split(this.Get(key), sep)
+}
+
+func (this *Config) Get6(section string, key string, sep string)[]string{
+	return  strings.Split(this.Get3(section, key), sep)
 }
 
 func (this *Config) Int(key string) int{
