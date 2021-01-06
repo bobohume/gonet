@@ -132,7 +132,7 @@ func (this *WebSocket) Stop() bool {
 func (this *WebSocket) Send(head rpc.RpcHead, buff  []byte) int{
 	pClient := this.GetClientById(head.SocketId)
 	if pClient != nil{
-		pClient.Send(head, base.SetTcpEnd(buff))
+		pClient.Send(head, buff)
 	}
 	return  0
 }
