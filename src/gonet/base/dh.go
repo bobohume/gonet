@@ -34,6 +34,7 @@ func (this *Dh) Init(){
 func (this *Dh) generatePrik(){
 	r := big.NewInt(int64(rand.Int()))
 	this.x.Mod(r, &this.q)
+	this.x.Add(&this.x, big.NewInt(1))
 }
 
 func (this *Dh) generatePubk(){
