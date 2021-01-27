@@ -1,0 +1,34 @@
+syntax = "proto3";
+package message;
+
+//服务器类型
+enum SERVICE{
+    NONE= 0;
+    CLIENT= 1;
+    GATESERVER= 2;//网关,转发服务
+    ACCOUNTSERVER=3;//账号
+    WORLDSERVER=4;//世界
+    ZONESERVER=5;//地图
+    WORLDDBSERVER=6;//db
+};
+
+enum CHAT{
+    MSG_TYPE_WORLD= 0;
+    MSG_TYPE_PRIVATE= 1;
+    MSG_TYPE_ORG= 2;
+    MSG_TYPE_COUNT= 3;
+};
+
+message PlayerData{
+    int64 PlayerID = 1;
+    string PlayerName = 2;
+    int32 PlayerGold = 3;
+}
+
+//客户端包头
+message Ipacket{
+    int32  Stx = 1;
+    SERVICE  DestServerType = 2;
+    int32  Ckx = 3;
+    int64  Id = 4;
+}

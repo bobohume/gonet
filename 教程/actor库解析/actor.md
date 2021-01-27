@@ -102,7 +102,7 @@ actor列子
     		
     		switch pServerInfo.Type {
     		
-    		case int(message.SERVICE_GATESERVER):
+    		case int(rpc.SERVICE_GATESERVER):
     		
     			SERVER.GetServer().SendMsgByID(this.GetRpcHead(ctx).SocketId, "COMMON_RegisterResponse")
     		

@@ -1,0 +1,144 @@
+syntax = "proto3";
+import "message.proto";
+package message;
+
+//point3F
+message Point3F{
+    float  X = 1;
+    float  Y = 2;
+    float  Z = 3;
+}
+
+//移动包
+message C_Z_Move{
+    Ipacket PacketHead = 1;
+
+    message Move{//正常走
+        message Normal{
+	       Point3F Pos = 1;
+           float  Yaw = 2;
+	       float  Duration = 3;
+        }
+
+        int32  Mode = 1;
+        Normal normal = 2;
+    }
+
+    Move move = 2;
+}
+
+//skill
+message C_Z_Skill{
+    Ipacket PacketHead = 1;
+    int32 SkillId = 2;
+    int64 TargetId = 3;
+}
+
+message Z_C_LoginMap{
+    Ipacket PacketHead = 1;
+    int64 Id = 2;
+    Point3F Pos = 3;
+    float Rotation = 4;
+}
+
+message Z_C_ENTITY{
+    Ipacket PacketHead = 1;
+    message Entity{
+        message DataMask{//初始信息
+            message NpcDataMask{//npc
+                int32 DataId = 1;//模板id
+            }
+            message SpellDataMask{//npc
+                int32 DataId = 1;//特效id
+                int32 LifeTime = 2;//存在事件
+                int32 FlySpeed = 3;//飞行速度
+            }
+            int32 Type = 1;//类型，player(9)，npc(5)
+            bool  RemoveFlag = 2;//销毁状态
+            NpcDataMask NpcData = 3;//npc初始信息
+            SpellDataMask SpellData = 4;//effect初始信息
+        }
+
+        message MoveMask{//移动信息
+            Point3F Pos = 1;
+            float Rotation = 2;
+            bool ForceUpdateFlag = 3;//强制拉回
+        }
+
+        message StatsMask{//状态
+            int32 HP = 1;// 生命
+            int32 MP = 2;// 真气
+            int32 MaxHP = 3;// 最大生命
+            int32 MaxMP = 4;// 最大真气
+            int32 PhyDamage = 5;// 物理伤害
+            int32 PhyDefence = 6;// 物理防御
+            int32 SplDamage = 7;// 法术伤害
+            int32 SplDefence = 8;// 法术防御
+            int32 Heal = 9;// 治疗
+            int32 CriticalTimes = 10;// 暴击全局百分比伤害倍数
+            int32 Critical = 11;// 暴击全局百分比几率
+            int32 AntiCriticalTimes = 12;// 抗暴击全局百分比伤害倍数
+            int32 AntiCritical = 13;// 防暴击全局百分比几率
+            int32 Dodge = 14;// 闪避全局百分比几率
+            int32 Hit = 15;// 命中全局百分比几率
+        }
+
+        int64 Id = 1;//唯一id
+        DataMask Data = 2;//初始化信息
+        MoveMask Move = 3;//移动
+        StatsMask Stats = 4;//基础属性
+    }
+    repeated Entity EntityInfo = 2;
+}
+
+message C_Z_LoginCopyMap{
+    Ipacket PacketHead = 1;
+    int32	DataId = 2;
+}
+
+
+/*message C_W_Move{
+    Ipacket PacketHead = 1;
+
+    message Move{//正常走
+        message Normal{
+	       Point3F Pos = 1;
+           float  Yaw = 2;
+	       float  Duration = 3;
+        }
+        message Path{//飞行
+            int32  PathId = 1;
+            int32  TimePos = 2;
+            int32  MountId = 3;
+        }
+        message Blink{//闪现
+       	    Point3F Pos = 1;
+  	        Point3F RPos = 2;
+        }
+        message Jump{//Jump//BeatFly//Skip//跳跃
+    	    Point3F BPos = 1;
+            Point3F EPos = 2;
+            int32  Duration = 3;
+            int32  TimePos = 4;
+            int32  UpExDur = 5;
+            int32  DownExDur = 6;
+            int32  A = 7;
+            int32  B = 8;
+        }
+        message Line{//Line//Charge//BeatBack//击退
+            Point3F BPos = 1;
+            Point3F EPos = 2;
+            int32  Duration = 3;
+            int32  TimePos = 4;
+        }
+
+        int32  Mode = 1;
+        Normal normal = 2;
+        Path path = 3;
+        Blink link = 4;
+        Jump jump = 5;
+        Line line = 6;
+    }
+
+    Move move = 2;
+}*/

@@ -1,2 +1,8 @@
-
-*.DS_Store
+*.log
+*.temp
+/bin/log
+/bin/nohup.out
+/bin/*.exe
+/.idea
+/pkg
+/src/gonet/bin
