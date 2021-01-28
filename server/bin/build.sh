@@ -1,5 +1,5 @@
 #!/bin/sh
-cd ./
+cd ./../
 go build
 cp server ./bin
 rm -rf server
