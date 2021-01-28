@@ -1,4 +1,4 @@
-module github.com/bobohume/gonet
+module gonet
 
 go 1.12
 
