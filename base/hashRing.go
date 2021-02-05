@@ -27,6 +27,7 @@ type (
 	IHashRing interface {
 		Add(elt string)
 		Remove(elt string)
+		HasMember(elt string) bool
 		Members() []string
 		Get(name string) (error, string)
 		Get64(val int64) (error, uint32)
@@ -90,6 +91,13 @@ func (this *HashRing) Remove(elt string) {
 	this.Lock()
 	defer this.Unlock()
 	this.remove(elt)
+}
+
+func (this *HashRing) HasMember(elt string) bool{
+	this.RLock()
+	defer this.RUnlock()
+	_, bEx := this.m_MemberMap[elt]
+	return bEx
 }
 
 func (this *HashRing) Members() []string {

@@ -16,6 +16,10 @@ func (this *ClusterInfo) IpString() string{
 	return fmt.Sprintf("%s:%d", this.Ip, this.Port)
 }
 
+func (this *ClusterInfo) RaftIp() string{
+	return fmt.Sprintf("%s:%d", this.Ip, this.Port + 10000)
+}
+
 func (this *ClusterInfo) String() string{
 	return  strings.ToLower(this.Type.String())
 }

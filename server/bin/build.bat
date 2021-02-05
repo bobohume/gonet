@@ -1,3 +1,5 @@
+set GOOS=windows
+set GOARCH=amd64
 cd ./../
 go build
 copy /y server.exe .\bin

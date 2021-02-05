@@ -36,6 +36,7 @@ type(
 		m_PacketFunc network.HandleFunc
 		m_Master  *Master
 		m_HashRing	*base.HashRing//hash一致性
+		m_ClusterInfoMap map[uint32] *common.ClusterInfo
 	}
 
 	ICluster interface{
@@ -85,23 +86,30 @@ func (this *Cluster) Init(num int, info *common.ClusterInfo, Endpoints []string)
 	this.m_ClusterMap = make(map[uint32] *ClusterNode)
 	this.m_Master = NewMaster(info, Endpoints, &this.Actor)
 	this.m_HashRing = base.NewHashRing()
+	this.m_ClusterInfoMap = make(map[uint32]*common.ClusterInfo)
 
 	//集群新加member
 	this.RegisterCall("Cluster_Add", func(ctx context.Context, info *common.ClusterInfo){
-		this.AddCluster(info)
+		_, bEx := this.m_ClusterInfoMap[info.Id()]
+		if !bEx {
+			this.AddCluster(info)
+			this.m_ClusterInfoMap[info.Id()] = info
+		}
 	})
 
 	//集群删除member
 	this.RegisterCall("Cluster_Del", func(ctx context.Context, info *common.ClusterInfo){
+		delete(this.m_ClusterInfoMap, info.Id())
 		this.DelCluster(info)
 	})
 
 	//链接断开
 	this.RegisterCall("DISCONNECT", func(ctx context.Context, ClusterId uint32) {
-		pCluster := this.GetCluster(rpc.RpcHead{ClusterId:ClusterId})
-		if pCluster != nil{
-			(*etv3.Master)(this.m_Master).DelService(pCluster.ClusterInfo)
+		pInfo, bEx := this.m_ClusterInfoMap[info.Id()]
+		if bEx {
+			this.DelCluster(pInfo)
 		}
+		delete(this.m_ClusterInfoMap, ClusterId)
 	})
 
 	this.Actor.Start()

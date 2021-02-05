@@ -20,10 +20,6 @@ type (
 		m_Actor actor.IActor
 		*common.ClusterInfo
 	}
-
-	IMaster interface {
-		Start()
-	}
 )
 
 //监控服务器
@@ -54,15 +50,12 @@ func (this *Master) BindActor(pActor actor.IActor) {
 	this.m_Actor = pActor
 }
 
-func (this *Master) AddService(info *common.ClusterInfo) {
-	_, bEx := this.m_ServiceMap[info.Id()]
-	if !bEx{
-		this.m_Actor.SendMsg(rpc.RpcHead{},"Cluster_Add", info)
-	}
+func (this *Master) addService(info *common.ClusterInfo) {
+	this.m_Actor.SendMsg(rpc.RpcHead{},"Cluster_Add", info)
 	this.m_ServiceMap[info.Id()] = info
 }
 
-func (this *Master) DelService(info *common.ClusterInfo) {
+func (this *Master) delService(info *common.ClusterInfo) {
 	delete(this.m_ServiceMap, info.Id())
 	this.m_Actor.SendMsg(rpc.RpcHead{},"Cluster_Del", info)
 }
@@ -92,13 +85,27 @@ func (this *Master) Run() {
 		}
 		if res.Action == "expire" {
 			info := NodeToService([]byte(res.PrevNode.Value))
-			this.DelService(info)
+			this.delService(info)
 		} else if res.Action == "set" {
 			info := NodeToService([]byte(res.Node.Value))
-			this.AddService(info)
+			this.addService(info)
 		} else if res.Action == "delete" {
 			info := NodeToService([]byte(res.Node.Value))
-			this.DelService(info)
+			this.delService(info)
 		}
 	}
+}
+
+func (this *Master) GetServices() []*common.ClusterInfo{
+	services := []*common.ClusterInfo{}
+	resp, err := this.m_KeysAPI.Get(context.Background(), ETCD_DIR + this.String(), &client.GetOptions{Quorum:true})
+	if err == nil && (resp != nil && resp.Node != nil) {
+		for _, v := range resp.Node.Nodes{
+			info := NodeToService([]byte(v.Value))
+			if info.Id() != this.Id(){
+				services = append(services, info)
+			}
+		}
+	}
+	return services
 }

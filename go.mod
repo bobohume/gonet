@@ -12,6 +12,8 @@ require (
 	github.com/golang/protobuf v1.4.0-rc.4.0.20200313231945-b860323f09d0
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/google/uuid v1.1.1 // indirect
+	github.com/hashicorp/raft v1.2.0
+	github.com/hashicorp/raft-boltdb v0.0.0-20191021154308-4207f1bf0617
 	github.com/json-iterator/go v1.1.7
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/tealeg/xlsx v1.0.5
