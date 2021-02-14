@@ -1,38 +1,32 @@
 # go-server
-gonet 游戏服务器架构，mmo架构，分布式snowflake64为整形uuid,ai行为树，配置data，游戏大部分都在内存运算,分布式缓存redis,增加db模块读取blob数据。
+gonet 游戏服务器架构，mmo架构，包含数学库(box,matrix,point2d,point3d),[Recast Navigation寻路模块](https://blog.csdn.net/mango9126/article/details/79390543)，
+a星寻路模块。
 
-设计之初，建立在actor模式下的；rpc，以及消息驱动，rpc无需注册，支持通用数据(int,[]int,[3]int),map数据,以及struct数据，[rpc性能测试如下](https://github.com/bobohume/gonet/blob/master/src/gonet/rpc/rpc_test.go)；sql封装简单的orm(orm支持pb结构体做mysql blob,orm支持结构体做mysql json类型)具体看[demo](https://github.com/bobohume/gonet/blob/master/src/gonet/db/db_test.go)
+分布式雪花uuid,ai行为树，ai状态机，[excel导出配置](https://github.com/bobohume/gonet/tree/master/tool/data),raft同步模块，分片raft同步模块，hashring分布式一致性算法。
 
-websocket模式下，在netgateserver里面注释回//websocket这段
+gonet核心思想是actor模式,消息驱动
 
-代码除了mysql，protobuf，redis, etcd这几个库以外，其他都是自己写的，方便性能和修改，主动权在自己手里
+服务器之间通过rpc，rpc无需注册，支持通用数据(int,[]int,[3]int),map数据,以及struct数据，[rpc性能](https://github.com/bobohume/gonet/blob/master/src/gonet/rpc/rpc_test.go)
 
-服务器之间rpc，客户端服务器之间protobuf + rpc，客户端tcp遵从如下消息包头
+sql封装简单的orm(orm支持pb结构体做mysql blob,orm支持结构体做mysql json类型)具体看[demo](https://github.com/bobohume/gonet/blob/master/src/gonet/db/db_test.go)
+
+统一websocket和socket消息格式
+
+客户端和网关之间通过protobuf + rpc，客户端tcp遵从如下消息包头
 
     前四位包体大小,再四位protobuf name 的 crc，中间protobuf字节流
     //另外支持特殊结束标志,前四位 protobuf name 的 crc，中间protobuf字节流， 尾部+结束标志💞♡ (结束标志也可以自己定义在base.TCP_END控制)（搜索tcp粘包特殊结束标志）
 
-1.支持go mod, gopath可以不需要设置(使用gomod可以使用goproxy代理(GOPROXY=https://goproxy.io ),不然很坑爹)。（也支持go vendor（删除项目下的go.mod文件），下载这几个基础库，mysql，protobuf，redis，etcd）
 
-// go get github.com/golang/net
+1.下载etcd做服发现
 
-// go get github.com/go-sql-driver/mysql
+2.bin目录下的gonet_server.cfg配置数据库以及端口
 
-// go get github.com/gomodule/redigo/redis
+3.数据库在sql文件目录下生产
 
-// go get go.etcd.io/etcd/client
+4.win下执行build.bat,start.bat
 
-// go get github.com/golang/protobuf
-
-2.下载etcd做服发现（new），（redis做排行榜，全局缓存，可选）
-
-3.bin目录下的gonet_server.cfg配置数据库以及端口
-
-4.数据库在sql文件目录下生产
-
-5.win下执行build.bat,start.bat
-
-6.linux下执行build.sh,start.sh
+5.linux下执行build.sh,start.sh
 
 # pb协议生成
 
@@ -55,11 +49,13 @@ websocket模式下，在netgateserver里面注释回//websocket这段
 
 3.db库，mysql，支持简单orm，没有重度gorm，更加轻便，还在受gorm 0 nil “” 数据库更新就失败的痛苦吗。还在忍受重度gorm带来sql语句都不知道怎么写，没错这个是轻度的。
 
-4.message库，pb用于传输协议。
+4.rpc，服务器之间rpc通信。
 
 5.nework库，网络库，tcp，websocket网络管理。rd库，redis库，做一些集群唯一缓存用。
 
-6.client，测试客户端源码，包括go和lua的源码
+6.raft 分布式同步
+
+7.common 集群相关库
 
 
 
@@ -71,7 +67,9 @@ websocket模式下，在netgateserver里面注释回//websocket这段
 
 3.world世界服务，所有逻辑，集群服务。
 
-4.第三方中间件：etcd分布式服发现，redis分布式缓存。
+4.login 登陆服，网关负载以及a，b切换
+
+5.第三方中间件：etcd分布式服发现，redis分布式缓存。
 
 # 交流
 
