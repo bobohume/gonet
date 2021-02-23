@@ -13,4 +13,4 @@ gonet核心思想是actor模式,消息驱动
 QQ群:950288306
 
 # 服务器架构如下：
-![image](https://github.com/bobohume/go-server/blob/master/框架.jpg)
+![image](框架.jpg)
