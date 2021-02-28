@@ -31,19 +31,6 @@ func main() {
 	}
 
 	InitCmd()
-
-	for i := 0; i < 1000; i++{
-		client := new(network.ClientSocket)
-		client.Init(UserNetIP, port)
-		packet := new(EventProcess)
-		packet.Init(1)
-		client.BindPacketFunc(packet.PacketFunc)
-		packet.Client = client
-		if client.Start(){
-			packet.LoginGate()
-		}
-		//time.Sleep(1 * time.Microsecond)
-	}
 	//PACKET.LoginGame()
 	//for{
 	//	PACKET.LoginGate()
