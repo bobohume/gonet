@@ -1,8 +1,8 @@
 package data
 
 import (
-	"gonet/common"
 	"gonet/base"
+	"gonet/common"
 	"log"
 	"strings"
 )
@@ -35,7 +35,7 @@ func (this *BanDataRes) Read() bool {
 		pData := BanData{}
 
 		file.GetData(lineData)
-		pData.BanName = lineData.String("BanWord.dat","BanName" )
+		pData.BanName = lineData.String("BanName" )
 		if pData.BanName == ""{
 			continue
 		}

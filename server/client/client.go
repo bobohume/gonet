@@ -31,6 +31,7 @@ func main() {
 	}
 
 	InitCmd()
+
 	//PACKET.LoginGame()
 	//for{
 	//	PACKET.LoginGate()

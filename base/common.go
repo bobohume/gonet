@@ -50,6 +50,7 @@ func Clamp(val, low,  high int) int {
 
 func IFAssert(x bool, y string) {
 	if bool(x) == false {
+		GLOG.Fatalf("\nFatal :{%s}", y)
 		log.Fatalf("\nFatal :{%s}", y)
 	}
 }

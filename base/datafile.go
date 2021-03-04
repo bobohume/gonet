@@ -29,6 +29,7 @@ const(
 
 type(
 	RData struct{
+		m_FileName string
 		m_Type	int
 
 		m_String	string
@@ -52,6 +53,7 @@ type(
 		RecordNum	int//记录数量
 		ColumNum	int//列数量
 
+		fileName	string//文件名
 		fstream		*BitStream
 		readstep	int//控制读的总数量
 		dataTypes   vector.Vector
@@ -75,6 +77,7 @@ func (this *CDataFile) ReadDataInit(){
 func (this *CDataFile) ReadDataFile(fileName string) bool{
 	this.dataTypes.Clear()
 	this.currentColumnIndex = 0
+	this.fileName = fileName
 
 	file, err := os.Open(fileName)
 	if err != nil {
@@ -128,6 +131,7 @@ func (this *CDataFile) GetData(pData *RData) bool {
 		return false
 	}
 
+	pData.m_FileName = this.fileName
 	switch this.dataTypes.Get(this.currentColumnIndex).(int) {
 	case DType_String:
 		pData.m_String = this.fstream.ReadString()
@@ -199,77 +203,77 @@ func (this *CDataFile) GetData(pData *RData) bool {
 /****************************
 	RData funciton
 ****************************/
-func (this *RData) String(dataname, datacol string) string{
-	IFAssert(this.m_Type == DType_String,  fmt.Sprintf("read [%s] col[%s] error", dataname, datacol))
+func (this *RData) String(datacol string) string{
+	IFAssert(this.m_Type == DType_String,  fmt.Sprintf("read [%s] col[%s] error", this.m_FileName, datacol))
 	return this.m_String
 }
 
-func (this *RData) Enum(dataname, datacol string) int{
-	IFAssert(this.m_Type == DType_Enum,  fmt.Sprintf("read [%s] col[%s] error", dataname, datacol))
+func (this *RData) Enum(datacol string) int{
+	IFAssert(this.m_Type == DType_Enum,  fmt.Sprintf("read [%s] col[%s] error", this.m_FileName, datacol))
 	return this.m_Enum
 }
 
-func (this *RData) Int8(dataname, datacol string) int8{
-	IFAssert(this.m_Type == DType_S8,  fmt.Sprintf("read [%s] col[%s] error", dataname, datacol))
+func (this *RData) Int8(datacol string) int8{
+	IFAssert(this.m_Type == DType_S8,  fmt.Sprintf("read [%s] col[%s] error", this.m_FileName, datacol))
 	return this.m_S8
 }
 
-func (this *RData) Int16(dataname, datacol string) int16{
-	IFAssert(this.m_Type == DType_S16,  fmt.Sprintf("read [%s] col[%s] error", dataname, datacol))
+func (this *RData) Int16(datacol string) int16{
+	IFAssert(this.m_Type == DType_S16,  fmt.Sprintf("read [%s] col[%s] error", this.m_FileName, datacol))
 	return this.m_S16
 }
 
-func (this *RData) Int(dataname, datacol string) int{
-	IFAssert(this.m_Type == DType_S32,  fmt.Sprintf("read [%s] col[%s] error", dataname, datacol))
+func (this *RData) Int(datacol string) int{
+	IFAssert(this.m_Type == DType_S32,  fmt.Sprintf("read [%s] col[%s] error", this.m_FileName, datacol))
 	return this.m_S32
 }
 
-func (this *RData) Float32(dataname, datacol string) float32{
-	IFAssert(this.m_Type == DType_F32,  fmt.Sprintf("read [%s] col[%s] error", dataname, datacol))
+func (this *RData) Float32(datacol string) float32{
+	IFAssert(this.m_Type == DType_F32,  fmt.Sprintf("read [%s] col[%s] error", this.m_FileName, datacol))
 	return this.m_F32
 }
 
-func (this *RData) Float64(dataname, datacol string) float64{
-	IFAssert(this.m_Type == DType_F64,  fmt.Sprintf("read [%s] col[%s] error", dataname, datacol))
+func (this *RData) Float64(datacol string) float64{
+	IFAssert(this.m_Type == DType_F64,  fmt.Sprintf("read [%s] col[%s] error", this.m_FileName, datacol))
 	return this.m_F64
 }
 
-func (this *RData) Int64(dataname, datacol string) int64{
-	IFAssert(this.m_Type == DType_S64,  fmt.Sprintf("read [%s] col[%s] error", dataname, datacol))
+func (this *RData) Int64(datacol string) int64{
+	IFAssert(this.m_Type == DType_S64,  fmt.Sprintf("read [%s] col[%s] error", this.m_FileName, datacol))
 	return this.m_S64
 }
 
-func (this *RData) StringArray(dataname, datacol string) []string{
-	IFAssert(this.m_Type == DType_StringArray,  fmt.Sprintf("read [%s] col[%s] error", dataname, datacol))
+func (this *RData) StringArray(datacol string) []string{
+	IFAssert(this.m_Type == DType_StringArray,  fmt.Sprintf("read [%s] col[%s] error", this.m_FileName, datacol))
 	return this.m_StringArray
 }
 
-func (this *RData) Int8Array(dataname, datacol string) []int8{
-	IFAssert(this.m_Type == DType_S8Array,  fmt.Sprintf("read [%s] col[%s] error", dataname, datacol))
+func (this *RData) Int8Array(datacol string) []int8{
+	IFAssert(this.m_Type == DType_S8Array,  fmt.Sprintf("read [%s] col[%s] error", this.m_FileName, datacol))
 	return this.m_S8Array
 }
 
-func (this *RData) Int16Array(dataname, datacol string) []int16{
-	IFAssert(this.m_Type == DType_S16Array,  fmt.Sprintf("read [%s] col[%s] error", dataname, datacol))
+func (this *RData) Int16Array(datacol string) []int16{
+	IFAssert(this.m_Type == DType_S16Array,  fmt.Sprintf("read [%s] col[%s] error", this.m_FileName, datacol))
 	return this.m_S16Array
 }
 
-func (this *RData) IntArray(dataname, datacol string) []int{
-	IFAssert(this.m_Type == DType_S32Array,  fmt.Sprintf("read [%s] col[%s] error", dataname, datacol))
+func (this *RData) IntArray(datacol string) []int{
+	IFAssert(this.m_Type == DType_S32Array,  fmt.Sprintf("read [%s] col[%s] error", this.m_FileName, datacol))
 	return this.m_S32Array
 }
 
-func (this *RData) Float32Array(dataname, datacol string) []float32{
-	IFAssert(this.m_Type == DType_F32Array,  fmt.Sprintf("read [%s] col[%s] error", dataname, datacol))
+func (this *RData) Float32Array(datacol string) []float32{
+	IFAssert(this.m_Type == DType_F32Array,  fmt.Sprintf("read [%s] col[%s] error", this.m_FileName, datacol))
 	return this.m_F32Array
 }
 
-func (this *RData) Float64Array(dataname, datacol string) []float64{
-	IFAssert(this.m_Type == DType_F64Array,  fmt.Sprintf("read [%s] col[%s] error", dataname, datacol))
+func (this *RData) Float64Array(datacol string) []float64{
+	IFAssert(this.m_Type == DType_F64Array,  fmt.Sprintf("read [%s] col[%s] error", this.m_FileName, datacol))
 	return this.m_F64Array
 }
 
-func (this *RData) Int64Array(dataname, datacol string) []int64{
-	IFAssert(this.m_Type == DType_S64Array,  fmt.Sprintf("read [%s] col[%s] error", dataname, datacol))
+func (this *RData) Int64Array(datacol string) []int64{
+	IFAssert(this.m_Type == DType_S64Array,  fmt.Sprintf("read [%s] col[%s] error", this.m_FileName, datacol))
 	return this.m_S64Array
 }
