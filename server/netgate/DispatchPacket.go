@@ -18,7 +18,7 @@ func DispatchPacket(id uint32, buff []byte) bool{
 		}
 	}()
 
-	rpcPacket, head := rpc.UnmarshalHead(buff)
+	rpcPacket, head := rpc.Unmarshal(buff)
 	switch head.DestServerType {
 	case rpc.SERVICE_ACCOUNTSERVER:
 		SERVER.GetAccountCluster().Send(head, base.SetTcpEnd(buff))
