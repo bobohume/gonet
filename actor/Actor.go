@@ -160,7 +160,7 @@ func (this *Actor) PacketFunc(id uint32, buff []byte) bool{
 }
 
 func (this *Actor) call(io CallIO) {
-	rpcPacket, _ := rpc.UnmarshalHead(io.Buff)
+	rpcPacket, _ := rpc.Unmarshal(io.Buff)
 	funcName := rpcPacket.FuncName
 	pFunc := this.FindCall(funcName)
 	if pFunc != nil {
