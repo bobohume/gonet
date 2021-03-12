@@ -11,6 +11,11 @@ import (
 
 //rpc UnmarshalHead
 func UnmarshalHead(buff []byte) (*RpcPacket, RpcHead){
+	nLen := base.Clamp(len(buff), 0 , 256)
+	return Unmarshal(buff[:nLen])
+}
+
+func Unmarshal(buff []byte) (*RpcPacket, RpcHead){
 	rpcPacket := &RpcPacket{}
 	proto.Unmarshal(buff, rpcPacket)
 	if rpcPacket.RpcHead == nil{
