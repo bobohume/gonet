@@ -20,8 +20,6 @@ func main() {
 		netgate.SERVER.Init()
 	}else if args[1] == "world"{
 		world.SERVER.Init()
-	}else if args[1] == "zone"{
-		zone.SERVER.Init()
 	}
 
 	base.SEVERNAME = args[1]
