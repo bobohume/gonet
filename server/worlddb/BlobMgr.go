@@ -81,20 +81,20 @@ func (t CoverList) Less(i, j int) bool{
 //test
 /*db2 := &db2.BlobMgr{}
 db2.Init()
-db2.RegisterBlob(1, &message.PlayerData_1{PlayerGold:proto.Int(1000)})
-db2.RegisterBlob(2, &message.PlayerData_2{PlayerGold:proto.Int64(1000)})
-db2.RegisterBlob(5, &message.PlayerData_5{PlayerGold:proto.Int64(1000)})
+db2.RegisterBlob(1, &rpc.PlayerData_1{PlayerGold:proto.Int(1000)})
+db2.RegisterBlob(2, &rpc.PlayerData_2{PlayerGold:proto.Int64(1000)})
+db2.RegisterBlob(5, &rpc.PlayerData_5{PlayerGold:proto.Int64(1000)})
 db2.RegisterCoverBlob(1, 2, func(v1 int, src proto.Message, v2 int, dest proto.Message) (int,proto.Message) {
-	src1  := src.(*message.PlayerData_1)
-	dest1 := dest.(*message.PlayerData_2)
+	src1  := src.(*rpc.PlayerData_1)
+	dest1 := dest.(*rpc.PlayerData_2)
 	dest1.PlayerGold = proto.Int64(int64(src1.GetPlayerGold()))
 	dest1.PlayerGold1 = proto.Int32(100)
 	base.Copy(dest1, src1)
 	return v2, dest1
 })
 db2.RegisterCoverBlob(2, 5, func(v1 int, src proto.Message, v2 int, dest proto.Message) (int,proto.Message) {
-	src1  := src.(*message.PlayerData_2)
-	dest1 := dest.(*message.PlayerData_5)
+	src1  := src.(*rpc.PlayerData_2)
+	dest1 := dest.(*rpc.PlayerData_5)
 	dest1.PlayerGold = proto.Int64(int64(src1.GetPlayerGold()))
 	dest1.PlayerGold1 = proto.Int32(100)
 	dest1.PlayerGold2 = proto.Int32(200)
@@ -102,5 +102,5 @@ db2.RegisterCoverBlob(2, 5, func(v1 int, src proto.Message, v2 int, dest proto.M
 	return v2, dest1
 })
 
-db2.GetBlob(1, &message.PlayerData_1{PlayerGold:proto.Int(1000), PlayerName:proto.String("tet"), PlayerID:proto.Int64(base.UUID.UUID())})
+db2.GetBlob(1, &rpc.PlayerData_1{PlayerGold:proto.Int(1000), PlayerName:proto.String("tet"), PlayerID:proto.Int64(base.UUID.UUID())})
 */

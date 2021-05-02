@@ -105,7 +105,7 @@ func (this *Cluster) Init(num int, info *common.ClusterInfo, Endpoints []string)
 
 	//链接断开
 	this.RegisterCall("DISCONNECT", func(ctx context.Context, ClusterId uint32) {
-		pInfo, bEx := this.m_ClusterInfoMap[info.Id()]
+		pInfo, bEx := this.m_ClusterInfoMap[ClusterId]
 		if bEx {
 			this.DelCluster(pInfo)
 		}

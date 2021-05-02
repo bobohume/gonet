@@ -59,7 +59,7 @@ func (this *EventProcess) Init(num int) {
 			}
 		}
 		if nError != 0 {
-			SendToClient(rpc.RpcHead{SocketId:this.GetRpcHead(ctx).SocketId, ClusterId:socketId}, &message.A_C_RegisterResponse{
+			SendToClient(rpc.RpcHead{ClusterId:this.GetRpcHead(ctx).SrcClusterId, SocketId:socketId}, &message.A_C_RegisterResponse{
 				PacketHead: message.BuildPacketHead( accountId, 0),
 				Error:      int32(nError),
 			})
@@ -86,7 +86,7 @@ func (this *EventProcess) Init(num int) {
 					passWd := rs.Row().String("password")
 					if password== passWd{
 						nError = base.NONE_ERROR
-						SERVER.GetAccountMgr().SendMsg(rpc.RpcHead{},"Account_Login", accountName, accountId, socketId, this.GetRpcHead(ctx).SocketId)
+						SERVER.GetAccountMgr().SendMsg(rpc.RpcHead{},"Account_Login", accountName, accountId, socketId, this.GetRpcHead(ctx).SrcClusterId)
 					}else{//密码错误
 						nError = base.PASSWORD_ERROR
 					}
@@ -100,7 +100,7 @@ func (this *EventProcess) Init(num int) {
 		}
 
 		if nError != base.NONE_ERROR {
-			SendToClient(rpc.RpcHead{SocketId:this.GetRpcHead(ctx).SocketId, ClusterId:socketId}, &message.A_C_LoginResponse{
+			SendToClient(rpc.RpcHead{ClusterId:this.GetRpcHead(ctx).SrcClusterId}, &message.A_C_LoginResponse{
 				PacketHead:message.BuildPacketHead( 0, 0 ),
 				Error:int32(nError),
 				AccountName:packet.AccountName,
@@ -109,11 +109,11 @@ func (this *EventProcess) Init(num int) {
 	})
 
 	//创建玩家
-	this.RegisterCall("W_A_CreatePlayer", func(ctx context.Context, accountId int64, playername string, sex int32, socketId uint32) {
+	this.RegisterCall("W_A_CreatePlayer", func(ctx context.Context, accountId int64, playername string, sex int32, gClusterId uint32) {
 		playerId := base.UUID.UUID()
 		_, err := this.m_db.Exec(fmt.Sprintf("insert into tbl_player (account_id, player_name, player_id) values (%d, '%s', %d)", accountId, playername, playerId))
 		if err == nil {
-			SendToWorld(this.GetRpcHead(ctx).SrcClusterId, "A_W_CreatePlayer", accountId, playerId, playername, sex, socketId)
+			SendToWorld(this.GetRpcHead(ctx).SrcClusterId, "A_W_CreatePlayer", accountId, playerId, playername, sex, gClusterId)
 		}
 	})
 

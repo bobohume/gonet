@@ -4,10 +4,10 @@ import (
 	"github.com/golang/protobuf/proto"
 	"gonet/actor"
 	"gonet/base"
+	"gonet/common"
 	"gonet/common/cluster"
 	"gonet/rpc"
 	"gonet/server/message"
-	"gonet/common"
 )
 
 type (
@@ -24,7 +24,7 @@ type (
 func (this *ClusterManager) Init(num int){
 	this.Actor.Init(num)
 	//注册account集群
-	this.InitService(&common.ClusterInfo{Type:rpc.SERVICE_ACCOUNTSERVER, Ip:UserNetIP, Port:int32(base.Int(UserNetPort))}, EtcdEndpoints)
+	this.InitService(&common.ClusterInfo{Type: rpc.SERVICE_ACCOUNTSERVER, Ip:UserNetIP, Port:int32(base.Int(UserNetPort))}, EtcdEndpoints)
 	this.RegisterClusterCall()
 
 	this.Actor.Start()
@@ -48,11 +48,6 @@ func BoardCastToWorld(funcName string, params  ...interface{}){
 
 //发送到客户端
 func SendToClient(head rpc.RpcHead, packet proto.Message){
-	buff := message.Encode(packet)
 	pakcetHead := packet.(message.Packet).GetPacketHead()
-	head.Id = pakcetHead.Id
-	head.DestServerType = rpc.SERVICE_GATESERVER
-	rpcPacket := &rpc.RpcPacket{FuncName:message.GetMessageName(packet), ArgLen:1, RpcHead:(*rpc.RpcHead)(&head), RpcBody:buff}
-	data, _ := proto.Marshal(rpcPacket)
-	SERVER.GetClusterMgr().Send(head, base.SetTcpEnd(data))
+	SERVER.GetClusterMgr().SendMsg(rpc.RpcHead{DestServerType:rpc.SERVICE_GATESERVER, Id:pakcetHead.Id}, message.GetMessageName(packet), packet)
 }

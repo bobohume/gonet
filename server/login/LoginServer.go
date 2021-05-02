@@ -8,9 +8,9 @@
 
 type(
 	ServerMgr struct{
-		m_Inited bool
-		m_config base.Config
-		m_Log	 base.CLog
+		m_Inited      bool
+		m_config      base.Config
+		m_Log         base.CLog
 		m_FileMonitor common.IFileMonitor
 	}
 
@@ -52,6 +52,6 @@ func (this *ServerMgr)Init() bool{
 	 return &this.m_Log
  }
 
- func (this *ServerMgr) GetFileMonitor() common.IFileMonitor{
+ func (this *ServerMgr) GetFileMonitor() common.IFileMonitor {
 	 return this.m_FileMonitor
  }

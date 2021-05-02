@@ -8,9 +8,9 @@ import (
 	"github.com/gomodule/redigo/redis"
 	"gonet/actor"
 	"gonet/base"
+	"gonet/common"
 	"gonet/db"
 	"gonet/rd"
-	"gonet/common"
 	"gonet/server/world"
 )
 

@@ -134,6 +134,37 @@ CREATE TABLE `tbl_toprank` (
 
 /*Data for the table `tbl_toprank` */
 
+/* Procedure structure for procedure `sp_updateplayerGold` */
+
+/*!50003 DROP PROCEDURE IF EXISTS  `sp_updateplayerGold` */;
+
+DELIMITER $$
+
+/*!50003 CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_updateplayerGold`(in playerId bigint,
+in _gold int)
+begin
+	set @curGold = 0;
+	set @err = 0;
+    
+    select @curGold = gold FROM tbl_player where player_Id = playerId;
+    if found_rows() <> 0 then
+		set @curGold = @curGold + _gold;
+        update tbl_player set gold = @curGold where player_Id = playerId;
+    else
+		set @err = 1;
+    end if;
+    
+    if @err <> 0 then
+		rollback;
+	else
+		commit;
+	end if;
+	
+   
+    select @err;
+end */$$
+DELIMITER ;
+
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
 /*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;

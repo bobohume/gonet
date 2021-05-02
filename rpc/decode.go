@@ -1140,3 +1140,11 @@ func unmarshalPB(bitstream *base.BitStream) (proto.Message, error) {
 	err := proto.Unmarshal(packetBuf, packet)
 	return  packet, err
 }
+
+func UnmarshalPB(bitstream *base.BitStream) []byte{
+	bitstream.ReadInt(8)
+	bitstream.ReadString()
+	nLen := bitstream.ReadInt(32)
+	packetBuf := bitstream.ReadBits(nLen << 3)
+	return  packetBuf
+}

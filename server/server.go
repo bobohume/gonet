@@ -6,6 +6,7 @@ import (
 	"gonet/server/account"
 	"gonet/server/netgate"
 	"gonet/server/world"
+	"gonet/server/zone"
 	"os"
 	"os/signal"
 	"syscall"
@@ -19,6 +20,8 @@ func main() {
 		netgate.SERVER.Init()
 	}else if args[1] == "world"{
 		world.SERVER.Init()
+	}else if args[1] == "zone"{
+		zone.SERVER.Init()
 	}
 
 	base.SEVERNAME = args[1]

@@ -132,7 +132,7 @@ func (this *PlayerManager) Init(num int){
 
 		if len(accountMap) != 0{
 			for i, v := range accountMap {
-				SERVER.GetWorldCluster().SendMsg(v, "G_W_Relogin", &message.RpcHead{Id:i})
+				SERVER.GetWorldCluster().SendMsg(v, "G_W_Relogin", &rpc.RpcHead{Id:i})
 			}
 		}
 	})*/

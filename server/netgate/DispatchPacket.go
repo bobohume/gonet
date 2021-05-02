@@ -27,11 +27,13 @@ func DispatchPacket(id uint32, buff []byte) bool{
 	case rpc.SERVICE_WORLDSERVER:
 		SERVER.GetWorldCluster().Send(head, base.SetTcpEnd(buff))
 	default:
+		bitstream := base.NewBitStream(rpcPacket.RpcBody, len(rpcPacket.RpcBody))
+		buff := message.EncodeEx(rpcPacket.FuncName, rpc.UnmarshalPB(bitstream))
 		if rpcPacket.FuncName == A_C_RegisterResponse || rpcPacket.FuncName == A_C_LoginResponse {
-			SERVER.GetServer().Send(rpc.RpcHead{SocketId:head.ClusterId}, base.SetTcpEnd(rpcPacket.RpcBody))
+			SERVER.GetServer().Send(rpc.RpcHead{SocketId:head.SocketId}, base.SetTcpEnd(buff))
 		}else{
 			socketId := SERVER.GetPlayerMgr().GetSocket(head.Id)
-			SERVER.GetServer().Send(rpc.RpcHead{SocketId:socketId}, base.SetTcpEnd(rpcPacket.RpcBody))
+			SERVER.GetServer().Send(rpc.RpcHead{SocketId:socketId}, base.SetTcpEnd(buff))
 		}
 	}
 

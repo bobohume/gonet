@@ -115,7 +115,7 @@ func (this *UserPrcoess) PacketFunc(socketid uint32, buff []byte) bool{
 	}
 
 	packetName := message.GetMessageName(packet)
-	head := rpc.RpcHead{Id:packetHead.Id}
+	head := rpc.RpcHead{Id:packetHead.Id, SrcClusterId:SERVER.GetCluster().Id()}
 	if packetName  == C_A_LoginRequest{
 		head.ClusterId = socketid
 	}else if packetName  == C_A_RegisterRequest {

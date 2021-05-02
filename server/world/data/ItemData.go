@@ -1,8 +1,8 @@
 package data
 
 import (
-	"gonet/common"
 	"gonet/base"
+	"gonet/common"
 	"log"
 )
 

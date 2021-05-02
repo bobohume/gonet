@@ -215,7 +215,7 @@ func getTypeString(param interface{}) string{
 				sType = getArrayTypeString(paramType.String(), true)
 			}else if paramType.Elem().Kind() == reflect.Slice{
 				sType = getSliceTypeString(paramType.String(), true)
-			}else if strings.Index(paramType.String(), "*rpc")!= -1{
+			}else if strings.Index(paramType.String(), "*rpc")!= -1 || strings.Index(paramType.String(), "*message")!= -1{
 				sType = "*rpc"
 			}else{
 				sType = "*gob"

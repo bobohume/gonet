@@ -74,8 +74,8 @@ func (this *CMailMgr) sendMail(sender int64, recver int64, money int, itemId int
 	m.Content = content
 	this.m_db.Exec(db.InsertSql(m, sqlTable))
 	world.SERVER.GetLog().Printf("邮件发送给[%d]玩家成功", recver)
-	/*world.SendToClient(caller.SocketId, &message.W_C_CreatePlayerResponse{
-		PacketHead:message.BuildPacketHead(this.AccountId, 0 ),
+	/*world.SendToClient(caller.SocketId, &rpc.W_C_CreatePlayerResponse{
+		PacketHead:rpc.BuildPacketHead(this.AccountId, 0 ),
 		Error:proto.Int32(int32(err)),
 		PlayerId:proto.Int32(int32(playerId)),
 	})*/

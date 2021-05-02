@@ -54,9 +54,9 @@ func (this *Player) GetItemMgr() IItemMgr{
 func (this *ItemMgr) Init(pPlayer IPlayer){
 	this.IPlayer = pPlayer
 	//test
-	/*this.RegisterCall("C_W_AddEquipAttrRequest", func(ctx context.Context, packet *message.C_W_ChatMessage) {
-		world.SendToClient(this.GetGateClusterId(), &message.W_C_ChatMessage{
-			PacketHead:message.BuildPacketHead(this.GetAccountId(), 0 ),
+	/*this.RegisterCall("C_W_AddEquipAttrRequest", func(ctx context.Context, packet *rpc.C_W_ChatMessage) {
+		world.SendToClient(this.GetGateClusterId(), &rpc.W_C_ChatMessage{
+			PacketHead:rpc.BuildPacketHead(this.GetAccountId(), 0 ),
 		})
 	})*/
 }

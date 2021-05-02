@@ -11,6 +11,9 @@ import (
 	"gonet/server/world/player"
 	"gonet/server/world/social"
 	"gonet/server/world/toprank"
+	"gonet/server/zone"
+	"gonet/server/zone/game"
+	data2 "gonet/server/zone/game/data"
 )
 
 
@@ -29,6 +32,10 @@ func InitMgr(serverName string){
 		player.SIMPLEMGR.Init(1000)
 		social.MGR().Init(1000)
 		actor.MGR.InitActorHandle(world.SERVER.GetServer())
+	}else if serverName == "zone"{
+		data2.InitRepository()
+		game.MAPMGR.Init(1000)
+		actor.MGR.InitActorHandle(zone.SERVER.GetServer())
 	}
 }
 

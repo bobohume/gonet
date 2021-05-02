@@ -2,12 +2,12 @@ package toprank
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
 	"gonet/actor"
 	"gonet/base"
-	"database/sql"
-	"gonet/db"
-	"fmt"
 	"gonet/common"
+	"gonet/db"
 	"gonet/server/world"
 	"sort"
 	"time"

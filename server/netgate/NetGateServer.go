@@ -56,15 +56,15 @@ func (this *ServerMgr) GetCluster () *cluster.Service {
  	return this.m_Cluster
 }
 
-func (this *ServerMgr) GetWorldCluster() *cluster.Cluster{
+func (this *ServerMgr) GetWorldCluster() *cluster.Cluster {
 	return this.m_WorldCluster
 }
 
-func (this *ServerMgr) GetAccountCluster() *cluster.Cluster{
+func (this *ServerMgr) GetAccountCluster() *cluster.Cluster {
  	return this.m_AccountCluster
 }
 
-func (this *ServerMgr) GetZoneCluster() *cluster.Cluster{
+func (this *ServerMgr) GetZoneCluster() *cluster.Cluster {
 	return this.m_ZoneCluster
 }
 
@@ -115,23 +115,23 @@ func (this *ServerMgr)Init() bool{
 	this.m_pService.BindPacketFunc(packet.PacketFunc)
 	this.m_pService.Start()*/
 	//注册到集群服务器
-	this.m_Cluster = cluster.NewService( &common.ClusterInfo{Type:rpc.SERVICE_GATESERVER, Ip:UserNetIP, Port:int32(base.Int(UserNetPort))}, EtcdEndpoints)
+	this.m_Cluster = cluster.NewService( &common.ClusterInfo{Type: rpc.SERVICE_GATESERVER, Ip:UserNetIP, Port:int32(base.Int(UserNetPort))}, EtcdEndpoints)
 
 	//世界服务器集群
 	this.m_WorldCluster = new(cluster.Cluster)
-	this.m_WorldCluster.Init(1000, &common.ClusterInfo{Type:rpc.SERVICE_WORLDSERVER}, EtcdEndpoints)
+	this.m_WorldCluster.Init(1000, &common.ClusterInfo{Type: rpc.SERVICE_WORLDSERVER}, EtcdEndpoints)
 	this.m_WorldCluster.BindPacket(&WorldProcess{})
 	this.m_WorldCluster.BindPacketFunc(DispatchPacket)
 
 	//账号服务器集群
 	this.m_AccountCluster = new(cluster.Cluster)
-	this.m_AccountCluster.Init(1000, &common.ClusterInfo{Type:rpc.SERVICE_ACCOUNTSERVER}, EtcdEndpoints)
+	this.m_AccountCluster.Init(1000,  &common.ClusterInfo{Type: rpc.SERVICE_ACCOUNTSERVER}, EtcdEndpoints)
 	this.m_AccountCluster.BindPacket(&AccountProcess{})
 	this.m_AccountCluster.BindPacketFunc(DispatchPacket)
 
 	//战斗服务器集群
 	this.m_ZoneCluster = new(cluster.Cluster)
-	this.m_ZoneCluster.Init(1000, &common.ClusterInfo{Type:rpc.SERVICE_ZONESERVER}, EtcdEndpoints)
+	this.m_ZoneCluster.Init(1000,  &common.ClusterInfo{Type: rpc.SERVICE_ZONESERVER}, EtcdEndpoints)
 	this.m_ZoneCluster.BindPacket(&ZoneProcess{})
 	this.m_ZoneCluster.BindPacketFunc(DispatchPacket)
 

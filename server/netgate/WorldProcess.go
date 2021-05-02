@@ -4,8 +4,8 @@ import (
 	"context"
 	"gonet/actor"
 	"gonet/base"
-	"gonet/rpc"
 	"gonet/common"
+	"gonet/rpc"
 )
 
 type (
@@ -34,7 +34,7 @@ func (this *WorldProcess) Init(num int) {
 	this.m_ClusterId = 0
 	this.RegisterTimer(1 * 1000 * 1000 * 1000, this.Update)
 	this.RegisterCall("COMMON_RegisterRequest", func(ctx context.Context) {
-		SERVER.GetWorldCluster().SendMsg(rpc.RpcHead{ClusterId:this.m_ClusterId},"COMMON_RegisterRequest", &common.ClusterInfo{Type:rpc.SERVICE_GATESERVER, Ip:UserNetIP, Port:int32(base.Int(UserNetPort))})
+		SERVER.GetWorldCluster().SendMsg(rpc.RpcHead{ClusterId:this.m_ClusterId},"COMMON_RegisterRequest", &common.ClusterInfo{Type: rpc.SERVICE_GATESERVER, Ip:UserNetIP, Port:int32(base.Int(UserNetPort))})
 	})
 
 	this.RegisterCall("COMMON_RegisterResponse", func(ctx context.Context) {

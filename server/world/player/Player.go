@@ -7,9 +7,9 @@ import (
 	"github.com/golang/protobuf/proto"
 	"gonet/actor"
 	"gonet/base"
+	"gonet/common"
 	"gonet/db"
 	"gonet/rpc"
-	"gonet/common"
 	"gonet/server/message"
 	"gonet/server/world"
 )
@@ -82,7 +82,7 @@ func (this *Player) Init(num int){
 				player_count := rs.Row().Int("player_count")
 				if player_count >= 1 {
 					this.m_Log.Printf("账号[%d]创建玩家上限", this.AccountId)
-					world.SendToClientBySocketId(this.GetRpcHead(ctx).SocketId, &message.W_C_CreatePlayerResponse{
+					world.SendToClient(this.GetRpcHead(ctx).SrcClusterId, &message.W_C_CreatePlayerResponse{
 						PacketHead:message.BuildPacketHead(this.AccountId, 0 ),
 						Error:int32(1),
 						PlayerId:0,
@@ -95,7 +95,7 @@ func (this *Player) Init(num int){
 	})
 
 	//account创建玩家反馈
-	this.RegisterCall("CreatePlayer", func(ctx context.Context, playerId int64, socketId uint32, err int) {
+	this.RegisterCall("CreatePlayer", func(ctx context.Context, playerId int64, gClusterId uint32, err int) {
 		//创建成功
 		if err == 0{
 			this.PlayerIdList = []int64{}
@@ -104,7 +104,7 @@ func (this *Player) Init(num int){
 			this.PlayerIdList = append(this.PlayerIdList, playerId)
 		}
 
-		world.SendToClientBySocketId(socketId, &message.W_C_CreatePlayerResponse{
+		world.SendToClient(gClusterId, &message.W_C_CreatePlayerResponse{
 			PacketHead:message.BuildPacketHead(this.AccountId, 0 ),
 			Error:int32(err),
 			PlayerId:playerId,

@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"gonet/actor"
 	"gonet/base"
+	"gonet/common"
 	"gonet/db"
 	"gonet/rpc"
-	"gonet/common"
 	"gonet/server/world"
 )
 //********************************************************
@@ -22,9 +22,9 @@ type(
 	PlayerMgr struct{
 		actor.ActorPool//玩家actor线城池
 
-		m_db         *sql.DB
-		m_Log        *base.CLog
-		m_PingTimer  common.ISimpleTimer
+		m_db        *sql.DB
+		m_Log       *base.CLog
+		m_PingTimer common.ISimpleTimer
 	}
 
 	IPlayerMgr interface {
@@ -69,7 +69,7 @@ func (this* PlayerMgr) Init(num int){
 	})
 
 	//account创建玩家反馈， 考虑到在创建角色的时候退出的情况
-	this.RegisterCall("A_W_CreatePlayer", func(ctx context.Context, accountId int64, playerId int64, playername string, sex int32, socketId uint32) {
+	this.RegisterCall("A_W_CreatePlayer", func(ctx context.Context, accountId int64, playerId int64, playername string, sex int32, gClusterId uint32) {
 		//查询playerid是否唯一
 		error := 1
 		rows, err := this.m_db.Query(fmt.Sprintf("select 1 from tbl_player where player_id = %d", playerId))
@@ -95,7 +95,7 @@ func (this* PlayerMgr) Init(num int){
 							//通知玩家`
 							pPlayer := this.GetPlayer(accountId)
 							if pPlayer != nil {
-								pPlayer.SendMsg(rpc.RpcHead{},"CreatePlayer", playerId, socketId, error)
+								pPlayer.SendMsg(rpc.RpcHead{},"CreatePlayer", playerId, gClusterId, error)
 							}
 						}
 					}

@@ -129,14 +129,10 @@ func (this *ClusterServer) BindServer(pService *network.ServerSocket){
 }
 
 func (this *ClusterServer) sendPoint(head rpc.RpcHead, buff []byte){
-	if head.SocketId != 0{
+	pCluster:= this.GetCluster(head)
+	if pCluster != nil {
+		head.SocketId = pCluster.SocketId
 		this.m_pService.Send(head, buff)
-	}else{
-		pCluster:= this.GetCluster(head)
-		if pCluster != nil {
-			head.SocketId = pCluster.SocketId
-			this.m_pService.Send(head, buff)
-		}
 	}
 }
 
