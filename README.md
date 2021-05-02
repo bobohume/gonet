@@ -6,6 +6,8 @@ a星寻路模块。
 
 gonet核心思想是actor模式,消息驱动
 
+微服务，微服务之间使用分布式消息队列
+
 [WIKI](https://github.com/bobohume/gonet/wiki)
 
 # 交流
