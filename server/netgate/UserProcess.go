@@ -60,26 +60,29 @@ func (this *UserPrcoess) CheckClient(sockId uint32, packetName string, head rpc.
 func (this *UserPrcoess) SwtichSendToWorld(socketId uint32, packetName string, head rpc.RpcHead, buff []byte){
 	pAccountInfo := this.CheckClient(socketId, packetName, head)
 	if pAccountInfo != nil{
-		buff = base.SetTcpEnd(buff)
+		//buff = base.SetTcpEnd(buff)
 		head.ClusterId = pAccountInfo.WClusterId
-		SERVER.GetWorldCluster().Send(head, buff)
+		head.DestServerType = rpc.SERVICE_WORLDSERVER
+		SERVER.GetCluster().Send(head, buff)
 	}
 }
 
 func (this *UserPrcoess) SwtichSendToAccount(socketId uint32, packetName string, head rpc.RpcHead, buff []byte){
 	if this.CheckClientEx(socketId, packetName, head) == true {
-		buff = base.SetTcpEnd(buff)
+		//buff = base.SetTcpEnd(buff)
 		head.SendType = rpc.SEND_BALANCE
-		SERVER.GetAccountCluster().Send(head, buff)
+		head.DestServerType = rpc.SERVICE_ACCOUNTSERVER
+		SERVER.GetCluster().Send(head, buff)
 	}
 }
 
 func (this *UserPrcoess) SwtichSendToZone(socketId uint32, packetName string, head rpc.RpcHead, buff []byte){
 	pAccountInfo := this.CheckClient(socketId, packetName, head)
 	if pAccountInfo != nil{
-		buff = base.SetTcpEnd(buff)
+		//buff = base.SetTcpEnd(buff)
 		head.ClusterId = pAccountInfo.ZClusterId
-		SERVER.GetZoneCluster().Send(head, buff)
+		head.DestServerType = rpc.SERVICE_ZONESERVER
+		SERVER.GetCluster().Send(head, buff)
 	}
 }
 

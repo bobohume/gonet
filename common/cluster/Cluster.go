@@ -2,92 +2,97 @@ package cluster
 
 import (
 	"context"
+	"github.com/nats-io/nats.go"
 	"gonet/actor"
 	"gonet/base"
+	"gonet/base/vector"
 	"gonet/common"
-	"gonet/common/cluster/etv3"
 	"gonet/network"
 	"gonet/rpc"
-	"reflect"
+	"log"
 	"sync"
 )
 
+const(
+	MAX_CLUSTER_NUM = int(rpc.SERVICE_ZONESERVER) + 1
+)
+
 type(
-	Service etv3.Service
-	Master etv3.Master
-	Snowflake etv3.Snowflake
-	//集群包管理
-	IClusterPacket interface {
-		actor.IActor
-		SetClusterId(uint32)
-	}
+	HashClusterMap map[uint32] *common.ClusterInfo
+	HashClusterSocketMap map[uint32] *common.ClusterInfo
 
-	ClusterNode struct {
-		*network.ClientSocket
-		*common.ClusterInfo
-	}
-
-	//集群客户端
+	//集群服务器
 	Cluster struct{
 		actor.Actor
-		m_ClusterMap map[uint32] *ClusterNode
-		m_ClusterLocker *sync.RWMutex
-		m_Packet IClusterPacket
-		m_PacketFunc network.HandleFunc
-		m_Master  *Master
-		m_HashRing	*base.HashRing//hash一致性
+		*Service //集群注册
+		m_ClusterMap [MAX_CLUSTER_NUM]HashClusterMap
+		m_ClusterLocker [MAX_CLUSTER_NUM]*sync.RWMutex
+		m_HashRing	[MAX_CLUSTER_NUM]*base.HashRing//hash一致性
+		m_Conn      *nats.Conn
+		m_DieChan	chan bool
+		m_Master    *Master
 		m_ClusterInfoMap map[uint32] *common.ClusterInfo
+		m_PacketFuncList	*vector.Vector//call back
 	}
 
 	ICluster interface{
-		//actor.IActor
-		Init(num int, info *common.ClusterInfo, Endpoints []string)
+		Init(num int, info *common.ClusterInfo, Endpoints []string, natsUrl string)
+		RegisterClusterCall()//注册集群通用回调
 		AddCluster(info *common.ClusterInfo)
 		DelCluster(info *common.ClusterInfo)
-		GetCluster(rpc.RpcHead) *ClusterNode
+		GetCluster(rpc.RpcHead) *common.ClusterInfo
 
-		BindPacket(IClusterPacket)
 		BindPacketFunc(network.HandleFunc)
 		SendMsg(rpc.RpcHead, string, ...interface{})//发送给集群特定服务器
 		Send(rpc.RpcHead, []byte)//发送给集群特定服务器
 
-		RandomCluster(head rpc.RpcHead) rpc.RpcHead///随机分配
+		RandomCluster(head rpc.RpcHead)	rpc.RpcHead//随机分配
+	}
 
-		sendPoint(rpc.RpcHead, []byte)//发送给集群特定服务器
-		balanceSend(rpc.RpcHead, []byte)//负载给集群特定服务器
-		boardCastSend(rpc.RpcHead, []byte)//给集群广播
+	EmptyClusterInfo struct {
+		common.ClusterInfo
 	}
 )
 
-//注册服务器
-func NewService(info *common.ClusterInfo, Endpoints []string) *Service{
-	service := &etv3.Service{}
-	service.Init(info, Endpoints)
-	return (*Service)(service)
+func (this *EmptyClusterInfo) String() string{
+	return ""
 }
 
-//监控服务器
-func NewMaster(info *common.ClusterInfo, Endpoints []string, pActor actor.IActor) *Master {
-	master := &etv3.Master{}
-	master.Init(info, Endpoints, pActor)
-	return (*Master)(master)
-}
-
-//uuid生成器
-func NewSnowflake(Endpoints []string) *Snowflake{
-	uuid := &etv3.Snowflake{}
-	uuid.Init(Endpoints)
-	return (*Snowflake)(uuid)
-}
-
-func (this *Cluster) Init(num int, info *common.ClusterInfo, Endpoints []string) {
+func (this *Cluster) Init(num int, info *common.ClusterInfo, Endpoints []string, natsUrl string) {
 	this.Actor.Init(num)
-	this.m_ClusterLocker = &sync.RWMutex{}
-	this.m_ClusterMap = make(map[uint32] *ClusterNode)
-	this.m_Master = NewMaster(info, Endpoints, &this.Actor)
-	this.m_HashRing = base.NewHashRing()
+	this.RegisterClusterCall()
+	for  i := 0; i < MAX_CLUSTER_NUM; i++{
+		this.m_ClusterLocker[i] = &sync.RWMutex{}
+		this.m_ClusterMap[i] = make(HashClusterMap)
+		this.m_HashRing[i] = base.NewHashRing()
+	}
+	//注册服务器
+	this.Service = NewService(info, Endpoints)
+	this.m_Master = NewMaster(&EmptyClusterInfo{}, Endpoints, &this.Actor)
 	this.m_ClusterInfoMap = make(map[uint32]*common.ClusterInfo)
+	this.m_PacketFuncList = vector.NewVector()
 
+	conn, err := setupNatsConn(
+		natsUrl,
+		this.m_DieChan,
+	)
+	if err != nil {
+		log.Fatal("nats connect error!!!!")
+	}
+	this.m_Conn = conn
+
+	this.m_Conn.Subscribe(getChannel(*info), func(msg *nats.Msg) {
+		this.HandlePacket(0, msg.Data)
+	})
+
+	this.m_Conn.Subscribe(getTopicChannel(*info), func(msg *nats.Msg) {
+		this.HandlePacket(0, msg.Data)
+	})
+
+	this.Actor.Start()
+}
+
+func (this *Cluster) RegisterClusterCall(){
 	//集群新加member
 	this.RegisterCall("Cluster_Add", func(ctx context.Context, info *common.ClusterInfo){
 		_, bEx := this.m_ClusterInfoMap[info.Id()]
@@ -111,100 +116,68 @@ func (this *Cluster) Init(num int, info *common.ClusterInfo, Endpoints []string)
 		}
 		delete(this.m_ClusterInfoMap, ClusterId)
 	})
-
-	this.Actor.Start()
 }
 
 func (this *Cluster) AddCluster(info *common.ClusterInfo){
-	pClient := new(network.ClientSocket)
-	pClient.Init(info.Ip, int(info.Port))
-	packet :=  reflect.New(reflect.ValueOf(this.m_Packet).Elem().Type()).Interface().(IClusterPacket)
-	packet.Init(1000)
-	packet.SetClusterId(info.Id())
-	pClient.BindPacketFunc(packet.PacketFunc)
-	if this.m_PacketFunc != nil{
-		pClient.BindPacketFunc(this.m_PacketFunc)
-	}
-	this.m_ClusterLocker.Lock()
-	this.m_ClusterMap[info.Id()] = &ClusterNode{ClientSocket:pClient, ClusterInfo:info}
-	this.m_ClusterLocker.Unlock()
-	this.m_HashRing.Add(info.IpString())
-	pClient.Start()
+	this.m_ClusterLocker[info.Type].Lock()
+	this.m_ClusterMap[info.Type][info.Id()] = info
+	this.m_ClusterLocker[info.Type].Unlock()
+	this.m_HashRing[info.Type].Add(info.IpString())
+	base.GLOG.Printf("服务器[%s:%s:%d]建立连接", info.String(), info.Ip, info.Port)
 }
 
 func (this *Cluster) DelCluster(info *common.ClusterInfo){
-	this.m_ClusterLocker.RLock()
-	pCluster, bEx := this.m_ClusterMap[info.Id()]
-	this.m_ClusterLocker.RUnlock()
+	this.m_ClusterLocker[info.Type].RLock()
+	_, bEx := this.m_ClusterMap[info.Type][info.Id()]
+	this.m_ClusterLocker[info.Type].RUnlock()
 	if bEx{
-		pCluster.CallMsg("STOP_ACTOR")
-		pCluster.Stop()
+		this.m_ClusterLocker[info.Type].Lock()
+		delete(this.m_ClusterMap[info.Type], info.Id())
+		this.m_ClusterLocker[info.Type].Unlock()
 	}
 
-	this.m_ClusterLocker.Lock()
-	delete(this.m_ClusterMap, info.Id())
-	this.m_ClusterLocker.Unlock()
-	this.m_HashRing.Remove(info.IpString())
+	this.m_HashRing[info.Type].Remove(info.IpString())
+	base.GLOG.Printf("服务器[%s:%s:%d]断开连接", info.String(), info.Ip, info.Port)
 }
 
-func (this *Cluster) GetCluster(head rpc.RpcHead) *ClusterNode{
-	this.m_ClusterLocker.RLock()
-	pCluster, bEx := this.m_ClusterMap[head.ClusterId]
-	this.m_ClusterLocker.RUnlock()
+func (this *Cluster) GetCluster(head rpc.RpcHead) *common.ClusterInfo {
+	this.m_ClusterLocker[head.DestServerType].RLock()
+	defer this.m_ClusterLocker[head.DestServerType].RUnlock()
+	pClient, bEx := this.m_ClusterMap[head.DestServerType][head.ClusterId]
 	if bEx{
-		return pCluster
+		return pClient
 	}
 	return nil
 }
 
-func (this *Cluster) BindPacket(packet IClusterPacket){
-	this.m_Packet = packet
+
+func (this *Cluster) BindPacketFunc(callfunc network.HandleFunc){
+	this.m_PacketFuncList.PushBack(callfunc)
 }
 
-func (this *Cluster) BindPacketFunc(packetFunc network.HandleFunc){
-	this.m_PacketFunc = packetFunc
-}
-
-func (this *Cluster) sendPoint(head rpc.RpcHead, buff []byte){
-	pCluster := this.GetCluster(head)
-	if pCluster != nil{
-		pCluster.Send(head, buff)
-	}
-}
-
-func (this *Cluster) balanceSend(head rpc.RpcHead, buff []byte){
-	_, head.ClusterId = this.m_HashRing.Get64(head.Id)
-	pClient := this.GetCluster(head)
-	if pClient != nil{
-		pClient.Send(head, buff)
-	}
-}
-
-func (this *Cluster) boardCastSend(head rpc.RpcHead, buff []byte){
-	clusterList := []*ClusterNode{}
-	this.m_ClusterLocker.RLock()
-	for _ ,v := range this.m_ClusterMap{
-		clusterList = append(clusterList, v)
-	}
-	this.m_ClusterLocker.RUnlock()
-	for _, v := range clusterList{
-		v.Send(head, buff)
+func (this *Cluster) HandlePacket(Id uint32, buff []byte){
+	for _,v := range this.m_PacketFuncList.Values() {
+		if (v.(network.HandleFunc)(Id, buff)){
+			break
+		}
 	}
 }
 
 func (this *Cluster) SendMsg(head rpc.RpcHead, funcName string, params  ...interface{}){
-	buff := base.SetTcpEnd(rpc.Marshal(head, funcName, params...))
+	head.SrcClusterId = this.Id()
+	buff := rpc.Marshal(head, funcName, params...)
 	this.Send(head, buff)
 }
 
 func (this *Cluster) Send(head rpc.RpcHead, buff []byte){
 	switch head.SendType{
 	case rpc.SEND_BALANCE:
-		this.balanceSend(head, buff)
+		_, head.ClusterId = this.m_HashRing[head.DestServerType].Get64(head.Id)
+		this.m_Conn.Publish(getRpcChannel(head) ,buff)
 	case rpc.SEND_POINT:
-		this.sendPoint(head, buff)
+		this.m_Conn.Publish(getRpcChannel(head) ,buff)
 	default:
-		this.boardCastSend(head, buff)
+		this.m_Conn.Publish(getRpcTopicChannel(head), buff)
 	}
 }
 
@@ -212,7 +185,7 @@ func (this *Cluster) RandomCluster(head rpc.RpcHead) rpc.RpcHead{
 	if head.Id == 0{
 		head.Id = int64(uint32(base.RAND.RandI(1, 0xFFFFFFFF)))
 	}
-	_, head.ClusterId = this.m_HashRing.Get64(head.Id)
+	_, head.ClusterId = this.m_HashRing[head.DestServerType].Get64(head.Id)
 	pCluster := this.GetCluster(head)
 	if pCluster != nil{
 		head.SocketId = pCluster.SocketId

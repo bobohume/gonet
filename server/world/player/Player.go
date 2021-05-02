@@ -51,7 +51,7 @@ func (this *Player) Init(num int){
 		this.m_Log.Println("玩家登录成功")
 		this.SetGateClusterId(gateClusterId)
 		this.SetZoneClusterId(zoneClusterId)
-		this.SendToClient(&message.W_C_SelectPlayerResponse{PacketHead: message.BuildPacketHead( this.AccountId,  rpc.SERVICE_CLIENT),
+		this.SendToClient(&message.W_C_SelectPlayerResponse{PacketHead: message.BuildPacketHead( this.AccountId,  rpc.SERVICE_GATESERVER),
 			AccountId:this.AccountId,
 			PlayerData:PlayerDataList,
 		})
@@ -88,7 +88,7 @@ func (this *Player) Init(num int){
 						PlayerId:0,
 					})
 				}else{
-					world.SendToAccount("W_A_CreatePlayer", this.AccountId, packet.GetPlayerName(), packet.GetSex(), this.GetRpcHead(ctx).SocketId)
+					world.SendToAccount("W_A_CreatePlayer", this.AccountId, packet.GetPlayerName(), packet.GetSex(), this.GetRpcHead(ctx).SrcClusterId)
 				}
 			}
 		}

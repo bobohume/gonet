@@ -17,10 +17,7 @@ type(
 		m_Log	base.CLog
 		m_TimeTraceTimer *time.Ticker
 		m_PlayerMgr *PlayerManager
-		m_WorldCluster *cluster.Cluster
-		m_AccountCluster *cluster.Cluster
-		m_ZoneCluster *cluster.Cluster
-		m_Cluster *cluster.Service
+		m_pCluster *cluster.Cluster
 	}
 
 	IServerMgr interface{
@@ -28,9 +25,6 @@ type(
 		GetLog() *base.CLog
 		GetServer() *network.ServerSocket
 		GetCluster () *cluster.Service
-		GetWorldCluster() *cluster.Cluster
-		GetAccountCluster() *cluster.Cluster
-		GetZoneCluster() *cluster.Cluster
 		GetPlayerMgr() *PlayerManager
 		OnServerStart()
 	}
@@ -40,7 +34,7 @@ var(
 	UserNetIP string
 	UserNetPort string
 	EtcdEndpoints []string
-
+	Nats_Cluster string
 	SERVER ServerMgr
 )
 
@@ -52,20 +46,8 @@ func (this *ServerMgr) GetServer() *network.ServerSocket{
  	return this.m_pService
 }
 
-func (this *ServerMgr) GetCluster () *cluster.Service {
- 	return this.m_Cluster
-}
-
-func (this *ServerMgr) GetWorldCluster() *cluster.Cluster {
-	return this.m_WorldCluster
-}
-
-func (this *ServerMgr) GetAccountCluster() *cluster.Cluster {
- 	return this.m_AccountCluster
-}
-
-func (this *ServerMgr) GetZoneCluster() *cluster.Cluster {
-	return this.m_ZoneCluster
+func (this *ServerMgr) GetCluster () *cluster.Cluster {
+ 	return this.m_pCluster
 }
 
 func (this *ServerMgr) GetPlayerMgr() *PlayerManager{
@@ -84,6 +66,7 @@ func (this *ServerMgr)Init() bool{
 
 	EtcdEndpoints = this.m_config.Get5("Etcd_Cluster", ",")
 	UserNetIP, UserNetPort 	= this.m_config.Get2("NetGate_WANAddress", ":")
+	Nats_Cluster = this.m_config.Get("Nats_Cluster")
 	ShowMessage := func(){
 		this.m_Log.Println("**********************************************************")
 		this.m_Log.Printf("\tNetGateServer Version:\t%s",base.BUILD_NO)
@@ -115,25 +98,13 @@ func (this *ServerMgr)Init() bool{
 	this.m_pService.BindPacketFunc(packet.PacketFunc)
 	this.m_pService.Start()*/
 	//注册到集群服务器
-	this.m_Cluster = cluster.NewService( &common.ClusterInfo{Type: rpc.SERVICE_GATESERVER, Ip:UserNetIP, Port:int32(base.Int(UserNetPort))}, EtcdEndpoints)
 
-	//世界服务器集群
-	this.m_WorldCluster = new(cluster.Cluster)
-	this.m_WorldCluster.Init(1000, &common.ClusterInfo{Type: rpc.SERVICE_WORLDSERVER}, EtcdEndpoints)
-	this.m_WorldCluster.BindPacket(&WorldProcess{})
-	this.m_WorldCluster.BindPacketFunc(DispatchPacket)
-
-	//账号服务器集群
-	this.m_AccountCluster = new(cluster.Cluster)
-	this.m_AccountCluster.Init(1000,  &common.ClusterInfo{Type: rpc.SERVICE_ACCOUNTSERVER}, EtcdEndpoints)
-	this.m_AccountCluster.BindPacket(&AccountProcess{})
-	this.m_AccountCluster.BindPacketFunc(DispatchPacket)
-
-	//战斗服务器集群
-	this.m_ZoneCluster = new(cluster.Cluster)
-	this.m_ZoneCluster.Init(1000,  &common.ClusterInfo{Type: rpc.SERVICE_ZONESERVER}, EtcdEndpoints)
-	this.m_ZoneCluster.BindPacket(&ZoneProcess{})
-	this.m_ZoneCluster.BindPacketFunc(DispatchPacket)
+	var packet1 EventProcess
+	packet1.Init(1000)
+	this.m_pCluster = new (cluster.Cluster)
+	this.m_pCluster.Init(1000, &common.ClusterInfo{Type: rpc.SERVICE_GATESERVER, Ip:UserNetIP, Port:int32(base.Int(UserNetPort))}, EtcdEndpoints, Nats_Cluster)
+	this.m_pCluster.BindPacketFunc(packet1.PacketFunc)
+	this.m_pCluster.BindPacketFunc(DispatchPacket)
 
 	//初始玩家管理
 	this.m_PlayerMgr = new(PlayerManager)

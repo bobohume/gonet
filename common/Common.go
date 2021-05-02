@@ -10,6 +10,14 @@ import (
 type(
 	//集群信息
 	ClusterInfo rpc.ClusterInfo
+
+	IClusterInfo interface {
+		Id() uint32
+		String() string
+		ServiceType() rpc.SERVICE
+		IpString() string
+		RaftIp() string
+	}
 )
 
 func (this *ClusterInfo) IpString() string{

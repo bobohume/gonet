@@ -16,11 +16,11 @@ type Master struct {
 	m_ServiceMap map[uint32]*common.ClusterInfo
 	m_Client *clientv3.Client
 	m_Actor actor.IActor
-	*common.ClusterInfo
+	common.IClusterInfo
 }
 
 //监控服务器
-func (this *Master) Init(info *common.ClusterInfo, Endpoints []string, pActor actor.IActor) {
+func (this *Master) Init(info common.IClusterInfo, Endpoints []string, pActor actor.IActor) {
 	cfg := clientv3.Config{
 		Endpoints:               Endpoints,
 	}
@@ -34,7 +34,7 @@ func (this *Master) Init(info *common.ClusterInfo, Endpoints []string, pActor ac
 	this.m_Client = etcdClient
 	this.BindActor(pActor)
 	this.Start()
-	this.ClusterInfo = info
+	this.IClusterInfo = info
 }
 
 func (this *Master) Start() {

@@ -43,7 +43,7 @@ func (this* AccountMgr) Init(num int){
 		LoginAccount := func(pAccount *Account) {
 			if pAccount != nil {
 				SERVER.GetLog().Printf("帐号[%s]返回登录OK", accountName)
-				SERVER.GetClusterMgr().SendMsg(rpc.RpcHead{ClusterId:id}, "A_G_Account_Login", accountId, socketId)
+				SERVER.GetCluster().SendMsg(rpc.RpcHead{ClusterId:id, DestServerType:rpc.SERVICE_GATESERVER}, "A_G_Account_Login", accountId, socketId)
 			}
 		}
 
@@ -122,7 +122,7 @@ func (this *AccountMgr) RemoveAccount(accountId int64, bLogin bool){
 	//假如账号服务器分布式，只要踢出world世界服务器即可
 	//这里要登录的时候就同步到踢人world
 	if bLogin || pAccount != nil{
-		SERVER.GetClusterMgr().KickWorldPlayer(accountId)
+		KickWorldPlayer(accountId)
 	}
 }
 

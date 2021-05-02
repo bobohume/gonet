@@ -18,12 +18,12 @@ type (
 		m_ServiceMap map[uint32]*common.ClusterInfo
 		m_KeysAPI client.KeysAPI
 		m_Actor actor.IActor
-		*common.ClusterInfo
+		common.IClusterInfo
 	}
 )
 
 //监控服务器
-func (this *Master) Init(info *common.ClusterInfo, Endpoints []string, pActor actor.IActor) {
+func (this *Master) Init(info common.IClusterInfo, Endpoints []string, pActor actor.IActor) {
 	cfg := client.Config{
 		Endpoints:               Endpoints,
 		Transport:               client.DefaultTransport,
@@ -39,7 +39,7 @@ func (this *Master) Init(info *common.ClusterInfo, Endpoints []string, pActor ac
 	this.m_KeysAPI =  client.NewKeysAPI(etcdClient)
 	this.BindActor(pActor)
 	this.Start()
-	this.ClusterInfo = info
+	this.IClusterInfo = info
 }
 
 func (this *Master) Start() {
@@ -73,7 +73,7 @@ func NodeToService(val []byte) *common.ClusterInfo {
 }
 
 func (this *Master) Run() {
-	watcher := this.m_KeysAPI.Watcher(ETCD_DIR+ this.Type.String(), &client.WatcherOptions{
+	watcher := this.m_KeysAPI.Watcher(ETCD_DIR+ this.String(), &client.WatcherOptions{
 		Recursive: true,
 	})
 

@@ -2,17 +2,21 @@
 
  import (
 	 "database/sql"
+	 "github.com/gogo/protobuf/proto"
 	 "gonet/base"
+	 "gonet/common"
 	 "gonet/common/cluster"
 	 "gonet/db"
 	 "gonet/network"
+	 "gonet/rpc"
+	 "gonet/server/message"
 	 "log"
  )
 
 type(
 	ServerMgr struct{
 		m_pService	*network.ServerSocket
-		m_pClusterMgr *ClusterManager
+		m_pCluster *cluster.Cluster
 		m_pActorDB *sql.DB
 		m_Inited bool
 		m_config base.Config
@@ -27,7 +31,7 @@ type(
 		GetDB() *sql.DB
 		GetLog() *base.CLog
 		GetServer() *network.ServerSocket
-		GetClusterMgr() *ClusterManager
+		GetCluster() *cluster.Cluster
 		GetAccountMgr() *AccountMgr
 	}
 )
@@ -41,6 +45,7 @@ var(
 	DB_UserId string
 	DB_Password string
 	EtcdEndpoints []string
+	Nats_Cluster string
 	SERVER ServerMgr
 )
 
@@ -59,6 +64,7 @@ func (this *ServerMgr)Init() bool{
 	DB_Name		= this.m_config.Get3("AccountDB","DB_Name");
 	DB_UserId	= this.m_config.Get3("AccountDB", "DB_UserId");
 	DB_Password	= this.m_config.Get3("AccountDB", "DB_Password")
+	Nats_Cluster = this.m_config.Get("Nats_Cluster")
 
 	ShowMessage := func(){
 		this.m_Log.Println("**********************************************************")
@@ -89,15 +95,13 @@ func (this *ServerMgr)Init() bool{
 	this.m_AccountMgr.Init(1000)
 
 	//本身账号集群管理
-	this.m_pClusterMgr = new(ClusterManager)
-	this.m_pClusterMgr.Init(1000)
-	this.m_pClusterMgr.BindServer(this.m_pService)
+	this.m_pCluster = new(cluster.Cluster)
+	this.m_pCluster.Init(1000, &common.ClusterInfo{Type: rpc.SERVICE_ACCOUNTSERVER, Ip:UserNetIP, Port:int32(base.Int(UserNetPort))}, EtcdEndpoints, Nats_Cluster)
 
 	var packet EventProcess
 	packet.Init(1000)
-	this.m_pService.BindPacketFunc(packet.PacketFunc)
-	this.m_pService.BindPacketFunc(this.m_AccountMgr.PacketFunc)
-	this.m_pService.BindPacketFunc(this.m_pClusterMgr.PacketFunc)
+	this.m_pCluster.BindPacketFunc(packet.PacketFunc)
+	this.m_pCluster.BindPacketFunc(this.m_AccountMgr.PacketFunc)
 
 	//snowflake
 	this.m_SnowFlake = cluster.NewSnowflake(this.m_config.Get5("Etcd_SnowFlake_Cluster", ","))
@@ -125,10 +129,32 @@ func (this *ServerMgr) GetServer() *network.ServerSocket{
 	return this.m_pService
 }
 
-func (this *ServerMgr) GetClusterMgr() *ClusterManager{
-	return this.m_pClusterMgr
+func (this *ServerMgr) GetCluster() *cluster.Cluster{
+	return this.m_pCluster
 }
 
 func (this *ServerMgr) GetAccountMgr() *AccountMgr{
 	return this.m_AccountMgr
 }
+
+ func KickWorldPlayer(accountId int64){
+	 BoardCastToWorld("G_ClientLost", accountId)
+ }
+
+ //发送world
+ func SendToWorld(ClusterId uint32, funcName string, params  ...interface{}){
+	 head := rpc.RpcHead{ClusterId:ClusterId, DestServerType:rpc.SERVICE_WORLDSERVER, SrcClusterId:SERVER.GetCluster().Id()}
+	 SERVER.GetCluster().SendMsg(head, funcName, params...)
+ }
+
+ //广播world
+ func BoardCastToWorld(funcName string, params  ...interface{}){
+	 head := rpc.RpcHead{DestServerType:rpc.SERVICE_WORLDSERVER, SendType:rpc.SEND_BOARD_CAST, SrcClusterId:SERVER.GetCluster().Id()}
+	 SERVER.GetCluster().SendMsg(head, funcName, params...)
+ }
+
+ //发送到客户端
+ func SendToClient(head rpc.RpcHead, packet proto.Message){
+	 pakcetHead := packet.(message.Packet).GetPacketHead()
+	 SERVER.GetCluster().SendMsg(rpc.RpcHead{DestServerType:rpc.SERVICE_GATESERVER, Id:pakcetHead.Id}, message.GetMessageName(packet), packet)
+ }

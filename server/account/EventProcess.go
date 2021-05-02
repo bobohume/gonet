@@ -51,7 +51,7 @@ func (this *EventProcess) Init(num int) {
 				if (err == nil) {
 					SERVER.GetLog().Printf("帐号[%s]创建成功", accountName)
 					//登录账号
-					SERVER.GetAccountMgr().SendMsg( rpc.RpcHead{},"Account_Login", accountName, accountId, socketId, this.GetRpcHead(ctx).SocketId)
+					SERVER.GetAccountMgr().SendMsg( rpc.RpcHead{},"Account_Login", accountName, accountId, socketId, this.GetRpcHead(ctx).SrcClusterId)
 					nError = 0
 				}
 			}else{//账号存在
@@ -100,7 +100,7 @@ func (this *EventProcess) Init(num int) {
 		}
 
 		if nError != base.NONE_ERROR {
-			SendToClient(rpc.RpcHead{ClusterId:this.GetRpcHead(ctx).SrcClusterId}, &message.A_C_LoginResponse{
+			SendToClient(rpc.RpcHead{ClusterId:this.GetRpcHead(ctx).SrcClusterId, SocketId:socketId}, &message.A_C_LoginResponse{
 				PacketHead:message.BuildPacketHead( 0, 0 ),
 				Error:int32(nError),
 				AccountName:packet.AccountName,

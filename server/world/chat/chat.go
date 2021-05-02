@@ -155,7 +155,7 @@ func (this *ChatMgr) SendMessageTo(msg *ChatMessage, playerId int64){
 
 func SendMessage(msg *ChatMessage, player *player){
 	world.SendToClient(player.gateClusterId, &message.W_C_ChatMessage{
-		PacketHead:message.BuildPacketHead(player.accountId, rpc.SERVICE_CLIENT),
+		PacketHead:message.BuildPacketHead(player.accountId, rpc.SERVICE_GATESERVER),
 		Sender:msg.Sender,
 		SenderName:msg.SenderName,
 		Recver:msg.Recver,
@@ -166,7 +166,7 @@ func SendMessage(msg *ChatMessage, player *player){
 }
 
 func (this *ChatMgr) SendMessageToAll(msg *ChatMessage){
-	world.SERVER.GetClusterMgr().SendMsg(rpc.RpcHead{DestServerType:rpc.SERVICE_GATESERVER, SendType:rpc.SEND_BOARD_CAST},
+	world.SERVER.GetCluster().SendMsg(rpc.RpcHead{DestServerType:rpc.SERVICE_GATESERVER, SendType:rpc.SEND_BOARD_CAST},
 	"Chat_SendMessageAll", msg)
 }
 

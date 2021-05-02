@@ -7,7 +7,7 @@ import (
 )
 
 type(
-	MemoryCheck struct {
+	PProf struct {
 
 	}
 )
@@ -16,7 +16,7 @@ type(
 //http://localhost:6060/debug/pprof/heap
 //go tool pprof -inuse_space http://localhost:6060/debug/pprof/heap
 //go tool pprof http://localhost:6060/debug/pprof/heap?debug=1
-func (this *MemoryCheck) Init(){
+func (this *PProf) Init(){
 	go func() {
 	     log.Println(http.ListenAndServe("localhost:6060", nil))
 	}()

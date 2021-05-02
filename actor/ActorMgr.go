@@ -19,8 +19,12 @@ type (
 		Init()
 		AddActor(IActor, ...string)
 		GetActor(string) IActor
-		InitActorHandle(network.ISocket)
+		InitActorHandle(ICluster)
 		SendMsg(rpc.RpcHead, string, ...interface{})
+	}
+
+	ICluster interface{
+		BindPacketFunc(network.HandleFunc)
 	}
 )
 
@@ -53,9 +57,9 @@ func (this *ActorMgr) GetActor(name string) IActor{
 	return nil
 }
 
-func (this *ActorMgr) InitActorHandle(pServer network.ISocket){
+func (this *ActorMgr) InitActorHandle(pCluster ICluster){
 	for _,v := range this.m_ActorMap{
-		pServer.BindPacketFunc(v.PacketFunc)
+		pCluster.BindPacketFunc(v.PacketFunc)
 	}
 }
 

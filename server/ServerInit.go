@@ -28,7 +28,7 @@ func InitMgr(serverName string){
 		toprank.MGR().Init(1000)
 		player.SIMPLEMGR.Init(1000)
 		social.MGR().Init(1000)
-		actor.MGR.InitActorHandle(world.SERVER.GetServer())
+		actor.MGR.InitActorHandle(world.SERVER.GetCluster())
 	}
 }
 
