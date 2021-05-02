@@ -11,9 +11,6 @@ import (
 	"gonet/server/world/player"
 	"gonet/server/world/social"
 	"gonet/server/world/toprank"
-	"gonet/server/zone"
-	"gonet/server/zone/game"
-	data2 "gonet/server/zone/game/data"
 )
 
 

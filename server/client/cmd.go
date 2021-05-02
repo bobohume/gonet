@@ -6,7 +6,6 @@ import (
 	"gonet/common"
 	"gonet/rpc"
 	"gonet/server/message"
-	"strconv"
 )
 
 type (
@@ -30,7 +29,7 @@ func (this *CmdProcess) Init(num int) {
 		}
 		SendPacket(packet1)
 	})
-	
+
 	this.Actor.Start()
 }
 

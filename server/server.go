@@ -6,7 +6,6 @@ import (
 	"gonet/server/account"
 	"gonet/server/netgate"
 	"gonet/server/world"
-	"gonet/server/zone"
 	"os"
 	"os/signal"
 	"syscall"
