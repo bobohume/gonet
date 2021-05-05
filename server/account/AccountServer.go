@@ -156,5 +156,9 @@ func (this *ServerMgr) GetAccountMgr() *AccountMgr{
  //发送到客户端
  func SendToClient(head rpc.RpcHead, packet proto.Message){
 	 pakcetHead := packet.(message.Packet).GetPacketHead()
-	 SERVER.GetCluster().SendMsg(rpc.RpcHead{DestServerType:rpc.SERVICE_GATESERVER, Id:pakcetHead.Id}, message.GetMessageName(packet), packet)
+	 if pakcetHead != nil {
+		 head.DestServerType = rpc.SERVICE_GATESERVER
+		 head.Id = pakcetHead.Id
+	 }
+	 SERVER.GetCluster().SendMsg(head, message.GetMessageName(packet), packet)
  }
