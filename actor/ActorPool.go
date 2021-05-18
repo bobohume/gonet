@@ -86,17 +86,19 @@ func (this *ActorPool) SendMsg(head rpc.RpcHead,funcName string, params ...inter
 }
 
 //actor pool must rewrite PacketFunc
-func (this *ActorPool) PacketFunc(id uint32, buff []byte) bool{
-	rpcPacket, head := rpc.UnmarshalHead(buff)
+func (this *ActorPool) PacketFunc(packet rpc.Packet) bool{
+	rpcPacket, head := rpc.UnmarshalHead(packet.Buff)
 	if this.FindCall(rpcPacket.FuncName) != nil{
-		head.SocketId = id
-		this.Send(head, buff)
+		head.SocketId = packet.Id
+		head.Reply = packet.Reply
+		this.Send(head, packet.Buff)
 		return true
 	}else{
 		pActor := this.GetActor(rpcPacket.RpcHead.Id)
 		if pActor != nil && pActor.FindCall(rpcPacket.FuncName) != nil{
-			head.SocketId = id
-			pActor.Send(head, buff)
+			head.SocketId = packet.Id
+			head.Reply = packet.Reply
+			pActor.Send(head, packet.Buff)
 			return true
 		}
 	}

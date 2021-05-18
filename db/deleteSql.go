@@ -3,11 +3,9 @@ package db
 import (
 	"fmt"
 	"gonet/base"
-	"math"
 	"reflect"
 	"strconv"
 	"strings"
-	"unicode"
 )
 
 func deletesql(sqlData *SqlData, p *Properties, val string){
@@ -26,9 +24,7 @@ func deletesqlarray(sqlData *SqlData, p *Properties, val string, i int){
 	}
 }
 
-func getDeleteSql(classField reflect.StructField, classVal reflect.Value, sqlData *SqlData) (bool) {
-	p := getProperties(classField)
-
+func getDeleteSql(p *Properties, classField reflect.StructField, classVal reflect.Value, sqlData *SqlData) (bool) {
 	sType := getTypeString(classField, classVal)
 	//过略json
 	if p.IsJson(){
@@ -369,18 +365,14 @@ func getDeleteSql(classField reflect.StructField, classVal reflect.Value, sqlDat
 }
 
 func parseDeleteSql(obj interface{}, sqlData *SqlData){
-	classVal := reflect.ValueOf(obj)
-	for classVal.Kind() == reflect.Ptr {
-		classVal = classVal.Elem()
-	}
-	classType := classVal.Type()
-
+	classVal, classType, ps := getClassInfo(obj)
 	for i := 0; i < classType.NumField(); i++{
 		if !classVal.Field(i).CanInterface(){
 			continue
 		}
 
-		bRight := getDeleteSql(classType.Field(i), classVal.Field(i), sqlData)
+		p := ps.Get(i).(*Properties)
+		bRight := getDeleteSql(p, classType.Field(i), classVal.Field(i), sqlData)
 		if !bRight{
 			errorStr := fmt.Sprintf("parseDeleteSql type not supported %s", classType.Name())
 			panic(errorStr)
@@ -426,47 +418,19 @@ func DeleteSqlEx(obj interface{}, sqltable string, params ...string) string {
 		}
 	}()
 
-	classVal := reflect.ValueOf(obj)
-	for classVal.Kind() == reflect.Ptr {
-		classVal = classVal.Elem()
-	}
-	classType := classVal.Type()
-
+	classVal, classType, nameMap, ps := getClassInfoEx(obj, params...)
 	sqlData := &SqlData{}
-	nameMap := make(map[string] *base.BitMap)//name index[for array]
-	for _,v := range params{
-		nIndex, i := 0, 0
-		v1 := strings.ToLower(v)
-		v2 := strings.TrimRightFunc(v, func(r rune) bool {
-			if unicode.IsNumber(r){
-				nIndex = int(r - '0') * int(math.Pow(10, float64(i))) + nIndex
-				i++
-				return true
-			}
-			return false
-		})
-		if v1 != v2{
-			bitMap, bOk := nameMap[v2]
-			if !bOk{
-				bitMap = base.NewBitMap(MAX_ARRAY_LENGTH)
-				nameMap[v2] = bitMap
-			}
-			bitMap.Set(nIndex)
-		}else{
-			nameMap[v1] = nil
-		}
-	}
 	for i := 0; i < classType.NumField(); i++ {
 		if !classVal.Field(i).CanInterface() {
 			continue
 		}
 
 		sf := classType.Field(i)
-		p := getProperties(sf)
+		p := ps.Get(i).(*Properties)
 		bitMap, exist := nameMap[p.Name]
 		if exist{
 			sqlData.bitMap = bitMap
-			bRight := getDeleteSql(sf, classVal.Field(i), sqlData)
+			bRight := getDeleteSql(p, sf, classVal.Field(i), sqlData)
 			if !bRight{
 				errorStr := fmt.Sprintf("DeleteSqlEx error %s", reflect.TypeOf(obj).Name())
 				panic(errorStr)

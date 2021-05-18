@@ -159,7 +159,7 @@ func (this *ClusterServer) boardCastSend(head rpc.RpcHead, buff []byte){
 }
 
 func (this *ClusterServer) SendMsg(head rpc.RpcHead, funcName string, params  ...interface{}){
-	buff := base.SetTcpEnd(rpc.Marshal(head, funcName, params...))
+	buff := rpc.Marshal(head, funcName, params...)
 	this.Send(head, buff)
 }
 

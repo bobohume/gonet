@@ -2,10 +2,12 @@ package actor
 
 import (
 	"context"
+	"fmt"
 	"gonet/base"
 	"gonet/rpc"
 	"log"
 	"reflect"
+	"runtime"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -27,6 +29,7 @@ type (
 		m_pTimer 	 *time.Ticker//定时器
 		m_TimerCall	func()//定时器触发函数
 		m_bStart	bool
+		m_Trace  	traceInfo//trace func
 	}
 
 	IActor interface {
@@ -37,7 +40,7 @@ type (
 		RegisterCall(funcName string, call interface{})
 		SendMsg(head rpc.RpcHead, funcName string, params ...interface{})
 		Send(head rpc.RpcHead, buff []byte)
-		PacketFunc(id uint32, buff []byte) bool//回调函数
+		PacketFunc(packet rpc.Packet) bool//回调函数
 		RegisterTimer(duration time.Duration, fun interface{})//注册定时器,时间为纳秒 1000 * 1000 * 1000
 		GetId() int64
 		GetRpcHead(ctx context.Context) rpc.RpcHead//rpc is safe
@@ -53,6 +56,13 @@ type (
 		FuncType reflect.Type
 		FuncVal reflect.Value
 		FuncParams string
+	}
+
+	traceInfo struct {
+		funcName string
+		fileName string
+		filePath string
+		className string
 	}
 )
 
@@ -81,6 +91,8 @@ func (this *Actor) Init(chanNum int) {
 	this.m_CallMap = make(map[string] *CallFunc)
 	this.m_pTimer = time.NewTicker(1<<63-1)//默认没有定时器
 	this.m_TimerCall = nil
+	//trance
+	this.m_Trace.Init()
 }
 
 func (this *Actor)  RegisterTimer(duration time.Duration, fun interface{}){
@@ -127,7 +139,8 @@ func (this *Actor) RegisterCall(funcName string, call interface{}) {
 		log.Fatalln("actor error [%s] 消息重复定义", funcName)
 	}
 
-	this.m_CallMap[funcName] = &CallFunc{Func:call, FuncVal:reflect.ValueOf(call), FuncType:reflect.TypeOf(call), FuncParams:reflect.TypeOf(call).String()}
+	callfunc := &CallFunc{Func:call, FuncVal:reflect.ValueOf(call), FuncType:reflect.TypeOf(call), FuncParams:reflect.TypeOf(call).String()}
+	this.m_CallMap[funcName] = callfunc
 }
 
 func (this *Actor) SendMsg(head rpc.RpcHead,funcName string, params ...interface{}) {
@@ -148,32 +161,32 @@ func (this *Actor) Send(head rpc.RpcHead, buff []byte) {
 	this.m_CallChan <- io
 }
 
-func (this *Actor) PacketFunc(id uint32, buff []byte) bool{
-	rpcPacket, head := rpc.UnmarshalHead(buff)
+func (this *Actor) PacketFunc(packet rpc.Packet) bool{
+	rpcPacket, head := rpc.UnmarshalHead(packet.Buff)
 	if this.FindCall(rpcPacket.FuncName) != nil{
-		head.SocketId = id
-		this.Send(head, buff)
+		head.SocketId = packet.Id
+		head.Reply = packet.Reply
+		this.Send(head, packet.Buff)
 		return true
 	}
 
 	return false
 }
 
+func (this *Actor) Trace(funcName string){
+	this.m_Trace.funcName = funcName
+}
+
 func (this *Actor) call(io CallIO) {
 	rpcPacket, _ := rpc.Unmarshal(io.Buff)
+	head := io.RpcHead
 	funcName := rpcPacket.FuncName
 	pFunc := this.FindCall(funcName)
 	if pFunc != nil {
 		f := pFunc.FuncVal
 		k := pFunc.FuncType
-		strParams := pFunc.FuncParams
 		rpcPacket.RpcHead.SocketId = io.SocketId
 		params := rpc.UnmarshalBody(rpcPacket, k)
-
-		if k.NumIn()  != len(params){
-			log.Printf("func [%s] can not call, func params [%s], params [%v]", funcName, strParams, params)
-			return
-		}
 
 		if len(params) >= 1{
 			in := make([]reflect.Value, len(params))
@@ -181,7 +194,13 @@ func (this *Actor) call(io CallIO) {
 				in[i] = reflect.ValueOf(param)
 			}
 
-			f.Call(in)
+			this.Trace(funcName)
+			ret := f.Call(in)
+			this.Trace("")
+			if ret != nil && head.Reply != ""{
+				ret = append([]reflect.Value{reflect.ValueOf(&head)}, ret...)
+				rpc.GCall.Call(ret)
+			}
 		}else{
 			log.Printf("func [%s] params at least one context", funcName)
 			//f.Call([]reflect.Value{reflect.ValueOf(ctx)})
@@ -192,7 +211,7 @@ func (this *Actor) call(io CallIO) {
 func (this *Actor) loop() bool{
 	defer func() {
 		if err := recover(); err != nil{
-			base.TraceCode(err)
+			base.TraceCode(this.m_Trace.ToString(), err)
 		}
 	}()
 
@@ -205,7 +224,9 @@ func (this *Actor) loop() bool{
 		}
 	case <- this.m_pTimer.C:
 		if this.m_TimerCall != nil{
+			this.Trace("timer")
 			this.m_TimerCall()
+			this.Trace("")
 		}
 	}
 	return true
@@ -219,4 +240,23 @@ func (this *Actor) run(){
 	}
 
 	this.clear()
+}
+
+func (this *traceInfo) Init() {
+	_, file, _,  bOk := runtime.Caller(2)
+	if bOk{
+		index := strings.LastIndex(file, "/")
+		if index!= -1{
+			this.fileName = file[index+1:]
+			this.filePath = file[:index]
+			index1 := strings.LastIndex(this.fileName, ".")
+			if index1!= -1 {
+				this.className = strings.ToLower(this.fileName[:index1])
+			}
+		}
+	}
+}
+
+func (this *traceInfo) ToString() string{
+	return fmt.Sprintf("trace go file[%s] call[%s]\n", this.fileName, this.funcName)
 }

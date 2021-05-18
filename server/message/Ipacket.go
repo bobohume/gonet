@@ -53,12 +53,6 @@ func Encode(packet proto.Message) []byte{
 	return data
 }
 
-func EncodeEx(packetName string, buf []byte) []byte{
-	packetId := base.GetMessageCode1(packetName)
-	data := append(base.IntToBytes(int(packetId)), buf...)
-	return data
-}
-
 func Decode(buff []byte) (uint32, []byte){
 	packetId := uint32(base.BytesToInt(buff[0:4]))
 	return packetId, buff[4:]

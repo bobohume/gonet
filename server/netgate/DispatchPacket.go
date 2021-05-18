@@ -1,42 +1,49 @@
 package netgate
 
 import (
+	"bytes"
+	"encoding/gob"
 	"github.com/golang/protobuf/proto"
 	"gonet/base"
 	"gonet/rpc"
 	"gonet/server/message"
-	"strings"
+	"reflect"
 )
 
 var(
-	A_C_RegisterResponse = strings.ToLower("A_C_RegisterResponse")
-	A_C_LoginResponse 	 = strings.ToLower("A_C_LoginResponse")
+	A_C_RegisterResponse = proto.MessageName(&message.A_C_RegisterResponse{})
+	A_C_LoginResponse 	 = proto.MessageName(&message.A_C_LoginResponse{})
 )
 
 func SendToClient(socketId uint32, packet proto.Message){
-	SERVER.GetServer().Send(rpc.RpcHead{SocketId:socketId}, base.SetTcpEnd(message.Encode(packet)))
+	SERVER.GetServer().Send(rpc.RpcHead{SocketId:socketId}, message.Encode(packet))
 }
 
-func DispatchPacket(id uint32, buff []byte) bool{
+func DispatchPacket(packet rpc.Packet) bool{
 	defer func(){
 		if err := recover(); err != nil{
 			base.TraceCode(err)
 		}
 	}()
 
-	rpcPacket, head := rpc.Unmarshal(buff)
+	rpcPacket, head := rpc.Unmarshal(packet.Buff)
 	switch head.DestServerType {
 	case rpc.SERVICE_GATESERVER:
-		bitstream := base.NewBitStream(rpcPacket.RpcBody, len(rpcPacket.RpcBody))
-		buff := message.EncodeEx(rpcPacket.FuncName, rpc.UnmarshalPB(bitstream))
-		if rpcPacket.FuncName == A_C_RegisterResponse || rpcPacket.FuncName == A_C_LoginResponse {
-			SERVER.GetServer().Send(rpc.RpcHead{SocketId:head.SocketId}, base.SetTcpEnd(buff))
+		messageName := ""
+		buf := bytes.NewBuffer(rpcPacket.RpcBody)
+		dec := gob.NewDecoder(buf)
+		dec.Decode(&messageName)
+		packet := reflect.New(proto.MessageType(messageName).Elem()).Interface().(proto.Message)
+		dec.Decode(packet)
+		buff := message.Encode(packet)
+		if messageName== A_C_RegisterResponse || messageName == A_C_LoginResponse {
+			SERVER.GetServer().Send(rpc.RpcHead{SocketId:head.SocketId}, buff)
 		}else{
 			socketId := SERVER.GetPlayerMgr().GetSocket(head.Id)
-			SERVER.GetServer().Send(rpc.RpcHead{SocketId:socketId}, base.SetTcpEnd(buff))
+			SERVER.GetServer().Send(rpc.RpcHead{SocketId:socketId}, buff)
 		}
 	default:
-		SERVER.GetCluster().Send(head, buff)
+		SERVER.GetCluster().Send(head, packet.Buff)
 	}
 
 	return true

@@ -60,7 +60,6 @@ func (this *UserPrcoess) CheckClient(sockId uint32, packetName string, head rpc.
 func (this *UserPrcoess) SwtichSendToWorld(socketId uint32, packetName string, head rpc.RpcHead, buff []byte){
 	pAccountInfo := this.CheckClient(socketId, packetName, head)
 	if pAccountInfo != nil{
-		//buff = base.SetTcpEnd(buff)
 		head.ClusterId = pAccountInfo.WClusterId
 		head.DestServerType = rpc.SERVICE_WORLDSERVER
 		SERVER.GetCluster().Send(head, buff)
@@ -69,7 +68,6 @@ func (this *UserPrcoess) SwtichSendToWorld(socketId uint32, packetName string, h
 
 func (this *UserPrcoess) SwtichSendToAccount(socketId uint32, packetName string, head rpc.RpcHead, buff []byte){
 	if this.CheckClientEx(socketId, packetName, head) == true {
-		//buff = base.SetTcpEnd(buff)
 		head.SendType = rpc.SEND_BALANCE
 		head.DestServerType = rpc.SERVICE_ACCOUNTSERVER
 		SERVER.GetCluster().Send(head, buff)
@@ -79,14 +77,15 @@ func (this *UserPrcoess) SwtichSendToAccount(socketId uint32, packetName string,
 func (this *UserPrcoess) SwtichSendToZone(socketId uint32, packetName string, head rpc.RpcHead, buff []byte){
 	pAccountInfo := this.CheckClient(socketId, packetName, head)
 	if pAccountInfo != nil{
-		//buff = base.SetTcpEnd(buff)
 		head.ClusterId = pAccountInfo.ZClusterId
 		head.DestServerType = rpc.SERVICE_ZONESERVER
 		SERVER.GetCluster().Send(head, buff)
 	}
 }
 
-func (this *UserPrcoess) PacketFunc(socketid uint32, buff []byte) bool{
+func (this *UserPrcoess) PacketFunc(packet1 rpc.Packet) bool{
+	buff := packet1.Buff
+	socketid := packet1.Id
 	packetId, data := message.Decode(buff)
 	packet := message.GetPakcet(packetId)
 	if packet == nil{
@@ -133,7 +132,7 @@ func (this *UserPrcoess) PacketFunc(socketid uint32, buff []byte) bool{
 	}else if packetHead.DestServerType == message.SERVICE_ZONESERVER{
 		this.SwtichSendToZone(socketid, packetName, head, rpc.Marshal(head, packetName, packet))
 	}else{
-		this.Actor.PacketFunc(socketid, rpc.Marshal(head, packetName, packet))
+		this.Actor.PacketFunc(rpc.Packet{Id:socketid, Buff:rpc.Marshal(head, packetName, packet)})
 	}
 
 	return true
