@@ -1,8 +1,6 @@
 package network
 
 import (
-	"fmt"
-	"gonet/base"
 	"gonet/base/vector"
 	"gonet/rpc"
 	"net"
@@ -24,15 +22,15 @@ const (
 )
 
 type (
-	HandleFunc func(uint32,[]byte) bool//回调函数
+	PacketFunc func(packet rpc.Packet) bool//回调函数
+	HandlePacket func(buff []byte)
 	Socket struct {
 		m_Conn                 net.Conn
 		m_nPort                int
 		m_sIP                  string
 		m_nState			   int
 		m_nConnectType		   int
-		m_ReceiveBufferSize    int//单次接受缓存
-		m_MaxReceiveBufferSize int//最大接受缓存
+		m_ReceiveBufferSize    int//单次接收缓存
 
 		m_ClientId uint32
 		m_Seq      int64
@@ -48,7 +46,7 @@ type (
 
 		m_bHalf		bool
 		m_nHalfSize int
-		m_MaxReceiveBuffer []byte//max receive buff
+		m_PacketParser PacketParser
 	}
 
 	ISocket interface {
@@ -66,16 +64,16 @@ type (
 		Send(rpc.RpcHead, []byte) int
 		CallMsg(string, ...interface{})//回调消息处理
 
+		GetId() uint32
 		GetState() int
 		SetReceiveBufferSize(int)
 		GetReceiveBufferSize()int
-		SetMaxReceiveBufferSize(int)
-		GetMaxReceiveBufferSize()int
-		BindPacketFunc(HandleFunc)
+		SetMaxPacketLen(int)
+		GetMaxPacketLen()int
+		BindPacketFunc(PacketFunc)
 		SetConnectType(int)
 		SetTcpConn(net.Conn)
-		HandlePacket(uint32,	[]byte)
-		ReceivePacket(uint32,	[]byte) bool
+		HandlePacket([]byte)
 	}
 )
 
@@ -84,10 +82,10 @@ func (this *Socket) Init(string, int) bool {
 	this.m_PacketFuncList = vector.NewVector()
 	this.m_nState = SSF_SHUT_DOWN
 	this.m_ReceiveBufferSize =1024
-	this.m_MaxReceiveBufferSize = base.MAX_PACKET
 	this.m_nConnectType = SERVER_CONNECT
 	this.m_bHalf = false
 	this.m_nHalfSize = 0
+	this.m_PacketParser = NewPacketParser(PacketConfig{Func:this.HandlePacket})
 	return true
 }
 
@@ -120,6 +118,10 @@ func (this *Socket) OnNetFail(int) {
 	this.Stop()
 }
 
+func (this *Socket) GetId() uint32{
+	return this.m_ClientId
+}
+
 func (this *Socket) GetState() int{
 	return  this.m_nState
 }
@@ -136,7 +138,6 @@ func (this *Socket) Clear() {
 	//this.m_nConnectType = CLIENT_CONNECT
 	this.m_Conn = nil
 	this.m_ReceiveBufferSize = 1024
-	this.m_MaxReceiveBufferSize = base.MAX_PACKET
 	this.m_bShuttingDown = false
 	this.m_bHalf = false
 	this.m_nHalfSize = 0
@@ -149,12 +150,12 @@ func (this *Socket) Close() {
 	this.Clear()
 }
 
-func (this *Socket) GetMaxReceiveBufferSize() int{
-	return  this.m_MaxReceiveBufferSize
+func (this *Socket) GetMaxPacketLen() int{
+	return  this.m_PacketParser.m_MaxPacketLen
 }
 
-func (this *Socket) SetMaxReceiveBufferSize(maxReceiveSize int){
-	this.m_MaxReceiveBufferSize = maxReceiveSize
+func (this *Socket) SetMaxPacketLen(maxReceiveSize int){
+	this.m_PacketParser.m_MaxPacketLen = maxReceiveSize
 }
 
 func (this *Socket) GetReceiveBufferSize() int{
@@ -173,101 +174,20 @@ func (this *Socket) SetTcpConn(conn net.Conn){
 	this.m_Conn = conn
 }
 
-func (this *Socket) BindPacketFunc(callfunc HandleFunc){
+func (this *Socket) BindPacketFunc(callfunc PacketFunc){
 	this.m_PacketFuncList.PushBack(callfunc)
 }
 
 func (this *Socket) CallMsg(funcName string, params ...interface{}){
 	buff := rpc.Marshal(rpc.RpcHead{}, funcName, params...)
-	this.HandlePacket(this.m_ClientId, buff)
+	this.HandlePacket(buff)
 }
 
-func (this *Socket) HandlePacket(Id uint32, buff []byte){
+func (this *Socket) HandlePacket(buff []byte){
+	packet := rpc.Packet{Id:this.m_ClientId, Buff:buff}
 	for _,v := range this.m_PacketFuncList.Values() {
-		if (v.(HandleFunc)(Id, buff)){
+		if (v.(PacketFunc)(packet)){
 			break
 		}
 	}
 }
-
-func (this *Socket) ReceivePacket(Id uint32, dat []byte) bool{
-	//找包结束
-	seekToTcpEnd := func(buff []byte) (bool, int){
-		nLen := len(buff)
-		if nLen < base.TCP_HEAD_SIZE{
-			return false, 0
-		}
-
-		nSize := base.BytesToInt(buff[0:4])
-		if nSize + base.TCP_HEAD_SIZE <= nLen{
-			return true, nSize+base.TCP_HEAD_SIZE
-		}
-		return false, 0
-	}
-
-	buff := append(this.m_MaxReceiveBuffer, dat...)
-	this.m_MaxReceiveBuffer = []byte{}
-	nCurSize := 0
-	//fmt.Println(this.m_MaxReceiveBuffer)
-ParsePacekt:
-	nPacketSize := 0
-	nBufferSize := len(buff[nCurSize:])
-	bFindFlag := false
-	bFindFlag, nPacketSize = seekToTcpEnd(buff[nCurSize:])
-	//fmt.Println(bFindFlag, nPacketSize, nBufferSize)
-	if bFindFlag{
-		if nBufferSize == nPacketSize{		//完整包
-			this.HandlePacket(Id, buff[nCurSize+base.TCP_HEAD_SIZE:nCurSize+nPacketSize])
-			nCurSize += nPacketSize
-		}else if ( nBufferSize > nPacketSize){
-			this.HandlePacket(Id, buff[nCurSize+base.TCP_HEAD_SIZE:nCurSize+nPacketSize])
-			nCurSize += nPacketSize
-			goto ParsePacekt
-		}
-	}else if nBufferSize < this.m_MaxReceiveBufferSize{
-		this.m_MaxReceiveBuffer = buff[nCurSize:]
-	}else{
-		fmt.Println("超出最大包限制，丢弃该包")
-		return false
-	}
-	return true
-}
-
-//tcp粘包特殊结束标志
-/*func (this *Socket) ReceivePacket(Id int, dat []byte) bool{
-	//找包结束
-	seekToTcpEnd := func(buff []byte) (bool, int) {
-		nLen := bytes.Index(buff, []byte(base.TCP_END))
-		if nLen != -1{
-			return true, nLen+base.TCP_END_LENGTH
-		}
-		return false, 0
-	}
-
-	buff := append(this.m_MaxReceiveBuffer, dat...)
-	this.m_MaxReceiveBuffer = []byte{}
-	nCurSize := 0
-	//fmt.Println(this.m_MaxReceiveBuffer)
-ParsePacekt:
-	nPacketSize := 0
-	nBufferSize := len(buff[nCurSize:])
-	bFindFlag := false
-	bFindFlag, nPacketSize = seekToTcpEnd(buff[nCurSize:])
-	//fmt.Println(bFindFlag, nPacketSize, nBufferSize)
-	if bFindFlag {
-		if nBufferSize == nPacketSize { //完整包
-			this.HandlePacket(Id, buff[nCurSize:nCurSize+nPacketSize-base.TCP_END_LENGTH])
-			nCurSize += nPacketSize
-		} else if (nBufferSize > nPacketSize) {
-			this.HandlePacket(Id, buff[nCurSize:nCurSize+nPacketSize-base.TCP_END_LENGTH])
-			nCurSize += nPacketSize
-			goto ParsePacekt
-		}
-	}else if nBufferSize < this.m_MaxReceiveBufferSize{
-		this.m_MaxReceiveBuffer = buff[nCurSize:]
-	}else{
-		fmt.Println("超出最大包限制，丢弃该包")
-		return false
-	}
-	return true
-}*/

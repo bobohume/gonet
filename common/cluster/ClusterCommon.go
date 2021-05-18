@@ -50,12 +50,20 @@ func getTopicChannel(clusterInfo common.ClusterInfo) string {
 	return fmt.Sprintf("%s/%s", ETCD_DIR, clusterInfo.String())
 }
 
+func getCallChannel(clusterInfo common.ClusterInfo) string {
+	return fmt.Sprintf("%s/%s/call/%d", ETCD_DIR, clusterInfo.String(), clusterInfo.Id())
+}
+
 func getRpcChannel(head rpc.RpcHead) string {
 	return fmt.Sprintf("%s/%s/%d", ETCD_DIR, strings.ToLower(head.DestServerType.String()), head.ClusterId)
 }
 
 func getRpcTopicChannel(head rpc.RpcHead) string {
 	return fmt.Sprintf("%s/%s", ETCD_DIR, strings.ToLower(head.DestServerType.String()))
+}
+
+func getRpcCallChannel(head rpc.RpcHead) string {
+	return fmt.Sprintf("%s/%s/call/%d", ETCD_DIR, strings.ToLower(head.DestServerType.String()), head.ClusterId)
 }
 
 func setupNatsConn(connectString string, appDieChan chan bool, options ...nats.Option) (*nats.Conn, error) {

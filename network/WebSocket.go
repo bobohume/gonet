@@ -1,14 +1,13 @@
 package network
 
 import (
-	"gonet/base"
 	"fmt"
+	"golang.org/x/net/websocket"
 	"gonet/rpc"
 	"log"
 	"net/http"
 	"sync"
 	"sync/atomic"
-	"golang.org/x/net/websocket"
 )
 
 type IWebSocket interface {
@@ -84,7 +83,7 @@ func (this *WebSocket) AddClinet(tcpConn *websocket.Conn, addr string, connectTy
 		pClient.Init("", 0)
 		pClient.m_pServer = this
 		pClient.m_ReceiveBufferSize = this.m_ReceiveBufferSize
-		pClient.m_MaxReceiveBufferSize = this.m_MaxReceiveBufferSize
+		pClient.SetMaxPacketLen(this.GetMaxPacketLen())
 		pClient.m_ClientId = this.AssignClientId()
 		pClient.m_sIP = addr
 		pClient.SetTcpConn(tcpConn)
@@ -132,7 +131,7 @@ func (this *WebSocket) Stop() bool {
 func (this *WebSocket) Send(head rpc.RpcHead, buff  []byte) int{
 	pClient := this.GetClientById(head.SocketId)
 	if pClient != nil{
-		pClient.Send(head, base.SetTcpEnd(buff))
+		pClient.Send(head, buff)
 	}
 	return  0
 }
@@ -140,7 +139,7 @@ func (this *WebSocket) Send(head rpc.RpcHead, buff  []byte) int{
 func (this *WebSocket) SendMsg(head rpc.RpcHead, funcName string, params ...interface{}){
 	pClient := this.GetClientById(head.SocketId)
 	if pClient != nil{
-		pClient.Send(head, base.SetTcpEnd(rpc.Marshal(head, funcName, params...)))
+		pClient.Send(head, rpc.Marshal(head, funcName, params...))
 	}
 }
 

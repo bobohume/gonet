@@ -67,11 +67,9 @@ func (this *WebSocketClient) Send(head rpc.RpcHead,buff []byte) int {
 func (this *WebSocketClient) DoSend(buff []byte) int {
 	if this.m_Conn == nil{
 		return 0
-	}else if len(buff) > base.MAX_PACKET{
-		panic("send over base.MAX_PACKET")
 	}
 
-	n, err := this.m_Conn.Write(buff)
+	n, err := this.m_Conn.Write(this.m_PacketParser.Write(buff))
 	handleError(err)
 	if n > 0 {
 		return n
@@ -87,7 +85,7 @@ func (this *WebSocketClient) OnNetFail(error int) {
 		stream := base.NewBitStream(make([]byte, 32), 32)
 		stream.WriteInt(int(DISCONNECTINT), 32)
 		stream.WriteInt(int(this.m_ClientId), 32)
-		this.HandlePacket(this.m_ClientId, stream.GetBuffer())
+		this.HandlePacket(stream.GetBuffer())
 	}else{
 		this.CallMsg("DISCONNECT", this.m_ClientId)
 	}
@@ -131,7 +129,7 @@ func (this *WebSocketClient) Run() bool {
 			return false
 		}
 		if n > 0 {
-			this.ReceivePacket(this.m_ClientId, buff[:n])
+			this.m_PacketParser.Read(buff[:n])
 		}
 		return true
 	}

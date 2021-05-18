@@ -2,12 +2,14 @@ package rpc_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/gob"
 	"encoding/json"
 	"github.com/golang/protobuf/proto"
 	"github.com/json-iterator/go"
 	"gonet/rpc"
 	"gonet/server/message"
+	"reflect"
 	"testing"
 )
 
@@ -143,5 +145,7 @@ func TestUMarshalRpc(t *testing.T){
 
 func parse (buff []byte) {
 	rpcPacket, _ := rpc.UnmarshalHead(buff)
-	rpc.UnmarshalBody(rpcPacket, nil)
+	pFuncType := reflect.TypeOf(func(ctx context.Context, aa []int32) {
+	})
+	rpc.UnmarshalBody(rpcPacket, pFuncType)
 }

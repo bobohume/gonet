@@ -5,10 +5,14 @@ import (
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"gonet/base"
+	"gonet/base/vector"
+	"math"
 	"reflect"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
+	"unicode"
 )
 
 const (
@@ -65,6 +69,8 @@ type(
 		bitMap *base.BitMap
 	}
 )
+
+var g_LoadCacheMap sync.Map
 
 //主键 `sql:"primary"`
 func (this *Properties) IsPrimary ()bool{
@@ -272,6 +278,66 @@ func Query(rows *sql.Rows, err error) *Rows{
 		rows.Close()
 	}
 	return rs
+}
+
+func getClassProperties(classType reflect.Type) *vector.Vector{
+	val, bOk := g_LoadCacheMap.Load(classType)
+	if !bOk{
+		vec := vector.NewVector()
+		for i := 0; i < classType.NumField(); i++ {
+			sf := classType.Field(i)
+			p := getProperties(sf)
+			vec.PushBack(p)
+		}
+		g_LoadCacheMap.Store(classType, vec)
+		return vec
+	}
+
+	return val.(*vector.Vector)
+}
+
+func getClassInfoEx(obj interface{}, params ...string)(reflect.Value, reflect.Type,
+	map[string] *base.BitMap, *vector.Vector){
+	classVal := reflect.ValueOf(obj)
+	for classVal.Kind() == reflect.Ptr {
+		classVal = classVal.Elem()
+	}
+	classType := classVal.Type()
+	nameMap := make(map[string] *base.BitMap)//name index[for array]
+	for _,v := range params{
+		nIndex, i := 0, 0
+		v1 := strings.ToLower(v)
+		v2 := strings.TrimRightFunc(v, func(r rune) bool {
+			if unicode.IsNumber(r){
+				nIndex = int(r - '0') * int(math.Pow(10, float64(i))) + nIndex
+				i++
+				return true
+			}
+			return false
+		})
+		if v1 != v2{
+			bitMap, bOk := nameMap[v2]
+			if !bOk{
+				bitMap = base.NewBitMap(MAX_ARRAY_LENGTH)
+				nameMap[v2] = bitMap
+			}
+			bitMap.Set(nIndex)
+		}else{
+			nameMap[v1] = nil
+		}
+	}
+	ps := getClassProperties(classType)
+	return classVal, classType, nameMap, ps
+}
+
+func getClassInfo(obj interface{})(reflect.Value, reflect.Type, *vector.Vector){
+	classVal := reflect.ValueOf(obj)
+	for classVal.Kind() == reflect.Ptr {
+		classVal = classVal.Elem()
+	}
+	classType := classVal.Type()
+	ps := getClassProperties(classType)
+	return classVal, classType, ps
 }
 //--------------------note存储过程----------------------//
 //mysql存储过程多变更集的时候要用 NextResultSet()
