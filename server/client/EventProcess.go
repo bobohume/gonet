@@ -9,7 +9,7 @@ import (
 	"gonet/network"
 	"gonet/rpc"
 	"gonet/server/message"
-	"gonet/server/zone/game/lmath"
+	"gonet/server/game/lmath"
 	"sync/atomic"
 )
 
