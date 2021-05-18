@@ -48,7 +48,7 @@ type(
 		GetCluster(rpc.RpcHead) *ClusterNode
 
 		BindPacket(IClusterPacket)
-		BindPacketFunc(network.PacketFunc)
+		BindPacketFunc(network.HandleFunc)
 		SendMsg(rpc.RpcHead, string, ...interface{})//发送给集群特定服务器
 		Send(rpc.RpcHead, []byte)//发送给集群特定服务器
 
@@ -125,7 +125,7 @@ func (this *Cluster) AddCluster(info *common.ClusterInfo){
 	packet.SetClusterId(info.Id())
 	pClient.BindPacketFunc(packet.PacketFunc)
 	for _, v := range this.m_PacketFuncList.Values(){
-		pClient.BindPacketFunc(v.(network.PacketFunc))
+		pClient.BindPacketFunc(v.(network.HandleFunc))
 	}
 	this.m_ClusterLocker.Lock()
 	this.m_ClusterMap[info.Id()] = &ClusterNode{ClientSocket:pClient, ClusterInfo:info}
@@ -159,7 +159,7 @@ func (this *Cluster) GetCluster(head rpc.RpcHead) *ClusterNode{
 	return nil
 }
 
-func (this *Cluster) BindPacketFunc(callfunc network.PacketFunc){
+func (this *Cluster) BindPacketFunc(callfunc network.HandleFunc){
 	this.m_PacketFuncList.PushBack(callfunc)
 }
 
@@ -196,7 +196,7 @@ func (this *Cluster) boardCastSend(head rpc.RpcHead, buff []byte){
 }
 
 func (this *Cluster) SendMsg(head rpc.RpcHead, funcName string, params  ...interface{}){
-	buff := rpc.Marshal(head, funcName, params...)
+	buff := base.SetTcpEnd(rpc.Marshal(head, funcName, params...))
 	this.Send(head, buff)
 }
 

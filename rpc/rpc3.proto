@@ -29,7 +29,6 @@ message RpcHead{
     SERVICE  DestServerType = 5;//目标集群
     SEND SendType = 6;
     string ActorName = 7;
-	string Reply = 8;//call sessionid
 }
 
 //rpc 包
@@ -47,11 +46,4 @@ message ClusterInfo{
     int32 Port = 3;
     int32 Weight = 4;
     uint32 SocketId = 5;
-}
-
-//原始包
-message Packet{
-	uint32 Id = 1;//socketid
-	string Reply = 2;//call sessionid
-	bytes Buff = 3;//buff
 }

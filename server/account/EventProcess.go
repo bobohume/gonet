@@ -3,7 +3,6 @@ package account
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"gonet/actor"
 	"gonet/base"
@@ -121,10 +120,6 @@ func (this *EventProcess) Init(num int) {
 	//删除玩家
 	this.RegisterCall("W_A_DeletePlayer", func(ctx context.Context, accountId int64, playerId int64) {
 		this.m_db.Exec(fmt.Sprintf("update tbl_player set delete_flag = 1 where account_id =%d and player_id=%d", accountId, playerId))
-	})
-
-	this.RegisterCall("test", func(ctx context.Context, aa int ,bb string) (error, int, string){
-		return errors.New("test"), aa, bb
 	})
 
 	this.Actor.Start()

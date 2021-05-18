@@ -79,7 +79,7 @@ func (this *ServerMgr)Init() bool{
 	this.m_pService = new(network.ServerSocket)
 	port := base.Int(UserNetPort)
 	this.m_pService.Init(UserNetIP, port)
-	this.m_pService.SetMaxPacketLen(base.MAX_CLIENT_PACKET)
+	this.m_pService.SetMaxReceiveBufferSize(base.MAX_CLIENT_PACKET)
 	this.m_pService.SetConnectType(network.CLIENT_CONNECT)
 	//this.m_pService.Start()
 	packet := new(UserPrcoess)

@@ -2,7 +2,6 @@ package cluster
 
 import (
 	"context"
-	"errors"
 	"github.com/nats-io/nats.go"
 	"gonet/actor"
 	"gonet/base"
@@ -11,14 +10,11 @@ import (
 	"gonet/network"
 	"gonet/rpc"
 	"log"
-	"reflect"
 	"sync"
-	"time"
 )
 
 const(
 	MAX_CLUSTER_NUM = int(rpc.SERVICE_ZONESERVER) + 1
-	CALL_TIME_OUT = 50 * time.Millisecond
 )
 
 type(
@@ -37,7 +33,6 @@ type(
 		m_Master    *Master
 		m_ClusterInfoMap map[uint32] *common.ClusterInfo
 		m_PacketFuncList	*vector.Vector//call back
-		m_CallBackMap sync.Map
 	}
 
 	ICluster interface{
@@ -47,10 +42,9 @@ type(
 		DelCluster(info *common.ClusterInfo)
 		GetCluster(rpc.RpcHead) *common.ClusterInfo
 
-		BindPacketFunc(packetFunc network.PacketFunc)
+		BindPacketFunc(network.HandleFunc)
 		SendMsg(rpc.RpcHead, string, ...interface{})//发送给集群特定服务器
 		Send(rpc.RpcHead, []byte)//发送给集群特定服务器
-		CallMsg(interface{}, rpc.RpcHead, string, ...interface{}) error//同步给集群特定服务器
 
 		RandomCluster(head rpc.RpcHead)	rpc.RpcHead//随机分配
 	}
@@ -88,35 +82,14 @@ func (this *Cluster) Init(num int, info *common.ClusterInfo, Endpoints []string,
 	this.m_Conn = conn
 
 	this.m_Conn.Subscribe(getChannel(*info), func(msg *nats.Msg) {
-		this.HandlePacket(rpc.Packet{Buff:msg.Data})
+		this.HandlePacket(0, msg.Data)
 	})
 
 	this.m_Conn.Subscribe(getTopicChannel(*info), func(msg *nats.Msg) {
-		this.HandlePacket(rpc.Packet{Buff:msg.Data})
+		this.HandlePacket(0, msg.Data)
 	})
 
-	this.m_Conn.Subscribe(getCallChannel(*info), func(msg *nats.Msg) {
-		this.HandlePacket(rpc.Packet{Buff:msg.Data, Reply:msg.Reply})
-	})
-
-	rpc.GCall = reflect.ValueOf(this.call)
 	this.Actor.Start()
-}
-
-//params[0]:rpc.RpcHead
-//params[1]:error
-func (this *Cluster) call(parmas ...interface{}) {
-	head := *parmas[0].(*rpc.RpcHead)
-	reply := head.Reply
-	head.Reply = ""
-	head.ClusterId = head.SrcClusterId
-	if parmas[1] == nil{
-		parmas[1] = ""
-	}else{
-		parmas[1] = parmas[1].(error).Error()
-	}
-	buff := rpc.Marshal(head, "", parmas[1:]...)
-	this.m_Conn.Publish(reply, buff)
 }
 
 func (this *Cluster) RegisterClusterCall(){
@@ -178,13 +151,13 @@ func (this *Cluster) GetCluster(head rpc.RpcHead) *common.ClusterInfo {
 }
 
 
-func (this *Cluster) BindPacketFunc(callfunc network.PacketFunc){
+func (this *Cluster) BindPacketFunc(callfunc network.HandleFunc){
 	this.m_PacketFuncList.PushBack(callfunc)
 }
 
-func (this *Cluster) HandlePacket(packet rpc.Packet){
+func (this *Cluster) HandlePacket(Id uint32, buff []byte){
 	for _,v := range this.m_PacketFuncList.Values() {
-		if (v.(network.PacketFunc)(packet)){
+		if (v.(network.HandleFunc)(Id, buff)){
 			break
 		}
 	}
@@ -206,69 +179,6 @@ func (this *Cluster) Send(head rpc.RpcHead, buff []byte){
 	default:
 		this.m_Conn.Publish(getRpcTopicChannel(head), buff)
 	}
-}
-
-func (this *Cluster) CallMsg(cb interface{}, head rpc.RpcHead, funcName string, params  ...interface{})error{
-	head.SrcClusterId = this.Id()
-	buff := rpc.Marshal(head, funcName, params...)
-
-	switch head.SendType{
-	case rpc.SEND_POINT:
-	default:
-		_, head.ClusterId = this.m_HashRing[head.DestServerType].Get64(head.Id)
-	}
-
-	reply, err := this.m_Conn.Request(getRpcCallChannel(head) ,buff, CALL_TIME_OUT)
-	if err == nil{
-		rpcPacket, _ := rpc.Unmarshal(reply.Data)
-		var cf *actor.CallFunc
-		val, bOk := this.m_CallBackMap.Load(funcName)
-		if !bOk{
-			cf = &actor.CallFunc{Func:cb, FuncVal:reflect.ValueOf(cb), FuncType:reflect.TypeOf(cb), FuncParams:reflect.TypeOf(cb).String()}
-			this.m_CallBackMap.Store(funcName, cf)
-		}else{
-			cf = val.(*actor.CallFunc)
-		}
-		f := cf.FuncVal
-		k := cf.FuncType
-		params := rpc.UnmarshalBody(rpcPacket, k)
-		iLen := len(params)
-		if iLen >= 2{
-			switch params[1].(type) {
-			case  string:
-				if params[1] != ""{
-					err = errors.New(params[1].(string))
-					return  err
-				}
-			default:
-				log.Printf("CallMsg [%s] params[1] must error", funcName)
-				return errors.New("callmsg params[1] must error")
-			}
-
-			if k.NumIn()  != iLen - 1{
-				log.Printf("CallMsg [%s] can not call, func params [%v]", funcName, params)
-				return errors.New("callmsg params no fit")
-			}
-
-			in := make([]reflect.Value, iLen - 1)
-			j := 0
-			for i, param := range params {
-				if i == 1{
-					continue
-				}
-				in[j] = reflect.ValueOf(param)
-				j++
-			}
-
-			this.Trace(funcName)
-			f.Call(in)
-			this.Trace("")
-		}else{
-			log.Printf("CallMsg [%s] params at least one context", funcName)
-			return errors.New("callmsg params at least one context")
-		}
-	}
-	return err
 }
 
 func (this *Cluster) RandomCluster(head rpc.RpcHead) rpc.RpcHead{

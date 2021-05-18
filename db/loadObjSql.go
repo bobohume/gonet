@@ -13,10 +13,11 @@ const(
 	load_obj_sqlarrayname = "%s%d"
 )
 
-func getLoadObjSql(p *Properties, classField reflect.StructField, classVal reflect.Value, row IRow) (bool) {
+func getLoadObjSql(classField reflect.StructField, classVal reflect.Value, row IRow) (bool) {
 	if !classVal.CanSet(){
 		return true
 	}
+	p := getProperties(classField)
 	classType := p.Name
 
 	sType := getTypeString(classField, classVal)
@@ -309,14 +310,18 @@ func getLoadObjSql(p *Properties, classField reflect.StructField, classVal refle
 }
 
 func parseLoadObjSql(obj interface{}, row IRow) (bool){
-	classVal, classType, ps := getClassInfo(obj)
+	classVal := reflect.ValueOf(obj)
+	for classVal.Kind() == reflect.Ptr {
+		classVal = classVal.Elem()
+	}
+	classType := classVal.Type()
+
 	for i := 0; i < classType.NumField(); i++{
 		if !classVal.Field(i).CanInterface(){
 			continue
 		}
 
-		p := ps.Get(i).(*Properties)
-		bRight := getLoadObjSql(p, classType.Field(i), classVal.Field(i), row)
+		bRight := getLoadObjSql(classType.Field(i), classVal.Field(i), row)
 		if !bRight{
 			errorStr := fmt.Sprintf("parseLoadObjSql type not supported %s", classType.Name())
 			panic(errorStr)

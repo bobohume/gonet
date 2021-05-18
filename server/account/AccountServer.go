@@ -2,7 +2,7 @@
 
  import (
 	 "database/sql"
-	 "github.com/golang/protobuf/proto"
+	 "github.com/gogo/protobuf/proto"
 	 "gonet/base"
 	 "gonet/common"
 	 "gonet/common/cluster"
@@ -160,5 +160,5 @@ func (this *ServerMgr) GetAccountMgr() *AccountMgr{
 		 head.DestServerType = rpc.SERVICE_GATESERVER
 		 head.Id = pakcetHead.Id
 	 }
-	 SERVER.GetCluster().SendMsg(head, "", proto.MessageName(packet), packet)
+	 SERVER.GetCluster().SendMsg(head, message.GetMessageName(packet), packet)
  }

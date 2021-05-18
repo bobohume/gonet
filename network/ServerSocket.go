@@ -1,6 +1,7 @@
 package network
 
 import (
+	"gonet/base"
 	"fmt"
 	"gonet/rpc"
 	"log"
@@ -100,7 +101,7 @@ func (this *ServerSocket) AddClinet(tcpConn *net.TCPConn, addr string, connectTy
 		pClient.Init("", 0)
 		pClient.m_pServer = this
 		pClient.m_ReceiveBufferSize = this.m_ReceiveBufferSize
-		pClient.SetMaxPacketLen(this.GetMaxPacketLen())
+		pClient.m_MaxReceiveBufferSize = this.m_MaxReceiveBufferSize
 		pClient.m_ClientId = this.AssignClientId()
 		pClient.m_sIP = addr
 		pClient.SetConnectType(connectType)
@@ -157,7 +158,7 @@ func (this *ServerSocket) Send(head rpc.RpcHead, buff  []byte) int{
 func (this *ServerSocket) SendMsg(head rpc.RpcHead, funcName string, params ...interface{}){
 	pClient := this.GetClientById(head.SocketId)
 	if pClient != nil{
-		pClient.Send(head, rpc.Marshal(head, funcName, params...))
+		pClient.Send(head, base.SetTcpEnd(rpc.Marshal(head, funcName, params...)))
 	}
 }
 

@@ -24,7 +24,7 @@ type (
 	}
 
 	ICluster interface{
-		BindPacketFunc(packetFunc network.PacketFunc)
+		BindPacketFunc(network.HandleFunc)
 	}
 )
 

@@ -2,7 +2,7 @@ package world
 
 import (
 	"database/sql"
-	"github.com/golang/protobuf/proto"
+	"github.com/gogo/protobuf/proto"
 	"gonet/base"
 	"gonet/common"
 	"gonet/common/cluster"
@@ -153,7 +153,7 @@ func SendToAccount(funcName string, params  ...interface{}){
 func SendToClient(clusterId uint32, packet proto.Message){
 	pakcetHead := packet.(message.Packet).GetPacketHead()
 	if pakcetHead != nil {
-		SERVER.GetCluster().SendMsg(rpc.RpcHead{DestServerType:rpc.SERVICE_GATESERVER, ClusterId:clusterId, Id:pakcetHead.Id}, "", proto.MessageName(packet), packet)
+		SERVER.GetCluster().SendMsg(rpc.RpcHead{DestServerType:rpc.SERVICE_GATESERVER, ClusterId:clusterId, Id:pakcetHead.Id}, message.GetMessageName(packet), packet)
 	}
 }
 

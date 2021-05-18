@@ -8,8 +8,8 @@ import (
 	"gonet/base"
 	"gonet/network"
 	"gonet/rpc"
+	"gonet/server/game/lmath"
 	"gonet/server/message"
-	"gonet/server/zone/game/lmath"
 	"sync/atomic"
 )
 
@@ -46,16 +46,18 @@ func ToCrc(accountName string, pwd string, buildNo string, nKey int64) uint32{
 
 func SendPacket(packet proto.Message){
 	buff := message.Encode(packet)
+	buff = base.SetTcpEnd(buff)
 	CLIENT.Send(rpc.RpcHead{}, buff)
 }
 
 func (this *EventProcess) SendPacket(packet proto.Message){
 	buff := message.Encode(packet)
+	buff = base.SetTcpEnd(buff)
 	this.Client.Send(rpc.RpcHead{},buff)
 }
 
-func (this *EventProcess) PacketFunc(packet1 rpc.Packet) bool {
-	packetId, data := message.Decode(packet1.Buff)
+func (this *EventProcess) PacketFunc(socketid uint32, buff []byte) bool {
+	packetId, data := message.Decode(buff)
 	packet := message.GetPakcet(packetId)
 	if packet == nil{
 		return true

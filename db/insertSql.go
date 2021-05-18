@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	"gonet/base"
+	"math"
 	"reflect"
 	"strconv"
 	"strings"
+	"unicode"
 )
 
 func insertsql(sqlData *SqlData, p *Properties, val string){
@@ -28,7 +30,8 @@ func insertsqlarray(sqlData *SqlData, p *Properties, val string, i int){
 	sqlData.SqlName += fmt.Sprintf("`%s%d`,", p.Name, i)
 }
 
-func getInsertSql(p *Properties, classField reflect.StructField, classVal reflect.Value, sqlData *SqlData) (bool) {
+func getInsertSql(classField reflect.StructField, classVal reflect.Value, sqlData *SqlData) (bool) {
+	p := getProperties(classField)
 	sType := getTypeString(classField, classVal)
 	if p.IsJson(){
 		data, _ := json.Marshal(classVal.Interface())
@@ -372,14 +375,18 @@ func getInsertSql(p *Properties, classField reflect.StructField, classVal reflec
 }
 
 func parseInserSql(obj interface{}, sqlData *SqlData){
-	classVal, classType, ps := getClassInfo(obj)
+	classVal := reflect.ValueOf(obj)
+	for classVal.Kind() == reflect.Ptr {
+		classVal = classVal.Elem()
+	}
+	classType := classVal.Type()
+
 	for i := 0; i < classType.NumField(); i++{
 		if !classVal.Field(i).CanInterface(){
 			continue
 		}
 
-		p := ps.Get(i).(*Properties)
-		bRight:= getInsertSql(p, classType.Field(i), classVal.Field(i), sqlData)
+		bRight:= getInsertSql(classType.Field(i), classVal.Field(i), sqlData)
 		if !bRight{
 			errorStr := fmt.Sprintf("parseInserSql type not supported %s", classType.Name())
 			panic(errorStr)
@@ -423,19 +430,47 @@ func InsertSqlEx(obj interface{}, sqltable string, params ...string) string {
 		}
 	}()
 
-	classVal, classType, nameMap, ps := getClassInfoEx(obj, params...)
+	classVal := reflect.ValueOf(obj)
+	for classVal.Kind() == reflect.Ptr {
+		classVal = classVal.Elem()
+	}
+	classType := classVal.Type()
+
 	sqlData := &SqlData{}
+	nameMap := make(map[string] *base.BitMap)//name index[for array]
+	for _,v := range params{
+		nIndex, i := 0, 0
+		v1 := strings.ToLower(v)
+		v2 := strings.TrimRightFunc(v, func(r rune) bool {
+			if unicode.IsNumber(r){
+				nIndex = int(r - '0') * int(math.Pow(10, float64(i))) + nIndex
+				i++
+				return true
+			}
+			return false
+		})
+		if v1 != v2{
+			bitMap, bOk := nameMap[v2]
+			if !bOk{
+				bitMap = base.NewBitMap(MAX_ARRAY_LENGTH)
+				nameMap[v2] = bitMap
+			}
+			bitMap.Set(nIndex)
+		}else{
+			nameMap[v1] = nil
+		}
+	}
 	for i := 0; i < classType.NumField(); i++ {
 		if !classVal.Field(i).CanInterface() {//private成员不能读取
 			continue
 		}
 
 		sf := classType.Field(i)
-		p := ps.Get(i).(*Properties)
+		p := getProperties(sf)
 		bitMap, exist := nameMap[p.Name]
 		if exist{
 			sqlData.bitMap = bitMap
-			bRight := getInsertSql(p, sf, classVal.Field(i), sqlData)
+			bRight := getInsertSql(sf, classVal.Field(i), sqlData)
 			if !bRight{
 				errorStr := fmt.Sprintf("InsertSqlEx error %s", reflect.TypeOf(obj).Name())
 				panic(errorStr)
