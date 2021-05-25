@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/gob"
+	"errors"
 	"github.com/golang/protobuf/proto"
 	"gonet/base"
 	"reflect"
@@ -46,6 +47,31 @@ func UnmarshalBody(rpcPacket *RpcPacket, pFuncType reflect.Type) []interface{}{
 		params[i] = val.Elem().Interface()
 	}
 	return params
+}
+
+func UnmarshalBodyCall(rpcPacket *RpcPacket, pFuncType reflect.Type) (error, []interface{}){
+	strErr := ""
+	nCurLen := pFuncType.NumIn()
+	params := make([]interface{}, nCurLen)
+	buf := bytes.NewBuffer(rpcPacket.RpcBody)
+	dec := gob.NewDecoder(buf)
+	dec.Decode(&strErr)
+	if strErr != ""{
+		return errors.New(strErr), params
+	}
+	for i := 0; i < nCurLen; i++{
+		if i == 0{
+			params[0] = context.WithValue(context.Background(), "rpcHead", *(*RpcHead)(rpcPacket.RpcHead))
+			continue
+		}
+
+		val := reflect.New(pFuncType.In(i))
+		if i < int(rpcPacket.ArgLen + 1) {
+			dec.DecodeValue(val)
+		}
+		params[i] = val.Elem().Interface()
+	}
+	return nil, params
 }
 
 //rpc  UnmarshalPB

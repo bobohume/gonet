@@ -231,33 +231,15 @@ func (this *Cluster) CallMsg(cb interface{}, head rpc.RpcHead, funcName string, 
 		}
 		f := cf.FuncVal
 		k := cf.FuncType
-		params := rpc.UnmarshalBody(rpcPacket, k)
+		err, params := rpc.UnmarshalBodyCall(rpcPacket, k)
+		if err != nil{
+			return  err
+		}
 		iLen := len(params)
-		if iLen >= 2{
-			switch params[1].(type) {
-			case  string:
-				if params[1] != ""{
-					err = errors.New(params[1].(string))
-					return  err
-				}
-			default:
-				log.Printf("CallMsg [%s] params[1] must error", funcName)
-				return errors.New("callmsg params[1] must error")
-			}
-
-			if k.NumIn()  != iLen - 1{
-				log.Printf("CallMsg [%s] can not call, func params [%v]", funcName, params)
-				return errors.New("callmsg params no fit")
-			}
-
-			in := make([]reflect.Value, iLen - 1)
-			j := 0
+		if iLen >= 1{
+			in := make([]reflect.Value, iLen)
 			for i, param := range params {
-				if i == 1{
-					continue
-				}
-				in[j] = reflect.ValueOf(param)
-				j++
+				in[i] = reflect.ValueOf(param)
 			}
 
 			this.Trace(funcName)
