@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"gonet/base"
+	"gonet/base/mpsc"
 	"gonet/rpc"
 	"log"
 	"reflect"
@@ -22,7 +23,7 @@ var(
 //********************************************************
 type (
 	Actor struct {
-		m_CallChan  chan CallIO//rpc chan
+		//m_CallChan  chan CallIO//rpc chan
 		m_AcotrChan chan int//use for states
 		m_Id       	 int64
 		m_CallMap	 map[string] *CallFunc//rpc
@@ -30,6 +31,9 @@ type (
 		m_TimerCall	func()//定时器触发函数
 		m_bStart	bool
 		m_Trace  	traceInfo//trace func
+		m_MailBox	*mpsc.Queue
+		m_bMailIn	int32
+		m_MailChan  chan bool
 	}
 
 	IActor interface {
@@ -85,7 +89,9 @@ func (this *Actor) GetRpcHead(ctx context.Context) rpc.RpcHead{
 }
 
 func (this *Actor) Init(chanNum int) {
-	this.m_CallChan = make(chan CallIO, chanNum)
+	//this.m_CallChan = make(chan CallIO, chanNum)
+	this.m_MailChan = make(chan bool)
+	this.m_MailBox = mpsc.New()
 	this.m_AcotrChan = make(chan int, 1)
 	this.m_Id = AssignActorId()
 	this.m_CallMap = make(map[string] *CallFunc)
@@ -105,6 +111,7 @@ func (this *Actor) clear() {
 	this.m_Id = 0
 	this.m_bStart = false
 	//close(this.m_AcotrChan)
+	//close(this.m_MailChan)
 	//close(this.m_CallChan)
 	if this.m_pTimer != nil{
 		this.m_pTimer.Stop()
@@ -158,7 +165,11 @@ func (this *Actor) Send(head rpc.RpcHead, buff []byte) {
 	var io CallIO
 	io.RpcHead = head
 	io.Buff = buff
-	this.m_CallChan <- io
+	//this.m_CallChan <- io
+	this.m_MailBox.Push(io)
+	if atomic.CompareAndSwapInt32(&this.m_bMailIn, 0, 1){
+		this.m_MailChan <- true
+	}
 }
 
 func (this *Actor) PacketFunc(packet rpc.Packet) bool{
@@ -208,6 +219,13 @@ func (this *Actor) call(io CallIO) {
 	}
 }
 
+func (this *Actor) consume() {
+	for data :=  this.m_MailBox.Pop(); data != nil; data =  this.m_MailBox.Pop(){
+		this.call(data.(CallIO))
+	}
+	atomic.StoreInt32(&this.m_bMailIn, 0)
+}
+
 func (this *Actor) loop() bool{
 	defer func() {
 		if err := recover(); err != nil{
@@ -216,8 +234,10 @@ func (this *Actor) loop() bool{
 	}()
 
 	select {
-	case io := <-this.m_CallChan:
-		this.call(io)
+	//case io := <-this.m_CallChan:
+	//	this.call(io)
+	case  <-this.m_MailChan:
+		this.consume()
 	case msg := <-this.m_AcotrChan :
 		if msg == DESDORY_EVENT{
 			return false

@@ -1,0 +1,646 @@
+# MPSC
+
+Advantages:
+
++ Waitfree and fast producers. One XCHG is maximum what one can get with multi-producer non-distributed queue.
+
++ Extremely fast consumer. On fast-path it's atomic-free, XCHG executed per node batch, in order to grab 'last item'.
+
++ No need for node order reversion. So pop operation is always O(1).
+
++ ABA-free.
+
++ No need for PDR. That is, one can use this algorithm out-of-the-box. No need for thread registration/deregistration, periodic activity, deferred garbage etc.
+
+Disadvantages:
+
+- Push function is blocking wrt consumer. I.e. if producer blocked in (*), then consumer is blocked too. Fortunately 'window of inconsistency' is extremely small - producer must be blocked exactly in (*). Actually it's disadvantage only as compared with totally lockfree algorithm. It's still much better lock-based algorithm.
+
+- The algorithm is not linearizable.
+
+struct mpscq_node_t
+
+{
+
+mpscq_node_t* volatile next;
+
+void* state;
+
+};
+
+struct mpscq_t
+
+{
+
+mpscq_node_t* volatile head;
+
+mpscq_node_t* tail;
+
+};
+
+void mpscq_create(mpscq_t* self, mpscq_node_t* stub)
+
+{
+
+stub->next = 0;
+
+self->head = stub;
+
+self->tail = stub;
+
+}
+
+void mpscq_push(mpscq_t* self, mpscq_node_t* n)
+
+{
+
+n->next = 0;
+
+mpscq_node_t* prev = XCHG(&self->head, n); // serialization-point wrt producers, acquire-release
+
+prev->next = n; // serialization-point wrt consumer, release
+
+}
+
+mpscq_node_t* mpscq_pop(mpscq_t* self)
+
+{
+
+mpscq_node_t* tail = self->tail;
+
+mpscq_node_t* next = tail->next; // serialization-point wrt producers, acquire
+
+if (next)
+
+{
+
+self->tail = next;
+
+tail->state = next->state;
+
+return tail;
+
+}
+
+return 0;
+
+}
+
+# mcmp
+
+emplate<typename T>
+
+class mpmc_bounded_queue
+
+{
+
+public:
+
+mpmc_bounded_queue(size_t buffer_size)
+
+: buffer_(new cell_t [buffer_size])
+
+, buffer_mask_(buffer_size - 1)
+
+{
+
+assert((buffer_size >= 2) &&
+
+((buffer_size & (buffer_size - 1)) == 0));
+
+for (size_t i = 0; i != buffer_size; i += 1)
+
+buffer_[i].sequence_.store(i, std::memory_order_relaxed);
+
+enqueue_pos_.store(0, std::memory_order_relaxed);
+
+dequeue_pos_.store(0, std::memory_order_relaxed);
+
+}
+
+~mpmc_bounded_queue()
+
+{
+
+delete [] buffer_;
+
+}
+
+bool enqueue(T const& data)
+
+{
+
+cell_t* cell;
+
+size_t pos = enqueue_pos_.load(std::memory_order_relaxed);
+
+for (;;)
+
+{
+
+cell = &buffer_[pos & buffer_mask_];
+
+size_t seq =
+
+cell->sequence_.load(std::memory_order_acquire);
+
+intptr_t dif = (intptr_t)seq - (intptr_t)pos;
+
+if (dif == 0)
+
+{
+
+if (enqueue_pos_.compare_exchange_weak
+
+(pos, pos + 1, std::memory_order_relaxed))
+
+break;
+
+}
+
+else if (dif < 0)
+
+return false;
+
+else
+
+pos = enqueue_pos_.load(std::memory_order_relaxed);
+
+}
+
+cell->data_ = data;
+
+cell->sequence_.store(pos + 1, std::memory_order_release);
+
+return true;
+
+}
+
+bool dequeue(T& data)
+
+{
+
+cell_t* cell;
+
+size_t pos = dequeue_pos_.load(std::memory_order_relaxed);
+
+for (;;)
+
+{
+
+cell = &buffer_[pos & buffer_mask_];
+
+size_t seq =
+
+cell->sequence_.load(std::memory_order_acquire);
+
+intptr_t dif = (intptr_t)seq - (intptr_t)(pos + 1);
+
+if (dif == 0)
+
+{
+
+if (dequeue_pos_.compare_exchange_weak
+
+(pos, pos + 1, std::memory_order_relaxed))
+
+break;
+
+}
+
+else if (dif < 0)
+
+return false;
+
+else
+
+pos = dequeue_pos_.load(std::memory_order_relaxed);
+
+}
+
+data = cell->data_;
+
+cell->sequence_.store
+
+(pos + buffer_mask_ + 1, std::memory_order_release);
+
+return true;
+
+}
+
+private:
+
+struct cell_t
+
+{
+
+std::atomic<size_t> sequence_;
+
+T data_;
+
+};
+
+static size_t const cacheline_size = 64;
+
+typedef char cacheline_pad_t [cacheline_size];
+
+cacheline_pad_t pad0_;
+
+cell_t* const buffer_;
+
+size_t const buffer_mask_;
+
+cacheline_pad_t pad1_;
+
+std::atomic<size_t> enqueue_pos_;
+
+cacheline_pad_t pad2_;
+
+std::atomic<size_t> dequeue_pos_;
+
+cacheline_pad_t pad3_;
+
+mpmc_bounded_queue(mpmc_bounded_queue const&);
+
+void operator = (mpmc_bounded_queue const&);
+
+};
+
+
+
+# SPSC
+
+Unbounded single-producer/single-consumer node-based queue. Internal non-reducible cache of nodes is used. Dequeue operation is always wait-free. Enqueue operation is wait-free in common case (when there is available node in the cache), otherwise enqueue operation calls ::operator new(), so probably not wait-free. No atomic RMW operations nor heavy memory fences are used, i.e. enqueue and dequeue operations issue just several plain loads, several plain stores and one conditional branching. Cache-conscious data layout is used, so producer and consumer can work simultaneously causing no cache-coherence traffic.
+
+Single-producer/single-consumer queue can be used for communication with thread which services hardware device (wait-free property is required), or when there are naturally only one producer and one consumer. Also N single-producer/single-consumer queues can be used to construct multi-producer/single-consumer queue, or N^2 queues can be used to construct fully-connected system of N threads (other partially-connected topologies are also possible).
+
+Hardware platform: x86-32/64
+
+Compiler: Intel C++ Compiler
+
+// load with 'consume' (data-dependent) memory ordering
+
+template<typename T>
+
+T load_consume(T const* addr)
+
+{
+
+// hardware fence is implicit on x86
+
+T v = *const_cast<T const volatile*>(addr);
+
+__memory_barrier(); // compiler fence
+
+return v;
+
+}
+
+// store with 'release' memory ordering
+
+template<typename T>
+
+void store_release(T* addr, T v)
+
+{
+
+// hardware fence is implicit on x86
+
+__memory_barrier(); // compiler fence
+
+*const_cast<T volatile*>(addr) = v;
+
+}
+
+// cache line size on modern x86 processors (in bytes)
+
+size_t const cache_line_size = 64;
+
+// single-producer/single-consumer queue
+
+template<typename T>
+
+class spsc_queue
+
+{
+
+public:
+
+spsc_queue()
+
+{
+
+node* n = new node;
+
+n->next_ = 0;
+
+tail_ = head_ = first_= tail_copy_ = n;
+
+}
+
+~spsc_queue()
+
+{
+
+node* n = first_;
+
+do
+
+{
+
+node* next = n->next_;
+
+delete n;
+
+n = next;
+
+}
+
+while (n);
+
+}
+
+void enqueue(T v)
+
+{
+
+node* n = alloc_node();
+
+n->next_ = 0;
+
+n->value_ = v;
+
+store_release(&head_->next_, n);
+
+head_ = n;
+
+}
+
+// returns 'false' if queue is empty
+
+bool dequeue(T& v)
+
+{
+
+if (load_consume(&tail_->next_))
+
+{
+
+v = tail_->next_->value_;
+
+store_release(&tail_, tail_->next_);
+
+return true;
+
+}
+
+else
+
+{
+
+return false;
+
+}
+
+}
+
+private:
+
+// internal node structure
+
+struct node
+
+{
+
+node* next_;
+
+T value_;
+
+};
+
+// consumer part
+
+// accessed mainly by consumer, infrequently be producer
+
+node* tail_; // tail of the queue
+
+// delimiter between consumer part and producer part,
+
+// so that they situated on different cache lines
+
+char cache_line_pad_ [cache_line_size];
+
+// producer part
+
+// accessed only by producer
+
+node* head_; // head of the queue
+
+node* first_; // last unused node (tail of node cache)
+
+node* tail_copy_; // helper (points somewhere between first_ and
+
+tail_)
+
+node* alloc_node()
+
+{
+
+// first tries to allocate node from internal node cache,
+
+// if attempt fails, allocates node via ::operator new()
+
+if (first_ != tail_copy_)
+
+{
+
+node* n = first_;
+
+first_ = first_->next_;
+
+return n;
+
+}
+
+tail_copy_ = load_consume(&tail_);
+
+if (first_ != tail_copy_)
+
+{
+
+node* n = first_;
+
+first_ = first_->next_;
+
+return n;
+
+}
+
+node* n = new node;
+
+return n;
+
+}
+
+spsc_queue(spsc_queue const&);
+
+spsc_queue& operator = (spsc_queue const&);
+
+};
+
+// usage example
+
+int main()
+
+{
+
+spsc_queue<int> q;
+
+q.enqueue(1);
+
+q.enqueue(2);
+
+int v;
+
+bool b = q.dequeue(v);
+
+b = q.dequeue(v);
+
+q.enqueue(3);
+
+q.enqueue(4);
+
+b = q.dequeue(v);
+
+b = q.dequeue(v);
+
+b = q.dequeue(v);
+
+}
+
+# MCSP
+
+Advantages:
+
++ Intrusive. No need for additional internal nodes.
+
++ Wait-free and fast producers. One XCHG is maximum what one can get with multi-producer non-distributed queue.
+
++ Extremely fast consumer. On fast-path it's atomic-free, XCHG executed per node batch, in order to grab 'last item'.
+
++ No need for node order reversion. So pop operation is always O(1).
+
++ ABA-free.
+
++ No need for PDR. That is, one can use this algorithm out-of-the-box. No need for thread registration/deregistration, periodic activity, deferred garbage etc.
+
+Disadvantages:
+
+- Push function is blocking wrt consumer. I.e. if producer blocked in (*), then consumer is blocked too. Fortunately 'window of inconsistency' is extremely small - producer must be blocked exactly in (*). Actually it's disadvantage only as compared with totally lockfree algorithm. It's still much better lockbased algorithm.
+
+struct mpscq_node_t
+
+{
+
+mpscq_node_t* volatile next;
+
+};
+
+struct mpscq_t
+
+{
+
+mpscq_node_t* volatile head;
+
+mpscq_node_t* tail;
+
+mpscq_node_t stub;
+
+};
+
+#define MPSCQ_STATIC_INIT(self) {&self.stub, &self.stub, {0}}
+
+void mpscq_create(mpscq_t* self)
+
+{
+
+self->head = &self->stub;
+
+self->tail = &self->stub;
+
+self->stub.next = 0;
+
+}
+
+void mpscq_push(mpscq_t* self, mpscq_node_t* n)
+
+{
+
+n->next = 0;
+
+mpscq_node_t* prev = XCHG(&self->head, n);
+
+//(*)
+
+prev->next = n;
+
+}
+
+mpscq_node_t* mpscq_pop(mpscq_t* self)
+
+{
+
+mpscq_node_t* tail = self->tail;
+
+mpscq_node_t* next = tail->next;
+
+if (tail == &self->stub)
+
+{
+
+if (0 == next)
+
+return 0;
+
+self->tail = next;
+
+tail = next;
+
+next = next->next;
+
+}
+
+if (next)
+
+{
+
+self->tail = next;
+
+return tail;
+
+}
+
+mpscq_node_t* head = self->head;
+
+if (tail != head)
+
+return 0;
+
+mpscq_push(self, &self->stub);
+
+next = tail->next;
+
+if (next)
+
+{
+
+self->tail = next;
+
+return tail;
+
+}
+
+return 0;
+
+}
+
