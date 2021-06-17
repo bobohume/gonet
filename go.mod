@@ -20,6 +20,7 @@ require (
 	golang.org/x/net v0.0.0-20191027233614-53de4c7853b5
 	google.golang.org/genproto v0.0.0-20200428115010-c45acf45369a // indirect
 	google.golang.org/protobuf v1.21.0
+	gopkg.in/yaml.v2 v2.2.2
 )
 
 replace google.golang.org/grpc => google.golang.org/grpc v1.26.0

@@ -20,11 +20,11 @@ type (
 	}
 )
 
-func (this *RaftManager) Init(num int){
-	this.Actor.Init(num)
+func (this *RaftManager) Init(){
+	this.Actor.Init()
 	//注册到集群
 	this.m_Fsm.Init(this)
-	this.InitRaft(&common.ClusterInfo{Type: rpc.SERVICE_WORLDSERVER, Ip:UserNetIP, Port:int32(base.Int(UserNetPort))}, EtcdEndpoints, &this.m_Fsm)
+	this.InitRaft(&common.ClusterInfo{Type: rpc.SERVICE_WORLDSERVER, Ip:CONF.Server.Ip, Port:int32(CONF.Server.Port)}, CONF.Etcd.Endpoints, &this.m_Fsm)
 	this.RegisterRaftCall()
 	this.RegisterTimer(10 * 1000 * 1000, this.Update)
 

@@ -17,8 +17,8 @@ type (
 	}
 )
 
-func (this *EventProcess) Init(num int) {
-	this.Actor.Init(num)
+func (this *EventProcess) Init() {
+	this.Actor.Init()
 	this.m_db = SERVER.GetDB()
 	
 	this.RegisterCall("G_ClientLost", func(ctx context.Context, accountId int64) {

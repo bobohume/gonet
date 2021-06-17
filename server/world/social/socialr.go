@@ -45,10 +45,10 @@ func RdKey(nPlayerId int64) string{
 	return fmt.Sprintf("h_%s_%d", sqlTable, nPlayerId)
 }
 
-func (this *SocialMgrR) Init(num int) {
+func (this *SocialMgrR) Init() {
 	this.m_db = world.SERVER.GetDB()
 	this.m_Log = world.SERVER.GetLog()
-	this.Actor.Init(num)
+	this.Actor.Init()
 	actor.MGR.AddActor(this)
 
 	this.RegisterCall("C_W_MakeLinkRequest", func(ctx context.Context, PlayerId, TargetId int64, Type int8) {

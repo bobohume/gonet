@@ -26,8 +26,8 @@ type(
 	}
 )
 
-func (this *Player) Init(num int){
-	this.Actor.Init(num)
+func (this *Player) Init(){
+	this.Actor.Init()
 	this.PlayerData.Init()
 	this.RegisterTimer(1000 * 1000 * 1000, this.Update)//定时器
 	this.m_offlineTimer = common.NewSimpleTimer(5 *60)

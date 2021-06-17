@@ -60,8 +60,8 @@ var(
 	MGR ChatMgr
 )
 
-func (this *ChatMgr) Init(num int) {
-	this.Actor.Init(num)
+func (this *ChatMgr) Init() {
+	this.Actor.Init()
 
 	this.m_playerChatMap = make(map[int64] *stPlayerChatRecord)
 	actor.MGR.AddActor(this)

@@ -2,6 +2,7 @@
 
  import (
 	 "gonet/base"
+	 "gonet/base/ini"
 	 "gonet/common"
 	 "gonet/common/cluster"
 	 "gonet/network"
@@ -11,13 +12,13 @@
 
 type(
 	ServerMgr struct{
-		m_pService	*network.ServerSocket
-		m_Inited bool
-		m_config base.Config
-		m_Log	base.CLog
+		m_pService       *network.ServerSocket
+		m_Inited         bool
+		m_config         ini.Config
+		m_Log            base.CLog
 		m_TimeTraceTimer *time.Ticker
-		m_PlayerMgr *PlayerManager
-		m_pCluster *cluster.Cluster
+		m_PlayerMgr      *PlayerManager
+		m_pCluster       *cluster.Cluster
 	}
 
 	IServerMgr interface{
@@ -28,13 +29,16 @@ type(
 		GetPlayerMgr() *PlayerManager
 		OnServerStart()
 	}
+
+	Config struct {
+		common.Server	`yaml:"netgate"`
+		common.Etcd		`yaml:"etcd"`
+		common.Nats		`yaml:"nats"`
+	}
 )
 
 var(
-	UserNetIP string
-	UserNetPort string
-	EtcdEndpoints []string
-	Nats_Cluster string
+	CONF Config
 	SERVER ServerMgr
 )
 
@@ -61,54 +65,49 @@ func (this *ServerMgr)Init() bool{
 
 	//初始化log文件
 	this.m_Log.Init("netgate")
-	//初始ini配置文件
-	this.m_config.Read("GONET_SERVER.CFG")
+	//初始配置文件
+	base.ReadConf("gonet.yaml", &CONF)
 
-	EtcdEndpoints = this.m_config.Get5("Etcd_Cluster", ",")
-	UserNetIP, UserNetPort 	= this.m_config.Get2("NetGate_WANAddress", ":")
-	Nats_Cluster = this.m_config.Get("Nats_Cluster")
 	ShowMessage := func(){
 		this.m_Log.Println("**********************************************************")
 		this.m_Log.Printf("\tNetGateServer Version:\t%s",base.BUILD_NO)
-		this.m_Log.Printf("\tNetGateServerIP(LAN):\t%s:%s", UserNetIP, UserNetPort)
+		this.m_Log.Printf("\tNetGateServerIP(LAN):\t%s:%d", CONF.Server.Ip, CONF.Server.Port)
 		this.m_Log.Println("**********************************************************");
 	}
 	ShowMessage()
 
 	//初始化socket
 	this.m_pService = new(network.ServerSocket)
-	port := base.Int(UserNetPort)
-	this.m_pService.Init(UserNetIP, port)
+	this.m_pService.Init(CONF.Server.Ip, CONF.Server.Port)
 	this.m_pService.SetMaxPacketLen(base.MAX_CLIENT_PACKET)
 	this.m_pService.SetConnectType(network.CLIENT_CONNECT)
 	//this.m_pService.Start()
 	packet := new(UserPrcoess)
-	packet.Init(1000)
+	packet.Init()
 	this.m_pService.BindPacketFunc(packet.PacketFunc)
 	this.m_pService.Start()
 
 	//websocket
 	/*this.m_pService = new(network.WebSocket)
-	port,_:=strconv.Atoi(UserNetPort)
-	this.m_pService.Init(UserNetIP, port)
+	this.m_pService.Init(CONF.Server.Ip, CONF.Server.Port)
 	this.m_pService.SetConnectType(network.CLIENT_CONNECT)
 	//this.m_pService.Start()
 	packet := new(UserPrcoess)
-	packet.Init(1000)
+	packet.Init()
 	this.m_pService.BindPacketFunc(packet.PacketFunc)
 	this.m_pService.Start()*/
 	//注册到集群服务器
 
 	var packet1 EventProcess
-	packet1.Init(1000)
+	packet1.Init()
 	this.m_pCluster = new (cluster.Cluster)
-	this.m_pCluster.Init(1000, &common.ClusterInfo{Type: rpc.SERVICE_GATESERVER, Ip:UserNetIP, Port:int32(base.Int(UserNetPort))}, EtcdEndpoints, Nats_Cluster)
+	this.m_pCluster.Init(&common.ClusterInfo{Type: rpc.SERVICE_GATESERVER, Ip:CONF.Server.Ip, Port:int32(CONF.Server.Port)}, CONF.Etcd.Endpoints, CONF.Nats.Endpoints)
 	this.m_pCluster.BindPacketFunc(packet1.PacketFunc)
 	this.m_pCluster.BindPacketFunc(DispatchPacket)
 
 	//初始玩家管理
 	this.m_PlayerMgr = new(PlayerManager)
-	this.m_PlayerMgr.Init(1000)
+	this.m_PlayerMgr.Init()
 	return  false
 }
 

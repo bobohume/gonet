@@ -22,8 +22,8 @@ type (
 	}
 )
 
-func (this *CmdProcess) Init(num int) {
-	this.Actor.Init(num)
+func (this *CmdProcess) Init() {
+	this.Actor.Init()
 	this.RegisterCall("cpus", func(ctx context.Context) {
 		fmt.Println(runtime.NumCPU(), " cpus and ", runtime.GOMAXPROCS(0), " in use")
 	})
@@ -70,7 +70,7 @@ var(
 
 func Init(){
 	g_Cmd = &CmdProcess{}
-	g_Cmd.Init(1000)
+	g_Cmd.Init()
 	common.StartConsole(g_Cmd)
 	//InitWeb()
 }

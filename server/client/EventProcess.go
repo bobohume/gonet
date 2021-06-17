@@ -69,8 +69,8 @@ func (this *EventProcess) PacketFunc(packet1 rpc.Packet) bool {
 	return true
 }
 
-func (this *EventProcess) Init(num int) {
-	this.Actor.Init(num)
+func (this *EventProcess) Init() {
+	this.Actor.Init()
 	this.Pos = lmath.Point3F{1, 1, 1}
 	this.m_Dh.Init()
 	this.RegisterCall("W_C_SelectPlayerResponse", func(ctx context.Context, packet *message.W_C_SelectPlayerResponse) {

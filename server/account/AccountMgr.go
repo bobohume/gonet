@@ -32,9 +32,9 @@ var (
 	ACCOUNTMGR AccountMgr
 )
 
-func (this* AccountMgr) Init(num int){
+func (this* AccountMgr) Init(){
 	this.m_db = SERVER.GetDB()
-	this.Actor.Init(1000)
+	this.Actor.Init()
 	this.m_AccountMap = make(map[int64] *Account)
 	this.m_AccountNameMap = make(map[string] *Account)
 	//this.RegisterTimer(1000 * 1000 * 1000, this.Update)//定时器

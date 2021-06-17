@@ -2,6 +2,7 @@
 
  import (
 	 "gonet/base"
+	 "gonet/base/ini"
 	 "gonet/common"
 	 "net/http"
  )
@@ -9,7 +10,7 @@
 type(
 	ServerMgr struct{
 		m_Inited      bool
-		m_config      base.Config
+		m_config      ini.Config
 		m_Log         base.CLog
 		m_FileMonitor common.IFileMonitor
 	}
@@ -19,10 +20,14 @@ type(
 		GetLog() *base.CLog
 		GetFileMonitor() common.IFileMonitor
 	}
+
+	Config struct {
+		common.Http	`yaml:"login"`
+	}
 )
 
 var(
-	LoginAddr string
+	CONF Config
 	SERVER ServerMgr
 )
 
@@ -33,18 +38,17 @@ func (this *ServerMgr)Init() bool{
 
 	//初始化log文件
 	this.m_Log.Init("login")
-	//初始ini配置文件
-	this.m_config.Read("GONET_SERVER.CFG")
-	LoginAddr = this.m_config.Get3("Login", "Login_Url")
+	//初始配置文件
+	base.ReadConf("gonet.yaml", &CONF)
 
 	//动态监控文件改变
 	this.m_FileMonitor = &common.FileMonitor{}
-	this.m_FileMonitor.Init(1000)
+	this.m_FileMonitor.Init()
 
 	NETGATECONF.Init()
 
 	http.HandleFunc("/login/", GetNetGateS)
-	http.ListenAndServe(LoginAddr, nil)
+	http.ListenAndServe(CONF.Http.Listen, nil)
 	return  false
 }
 

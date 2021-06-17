@@ -23,7 +23,6 @@ var(
 //********************************************************
 type (
 	Actor struct {
-		//m_CallChan  chan CallIO//rpc chan
 		m_AcotrChan chan int//use for states
 		m_Id       	 int64
 		m_CallMap	 map[string] *CallFunc//rpc
@@ -37,7 +36,7 @@ type (
 	}
 
 	IActor interface {
-		Init(chanNum int)
+		Init()
 		Stop()
 		Start()
 		FindCall(funcName string) *CallFunc
@@ -88,8 +87,7 @@ func (this *Actor) GetRpcHead(ctx context.Context) rpc.RpcHead{
 	return rpcHead
 }
 
-func (this *Actor) Init(chanNum int) {
-	//this.m_CallChan = make(chan CallIO, chanNum)
+func (this *Actor) Init() {
 	this.m_MailChan = make(chan bool)
 	this.m_MailBox = mpsc.New()
 	this.m_AcotrChan = make(chan int, 1)
@@ -112,7 +110,6 @@ func (this *Actor) clear() {
 	this.m_bStart = false
 	//close(this.m_AcotrChan)
 	//close(this.m_MailChan)
-	//close(this.m_CallChan)
 	if this.m_pTimer != nil{
 		this.m_pTimer.Stop()
 	}
@@ -165,7 +162,6 @@ func (this *Actor) Send(head rpc.RpcHead, buff []byte) {
 	var io CallIO
 	io.RpcHead = head
 	io.Buff = buff
-	//this.m_CallChan <- io
 	this.m_MailBox.Push(io)
 	if atomic.CompareAndSwapInt32(&this.m_bMailIn, 0, 1){
 		this.m_MailChan <- true
@@ -234,8 +230,6 @@ func (this *Actor) loop() bool{
 	}()
 
 	select {
-	//case io := <-this.m_CallChan:
-	//	this.call(io)
 	case  <-this.m_MailChan:
 		this.consume()
 	case msg := <-this.m_AcotrChan :

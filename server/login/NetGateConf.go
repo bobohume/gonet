@@ -2,13 +2,14 @@ package login
 
 import (
 	"gonet/base"
+	"gonet/base/ini"
 	"net/http"
 	"sync"
 )
 
 type(
 	NetGateConf struct{
-		m_config base.Config
+		m_config ini.Config
 		m_Locker *sync.RWMutex
 	}
 )

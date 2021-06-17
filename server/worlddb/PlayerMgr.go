@@ -33,9 +33,9 @@ var (
 	PLAYERMGR PlayerMgr
 )
 
-func (this* PlayerMgr) Init(num int){
+func (this* PlayerMgr) Init(){
 	this.m_db = SERVER.GetDB()
-	this.Actor.Init(1000)
+	this.Actor.Init()
 	this.m_PlayerMap = make(map[int64] *Player)
 	this.RegisterTimer(1000 * 1000 * 1000, this.Update)//定时器
 	//load blob

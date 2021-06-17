@@ -6,6 +6,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"gonet/base"
 	"gonet/base/vector"
+	"gonet/common"
 	"math"
 	"reflect"
 	"strconv"
@@ -103,10 +104,14 @@ func  GetDBTimeString(t int64)string{
 	return  tm.Format("2006-01-02 15:04:05")
 }
 
-func OpenDB(svr string, usr string, pwd string, db string) *sql.DB {
-	sqlstr := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4", usr, pwd, svr, db)
+func OpenDB(conf common.Db) *sql.DB {
+	sqlstr := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4", conf.User, conf.Password, conf.Ip, conf.Name)
 	mydb, err := sql.Open("mysql", sqlstr)
 	base.ChechErr(err)
+	if err == nil{
+		mydb.SetMaxOpenConns(conf.MaxOpenConns)
+		mydb.SetMaxIdleConns(conf.MaxIdleConns)
+	}
 	return mydb
 }
 

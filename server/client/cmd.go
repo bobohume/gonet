@@ -6,6 +6,7 @@ import (
 	"gonet/common"
 	"gonet/rpc"
 	"gonet/server/message"
+	"strconv"
 )
 
 type (
@@ -18,8 +19,8 @@ type (
 	}
 )
 
-func (this *CmdProcess) Init(num int) {
-	this.Actor.Init(num)
+func (this *CmdProcess) Init() {
+	this.Actor.Init()
 	this.RegisterCall("msg", func(ctx context.Context, args string) {
 		packet1 := &message.C_W_ChatMessage{PacketHead:message.BuildPacketHead( PACKET.AccountId, rpc.SERVICE_GATESERVER),
 			Sender:PACKET.PlayerId,
@@ -28,6 +29,11 @@ func (this *CmdProcess) Init(num int) {
 			Message:(args),
 		}
 		SendPacket(packet1)
+	})
+
+	this.RegisterCall("move", func(ctx context.Context, yaw string) {
+		ya, _ := strconv.ParseFloat(yaw, 32)
+		PACKET.Move(float32(ya), 100.0)
 	})
 
 	this.Actor.Start()
@@ -39,7 +45,7 @@ var(
 
 func InitCmd(){
 	g_Cmd = &CmdProcess{}
-	g_Cmd.Init(1000)
+	g_Cmd.Init()
 	common.StartConsole(g_Cmd)
 }
 

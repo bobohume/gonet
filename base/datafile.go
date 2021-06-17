@@ -5,6 +5,7 @@ import (
 	"gonet/base/vector"
 	"io/ioutil"
 	"os"
+	"reflect"
 )
 
 //datatype
@@ -276,4 +277,72 @@ func (this *RData) Float64Array(datacol string) []float64{
 func (this *RData) Int64Array(datacol string) []int64{
 	IFAssert(this.m_Type == DType_S64Array,  fmt.Sprintf("read [%s] col[%s] error", this.m_FileName, datacol))
 	return this.m_S64Array
+}
+
+//--- struct to data
+func LoadData(obj interface{}, file *CDataFile) bool{
+	if file == nil{
+		return false
+	}
+
+	classVal, classType := getClassInfo(obj)
+	for i := 0; i < classType.NumField(); i++{
+		if !classVal.Field(i).CanInterface(){
+			continue
+		}
+
+		getData(classType.Field(i), classVal.Field(i), file)
+	}
+	return true
+}
+
+
+func getClassInfo(obj interface{})(reflect.Value, reflect.Type){
+	classVal := reflect.ValueOf(obj)
+	for classVal.Kind() == reflect.Ptr {
+		classVal = classVal.Elem()
+	}
+	classType := classVal.Type()
+	return classVal, classType
+}
+
+func getData(sf reflect.StructField, classVal reflect.Value, file *CDataFile){
+	data := &RData{}
+	colName := sf.Name
+
+	file.GetData(data)
+
+	switch data.m_Type {
+	case DType_String:
+		classVal.SetString(data.String(colName))
+	case DType_Enum:
+		classVal.SetInt(int64(data.Enum(colName)))
+	case DType_S8:
+		classVal.SetInt(int64(data.Int8(colName)))
+	case DType_S16:
+		classVal.SetInt(int64(data.Int16(colName)))
+	case DType_S32:
+		classVal.SetInt(int64(data.Int(colName)))
+	case DType_F32:
+		classVal.SetFloat(float64(data.Float32(colName)))
+	case DType_F64:
+		classVal.SetFloat(float64(data.Float64(colName)))
+	case DType_S64:
+		classVal.SetInt(int64(data.Int64(colName)))
+
+	case DType_StringArray:
+		classVal.Set(reflect.ValueOf(data.StringArray(colName)))
+	case DType_S8Array:
+		classVal.Set(reflect.ValueOf(data.Int8Array(colName)))
+	case DType_S16Array:
+		classVal.Set(reflect.ValueOf(data.Int16Array(colName)))
+	case DType_S32Array:
+		classVal.Set(reflect.ValueOf(data.IntArray(colName)))
+	case DType_F32Array:
+		classVal.Set(reflect.ValueOf(data.Float32Array(colName)))
+	case DType_F64Array:
+		classVal.Set(reflect.ValueOf(data.Float64Array(colName)))
+	case DType_S64Array:
+		classVal.Set(reflect.ValueOf(data.Int64Array(colName)))
+	}
 }

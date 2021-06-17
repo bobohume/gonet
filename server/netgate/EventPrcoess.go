@@ -16,8 +16,8 @@ type (
 	}
 )
 
-func (this *EventProcess) Init(num int) {
-	this.Actor.Init(num)
+func (this *EventProcess) Init() {
+	this.Actor.Init()
 
 	this.RegisterCall("A_G_Account_Login", func(ctx context.Context, accountId int64, socketId uint32) {
 		SERVER.GetPlayerMgr().SendMsg(rpc.RpcHead{},"ADD_ACCOUNT", accountId, socketId)

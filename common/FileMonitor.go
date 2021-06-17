@@ -31,8 +31,8 @@ type(
 	}
 )
 
-func (this *FileMonitor) Init(num int) {
-	this.Actor.Init(num)
+func (this *FileMonitor) Init() {
+	this.Actor.Init()
 	this.m_FilesMap = map[string] *FileInfo{}
 	this.RegisterTimer(3 * time.Second, this.update)
 	this.RegisterCall("addfile", func(ctx context.Context, fileName string, p *int64) {

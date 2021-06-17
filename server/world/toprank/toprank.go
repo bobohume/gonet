@@ -41,7 +41,7 @@ var(
 
 func MGR() actor.IActor{
 	if g_pMgr == nil{
-		if world.OpenRedis{
+		if world.CONF.Redis.OpenFlag{
 			g_pMgr = &TopMgrR{}
 		}else{
 			g_pMgr = &TopMgr{}
@@ -105,11 +105,11 @@ func (this *TopMgr) loadDB() {
 }
 
 //分布式考虑直接数据库
-func (this *TopMgr) Init(num int){
+func (this *TopMgr) Init(){
 	this.m_db = world.SERVER.GetDB()
 	this.m_Log = world.SERVER.GetLog()
 	this.m_topRankTimer = common.NewSimpleTimer(TOP_RANK_SYNC_TIME)
-	this.Actor.Init(num)
+	this.Actor.Init()
 	actor.MGR.AddActor(this)
 	this.clearRank()
 

@@ -42,7 +42,7 @@ type(
 
 	ICluster interface{
 		//actor.IActor
-		Init(num int, info *common.ClusterInfo, Endpoints []string)
+		Init(info *common.ClusterInfo, Endpoints []string)
 		AddCluster(info *common.ClusterInfo)
 		DelCluster(info *common.ClusterInfo)
 		GetCluster(rpc.RpcHead) *ClusterNode
@@ -81,8 +81,8 @@ func NewSnowflake(Endpoints []string) *Snowflake{
 	return (*Snowflake)(uuid)
 }
 
-func (this *Cluster) Init(num int, info *common.ClusterInfo, Endpoints []string) {
-	this.Actor.Init(num)
+func (this *Cluster) Init(info *common.ClusterInfo, Endpoints []string) {
+	this.Actor.Init()
 	this.m_ClusterLocker = &sync.RWMutex{}
 	this.m_ClusterMap = make(map[uint32] *ClusterNode)
 	this.m_Master = NewMaster(info, Endpoints, &this.Actor)
@@ -121,7 +121,7 @@ func (this *Cluster) AddCluster(info *common.ClusterInfo){
 	pClient := new(network.ClientSocket)
 	pClient.Init(info.Ip, int(info.Port))
 	packet :=  reflect.New(reflect.ValueOf(this.m_Packet).Elem().Type()).Interface().(IClusterPacket)
-	packet.Init(1000)
+	packet.Init()
 	packet.SetClusterId(info.Id())
 	pClient.BindPacketFunc(packet.PacketFunc)
 	for _, v := range this.m_PacketFuncList.Values(){

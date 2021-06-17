@@ -107,6 +107,7 @@ func (this *CLog) Fatalln(v1 ...interface{}) {
 	}
 	params[len(v1)] = "\r"
 	this.m_Logger[LG_ERROR].Output(2, fmt.Sprintln(params...))
+	log.Println(params...)
 }
 
 func (this *CLog) Fatal(v1 ...interface{}) {
@@ -117,12 +118,14 @@ func (this *CLog) Fatal(v1 ...interface{}) {
 	}
 	params[len(v1)] = "\r\n"
 	this.m_Logger[LG_ERROR].Output(2, fmt.Sprint(params...))
+	log.Print(params...)
 }
 
 func (this *CLog) Fatalf(format string, params ...interface{}) {
 	this.Write(LG_ERROR)
 	format += "\r\n"
 	this.m_Logger[LG_ERROR].Output(2, fmt.Sprintf(format, params...))
+	log.Printf(format,params...)
 }
 
 func (this *CLog) WriteFile(nType LG_TYPE){

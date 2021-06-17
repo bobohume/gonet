@@ -105,8 +105,8 @@ func (this *PlayerManager) GetAccountInfo(socketId uint32) *AccountInfo{
 	return nil
 }
 
-func (this *PlayerManager) Init(num int){
-	this.Actor.Init(num)
+func (this *PlayerManager) Init(){
+	this.Actor.Init()
 	this.m_SocketMap = make(map[uint32] int64)
 	this.m_AccountMap = make(map[int64] *AccountInfo)
 	this.m_Locker = &sync.RWMutex{}

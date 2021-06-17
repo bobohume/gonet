@@ -82,7 +82,7 @@ func setupNatsConn(connectString string, appDieChan chan bool, options ...nats.O
 				return
 			}
 
-			base.GLOG.Fatalf("nats connection closed. reason: %q", nc.LastError())
+			base.GLOG.Println("nats connection closed. reason: %q", nc.LastError())
 			if appDieChan != nil {
 				appDieChan <- true
 			}

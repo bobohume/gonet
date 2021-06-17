@@ -61,11 +61,11 @@ func (this *TopMgrR) loadDB(nType int) {
 }
 
 //分布式考虑直接数据库
-func (this *TopMgrR) Init(num int){
+func (this *TopMgrR) Init(){
 	this.m_db = world.SERVER.GetDB()
 	this.m_Log = world.SERVER.GetLog()
 	this.m_topRankTimer = common.NewSimpleTimer(TOP_RANK_SYNC_TIME)
-	this.Actor.Init(num)
+	this.Actor.Init()
 	actor.MGR.AddActor(this)
 
 	this.RegisterTimer(1000 * 1000 * 1000, this.update)//定时器

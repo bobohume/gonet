@@ -75,7 +75,7 @@ var(
 func MGR() actor.IActor{
 	if g_pMgr == nil{
 		g_pMgr = &SocialMgr{}
-		if world.OpenRedis{
+		if world.CONF.Redis.OpenFlag{
 			g_pMgr = &SocialMgrR{}
 		}else{
 			g_pMgr = &SocialMgr{}
@@ -96,10 +96,10 @@ func getSocialTypeMaxCount(Type int8) int{
 	return  SocialTypeMaxCount[Type]
 }
 
-func (this *SocialMgr) Init(num int) {
+func (this *SocialMgr) Init() {
 	this.m_db = world.SERVER.GetDB()
 	this.m_Log = world.SERVER.GetLog()
-	this.Actor.Init(num)
+	this.Actor.Init()
 	actor.MGR.AddActor(this)
 
 	this.RegisterCall("C_W_MakeLinkRequest", func(ctx context.Context, PlayerId, TargetId int64, Type int8) {

@@ -22,12 +22,12 @@ func InitMgr(serverName string){
 	}else if serverName == "world"{
 		cmd.Init()
 		data.InitRepository()
-		player.MGR.Init(1000)
-		chat.MGR.Init(1000)
-		mail.MGR.Init(1000)
-		toprank.MGR().Init(1000)
-		player.SIMPLEMGR.Init(1000)
-		social.MGR().Init(1000)
+		player.MGR.Init()
+		chat.MGR.Init()
+		mail.MGR.Init()
+		toprank.MGR().Init()
+		player.SIMPLEMGR.Init()
+		social.MGR().Init()
 		actor.MGR.InitActorHandle(world.SERVER.GetCluster())
 	}
 }

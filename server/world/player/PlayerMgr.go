@@ -37,8 +37,8 @@ type(
 	}
 )
 
-func (this* PlayerMgr) Init(num int){
-	this.ActorPool.Init(num)
+func (this* PlayerMgr) Init(){
+	this.ActorPool.Init()
 	this.m_db = world.SERVER.GetDB()
 	this.m_Log = world.SERVER.GetLog()
 	this.m_PingTimer = common.NewSimpleTimer(120)
@@ -138,7 +138,7 @@ func (this *PlayerMgr) AddPlayer(accountId int64) actor.IActor{
 	pPlayer.PlayerIdList = PlayerList
 	pPlayer.PlayerNum = PlayerNum
 	this.AddActor(accountId, pPlayer)
-	pPlayer.Init(MAX_PLAYER_CHAN)
+	pPlayer.Init()
 	return pPlayer
 }
 

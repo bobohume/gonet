@@ -25,10 +25,6 @@ const(
 	STATUS_COUNT				=	iota
 )
 
-const(
-	MAX_PLAYER_CHAN = 32
-)
-
 type (
 	PlayerData struct{
 		SimplePlayerData

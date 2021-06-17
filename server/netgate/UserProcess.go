@@ -146,8 +146,8 @@ func (this *UserPrcoess) delKey(SocketId uint32){
 	delete(this.m_KeyMap, SocketId)
 }
 
-func (this *UserPrcoess) Init(num int) {
-	this.Actor.Init(num)
+func (this *UserPrcoess) Init() {
+	this.Actor.Init()
 	this.m_KeyMap = map[uint32]*base.Dh{}
 	this.RegisterCall("C_G_LogoutRequest", func(ctx context.Context, accountId int, UID int){
 		SERVER.GetLog().Printf("logout Socket:%d Account:%d UID:%d ",this.GetRpcHead(ctx).SocketId, accountId,UID )

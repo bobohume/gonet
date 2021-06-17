@@ -3,27 +3,30 @@ package main
 import (
 	"fmt"
 	"gonet/base"
+	"gonet/common"
 	"gonet/network"
 	"gonet/server/message"
 	"os"
 	"os/signal"
-	"strconv"
+)
+
+type(
+	Config struct {
+		common.Server	`yaml:"netgate"`
+	}
 )
 
 var (
+	CONF Config
 	CLIENT *network.ClientSocket
 )
 func main() {
 	message.InitClient()
-	cfg := &base.Config{}
-	cfg.Read("GONET_SERVER.CFG")
-	UserNetIP, UserNetPort := cfg.Get2("NetGate_WANAddress", ":")
-	//UserNetIP, UserNetPort := "101.132.178.159", "31700"
-	port,_ := strconv.Atoi(UserNetPort)
+	base.ReadConf("gonet.yaml", &CONF)
 	CLIENT = new(network.ClientSocket)
-	CLIENT.Init(UserNetIP, port)
+	CLIENT.Init(CONF.Server.Ip, CONF.Server.Port)
 	PACKET = new(EventProcess)
-	PACKET.Init(1)
+	PACKET.Init()
 	CLIENT.BindPacketFunc(PACKET.PacketFunc)
 	PACKET.Client = CLIENT
 	if CLIENT.Start(){
@@ -32,6 +35,17 @@ func main() {
 
 	InitCmd()
 
+	/*for i := 0; i < 10; i++{
+		client := new(network.ClientSocket)
+		client.Init(CONF.Server.Ip, CONF.Server.Port)
+		packet := new(EventProcess)
+		packet.Init()
+		client.BindPacketFunc(packet.PacketFunc)
+		packet.Client = client
+		if client.Start(){
+			packet.LoginGate()
+		}
+	}*/
 	//PACKET.LoginGame()
 	//for{
 	//	PACKET.LoginGate()

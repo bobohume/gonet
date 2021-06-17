@@ -3,7 +3,6 @@ package account
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"gonet/actor"
 	"gonet/base"
@@ -32,8 +31,8 @@ func ToCrc(accountName string, pwd string, buildNo string, nKey int64) uint32{
 	return base.GetMessageCode1(fmt.Sprintf("%s_%s_%s_%d", accountName, pwd, buildNo, nKey))
 }
 
-func (this *EventProcess) Init(num int) {
-	this.Actor.Init(num)
+func (this *EventProcess) Init() {
+	this.Actor.Init()
 	this.m_db = SERVER.GetDB()
 	//创建账号
 	this.RegisterCall("C_A_RegisterRequest", func(ctx context.Context, packet *message.C_A_RegisterRequest) {
@@ -124,7 +123,7 @@ func (this *EventProcess) Init(num int) {
 	})
 
 	this.RegisterCall("test", func(ctx context.Context, aa int ,bb string) (error, int, string){
-		return errors.New("test"), aa, bb
+		return nil, aa, bb
 	})
 
 	this.Actor.Start()

@@ -49,8 +49,8 @@ func loadSimple(row db.IRow, s *SimplePlayerData){
 	s.LastLogoutTime = row.Time("last_logout_time")
 }
 
-func (this *PlayerSimpleMgr) Init(num int) {
-	this.Actor.Init(num)
+func (this *PlayerSimpleMgr) Init() {
+	this.Actor.Init()
 	this.m_Locker = &sync.RWMutex{}
 	this.m_db = world.SERVER.GetDB()
 	this.m_Log = world.SERVER.GetLog()

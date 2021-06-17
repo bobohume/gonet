@@ -51,9 +51,9 @@ var(
 	MGR CMailMgr
 )
 
-func (this *CMailMgr) Init(num int) {
+func (this *CMailMgr) Init() {
 	this.m_db = world.SERVER.GetDB()
-	this.Actor.Init(num)
+	this.Actor.Init()
 	actor.MGR.AddActor(this)
 
 	this.Actor.Start()

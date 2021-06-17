@@ -25,10 +25,10 @@ type(
 	}
 )
 
-func (this *ActorPool) Init(chanNum int){
+func (this *ActorPool) Init(){
 	this.m_ActorMap = make(map[int64] IActor)
 	this.m_ActorLock = &sync.RWMutex{}
-	this.Actor.Init(chanNum)
+	this.Actor.Init()
 }
 
 func (this *ActorPool) GetActor(Id int64) IActor{
