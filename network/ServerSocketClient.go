@@ -3,11 +3,13 @@ package network
 import (
 	"fmt"
 	"gonet/base"
+	"gonet/common/timer"
 	"gonet/rpc"
 	"hash/crc32"
 	"io"
 	"log"
 	"net"
+	"time"
 )
 
 const (
@@ -16,8 +18,9 @@ const (
 	CONNECT_TYPE    = iota
 )
 
-var(
+var (
 	DISCONNECTINT = crc32.ChecksumIEEE([]byte("DISCONNECT"))
+	HEART_PACKET  = crc32.ChecksumIEEE([]byte("heardpacket"))
 )
 
 type IServerSocketClient interface {
@@ -26,8 +29,9 @@ type IServerSocketClient interface {
 
 type ServerSocketClient struct {
 	Socket
-	m_pServer     *ServerSocket
-	m_SendChan	chan []byte//对外缓冲队列
+	m_pServer  *ServerSocket
+	m_SendChan chan []byte //对外缓冲队列
+	m_TimerId  *int64
 }
 
 func handleError(err error) {
@@ -40,16 +44,17 @@ func handleError(err error) {
 func (this *ServerSocketClient) Init(ip string, port int) bool {
 	if this.m_nConnectType == CLIENT_CONNECT {
 		this.m_SendChan = make(chan []byte, MAX_SEND_CHAN)
+		this.m_TimerId = new(int64)
+		*this.m_TimerId = int64(this.m_ClientId)
+		timer.RegisterTimer(this.m_TimerId, (HEART_TIME_OUT/3)*time.Second, func() {
+			this.Update()
+		})
 	}
 	this.Socket.Init(ip, port)
 	return true
 }
 
 func (this *ServerSocketClient) Start() bool {
-	if this.m_nState != SSF_SHUT_DOWN{
-		return false
-	}
-
 	if this.m_pServer == nil {
 		return false
 	}
@@ -57,7 +62,6 @@ func (this *ServerSocketClient) Start() bool {
 	if this.m_PacketFuncList.Len() == 0 {
 		this.m_PacketFuncList = this.m_pServer.m_PacketFuncList
 	}
-	this.m_nState = SSF_CONNECT
 	this.m_Conn.(*net.TCPConn).SetNoDelay(true)
 	//this.m_Conn.SetKeepAlive(true)
 	//this.m_Conn.SetKeepAlivePeriod(5*time.Second)
@@ -68,27 +72,27 @@ func (this *ServerSocketClient) Start() bool {
 	return true
 }
 
-func (this *ServerSocketClient) Send(head rpc.RpcHead,buff []byte) int {
+func (this *ServerSocketClient) Send(head rpc.RpcHead, buff []byte) int {
 	defer func() {
-		if err := recover(); err != nil{
+		if err := recover(); err != nil {
 			base.TraceCode(err)
 		}
 	}()
 
-	if this.m_nConnectType == CLIENT_CONNECT  {//对外链接send不阻塞
+	if this.m_nConnectType == CLIENT_CONNECT { //对外链接send不阻塞
 		select {
 		case this.m_SendChan <- buff:
-		default://网络太卡,tcp send缓存满了并且发送队列也满了
+		default: //网络太卡,tcp send缓存满了并且发送队列也满了
 			this.OnNetFail(1)
 		}
-	}else{
+	} else {
 		return this.DoSend(buff)
 	}
 	return 0
 }
 
 func (this *ServerSocketClient) DoSend(buff []byte) int {
-	if this.m_Conn == nil{
+	if this.m_Conn == nil {
 		return 0
 	}
 
@@ -103,12 +107,12 @@ func (this *ServerSocketClient) DoSend(buff []byte) int {
 
 func (this *ServerSocketClient) OnNetFail(error int) {
 	this.Stop()
-	if this.m_nConnectType == CLIENT_CONNECT{//netgate对外格式统一
+	if this.m_nConnectType == CLIENT_CONNECT { //netgate对外格式统一
 		stream := base.NewBitStream(make([]byte, 32), 32)
 		stream.WriteInt(int(DISCONNECTINT), 32)
 		stream.WriteInt(int(this.m_ClientId), 32)
 		this.HandlePacket(stream.GetBuffer())
-	}else{
+	} else {
 		this.CallMsg("DISCONNECT", this.m_ClientId)
 	}
 	if this.m_pServer != nil {
@@ -118,7 +122,9 @@ func (this *ServerSocketClient) OnNetFail(error int) {
 
 func (this *ServerSocketClient) Close() {
 	if this.m_nConnectType == CLIENT_CONNECT {
+		this.m_SendChan <- nil
 		//close(this.m_SendChan)
+		timer.StopTimer(this.m_TimerId)
 	}
 	this.Socket.Close()
 	if this.m_pServer != nil {
@@ -127,15 +133,16 @@ func (this *ServerSocketClient) Close() {
 }
 
 func (this *ServerSocketClient) Run() bool {
-	var buff= make([]byte, this.m_ReceiveBufferSize)
-	loop := func() bool{
+	var buff = make([]byte, this.m_ReceiveBufferSize)
+	this.SetState(SSF_RUN)
+	loop := func() bool {
 		defer func() {
 			if err := recover(); err != nil {
 				base.TraceCode(err)
 			}
 		}()
 
-		if this.m_bShuttingDown || this.m_Conn == nil{
+		if this.m_Conn == nil {
 			return false
 		}
 
@@ -152,16 +159,17 @@ func (this *ServerSocketClient) Run() bool {
 		}
 		if n > 0 {
 			//熔断
-			if !this.m_PacketParser.Read(buff[:n]) && this.m_nConnectType == CLIENT_CONNECT{
+			if !this.m_PacketParser.Read(buff[:n]) && this.m_nConnectType == CLIENT_CONNECT {
 				this.OnNetFail(1)
 				return false
 			}
 		}
+		this.m_HeartTime = int(time.Now().Unix()) + HEART_TIME_OUT
 		return true
 	}
 
 	for {
-		if !loop(){
+		if !loop() {
 			break
 		}
 	}
@@ -171,16 +179,33 @@ func (this *ServerSocketClient) Run() bool {
 	return true
 }
 
+// heart
+func (this *ServerSocketClient) Update() {
+	now := int(time.Now().Unix())
+	// timeout
+	if this.m_HeartTime < now {
+		this.OnNetFail(2)
+		return
+	}
+}
+
 func (this *ServerSocketClient) SendLoop() bool {
 	for {
+		defer func() {
+			if err := recover(); err != nil {
+				base.TraceCode(err)
+			}
+		}()
+
 		select {
 		case buff := <-this.m_SendChan:
-			if buff == nil{//信道关闭
+			if buff == nil { //信道关闭
 				return false
-			}else{
+			} else {
 				this.DoSend(buff)
 			}
 		}
 	}
+
 	return true
 }

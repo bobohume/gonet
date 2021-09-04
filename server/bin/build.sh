@@ -1,4 +1,5 @@
 #!/bin/sh
+sh stop.sh
 cd ./../
 go build
 cp server ./bin

@@ -2,12 +2,13 @@ package network
 
 import (
 	"fmt"
-	"golang.org/x/net/websocket"
 	"gonet/rpc"
 	"log"
 	"net/http"
 	"sync"
 	"sync/atomic"
+
+	"golang.org/x/net/websocket"
 )
 
 type IWebSocket interface {
@@ -23,13 +24,13 @@ type IWebSocket interface {
 
 type WebSocket struct {
 	Socket
-	m_nClientCount  int
-	m_nMaxClients   int
-	m_nMinClients   int
-	m_nIdSeed       uint32
-	m_ClientList    map[uint32]*WebSocketClient
-	m_ClientLocker	*sync.RWMutex
-	m_Lock          sync.Mutex
+	m_nClientCount int
+	m_nMaxClients  int
+	m_nMinClients  int
+	m_nIdSeed      uint32
+	m_ClientList   map[uint32]*WebSocketClient
+	m_ClientLocker *sync.RWMutex
+	m_Lock         sync.Mutex
 }
 
 func (this *WebSocket) Init(ip string, port int) bool {
@@ -42,8 +43,6 @@ func (this *WebSocket) Init(ip string, port int) bool {
 }
 
 func (this *WebSocket) Start() bool {
-	this.m_bShuttingDown = false
-
 	if this.m_sIP == "" {
 		this.m_sIP = "127.0.0.1"
 	}
@@ -58,7 +57,6 @@ func (this *WebSocket) Start() bool {
 	}()
 
 	fmt.Printf("WebSocket 启动监听，等待链接！\n")
-	this.m_nState = SSF_ACCEPT
 	return true
 }
 
@@ -106,9 +104,9 @@ func (this *WebSocket) DelClinet(pClient *WebSocketClient) bool {
 	return true
 }
 
-func (this *WebSocket) StopClient(id uint32){
+func (this *WebSocket) StopClient(id uint32) {
 	pClinet := this.GetClientById(id)
-	if pClinet != nil{
+	if pClinet != nil {
 		pClinet.Stop()
 	}
 }
@@ -118,27 +116,17 @@ func (this *WebSocket) LoadClient() *WebSocketClient {
 	return s
 }
 
-func (this *WebSocket) Stop() bool {
-	if this.m_bShuttingDown {
-		return true
-	}
-
-	this.m_bShuttingDown = true
-	this.m_nState = SSF_SHUT_DOWN
-	return true
-}
-
-func (this *WebSocket) Send(head rpc.RpcHead, buff  []byte) int{
+func (this *WebSocket) Send(head rpc.RpcHead, buff []byte) int {
 	pClient := this.GetClientById(head.SocketId)
-	if pClient != nil{
+	if pClient != nil {
 		pClient.Send(head, buff)
 	}
-	return  0
+	return 0
 }
 
-func (this *WebSocket) SendMsg(head rpc.RpcHead, funcName string, params ...interface{}){
+func (this *WebSocket) SendMsg(head rpc.RpcHead, funcName string, params ...interface{}) {
 	pClient := this.GetClientById(head.SocketId)
-	if pClient != nil{
+	if pClient != nil {
 		pClient.Send(head, rpc.Marshal(head, funcName, params...))
 	}
 }
@@ -160,7 +148,7 @@ func (this *WebSocket) Close() {
 	this.Clear()
 }
 
-func (this *WebSocket) wserverRoutine(conn *websocket.Conn){
+func (this *WebSocket) wserverRoutine(conn *websocket.Conn) {
 	fmt.Printf("客户端：%s已连接！\n", conn.RemoteAddr().String())
 	this.handleConn(conn, conn.RemoteAddr().String())
 }

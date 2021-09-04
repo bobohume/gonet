@@ -2,27 +2,30 @@ package cluster
 
 import (
 	"fmt"
-	"github.com/nats-io/nats.go"
 	"gonet/actor"
 	"gonet/base"
 	"gonet/common"
 	"gonet/common/cluster/etv3"
 	"gonet/rpc"
 	"strings"
+
+	"github.com/nats-io/nats.go"
 )
 
-const(
-	ETCD_DIR =  "server/"
+const (
+	ETCD_DIR     = "server/"
+	OFFLINE_TIME = etv3.OFFLINE_TIME
 )
 
-type(
-	Service etv3.Service
-	Master etv3.Master
-	Snowflake etv3.Snowflake
+type (
+	Service    etv3.Service
+	Master     etv3.Master
+	Snowflake  etv3.Snowflake
+	PlayerRaft etv3.PlayerRaft
 )
 
 //注册服务器
-func NewService(info *common.ClusterInfo, Endpoints []string) *Service{
+func NewService(info *common.ClusterInfo, Endpoints []string) *Service {
 	service := &etv3.Service{}
 	service.Init(info, Endpoints)
 	return (*Service)(service)
@@ -36,10 +39,29 @@ func NewMaster(info common.IClusterInfo, Endpoints []string, pActor actor.IActor
 }
 
 //uuid生成器
-func NewSnowflake(Endpoints []string) *Snowflake{
+func NewSnowflake(Endpoints []string) *Snowflake {
 	uuid := &etv3.Snowflake{}
 	uuid.Init(Endpoints)
 	return (*Snowflake)(uuid)
+}
+
+//注册playerraft
+func NewPlayerRaft(Endpoints []string) *PlayerRaft {
+	playerRaft := &etv3.PlayerRaft{}
+	playerRaft.Init(Endpoints)
+	return (*PlayerRaft)(playerRaft)
+}
+
+func (this *PlayerRaft) GetPlayer(Id int64) *rpc.PlayerClusterInfo {
+	return (*etv3.PlayerRaft)(this).GetPlayer(Id)
+}
+
+func (this *PlayerRaft) Publish(info *rpc.PlayerClusterInfo) bool {
+	return (*etv3.PlayerRaft)(this).Publish(info)
+}
+
+func (this *PlayerRaft) Lease(leaseId int64) error {
+	return (*etv3.PlayerRaft)(this).Lease(leaseId)
 }
 
 func getChannel(clusterInfo common.ClusterInfo) string {
@@ -73,7 +95,7 @@ func setupNatsConn(connectString string, appDieChan chan bool, options ...nats.O
 			base.GLOG.Println("disconnected from nats!")
 		}),
 		nats.ReconnectHandler(func(nc *nats.Conn) {
-			base.GLOG.Printf("reconnected to nats server %s with address %s in cluster %s!", nc.ConnectedServerId(), nc.ConnectedAddr(), nc.ConnectedUrl() )
+			base.GLOG.Printf("reconnected to nats server %s with address %s in cluster %s!", nc.ConnectedServerId(), nc.ConnectedAddr(), nc.ConnectedUrl())
 		}),
 		nats.ClosedHandler(func(nc *nats.Conn) {
 			err := nc.LastError()
@@ -95,4 +117,3 @@ func setupNatsConn(connectString string, appDieChan chan bool, options ...nats.O
 	}
 	return nc, nil
 }
-

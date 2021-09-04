@@ -1,23 +1,23 @@
 package common
 
-type(
+type (
 	Server struct {
-		Ip string `yaml:"ip"`
-		Port int `yaml:"port"`
+		Ip   string `yaml:"ip"`
+		Port int    `yaml:"port"`
 	}
 
 	Db struct {
-		Ip string `yaml:"ip"`
-		Name string `yaml:"name"`
-		User string `yaml:"user"`
-		Password string `yaml:"password"`
-		MaxIdleConns int `yaml:"maxIdleConns"`
-		MaxOpenConns int `yaml:"maxOpenConns"`
+		Ip           string `yaml:"ip"`
+		Name         string `yaml:"name"`
+		User         string `yaml:"user"`
+		Password     string `yaml:"password"`
+		MaxIdleConns int    `yaml:"maxIdleConns"`
+		MaxOpenConns int    `yaml:"maxOpenConns"`
 	}
 
 	Redis struct {
-		OpenFlag bool `yaml:"open"`
-		Ip string `yaml:"ip"`
+		OpenFlag bool   `yaml:"open"`
+		Ip       string `yaml:"ip"`
 		Password string `yaml:"password"`
 	}
 
@@ -31,5 +31,9 @@ type(
 
 	Nats struct {
 		Endpoints string `yaml:"endpoints"`
+	}
+
+	Raft struct {
+		Endpoints []string `yaml:"endpoints"`
 	}
 )

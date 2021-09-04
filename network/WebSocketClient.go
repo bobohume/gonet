@@ -3,8 +3,10 @@ package network
 import (
 	"fmt"
 	"gonet/base"
+	"gonet/common/timer"
 	"gonet/rpc"
 	"io"
+	"time"
 )
 
 type IWebSocketClient interface {
@@ -13,23 +15,25 @@ type IWebSocketClient interface {
 
 type WebSocketClient struct {
 	Socket
-	m_pServer     *WebSocket
-	m_SendChan	chan []byte//对外缓冲队列
+	m_pServer  *WebSocket
+	m_SendChan chan []byte //对外缓冲队列
+	m_TimerId  *int64
 }
 
 func (this *WebSocketClient) Init(ip string, port int) bool {
 	if this.m_nConnectType == CLIENT_CONNECT {
 		this.m_SendChan = make(chan []byte, MAX_SEND_CHAN)
+		this.m_TimerId = new(int64)
+		*this.m_TimerId = int64(this.m_ClientId)
+		timer.RegisterTimer(this.m_TimerId, (HEART_TIME_OUT/3)*time.Second, func() {
+			this.Update()
+		})
 	}
 	this.Socket.Init(ip, port)
 	return true
 }
 
 func (this *WebSocketClient) Start() bool {
-	if this.m_nState != SSF_SHUT_DOWN{
-		return false
-	}
-
 	if this.m_pServer == nil {
 		return false
 	}
@@ -37,7 +41,6 @@ func (this *WebSocketClient) Start() bool {
 	if this.m_PacketFuncList.Len() == 0 {
 		this.m_PacketFuncList = this.m_pServer.m_PacketFuncList
 	}
-	this.m_nState = SSF_ACCEPT
 	if this.m_nConnectType == CLIENT_CONNECT {
 		go this.SendLoop()
 	}
@@ -45,27 +48,27 @@ func (this *WebSocketClient) Start() bool {
 	return true
 }
 
-func (this *WebSocketClient) Send(head rpc.RpcHead,buff []byte) int {
+func (this *WebSocketClient) Send(head rpc.RpcHead, buff []byte) int {
 	defer func() {
-		if err := recover(); err != nil{
+		if err := recover(); err != nil {
 			base.TraceCode(err)
 		}
 	}()
 
-	if this.m_nConnectType == CLIENT_CONNECT  {//对外链接send不阻塞
+	if this.m_nConnectType == CLIENT_CONNECT { //对外链接send不阻塞
 		select {
 		case this.m_SendChan <- buff:
-		default://网络太卡,tcp send缓存满了并且发送队列也满了
+		default: //网络太卡,tcp send缓存满了并且发送队列也满了
 			this.OnNetFail(1)
 		}
-	}else{
+	} else {
 		return this.DoSend(buff)
 	}
 	return 0
 }
 
 func (this *WebSocketClient) DoSend(buff []byte) int {
-	if this.m_Conn == nil{
+	if this.m_Conn == nil {
 		return 0
 	}
 
@@ -80,13 +83,13 @@ func (this *WebSocketClient) DoSend(buff []byte) int {
 
 func (this *WebSocketClient) OnNetFail(error int) {
 	this.Stop()
-	
-	if this.m_nConnectType == CLIENT_CONNECT{//netgate对外格式统一
+
+	if this.m_nConnectType == CLIENT_CONNECT { //netgate对外格式统一
 		stream := base.NewBitStream(make([]byte, 32), 32)
 		stream.WriteInt(int(DISCONNECTINT), 32)
 		stream.WriteInt(int(this.m_ClientId), 32)
 		this.HandlePacket(stream.GetBuffer())
-	}else{
+	} else {
 		this.CallMsg("DISCONNECT", this.m_ClientId)
 	}
 	if this.m_pServer != nil {
@@ -97,6 +100,7 @@ func (this *WebSocketClient) OnNetFail(error int) {
 func (this *WebSocketClient) Close() {
 	if this.m_nConnectType == CLIENT_CONNECT {
 		//close(this.m_SendChan)
+		timer.StopTimer(this.m_TimerId)
 	}
 	this.Socket.Close()
 	if this.m_pServer != nil {
@@ -105,15 +109,16 @@ func (this *WebSocketClient) Close() {
 }
 
 func (this *WebSocketClient) Run() bool {
-	var buff= make([]byte, this.m_ReceiveBufferSize)
-	loop := func() bool{
+	var buff = make([]byte, this.m_ReceiveBufferSize)
+	this.SetState(SSF_RUN)
+	loop := func() bool {
 		defer func() {
 			if err := recover(); err != nil {
 				base.TraceCode(err)
 			}
 		}()
 
-		if this.m_bShuttingDown || this.m_Conn == nil{
+		if this.m_Conn == nil {
 			return false
 		}
 
@@ -135,7 +140,7 @@ func (this *WebSocketClient) Run() bool {
 	}
 
 	for {
-		if !loop(){
+		if !loop() {
 			break
 		}
 	}
@@ -145,13 +150,29 @@ func (this *WebSocketClient) Run() bool {
 	return true
 }
 
+// heart
+func (this *WebSocketClient) Update() bool {
+	now := int(time.Now().Unix())
+	if this.m_HeartTime < now {
+		this.OnNetFail(2)
+		return false
+	}
+	return true
+}
+
 func (this *WebSocketClient) SendLoop() bool {
 	for {
+		defer func() {
+			if err := recover(); err != nil {
+				base.TraceCode(err)
+			}
+		}()
+
 		select {
 		case buff := <-this.m_SendChan:
-			if buff == nil{//信道关闭
+			if buff == nil { //信道关闭
 				return false
-			}else{
+			} else {
 				this.DoSend(buff)
 			}
 		}

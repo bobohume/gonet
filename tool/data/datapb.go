@@ -4,15 +4,16 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"github.com/tealeg/xlsx"
 	"gonet/base"
 	"os"
 	"strings"
+
+	"github.com/tealeg/xlsx"
 )
 
-func OpenExcePb(filename string){
+func OpenExcePb(filename string) {
 	xlFile, err := xlsx.OpenFile(filename)
-	if err != nil{
+	if err != nil {
 		fmt.Println("open [%s] error", filename)
 		return
 	}
@@ -21,30 +22,30 @@ func OpenExcePb(filename string){
 	dataTypeNames := []string{}
 	stream := bytes.NewBuffer([]byte{})
 	filenames := strings.Split(filename, ".")
-	enumKVMap := make(map[int] map[string] int) //列 key val
-	enumKMap := map[string] []string{}//列名对应key
-	enumNames := []string{}//列名
+	enumKVMap := make(map[int]map[string]int) //列 key val
+	enumKMap := map[string][]string{}         //列名对应key
+	enumNames := []string{}                   //列名
 	dataNames := []string{}
 	colNames := []string{}
 	{
 		sheet, bEx := xlFile.Sheet["Settings_Radio"]
-		if bEx{
-			for i, v := range sheet.Rows{
-				for i1, v1 := range v.Cells{
-					if v1.String() == ""{
+		if bEx {
+			for i, v := range sheet.Rows {
+				for i1, v1 := range v.Cells {
+					if v1.String() == "" {
 						continue
 					}
-					if i == 0{
+					if i == 0 {
 						enumNames = append(enumNames, v1.String())
-					}else{
+					} else {
 						enumKMap[enumNames[i1]] = append(enumKMap[enumNames[i1]], v1.String())
 					}
 				}
 			}
 		}
 	}
-	for page, sheet := range xlFile.Sheets{
-		if page != 0{
+	for page, sheet := range xlFile.Sheets {
+		if page != 0 {
 			//other sheet
 			continue
 			/*for _, row := range sheet.Rows {
@@ -61,14 +62,14 @@ func OpenExcePb(filename string){
 		}
 
 		//检查行列
-		func(){
-			if sheet.MaxRow != len(sheet.Rows){
-				fmt.Printf("data [%s] 行数不统一", filename,  )
+		func() {
+			if sheet.MaxRow != len(sheet.Rows) {
+				fmt.Printf("data [%s] 行数不统一", filename)
 				return
 			}
 			for i, row := range sheet.Rows {
-				if sheet.MaxCol != len(row.Cells){
-					fmt.Printf("data [%s] 列数不统一,第 [%d] 行", filename,  i)
+				if sheet.MaxCol != len(row.Cells) {
+					fmt.Printf("data [%s] 列数不统一,第 [%d] 行", filename, i)
 					return
 				}
 			}
@@ -79,41 +80,41 @@ func OpenExcePb(filename string){
 				if i == COL_NAME {
 					colNames = append(colNames, cell.String())
 					continue
-				} else if i == COL_CLIENT_NAME{
+				} else if i == COL_CLIENT_NAME {
 					colName := cell.String()
 					dataNames = append(dataNames, colName)
 					//写proto
-					if j == 0{
+					if j == 0 {
 						stream.WriteString("syntax = \"proto3\";\n")
 						stream.WriteString("package message;\n")
 						stream.WriteString("\n")
 					}
 
 					continue
-				}else if i == COL_TYPE{
+				} else if i == COL_TYPE {
 					coltype := strings.ToLower(cell.String())
-					rd :=  bufio.NewReader(strings.NewReader(coltype))
+					rd := bufio.NewReader(strings.NewReader(coltype))
 					data, _, _ := rd.ReadLine()
 					coltype = strings.TrimSpace(string(data))
-					if coltype == "enum"{
+					if coltype == "enum" {
 						num := 0
-						KVMap := map[string] int{}
-						for data, _, _ := rd.ReadLine(); data != nil;{
+						KVMap := map[string]int{}
+						for data, _, _ := rd.ReadLine(); data != nil; {
 							slot := strings.Split(string(data), "=")
-							if len(slot) == 2{
+							if len(slot) == 2 {
 								KVMap[slot[0]] = base.Int(slot[1])
 							}
 							data, _, _ = rd.ReadLine()
 						}
 						keys, bEx := enumKMap[colNames[j]]
-						if bEx{
+						if bEx {
 							_, bEx := enumKVMap[j]
-							if !bEx{
-								enumKVMap[j] = make(map[string] int)
+							if !bEx {
+								enumKVMap[j] = make(map[string]int)
 							}
-							for _, v := range keys{
+							for _, v := range keys {
 								val, bEx := KVMap[v]
-								if bEx{
+								if bEx {
 									num = val
 								}
 								enumKVMap[j][v] = num
@@ -133,7 +134,7 @@ func OpenExcePb(filename string){
 						dataTypes = append(dataTypes, base.DType_S8)
 						dataTypeNames = append(dataTypeNames, "int32")
 					case "int16":
-						dataTypes = append(dataTypes, base.DType_S16)
+						dataTypes = append(dataTypes, base.DTypelinkClearS16)
 						dataTypeNames = append(dataTypeNames, "int32")
 					case "int":
 						dataTypes = append(dataTypes, base.DType_S32)
@@ -169,7 +170,7 @@ func OpenExcePb(filename string){
 						dataTypes = append(dataTypes, base.DType_S64Array)
 						dataTypeNames = append(dataTypeNames, "repeated int64")
 					default:
-						fmt.Printf("data [%s] [%s] col[%d] type not support in[string, enum, int8, int16, int32, float32, float64, []string, []int8, []int16, []int32, []float32, []float64]", filename, coltype, j )
+						fmt.Printf("data [%s] [%s] col[%d] type not support in[string, enum, int8, int16, int32, float32, float64, []string, []int8, []int16, []int32, []float32, []float64]", filename, coltype, j)
 						return
 					}
 					continue
@@ -184,9 +185,9 @@ func OpenExcePb(filename string){
 						stream.WriteString("Data\n")
 						stream.WriteString("{\n")
 						id := 1
-						for i1, v := range dataTypeNames{
+						for i1, v := range dataTypeNames {
 							//过滤掉不是客户端的数据
-							if dataNames[i1] == "" || dataNames[i1] == "0"{
+							if dataNames[i1] == "" || dataNames[i1] == "0" {
 								continue
 							}
 
@@ -210,7 +211,7 @@ func OpenExcePb(filename string){
 
 					//other sheet
 					file, err := os.Create(filenames[0] + ".proto")
-					if err == nil{
+					if err == nil {
 						file.Write(stream.Bytes())
 						file.Close()
 					}

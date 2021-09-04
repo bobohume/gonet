@@ -11,16 +11,17 @@ import (
 	"gonet/rpc"
 	"gonet/server/world"
 )
+
 //********************************************************
 // 玩家管理
 //********************************************************
-var(
+var (
 	MGR PlayerMgr
 )
 
-type(
-	PlayerMgr struct{
-		actor.ActorPool//玩家actor线城池
+type (
+	PlayerMgr struct {
+		actor.ActorPool //玩家actor线城池
 
 		m_db        *sql.DB
 		m_Log       *base.CLog
@@ -37,7 +38,7 @@ type(
 	}
 )
 
-func (this* PlayerMgr) Init(){
+func (this *PlayerMgr) Init() {
 	this.ActorPool.Init()
 	this.m_db = world.SERVER.GetDB()
 	this.m_Log = world.SERVER.GetLog()
@@ -45,24 +46,23 @@ func (this* PlayerMgr) Init(){
 	this.m_PingTimer.Start()
 	actor.MGR.AddActor(this)
 
-	this.RegisterTimer(1000 * 1000 * 1000, this.Update)//定时器
 	//玩家登录
-	this.RegisterCall("G_W_CLoginRequest", func(ctx context.Context, accountId int64, gateClusterId uint32, zoneClusterId uint32) {
+	this.RegisterCall("G_W_CLoginRequest", func(ctx context.Context, accountId int64, gateClusterId uint32, clusterInfo rpc.PlayerClusterInfo) {
 		pPlayer := this.GetPlayer(accountId)
-		if pPlayer != nil{
-			pPlayer.SendMsg(rpc.RpcHead{},"Logout", accountId)
+		if pPlayer != nil {
+			pPlayer.SendMsg(rpc.RpcHead{}, "Logout", accountId)
 			this.RemovePlayer(accountId)
 		}
 
 		pPlayer = this.AddPlayer(accountId)
-		pPlayer.SendMsg(rpc.RpcHead{},"Login", gateClusterId, zoneClusterId)
+		pPlayer.SendMsg(rpc.RpcHead{}, "Login", gateClusterId, clusterInfo)
 	})
 
 	//玩家断开链接
 	this.RegisterCall("G_ClientLost", func(ctx context.Context, accountId int64) {
 		pPlayer := this.GetPlayer(accountId)
-		if pPlayer != nil{
-			pPlayer.SendMsg(rpc.RpcHead{},"Logout", accountId)
+		if pPlayer != nil {
+			pPlayer.SendMsg(rpc.RpcHead{}, "Logout", accountId)
 		}
 
 		this.RemovePlayer(accountId)
@@ -73,21 +73,21 @@ func (this* PlayerMgr) Init(){
 		//查询playerid是否唯一
 		error := 1
 		rows, err := this.m_db.Query(fmt.Sprintf("select 1 from tbl_player where player_id = %d", playerId))
-		if err == nil{
+		if err == nil {
 			rs := db.Query(rows, err)
-			if !rs.Next(){
+			if !rs.Next() {
 				//查找账号玩家数量
 				rows, err = this.m_db.Query(fmt.Sprintf("select count(player_id) as player_count from tbl_player where account_id = %d", accountId))
 				if err == nil {
 					rs = db.Query(rows, err)
-					if rs.Next(){
+					if rs.Next() {
 						player_count := rs.Row().Int("player_count")
-						if player_count >= 1{//创建玩家上限
+						if player_count >= 1 { //创建玩家上限
 							this.m_Log.Printf("账号[%d]创建玩家数量上限", accountId)
-						}else{//创建玩家
-							_, err = this.m_db.Exec(fmt.Sprintf("insert into tbl_player (account_id, player_id, player_name, sex, level, gold, draw_gold)" +
+						} else { //创建玩家
+							_, err = this.m_db.Exec(fmt.Sprintf("insert into tbl_player (account_id, player_id, player_name, sex, level, gold, draw_gold)"+
 								"values(%d, %d, '%s', %d, 1, 0,	0)", accountId, playerId, playername, sex))
-							if err == nil{
+							if err == nil {
 								this.m_Log.Printf("账号[%d]创建玩家[%d]", accountId, playerId)
 								error = 0
 							}
@@ -95,7 +95,7 @@ func (this* PlayerMgr) Init(){
 							//通知玩家`
 							pPlayer := this.GetPlayer(accountId)
 							if pPlayer != nil {
-								pPlayer.SendMsg(rpc.RpcHead{},"CreatePlayer", playerId, gClusterId, error)
+								pPlayer.SendMsg(rpc.RpcHead{}, "CreatePlayer", playerId, gClusterId, error)
 							}
 						}
 					}
@@ -103,27 +103,26 @@ func (this* PlayerMgr) Init(){
 			}
 		}
 
-		if error == 1 {//创建失败通知accout删除player
+		if error == 1 { //创建失败通知accout删除player
 			this.m_Log.Printf("账号[%d]创建玩家[%d]失败", accountId, playerId)
 			world.SendToAccount("W_A_DeletePlayer", accountId, playerId)
 		}
 	})
 
-	//this.RegisterTimer(1000 * 1000 * 1000, this.Update)//定时器
 	this.Actor.Start()
 }
 
-func (this *PlayerMgr) GetPlayer(accountId int64) actor.IActor{
+func (this *PlayerMgr) GetPlayer(accountId int64) actor.IActor {
 	return this.GetActor(accountId)
 }
 
-func (this *PlayerMgr) AddPlayer(accountId int64) actor.IActor{
-	LoadPlayerDB := func(accountId int64) ([]int64, int){
+func (this *PlayerMgr) AddPlayer(accountId int64) actor.IActor {
+	LoadPlayerDB := func(accountId int64) ([]int64, int) {
 		PlayerList := make([]int64, 0)
 		PlayerNum := 0
 		rows, err := this.m_db.Query(fmt.Sprintf("select player_id from tbl_player where account_id=%d", accountId))
 		rs := db.Query(rows, err)
-		for rs.Next(){
+		for rs.Next() {
 			PlayerId := rs.Row().Int64("player_id")
 			PlayerList = append(PlayerList, PlayerId)
 			PlayerNum++
@@ -142,10 +141,7 @@ func (this *PlayerMgr) AddPlayer(accountId int64) actor.IActor{
 	return pPlayer
 }
 
-func (this *PlayerMgr) RemovePlayer(accountId int64){
+func (this *PlayerMgr) RemovePlayer(accountId int64) {
 	this.m_Log.Printf("移除帐号数据[%d]", accountId)
 	this.DelActor(accountId)
-}
-
-func (this* PlayerMgr) Update(){
 }

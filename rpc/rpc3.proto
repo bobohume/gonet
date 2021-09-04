@@ -55,3 +55,11 @@ message Packet{
 	string Reply = 2;//call sessionid
 	bytes Buff = 3;//buff
 }
+
+//玩家集群信息
+message PlayerClusterInfo{
+    int64 Id = 1;
+    int64  LeaseId = 2;
+    uint32 WClusterId = 3;
+    uint32 ZClusterId = 4;
+}

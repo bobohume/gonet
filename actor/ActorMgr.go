@@ -2,17 +2,17 @@ package actor
 
 import (
 	"gonet/base"
+	"gonet/network"
 	"gonet/rpc"
 	"log"
-	"gonet/network"
 	"strings"
 )
 
 //一些全局的actor,不可删除的,不用锁考虑性能
 //不是全局的actor,请使用actor pool
 type (
-	ActorMgr struct{
-		m_ActorMap 	map[string] IActor
+	ActorMgr struct {
+		m_ActorMap map[string]IActor
 	}
 
 	IActorMgr interface {
@@ -23,59 +23,59 @@ type (
 		SendMsg(rpc.RpcHead, string, ...interface{})
 	}
 
-	ICluster interface{
+	ICluster interface {
 		BindPacketFunc(packetFunc network.PacketFunc)
 	}
 )
 
 func (this *ActorMgr) Init() {
-	this.m_ActorMap = make(map[string] IActor)
+	this.m_ActorMap = make(map[string]IActor)
 }
 
-func (this *ActorMgr) AddActor(pActor IActor,  names ...string) {
+func (this *ActorMgr) AddActor(pActor IActor, names ...string) {
 	name := ""
 	if len(names) == 0 {
 		name = base.GetClassName(pActor)
 		_, exist := this.m_ActorMap[name]
-		if exist{
+		if exist {
 			log.Printf("Register an existed GobalActor")
 			return
 		}
-	}else{
+	} else {
 		name = names[0]
 	}
 
 	this.m_ActorMap[name] = pActor
 }
 
-func (this *ActorMgr) GetActor(name string) IActor{
+func (this *ActorMgr) GetActor(name string) IActor {
 	name = strings.ToLower(name)
 	pActor, exist := this.m_ActorMap[name]
-	if exist{
+	if exist {
 		return pActor
 	}
 	return nil
 }
 
-func (this *ActorMgr) InitActorHandle(pCluster ICluster){
-	for _,v := range this.m_ActorMap{
+func (this *ActorMgr) InitActorHandle(pCluster ICluster) {
+	for _, v := range this.m_ActorMap {
 		pCluster.BindPacketFunc(v.PacketFunc)
 	}
 }
 
-func (this *ActorMgr) SendMsg(head rpc.RpcHead, funcName string, params  ...interface{}){
+func (this *ActorMgr) SendMsg(head rpc.RpcHead, funcName string, params ...interface{}) {
 	name := strings.ToLower(head.ActorName)
 	pActor, exist := this.m_ActorMap[name]
-	if exist{
+	if exist {
 		pActor.SendMsg(head, funcName, params...)
 	}
 }
 
-var(
+var (
 	MGR *ActorMgr
 )
 
-func init(){
+func init() {
 	MGR = &ActorMgr{}
 	MGR.Init()
 }

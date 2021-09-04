@@ -22,25 +22,25 @@ type IServerSocket interface {
 
 type ServerSocket struct {
 	Socket
-	m_nClientCount  int
-	m_nMaxClients   int
-	m_nMinClients   int
-	m_nIdSeed       uint32
-	m_ClientList    map[uint32]*ServerSocketClient
-	m_ClientLocker	*sync.RWMutex
-	m_Listen        *net.TCPListener
-	m_Lock          sync.Mutex
+	m_nClientCount int
+	m_nMaxClients  int
+	m_nMinClients  int
+	m_nIdSeed      uint32
+	m_ClientList   map[uint32]*ServerSocketClient
+	m_ClientLocker *sync.RWMutex
+	m_Listen       *net.TCPListener
+	m_Lock         sync.Mutex
 }
 
-type ClientChan struct{
+type ClientChan struct {
 	pClient *ServerSocketClient
-	state int
-	id int
+	state   int
+	id      int
 }
 
 type WriteChan struct {
-	buff	[]byte
-	id		int
+	buff []byte
+	id   int
 }
 
 func (this *ServerSocket) Init(ip string, port int) bool {
@@ -52,8 +52,6 @@ func (this *ServerSocket) Init(ip string, port int) bool {
 	return true
 }
 func (this *ServerSocket) Start() bool {
-	this.m_bShuttingDown = false
-
 	if this.m_sIP == "" {
 		this.m_sIP = "127.0.0.1"
 	}
@@ -74,7 +72,6 @@ func (this *ServerSocket) Start() bool {
 	this.m_Listen = ln
 	//延迟，监听关闭
 	//defer ln.Close()
-	this.m_nState = SSF_ACCEPT
 	go this.Run()
 	return true
 }
@@ -124,9 +121,9 @@ func (this *ServerSocket) DelClinet(pClient *ServerSocketClient) bool {
 	return true
 }
 
-func (this *ServerSocket) StopClient(id uint32){
+func (this *ServerSocket) StopClient(id uint32) {
 	pClinet := this.GetClientById(id)
-	if pClinet != nil{
+	if pClinet != nil {
 		pClinet.Stop()
 	}
 }
@@ -136,27 +133,17 @@ func (this *ServerSocket) LoadClient() *ServerSocketClient {
 	return s
 }
 
-func (this *ServerSocket) Stop() bool {
-	if this.m_bShuttingDown {
-		return true
-	}
-
-	this.m_bShuttingDown = true
-	this.m_nState = SSF_SHUT_DOWN
-	return true
-}
-
-func (this *ServerSocket) Send(head rpc.RpcHead, buff  []byte) int{
+func (this *ServerSocket) Send(head rpc.RpcHead, buff []byte) int {
 	pClient := this.GetClientById(head.SocketId)
-	if pClient != nil{
+	if pClient != nil {
 		pClient.Send(head, buff)
 	}
-	return  0
+	return 0
 }
 
-func (this *ServerSocket) SendMsg(head rpc.RpcHead, funcName string, params ...interface{}){
+func (this *ServerSocket) SendMsg(head rpc.RpcHead, funcName string, params ...interface{}) {
 	pClient := this.GetClientById(head.SocketId)
-	if pClient != nil{
+	if pClient != nil {
 		pClient.Send(head, rpc.Marshal(head, funcName, params...))
 	}
 }
@@ -181,7 +168,7 @@ func (this *ServerSocket) Close() {
 	this.Clear()
 }
 
-func (this *ServerSocket) Run() bool{
+func (this *ServerSocket) Run() bool {
 	for {
 		tcpConn, err := this.m_Listen.AcceptTCP()
 		handleError(err)

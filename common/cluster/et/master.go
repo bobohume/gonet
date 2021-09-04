@@ -60,9 +60,6 @@ func (this *Master) delService(info *common.ClusterInfo) {
 	this.m_Actor.SendMsg(rpc.RpcHead{},"Cluster_Del", info)
 }
 
-func (this *Master) InitService(info *common.ClusterInfo) {
-}
-
 func NodeToService(val []byte) *common.ClusterInfo {
 	info := &common.ClusterInfo{}
 	err := json.Unmarshal(val, info)
@@ -94,18 +91,4 @@ func (this *Master) Run() {
 			this.delService(info)
 		}
 	}
-}
-
-func (this *Master) GetServices() []*common.ClusterInfo{
-	services := []*common.ClusterInfo{}
-	resp, err := this.m_KeysAPI.Get(context.Background(), ETCD_DIR + this.String(), &client.GetOptions{Quorum:true})
-	if err == nil && (resp != nil && resp.Node != nil) {
-		for _, v := range resp.Node.Nodes{
-			info := NodeToService([]byte(v.Value))
-			if info.Id() != this.Id(){
-				services = append(services, info)
-			}
-		}
-	}
-	return services
 }

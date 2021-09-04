@@ -1,12 +1,8 @@
 package raft
 
 import (
-	"context"
-	"gonet/actor"
 	"gonet/base"
 	"gonet/common"
-	"gonet/common/cluster"
-	"gonet/common/cluster/etv3"
 	"net"
 	"os"
 	"path/filepath"
@@ -16,66 +12,37 @@ import (
 	raftboltdb "github.com/hashicorp/raft-boltdb"
 )
 
-type(
+type (
 	Raft struct {
 		*raft.Raft
-		actor.Actor
 		*common.ClusterInfo
-		m_Master  *cluster.Master
-		m_HashRing	*base.HashRing//hash一致性
-		m_ClusterInfoMap map[uint32] *common.ClusterInfo
+		m_HashRing       *base.HashRing //hash一致性
+		m_ClusterInfoMap map[uint32]*common.ClusterInfo
 	}
 )
 
-func (this *Raft) RegisterRaftCall(){
-	//集群新加member
-	this.RegisterCall("Cluster_Add", func(ctx context.Context, info *common.ClusterInfo){
-		_, bEx := this.m_ClusterInfoMap[info.Id()]
-		if !bEx {
-			this.m_HashRing.Add(info.IpString())
-			if (this.RaftIp() != info.RaftIp()) && this.IsLeader(){
-				this.AddVoter(raft.ServerID(info.IpString()), raft.ServerAddress(info.RaftIp()), 0, -1)
-			}
-		}
-	})
-
-	//集群删除member
-	this.RegisterCall("Cluster_Del", func(ctx context.Context, info *common.ClusterInfo){
-		delete(this.m_ClusterInfoMap, info.Id())
-		this.m_HashRing.Remove(info.IpString())
-		if (this.RaftIp() != info.RaftIp()) && this.IsLeader(){
-			this.RemoveServer(raft.ServerID(info.IpString()), 0, -1)
-		}
-	})
-}
-
 func (this *Raft) InitRaft(info *common.ClusterInfo, Endpoints []string, fsm raft.FSM) {
 	this.ClusterInfo = info
-	this.m_Master = cluster.NewMaster(info, Endpoints, &this.Actor)
 	this.m_HashRing = base.NewHashRing()
 	this.m_ClusterInfoMap = make(map[uint32]*common.ClusterInfo)
 
-	this.Raft, _ = NewRaft(info.RaftIp(), info.IpString(), "./node", fsm)
-	services := (*etv3.Master)(this.m_Master).GetServices()
-	services = append(services, this.ClusterInfo)
-
+	this.Raft, _ = NewRaft(info.IpString(), info.IpString(), "./node", fsm)
 	var configuration raft.Configuration
-	for _, v := range services{
-		server := raft.Server{ID:raft.ServerID(v.IpString()), Address: raft.ServerAddress(v.RaftIp()),}
+	for _, v := range Endpoints {
+		server := raft.Server{ID: raft.ServerID(v), Address: raft.ServerAddress(v)}
 		configuration.Servers = append(configuration.Servers, server)
 	}
 
 	this.BootstrapCluster(configuration)
 }
 
-func (this *Raft) IsLeader() bool{
-	return string(this.Leader()) ==  this.RaftIp()
+func (this *Raft) IsLeader() bool {
+	return string(this.Leader()) == this.IpString()
 }
 
 func (this *Raft) GetHashRing(Id int64) (error, uint32) {
 	return this.m_HashRing.Get64(Id)
 }
-
 
 func NewRaft(raftAddr, raftId, raftDir string, fsm raft.FSM) (*raft.Raft, error) {
 	config := raft.DefaultConfig()
