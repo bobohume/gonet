@@ -74,7 +74,7 @@ func (this *EventProcess) Init() {
 	this.Actor.Init()
 	this.Pos = lmath.Point3F{1, 1, 1}
 	this.m_Dh.Init()
-	//this.RegisterTimer((network.HEART_TIME_OUT/3)*1000*1000*1000, this.Update) //定时器
+	this.RegisterTimer((network.HEART_TIME_OUT/3)*1000*1000*1000, this.Update) //定时器
 	this.RegisterCall("W_C_SelectPlayerResponse", func(ctx context.Context, packet *message.W_C_SelectPlayerResponse) {
 		this.AccountId = packet.GetAccountId()
 		nLen := len(packet.GetPlayerData())

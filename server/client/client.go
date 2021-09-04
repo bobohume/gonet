@@ -36,7 +36,7 @@ func main() {
 
 	InitCmd()
 
-	for i := 0; i < 1000; i++ {
+	/*for i := 0; i < 1000; i++ {
 		client := new(network.ClientSocket)
 		client.Init(CONF.Server.Ip, CONF.Server.Port)
 		packet := new(EventProcess)
@@ -46,7 +46,7 @@ func main() {
 		if client.Start() {
 			packet.LoginGate()
 		}
-	}
+	}*/
 	//PACKET.LoginGame()
 	//for{
 	//	PACKET.LoginGate()
