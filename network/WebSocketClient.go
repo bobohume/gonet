@@ -20,7 +20,16 @@ type WebSocketClient struct {
 	m_TimerId  *int64
 }
 
-func (this *WebSocketClient) Init(ip string, port int) bool {
+func (this *WebSocketClient) Init(ip string, port int, params ...OpOption) bool {
+	this.Socket.Init(ip, port, params...)
+	return true
+}
+
+func (this *WebSocketClient) Start() bool {
+	if this.m_pServer == nil {
+		return false
+	}
+
 	if this.m_nConnectType == CLIENT_CONNECT {
 		this.m_SendChan = make(chan []byte, MAX_SEND_CHAN)
 		this.m_TimerId = new(int64)
@@ -28,14 +37,6 @@ func (this *WebSocketClient) Init(ip string, port int) bool {
 		timer.RegisterTimer(this.m_TimerId, (HEART_TIME_OUT/3)*time.Second, func() {
 			this.Update()
 		})
-	}
-	this.Socket.Init(ip, port)
-	return true
-}
-
-func (this *WebSocketClient) Start() bool {
-	if this.m_pServer == nil {
-		return false
 	}
 
 	if this.m_PacketFuncList.Len() == 0 {

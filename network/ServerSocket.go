@@ -7,6 +7,8 @@ import (
 	"net"
 	"sync"
 	"sync/atomic"
+
+	"github.com/xtaci/kcp-go"
 )
 
 type IServerSocket interface {
@@ -30,6 +32,7 @@ type ServerSocket struct {
 	m_ClientLocker *sync.RWMutex
 	m_Listen       *net.TCPListener
 	m_Lock         sync.Mutex
+	m_KcpListern   net.Listener
 }
 
 type ClientChan struct {
@@ -43,8 +46,8 @@ type WriteChan struct {
 	id   int
 }
 
-func (this *ServerSocket) Init(ip string, port int) bool {
-	this.Socket.Init(ip, port)
+func (this *ServerSocket) Init(ip string, port int, params ...OpOption) bool {
+	this.Socket.Init(ip, port, params...)
 	this.m_ClientList = make(map[uint32]*ServerSocketClient)
 	this.m_ClientLocker = &sync.RWMutex{}
 	this.m_sIP = ip
@@ -57,22 +60,28 @@ func (this *ServerSocket) Start() bool {
 	}
 
 	var strRemote = fmt.Sprintf("%s:%d", this.m_sIP, this.m_nPort)
+	//初始tcp
 	tcpAddr, err := net.ResolveTCPAddr("tcp4", strRemote)
 	if err != nil {
 		log.Fatalf("%v", err)
 	}
-	ln, err := net.ListenTCP("tcp4", tcpAddr)
+	this.m_Listen, err = net.ListenTCP("tcp4", tcpAddr)
 	if err != nil {
 		log.Fatalf("%v", err)
 		return false
 	}
 
-	fmt.Printf("启动监听，等待链接！\n")
+	//初始kcp
+	this.m_KcpListern, err = kcp.Listen(strRemote)
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
 
-	this.m_Listen = ln
+	fmt.Printf("启动监听，等待链接！\n")
 	//延迟，监听关闭
 	//defer ln.Close()
 	go this.Run()
+	go this.RunKcp()
 	return true
 }
 
@@ -91,7 +100,7 @@ func (this *ServerSocket) GetClientById(id uint32) *ServerSocketClient {
 	return nil
 }
 
-func (this *ServerSocket) AddClinet(tcpConn *net.TCPConn, addr string, connectType int) *ServerSocketClient {
+func (this *ServerSocket) AddClinet(conn net.Conn, addr string, connectType int) *ServerSocketClient {
 	pClient := this.LoadClient()
 	if pClient != nil {
 		pClient.Init("", 0)
@@ -101,7 +110,7 @@ func (this *ServerSocket) AddClinet(tcpConn *net.TCPConn, addr string, connectTy
 		pClient.m_ClientId = this.AssignClientId()
 		pClient.m_sIP = addr
 		pClient.SetConnectType(connectType)
-		pClient.SetTcpConn(tcpConn)
+		pClient.SetConn(conn)
 		this.m_ClientLocker.Lock()
 		this.m_ClientList[pClient.m_ClientId] = pClient
 		this.m_ClientLocker.Unlock()
@@ -165,6 +174,7 @@ func (this *ServerSocket) OnNetFail(int) {
 
 func (this *ServerSocket) Close() {
 	defer this.m_Listen.Close()
+	defer this.m_KcpListern.Close()
 	this.Clear()
 }
 
@@ -183,7 +193,22 @@ func (this *ServerSocket) Run() bool {
 	}
 }
 
-func (this *ServerSocket) handleConn(tcpConn *net.TCPConn, addr string) bool {
+func (this *ServerSocket) RunKcp() bool {
+	for {
+		kcpConn, err := this.m_KcpListern.Accept()
+		handleError(err)
+		if err != nil {
+			return false
+		}
+
+		fmt.Printf("kcp客户端：%s已连接！\n", kcpConn.RemoteAddr().String())
+		//延迟，关闭链接
+		//defer kcpConn.Close()
+		this.handleConn(kcpConn, kcpConn.RemoteAddr().String())
+	}
+}
+
+func (this *ServerSocket) handleConn(tcpConn net.Conn, addr string) bool {
 	if tcpConn == nil {
 		return false
 	}

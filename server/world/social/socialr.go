@@ -10,6 +10,7 @@ import (
 	"gonet/base"
 	"gonet/db"
 	"gonet/rd"
+	"gonet/server/model"
 	"gonet/server/world"
 	"gonet/server/world/player"
 )
@@ -30,7 +31,7 @@ type (
 		destoryLink(PlayerId, TargetId int64, Type int8) int//删除好友
 		addFriendValue(PlayerId, TargetId int64, Value int) int//增加好友度
 		loadSocialDB(PlayerId int64, Type int8) SOCIALITEMMAP
-		loadSocialById(PlayerId, TargetId int64, Type int8) *SocialItem
+		loadSocialById(PlayerId, TargetId int64, Type int8) *model.SocialItem
 		isFriendType(Type int8) bool
 		isBestFriendType(Type int8) bool
 		hasMakeLink(oldType, newType int8) bool
@@ -100,8 +101,8 @@ func (this *SocialMgrR) hasMakeLink(oldType, newType int8) bool{
 
 func (this *SocialMgrR) loadSocialDB(PlayerId int64, Type int8) SOCIALITEMMAP{
 	SocialMap := make(SOCIALITEMMAP)
-	Item := &SocialItem{}
-	rows, err := this.m_db.Query(db.LoadSql(Item, sqlTable, fmt.Sprintf("player_id=%d and type=%d", PlayerId, Type)))
+	Item := &model.SocialItem{}
+	rows, err := this.m_db.Query(db.LoadSql(Item, db.WithWhere(model.SocialItem{PlayerId:PlayerId, Type:Type})))
 	rs := db.Query(rows, err)
 	if rs.Next(){
 		db.LoadObjSql(&Item, rs.Row())
@@ -110,9 +111,9 @@ func (this *SocialMgrR) loadSocialDB(PlayerId int64, Type int8) SOCIALITEMMAP{
 	return SocialMap
 }
 
-func (this *SocialMgrR) loadSocialById(PlayerId, TargetId int64, Type int8) *SocialItem{
-	Item := &SocialItem{}
-	rows, err := this.m_db.Query(db.LoadSql(Item, sqlTable, fmt.Sprintf("player_id=%d and type=%d and target_id=%d", PlayerId, Type, TargetId)))
+func (this *SocialMgrR) loadSocialById(PlayerId, TargetId int64, Type int8) *model.SocialItem{
+	Item := &model.SocialItem{PlayerId:PlayerId, TargetId:TargetId, Type:Type}
+	rows, err := this.m_db.Query(db.LoadSql(Item))
 	rs := db.Query(rows, err)
 	if rs.Next(){
 		db.LoadObjSql(&Item, rs.Row())
@@ -140,7 +141,7 @@ func (this *SocialMgrR) makeLink(PlayerId, TargetId int64, Type int8) int{
 	}))
 
 	for _, v := range datas{
-		pData := &SocialItem{}
+		pData := &model.SocialItem{}
 		json.Unmarshal(v, pData)
 		SocialMap[pData.TargetId] = pData
 	}
@@ -191,7 +192,7 @@ func (this *SocialMgrR) makeLink(PlayerId, TargetId int64, Type int8) int{
 			Item.TargetId = TargetId
 			Item.Type = Type
 			Item.FriendValue = 0
-			this.m_db.Exec(db.UpdateSql(Item, sqlTable))
+			this.m_db.Exec(db.UpdateSql(Item))
 			data, _ := json.Marshal(&Item)
 			rd.Do(world.RdID, func(c redis.Conn) (reply interface{}, err error) {
 				c.Send("HSET", RdKey(PlayerId), TargetId, data)
@@ -203,14 +204,14 @@ func (this *SocialMgrR) makeLink(PlayerId, TargetId int64, Type int8) int{
 			return SocialError_None
 		}
 	}else{
-		Item := &SocialItem{}
+		Item := &model.SocialItem{}
 		Item.PlayerId = PlayerId
 		Item.TargetId = TargetId
 		Item.Type = Type
 		Item.FriendValue = 0
 
 		SocialMap[TargetId] = Item
-		this.m_db.Exec(db.InsertSql(Item, sqlTable))
+		this.m_db.Exec(db.InsertSql(Item))
 		data, _ := json.Marshal(&Item)
 		rd.Do(world.RdID, func(c redis.Conn) (reply interface{}, err error){
 			c.Send("HSET", RdKey(PlayerId), TargetId, data)
@@ -230,7 +231,7 @@ func (this *SocialMgrR) destoryLink(PlayerId, TargetId int64, Type int8) int{
 		return  SocialError_Self
 	}
 
-	Item := &SocialItem{}
+	Item := &model.SocialItem{}
 	Item.PlayerId = PlayerId
 	Item.TargetId = TargetId
 	Item.Type = Type
@@ -238,7 +239,7 @@ func (this *SocialMgrR) destoryLink(PlayerId, TargetId int64, Type int8) int{
 
 
 	if Item.Type == Friend || Item.Type == Mute || Item.Type == Temp || Item.Type == Enemy{
-		this.m_db.Exec(db.DeleteSql(Item, sqlTable))
+		this.m_db.Exec(db.DeleteSql(Item))
 		rd.Do(world.RdID, func(c redis.Conn) (reply interface{}, err error) {
 			c.Do("HDEL", RdKey(PlayerId), TargetId)
 			return nil, nil
@@ -263,8 +264,8 @@ func (this *SocialMgrR) addFriendValue(PlayerId, TargetId int64, Value int) int{
 
 	Item1.FriendValue +=Value
 	Item2.FriendValue = Item1.FriendValue
-	this.m_db.Exec(db.UpdateSqlEx(Item1, sqlTable, "friend_value"))
-	this.m_db.Exec(db.UpdateSqlEx(Item2, sqlTable, "friend_value"))
+	this.m_db.Exec(db.UpdateSql(Item1))
+	this.m_db.Exec(db.UpdateSql(Item2))
 	data, _ := json.Marshal(&Item1)
 	data1, _ := json.Marshal(&Item2)
 	rd.Do(world.RdID, func(c redis.Conn) (reply interface{}, err error){

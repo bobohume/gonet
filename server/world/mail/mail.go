@@ -1,35 +1,15 @@
 package mail
 
 import (
+	"database/sql"
 	"gonet/actor"
 	"gonet/base"
-	"database/sql"
 	"gonet/db"
-	"fmt"
+	"gonet/server/model"
 	"gonet/server/world"
 )
 
-const(
-	sqlTable = "tbl_mail"
-)
-
 type (
-	MailItem struct{
-		Id int64`sql:"primary;name:id"`
-		Sender int64 `sql:"name:sender"`
-		SenderName string `sql:"name:sender_name"`
-		Recver int64 `sql:"name:recver"`
-		RecverName string `sql:"name:recver_name"`
-		Money int `sql:"name:money"`
-		ItemId int `sql:"name:item_id"`
-		ItemCount int `sql:"name:item_count"`
-		IsRead int8 `sql:"name:is_read"`
-		IsSystem int8 `sql:"name:is_system"`
-		RecvFlag int8 `sql:"name:recv_flag"`
-		Title string `sql:"name:title"`
-		Content string `sql:"name:content"`
-	}
-
 	CMailMgr struct {
 		actor.Actor
 		m_db *sql.DB
@@ -39,8 +19,8 @@ type (
 		actor.IActor
 
 		sendMail(sender int64, recver int64, money int, itemId int, itemNum int, title string, content string, isSystem int8)
-		loadMail(playerId int64, mailList []*MailItem, recvCount int, noReadCount int)
-		loadMialById(mailId int64) *MailItem
+		loadMail(playerId int64, mailList []*model.MailItem, recvCount int, noReadCount int)
+		loadMialById(mailId int64) *model.MailItem
 		deleteMail(playerId int64, mailId int64)
 		readMail(playerId int64, mailId int64)
 		recverMail(playerId int64, mailId int64)
@@ -62,7 +42,7 @@ func (this *CMailMgr) Init() {
 }
 
 func (this *CMailMgr) sendMail(sender int64, recver int64, money int, itemId int, itemNum int, title string, content string, isSystem int8){
-	m := &MailItem{}
+	m := &model.MailItem{}
 	m.Id = base.UUID.UUID()
 	m.Sender = sender
 	m.Recver = recver
@@ -72,7 +52,7 @@ func (this *CMailMgr) sendMail(sender int64, recver int64, money int, itemId int
 	m.IsSystem = isSystem
 	m.Title = title
 	m.Content = content
-	this.m_db.Exec(db.InsertSql(m, sqlTable))
+	this.m_db.Exec(db.InsertSql(m))
 	world.SERVER.GetLog().Printf("邮件发送给[%d]玩家成功", recver)
 	/*world.SendToClient(caller.SocketId, &rpc.W_C_CreatePlayerResponse{
 		PacketHead:rpc.BuildPacketHead(this.AccountId, 0 ),
@@ -81,7 +61,7 @@ func (this *CMailMgr) sendMail(sender int64, recver int64, money int, itemId int
 	})*/
 }
 
-func loadMail(row db.IRow, m *MailItem){
+func loadMail(row db.IRow, m *model.MailItem){
 	m.Id = row.Int64("id")
 	m.Sender = row.Int64("sender")
 	m.SenderName = row.String("sender_name")
@@ -97,11 +77,11 @@ func loadMail(row db.IRow, m *MailItem){
 	m.Content = row.String("content")
 }
 
-func (this *CMailMgr) loadMail(playerId int64, mailList []*MailItem, recvCount int, noReadCount int){
-	rows, err := this.m_db.Query(db.LoadSql(MailItem{}, "tbl_mail", fmt.Sprintf("recver=%d", playerId)))
+func (this *CMailMgr) loadMail(playerId int64, mailList []*model.MailItem, recvCount int, noReadCount int){
+	rows, err := this.m_db.Query(db.LoadSql(model.MailItem{}, db.WithWhere(model.MailItem{Recver:playerId})))
 	rs := db.Query(rows, err)
 	if rs.Next(){
-		m := &MailItem{}
+		m := &model.MailItem{}
 		loadMail(rs.Row(), m)
 		if err != nil{
 			world.SERVER.GetLog().Printf("load mail err[%s]", err.Error())
@@ -117,9 +97,9 @@ func (this *CMailMgr) loadMail(playerId int64, mailList []*MailItem, recvCount i
 	}
 }
 
-func (this *CMailMgr) loadMialById(mailId int64) *MailItem{
-	m := &MailItem{}
-	rows, err := this.m_db.Query(db.LoadSql(m, "tbl_mail", fmt.Sprintf("id=%d", mailId)))
+func (this *CMailMgr) loadMialById(mailId int64) *model.MailItem{
+	m := &model.MailItem{Id:mailId}
+	rows, err := this.m_db.Query(db.LoadSql(m))
 	rs := db.Query(rows, err)
 	if rs.Next() {
 		loadMail(rs.Row(), m)
@@ -144,7 +124,7 @@ func (this *CMailMgr) readMail(playerId int64, mailId int64){
 	if m.ItemId == 0 && m.Money == 0 {
 		this.deleteMail(m.Recver, m.Id)
 	}else{
-		this.m_db.Exec(db.UpdateSqlEx(m, "tb_mail", "id", "is_read"))
+		this.m_db.Exec(db.UpdateSql(m))
 	}
 }
 
@@ -156,7 +136,7 @@ func (this *CMailMgr) recverMail(playerId int64, mailId int64){
 
 	if m.RecvFlag == 0{
 		m.RecvFlag = 1
-		this.m_db.Exec(db.UpdateSqlEx(m, "tb_mail", "id", "recv_flag"))
+		this.m_db.Exec(db.UpdateSql(m))
 		//奖励道具
 
 	}

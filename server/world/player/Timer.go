@@ -3,6 +3,7 @@ package player
 import (
 	"gonet/base/vector"
 	"gonet/db"
+	"gonet/server/model"
 	"sort"
 	"time"
 )
@@ -13,13 +14,6 @@ const(
 )
 
 type(
-	Timer struct {
-		Id int `sql:"primary;name:id"`						//定时器Id
-		PlayerId int64 `sql:"primary;name:player_id"`		//玩家Id
-		Flag int64	`sql:"name:flag"`						//定时器数据
-		ExpireTime int64 `sql:datetime;name:expire_time`	//定时器过期时间
-	}
-
 	TimerSet struct {
 		vector.Vector
 	}//定时器序列
@@ -28,12 +22,12 @@ type(
 		IPlayer
 
 		m_TimerSet TimerSet//定时器set
-		m_TimerMap map[int] *Timer//方便查找
+		m_TimerMap map[int] *model.Timer//方便查找
 	}
 
 	ITimerMgr interface {
 		Init(IPlayer)
-		GetTimer(Id int) *Timer//获取定时器
+		GetTimer(Id int) *model.Timer//获取定时器
 		AddTimer(Id int, Flag int64, ExpireTime int64)//添加定时器
 		DelTimer(Id int)//删除定时器
 		Update()
@@ -43,10 +37,10 @@ type(
 
 func (this *TimerMgr) Init(pPlayer IPlayer){
 	this.IPlayer = pPlayer
-	this.m_TimerMap = map[int] *Timer{}
+	this.m_TimerMap = map[int] *model.Timer{}
 }
 
-func (this *TimerMgr)  GetTimer(Id int) *Timer{
+func (this *TimerMgr)  GetTimer(Id int) *model.Timer{
 	pTimer, bEx := this.m_TimerMap[Id]
 	if bEx{
 		return pTimer
@@ -60,9 +54,9 @@ func (this *TimerMgr) AddTimer(Id int, Flag int64, ExpireTime int64){
 		pTimer.Flag = Flag
 		pTimer.ExpireTime = ExpireTime
 		this.sort()
-		this.GetDB().Exec(db.UpdateSqlEx(pTimer, "tbl_timerset", "flag", "expire_time"))
+		this.GetDB().Exec(db.UpdateSql(pTimer))
 	}else{
-		pTimer = &Timer{}
+		pTimer = &model.Timer{}
 		pTimer.Id = Id
 		pTimer.PlayerId = this.GetPlayerId()
 		pTimer.ExpireTime = ExpireTime
@@ -70,7 +64,7 @@ func (this *TimerMgr) AddTimer(Id int, Flag int64, ExpireTime int64){
 		this.m_TimerSet.PushBack(pTimer)
 		this.m_TimerMap[Id] = pTimer
 		this.sort()
-		this.GetDB().Exec(db.InsertSql(pTimer, "tbl_timerset"))
+		this.GetDB().Exec(db.InsertSql(pTimer))
 	}
 }
 
@@ -81,11 +75,11 @@ func (this *TimerMgr) DelTimer(Id int){
 		itr.Begin()
 		for itr.Next(){
 			v := itr.Value()
-			if v != nil && (v).(*Timer).Id == Id{
+			if v != nil && (v).(*model.Timer).Id == Id{
 				delete(this.m_TimerMap, Id)
 				this.m_TimerSet.Erase(itr.Index())
 				itr.Prev()
-				this.GetDB().Exec(db.DeleteSql((v).(*Timer), "tbl_timerset"))
+				this.GetDB().Exec(db.DeleteSql((v).(*model.Timer)))
 				break
 			}
 		}
@@ -98,11 +92,11 @@ func (this *TimerMgr) Update() {
 	itr := this.m_TimerSet.Iterator()
 	for itr.Next() {
 		v := itr.Value()
-		if v != nil && (v).(*Timer).ExpireTime <= nCurTime{//活动过期
-			delete(this.m_TimerMap, (v).(*Timer).Id)
+		if v != nil && (v).(*model.Timer).ExpireTime <= nCurTime{//活动过期
+			delete(this.m_TimerMap, (v).(*model.Timer).Id)
 			this.m_TimerSet.Erase(itr.Index())
 			itr.Prev()
-			this.GetDB().Exec(db.DeleteSql((v).(*Timer), "tbl_timerset"))
+			this.GetDB().Exec(db.DeleteSql((v).(*model.Timer)))
 			continue
 		}else{
 			break
@@ -116,5 +110,5 @@ func (this *TimerMgr) sort(){
 
 //sort interface
 func (t *TimerSet) Less(i, j int) bool{
-	return t.Get(i).(*Timer).ExpireTime < t.Get(j).(*Timer).ExpireTime
+	return t.Get(i).(*model.Timer).ExpireTime < t.Get(j).(*model.Timer).ExpireTime
 }

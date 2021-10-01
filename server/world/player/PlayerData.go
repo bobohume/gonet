@@ -2,10 +2,10 @@ package player
 
 import (
 	"database/sql"
-	"fmt"
 	"gonet/base"
 	"gonet/db"
 	"gonet/rpc"
+	"gonet/server/model"
 	"gonet/server/world"
 )
 
@@ -28,7 +28,7 @@ const (
 
 type (
 	PlayerData struct {
-		SimplePlayerData
+		model.SimplePlayerData
 
 		AccountId            int64
 		PlayerId             int64
@@ -37,8 +37,8 @@ type (
 		AccountName          string
 		PlayerNum            int
 		PlayerIdList         []int64
-		PlayerSimpleDataList []*SimplePlayerData
-		m_PlayerKVMap        map[int]*PlayerKvData
+		PlayerSimpleDataList []*model.SimplePlayerData
+		m_PlayerKVMap        map[int]*model.PlayerKvData
 		m_db                 *sql.DB
 		m_Log                *base.CLog
 	}
@@ -69,7 +69,7 @@ type (
 func (this *PlayerData) Init() {
 	this.m_db = world.SERVER.GetDB()
 	this.m_Log = world.SERVER.GetLog()
-	this.m_PlayerKVMap = map[int]*PlayerKvData{}
+	this.m_PlayerKVMap = map[int]*model.PlayerKvData{}
 	//this.PlayerIdList = make([]int, 0)
 	//this.PlayerSimpleDataList = make([]*SimplePlayerData, 0)
 }
@@ -130,11 +130,11 @@ func (this *PlayerData) LoadPlayerData() {
 
 //-------------kv--------------//
 func (this *PlayerData) LoadKV() {
-	pData := &PlayerKvData{}
-	rows, err := this.m_db.Query(db.LoadSql(pData, "tbl_player_kv", fmt.Sprintf("player_id = %d", this.GetPlayerId())))
+	pData := &model.PlayerKvData{}
+	rows, err := this.m_db.Query(db.LoadSql(pData, db.WithWhere(model.PlayerKvData{PlayerId:this.GetPlayerId()})))
 	rs := db.Query(rows, err)
 	for rs.Next() {
-		pData := &PlayerKvData{}
+		pData := &model.PlayerKvData{}
 		db.LoadObjSql(pData, rs.Row())
 		this.m_PlayerKVMap[pData.Key] = pData
 	}
@@ -144,18 +144,18 @@ func (this *PlayerData) SetKV(key int, value int64) {
 	pDdata, bEx := this.m_PlayerKVMap[key]
 	if bEx && pDdata != nil {
 		pDdata.Value = value
-		this.m_db.Exec(db.UpdateSqlEx(pDdata, "tbl_player_kv", "value"))
+		this.m_db.Exec(db.UpdateSql(pDdata))
 	} else {
-		pDdata = &PlayerKvData{PlayerId: this.GetPlayerId(), Key: key, Value: value}
+		pDdata = &model.PlayerKvData{PlayerId: this.GetPlayerId(), Key: key, Value: value}
 		this.m_PlayerKVMap[key] = pDdata
-		this.m_db.Exec(db.InsertSql(pDdata, "tbl_player_kv"))
+		this.m_db.Exec(db.InsertSql(pDdata))
 	}
 }
 
 func (this *PlayerData) DelKV(key int) {
 	pDdata, bEx := this.m_PlayerKVMap[key]
 	if bEx && pDdata != nil {
-		this.m_db.Exec(db.DeleteSql(pDdata, "tbl_player_kv"))
+		this.m_db.Exec(db.DeleteSql(pDdata))
 		delete(this.m_PlayerKVMap, key)
 	}
 }

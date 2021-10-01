@@ -5,9 +5,10 @@ import (
 	"strings"
 )
 
-func insertSqlStr(sqlData *SqlData) string {
+func SaveSqlStr(sqlData *SqlData) string {
 	sqlname := sqlData.Name
 	sqlvalue := sqlData.Value
+	sqlext := sqlData.NameValue
 	index := strings.LastIndex(sqlname, ",")
 	if index != -1 {
 		sqlname = sqlname[:index]
@@ -17,21 +18,25 @@ func insertSqlStr(sqlData *SqlData) string {
 	if index != -1 {
 		sqlvalue = sqlvalue[:index]
 	}
-	return "insert into " + sqlData.Table + " (" + sqlname + ") VALUES (" + sqlvalue + ")"
+	index = strings.LastIndex(sqlext, ",")
+	if index != -1 {
+		sqlext = sqlext[:index]
+	}
+	return "insert into " + sqlData.Table + " (" + sqlname + ") VALUES (" + sqlvalue + ") ON DUPLICATE KEY UPDATE" + sqlext
 }
 
 //--- struct to sql
-func InsertSql(obj interface{}, params ...OpOption) string {
+func SaveSql(obj interface{}, params ...OpOption) string {
 	defer func() {
 		if err := recover(); err != nil {
 			base.TraceCode(err)
 		}
 	}()
 
-	op := &Op{sqlType: SQLTYPE_INSERT}
+	op := &Op{sqlType: SQLTYPE_SAVE}
 	op.applyOpts(params)
 	sqlData := &SqlData{}
 	getTableName(obj, sqlData)
 	parseStructSql(obj, sqlData, op)
-	return insertSqlStr(sqlData)
+	return SaveSqlStr(sqlData)
 }

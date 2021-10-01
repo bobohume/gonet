@@ -10,6 +10,7 @@ import (
 	"gonet/common"
 	"gonet/db"
 	"gonet/rd"
+	"gonet/server/model"
 	"gonet/server/world"
 
 	"github.com/gomodule/redigo/redis"
@@ -39,13 +40,13 @@ func (this *TopMgrR) loadDB(nType int) {
 		return c.Do("ZCARD", ZRdKey(nType))
 	}))
 	if result == 0 {
-		fmt.Println(db.LoadSql(&TopRank{}, sqlTable, fmt.Sprintf("type = %d order by `score` limit 0, %d", nType, TOP_RANK_MAX)))
-		rows, err := this.m_db.Query(db.LoadSql(&TopRank{}, sqlTable, fmt.Sprintf("type = %d order by `score` limit 0, %d", nType, TOP_RANK_MAX)))
+		fmt.Println(db.LoadSql(&model.TopRank{}, db.WithWhere(&model.TopRank{Type:int8(nType)}), db.WithLimit(TOP_RANK_MAX)))
+		rows, err := this.m_db.Query(db.LoadSql(&model.TopRank{}, db.WithWhere(&model.TopRank{Type:int8(nType)}), db.WithLimit(TOP_RANK_MAX)))
 		if err != nil {
 			common.DBERROR("toprankr LoadDB", err)
 		}
 		rs := db.Query(rows, err)
-		topList := make([]*TopRank, 0)
+		topList := make([]*model.TopRank, 0)
 		rs.Obj(&topList)
 		for _, v := range topList {
 			data, _ := json.Marshal(v)
@@ -96,9 +97,9 @@ func (this *TopMgrR) newInData(nType int, id int64, name string, score, val0, va
 	}
 
 	if bExist {
-		this.m_db.Exec(db.UpdateSqlEx(pData, sqlTable, "score", "name", "value", "last_time", "id", "type"))
+		this.m_db.Exec(db.UpdateSql(pData))
 	} else {
-		this.m_db.Exec(db.InsertSql(pData, sqlTable))
+		this.m_db.Exec(db.InsertSql(pData))
 	}
 }
 
@@ -112,8 +113,8 @@ func (this *TopMgrR) clearTop(nType int) {
 	this.m_db.Exec(fmt.Sprintf("delete %s where type=%d", sqlTable, nType))
 }
 
-func (this *TopMgrR) getRank(nType int, id int64) *TopRank {
-	pData := &TopRank{}
+func (this *TopMgrR) getRank(nType int, id int64) *model.TopRank {
+	pData := &model.TopRank{}
 	data, _ := redis.Bytes(rd.Do(world.RdID, func(c redis.Conn) (reply interface{}, err error) {
 		return c.Do("HGET", HRdKey(nType), id)
 	}))
@@ -125,8 +126,8 @@ func (this *TopMgrR) getRank(nType int, id int64) *TopRank {
 	return nil
 }
 
-func (this *TopMgrR) createRank(nType int, id int64, name string, score, val0, val1 int) *TopRank {
-	pData := &TopRank{}
+func (this *TopMgrR) createRank(nType int, id int64, name string, score, val0, val1 int) *model.TopRank {
+	pData := &model.TopRank{}
 	pData.Type = int8(nType)
 	pData.Id = id
 	pData.Name = name

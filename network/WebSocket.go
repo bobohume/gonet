@@ -33,8 +33,8 @@ type WebSocket struct {
 	m_Lock         sync.Mutex
 }
 
-func (this *WebSocket) Init(ip string, port int) bool {
-	this.Socket.Init(ip, port)
+func (this *WebSocket) Init(ip string, port int, params ...OpOption) bool {
+	this.Socket.Init(ip, port, params...)
 	this.m_ClientList = make(map[uint32]*WebSocketClient)
 	this.m_ClientLocker = &sync.RWMutex{}
 	this.m_sIP = ip
@@ -84,7 +84,7 @@ func (this *WebSocket) AddClinet(tcpConn *websocket.Conn, addr string, connectTy
 		pClient.SetMaxPacketLen(this.GetMaxPacketLen())
 		pClient.m_ClientId = this.AssignClientId()
 		pClient.m_sIP = addr
-		pClient.SetTcpConn(tcpConn)
+		pClient.SetConn(tcpConn)
 		pClient.SetConnectType(connectType)
 		this.m_ClientLocker.Lock()
 		this.m_ClientList[pClient.m_ClientId] = pClient

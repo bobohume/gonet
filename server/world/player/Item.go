@@ -3,47 +3,33 @@ package player
 import (
 	"gonet/base"
 	"gonet/db"
+	"gonet/server/model"
 	"gonet/server/world/data"
 	"math"
 )
 
 type(
-	Item struct {
-		Id int64 `sql:"primary;name:id"`				//物品唯一Id
-		PlayerId int64 `sql:"primary;name:player_id"`	//玩家Id
-		ItemId int	`sql:"name:item_id"`				//模板Id
-		Quantity int `sql:name:quantity`				//数量(对于装备，只能为1)
-	}
-
-	Equip struct {
-		Id int64 `sql:"primary;name:id"`				//物品唯一Id
-		PlayerId int64 `sql:"primary;name:player_id"`	//玩家Id
-		ItemId int `sql:"name:item_id"`					//模板Id
-		Level int	`sql:"name:level"`					//等级
-		StrengthenLv int `sql:"name:strengthen_lv"`		//强化等级
-	}
-
 	ItemEquipPair struct {
-		Item *Item
-		Equip *Equip
+		Item *model.Item
+		Equip *model.Equip
 	}
 
 	ItemMgr struct {
 		IPlayer
-		m_ItemMap map[int64] *Item
-		m_EquipMap map[int64] *Equip
+		m_ItemMap map[int64] *model.Item
+		m_EquipMap map[int64] *model.Equip
 	}
 
 	IItemMgr interface {
 		Init(IPlayer)
-		CreateItem(int, int) (*Item, *Equip)		//创建物品
+		CreateItem(int, int) (*model.Item, *model.Equip)		//创建物品
 		AddItem(int, int)	bool					//物品操作
 		//SortItem(int) bool						//排序物品
 		CanReduceItem(int, int) bool				//能否扣除
 		//addItem(int, int)	bool					//添加物品
 		//reduceItem(int, int) bool					//删除物品
 		DelEquipById(int64) bool					//删除装备
-		DelEquip(*Equip) bool						//删除装备
+		DelEquip(*model.Equip) bool						//删除装备
 	}
 )
 
@@ -61,21 +47,21 @@ func (this *ItemMgr) Init(pPlayer IPlayer){
 	})*/
 }
 
-func (this *ItemMgr) CreateItem(ItemId int, Quantity int) (*Item, *Equip) {
+func (this *ItemMgr) CreateItem(ItemId int, Quantity int) (*model.Item, *model.Equip) {
 	pItemData := data.ITEMDATA.GetData(ItemId)
 	if pItemData == nil{
 		return nil, nil
 	}
 
-	pItem := &Item{}
+	pItem := &model.Item{}
 	pItem.Id = base.UUID.UUID()
 	pItem.ItemId = ItemId
 	pItem.Quantity = Quantity
 	pItem.PlayerId = this.GetPlayerId()
 
-	var pEquip *Equip
+	var pEquip *model.Equip
 	if pItemData.IsEquip(){
-		pEquip = &Equip{}
+		pEquip = &model.Equip{}
 		pEquip.Id = pItem.Id
 		pEquip.ItemId = ItemId
 		pEquip.PlayerId = this.GetPlayerId()
@@ -116,13 +102,13 @@ func (this *ItemMgr) CanReduceItem(ItemId int, Quantity int) bool{
 	return !bEnough
 }
 
-func (this *ItemMgr) DelEquip(pEquip *Equip) bool{
+func (this *ItemMgr) DelEquip(pEquip *model.Equip) bool{
 	if pEquip != nil{
 		pItem, exist := this.m_ItemMap[pEquip.Id]
 		if exist{
-			this.GetDB().Exec(db.DeleteSql(pItem, "tbl_item"))
+			this.GetDB().Exec(db.DeleteSql(pItem,))
 		}
-		this.GetDB().Exec(db.DeleteSql(pEquip, "tbl_equip"))
+		this.GetDB().Exec(db.DeleteSql(pEquip))
 		delete(this.m_ItemMap, pEquip.Id)
 		delete(this.m_EquipMap, pEquip.Id)
 		return true
@@ -190,19 +176,19 @@ func (this *ItemMgr) addItem(ItemId int, Quantity int) bool{
 			pItem, exist := this.m_ItemMap[i]
 			if exist{
 				pItem.Quantity += v
-				this.GetDB().Exec(db.UpdateSqlEx(pItem, "tbl_item", "quantity"))
+				this.GetDB().Exec(db.UpdateSql(pItem))
 			}
 		}
 
 		for _, v := range CreateMap{
 			if v.Item != nil{
 				this.m_ItemMap[v.Item.Id] = v.Item
-				this.GetDB().Exec(db.InsertSql(v.Item, "tbl_item"))
+				this.GetDB().Exec(db.InsertSql(v.Item))
 			}
 
 			if v.Equip != nil{
 				this.m_EquipMap[v.Equip.Id] = v.Equip
-				this.GetDB().Exec(db.InsertSql(v.Equip, "tbl_equip"))
+				this.GetDB().Exec(db.InsertSql(v.Equip))
 			}
 		}
 	}
@@ -245,9 +231,9 @@ func (this *ItemMgr) reduceItem(ItemId int, Quantity int) bool{
 				pItem.Quantity -= v
 				if pItem.Quantity == 0{
 					delete(this.m_ItemMap, i)
-					this.GetDB().Exec(db.DeleteSql(pItem, "tbl_item"))
+					this.GetDB().Exec(db.DeleteSql(pItem))
 				}else{
-					this.GetDB().Exec(db.UpdateSqlEx(pItem, "tbl_item", "quantity"))
+					this.GetDB().Exec(db.UpdateSql(pItem))
 				}
 			}
 
@@ -255,7 +241,7 @@ func (this *ItemMgr) reduceItem(ItemId int, Quantity int) bool{
 				pEquip, exist := this.m_EquipMap[i]
 				if exist{
 					delete(this.m_EquipMap, i)
-					this.GetDB().Exec(db.DeleteSql(pEquip, "tbl_equip"))
+					this.GetDB().Exec(db.DeleteSql(pEquip))
 				}
 			}
 		}

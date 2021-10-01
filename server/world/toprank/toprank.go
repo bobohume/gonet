@@ -8,6 +8,7 @@ import (
 	"gonet/base"
 	"gonet/common"
 	"gonet/db"
+	"gonet/server/model"
 	"gonet/server/world"
 	"sort"
 	"time"
@@ -22,17 +23,6 @@ const (
 	oVERDUETIME        = (30 * 24 * 60 * 60) //30天不上线清排行榜
 	TOP_RANK_MAX       = 100
 	TOP_RANK_SYNC_TIME = 3 * 60
-)
-
-type (
-	TopRank struct {
-		Id       int64  `sql:"primary;name:id" json:"id"`
-		Type     int8   `sql:"primary;name:type" json:"type"`
-		Name     string `sql:"name:name" json:"name"`
-		Score    int    `sql:"name:score" json:"score"`
-		Value    [2]int `sql:"name:value" json:"value"`
-		LastTime int64  `sql:"datetime;name:last_time" json:"last_time"`
-	}
 )
 
 var (
@@ -51,8 +41,8 @@ func MGR() actor.IActor {
 }
 
 type (
-	TOPRANKSET []*TopRank         //排行榜队列
-	TOPRANKMAP map[int64]*TopRank //排行榜队列
+	TOPRANKSET []*model.TopRank         //排行榜队列
+	TOPRANKMAP map[int64]*model.TopRank //排行榜队列
 	TopMgr     struct {
 		actor.Actor
 
@@ -68,8 +58,8 @@ type (
 
 		loadDB()
 		newInData(int, int64, string, int, int, int)
-		getRank(int, int64) *TopRank
-		createRank(int, int64, string, int, int, int) *TopRank
+		getRank(int, int64) *model.TopRank
+		createRank(int, int64, string, int, int, int) *model.TopRank
 		clearTop(int)
 		deleteOverDue(int)
 		getPlayerRank(int, int64) int //获取排名
@@ -78,7 +68,7 @@ type (
 	}
 )
 
-func loadTopRank(row db.IRow, t *TopRank) {
+func loadTopRank(row db.IRow, t *model.TopRank) {
 	t.Id = row.Int64("id")
 	t.Type = int8(row.Int("type"))
 	t.Name = row.String("name")
@@ -96,7 +86,7 @@ func (this *TopMgr) loadDB() {
 	//row, err := this.m_db.Query(db.LoadSql(pData, sqlTable, ""));
 	rs := db.Query(rows, err)
 	for rs.Next() {
-		pData := &TopRank{}
+		pData := &model.TopRank{}
 		loadTopRank(rs.Row(), pData)
 		this.m_topRankMap[pData.Type][pData.Id] = pData
 		this.m_topRankSet[pData.Type] = append(this.m_topRankSet[pData.Type], pData)
@@ -162,9 +152,9 @@ func (this *TopMgr) newInData(nType int, id int64, name string, score, val0, val
 	}
 
 	if bExist {
-		this.m_db.Exec(db.UpdateSqlEx(pData, sqlTable, "score", "name", "value", "last_time", "id", "type"))
+		this.m_db.Exec(db.UpdateSql(pData))
 	} else {
-		this.m_db.Exec(db.InsertSql(pData, sqlTable))
+		this.m_db.Exec(db.InsertSql(pData))
 	}
 }
 
@@ -177,7 +167,7 @@ func (this *TopMgr) clearTop(nType int) {
 	this.m_db.Exec(fmt.Sprintf("delete %s where type=%d", sqlTable, nType))
 }
 
-func (this *TopMgr) getRank(nType int, id int64) *TopRank {
+func (this *TopMgr) getRank(nType int, id int64) *model.TopRank {
 	items := this.m_topRankMap[nType]
 	pData, exist := items[id]
 	if exist {
@@ -186,8 +176,8 @@ func (this *TopMgr) getRank(nType int, id int64) *TopRank {
 	return nil
 }
 
-func (this *TopMgr) createRank(nType int, id int64, name string, score, val0, val1 int) *TopRank {
-	pData := &TopRank{}
+func (this *TopMgr) createRank(nType int, id int64, name string, score, val0, val1 int) *model.TopRank {
+	pData := &model.TopRank{}
 	pData.Type = int8(nType)
 	pData.Id = id
 	pData.Name = name
@@ -213,7 +203,7 @@ func (this *TopMgr) deleteOverDue(nType int) {
 		if pData != nil && curtime-pData.LastTime >= oVERDUETIME {
 			delete(items, i)
 			this.m_Log.Printf("删除过期的排行榜项[type]=%d,[uid]=%s", nType, pData.Id)
-			this.m_db.Exec(db.DeleteSql(pData, sqlTable))
+			this.m_db.Exec(db.DeleteSql(pData))
 		}
 	}
 

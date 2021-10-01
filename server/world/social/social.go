@@ -2,11 +2,11 @@ package social
 
 import (
 	"context"
+	"database/sql"
 	"gonet/actor"
 	"gonet/base"
-	"database/sql"
 	"gonet/db"
-	"fmt"
+	"gonet/server/model"
 	"gonet/server/world"
 	"gonet/server/world/player"
 )
@@ -38,14 +38,7 @@ const (
 
 //分布式考虑直接数据库
 type (
-	SocialItem struct {
-		PlayerId int64	`sql:"primary;name:player_id"`
-		TargetId int64	`sql:"primary;name:target_id"`
-		Type	int8	`sql:"name:type"`
-		FriendValue	int `sql:"name:friend_value"`
-	}
-
-	SOCIALITEMMAP map[int64] *SocialItem
+	SOCIALITEMMAP map[int64] *model.SocialItem
 
 	SocialMgr struct{
 		actor.Actor
@@ -61,7 +54,7 @@ type (
 		destoryLink(PlayerId, TargetId int64, Type int8) int//删除好友
 		addFriendValue(PlayerId, TargetId int64, Value int) int//增加好友度
 		loadSocialDB(PlayerId int64, Type int8) SOCIALITEMMAP
-		loadSocialById(PlayerId, TargetId int64, Type int8) *SocialItem
+		loadSocialById(PlayerId, TargetId int64, Type int8) *model.SocialItem
 		isFriendType(Type int8) bool
 		isBestFriendType(Type int8) bool
 		hasMakeLink(oldType, newType int8) bool
@@ -148,7 +141,7 @@ func (this *SocialMgr) hasMakeLink(oldType, newType int8) bool{
 	return true
 }
 
-func loadSocialDB(row db.IRow, s *SocialItem){
+func loadSocialDB(row db.IRow, s *model.SocialItem){
 	s.PlayerId = row.Int64("player_id")
 	s.TargetId = row.Int64("target_id")
 	s.Type = int8(row.Int("type"))
@@ -157,8 +150,8 @@ func loadSocialDB(row db.IRow, s *SocialItem){
 
 func (this *SocialMgr) loadSocialDB(PlayerId int64, Type int8) SOCIALITEMMAP{
 	SocialMap := make(SOCIALITEMMAP)
-	Item := &SocialItem{}
-	rows, err := this.m_db.Query(db.LoadSql(Item, sqlTable, fmt.Sprintf("player_id=%d and type=%d", PlayerId, Type)))
+	Item := &model.SocialItem{}
+	rows, err := this.m_db.Query(db.LoadSql(Item, db.WithWhere(model.SocialItem{PlayerId:PlayerId, Type:Type})))
 	rs := db.Query(rows, err)
 	if rs.Next(){
 		loadSocialDB(rs.Row(), Item)
@@ -167,9 +160,9 @@ func (this *SocialMgr) loadSocialDB(PlayerId int64, Type int8) SOCIALITEMMAP{
 	return SocialMap
 }
 
-func (this *SocialMgr) loadSocialById(PlayerId, TargetId int64, Type int8) *SocialItem{
-	Item := &SocialItem{}
-	rows, err := this.m_db.Query(db.LoadSql(Item, sqlTable, fmt.Sprintf("player_id=%d and type=%d and target_id=%d", PlayerId, Type, TargetId)))
+func (this *SocialMgr) loadSocialById(PlayerId, TargetId int64, Type int8) *model.SocialItem{
+	Item := &model.SocialItem{PlayerId:PlayerId, TargetId:TargetId, Type:Type}
+	rows, err := this.m_db.Query(db.LoadSql(Item))
 	rs := db.Query(rows, err)
 	if rs.Next(){
 		loadSocialDB(rs.Row(), Item)
@@ -232,19 +225,19 @@ func (this *SocialMgr) 	makeLink(PlayerId, TargetId int64, Type int8) int{
 			Item.TargetId = TargetId
 			Item.Type = Type
 			Item.FriendValue = 0
-			this.m_db.Exec(db.UpdateSql(Item, sqlTable))
+			this.m_db.Exec(db.UpdateSql(Item))
 			this.m_Log.Printf("更新社会关系playerId=%d,destPlayerId=%d,newType=%d", PlayerId, TargetId, Item.Type)
 			return SocialError_None
 		}
 	}else{
-		Item := &SocialItem{}
+		Item := &model.SocialItem{}
 		Item.PlayerId = PlayerId
 		Item.TargetId = TargetId
 		Item.Type = Type
 		Item.FriendValue = 0
 
 		SocialMap[TargetId] = Item
-		this.m_db.Exec(db.InsertSql(Item, sqlTable))
+		this.m_db.Exec(db.InsertSql(Item))
 		this.m_Log.Printf("新增社会关系playerId=%d,destPlayerId=%d,type=%d", PlayerId, TargetId, Item.Type)
 		return SocialError_None
 	}
@@ -257,7 +250,7 @@ func (this *SocialMgr) destoryLink(PlayerId, TargetId int64, Type int8) int{
 		return  SocialError_Self
 	}
 
-	Item := &SocialItem{}
+	Item := &model.SocialItem{}
 	Item.PlayerId = PlayerId
 	Item.TargetId = TargetId
 	Item.Type = Type
@@ -265,7 +258,7 @@ func (this *SocialMgr) destoryLink(PlayerId, TargetId int64, Type int8) int{
 
 
 	if Item.Type == Friend || Item.Type == Mute || Item.Type == Temp || Item.Type == Enemy{
-		this.m_db.Exec(db.DeleteSql(Item, sqlTable))
+		this.m_db.Exec(db.DeleteSql(Item))
 		return SocialError_None
 	}
 
@@ -286,7 +279,7 @@ func (this *SocialMgr) addFriendValue(PlayerId, TargetId int64, Value int) int{
 
 	Item1.FriendValue +=Value
 	Item2.FriendValue = Item1.FriendValue
-	this.m_db.Exec(db.UpdateSqlEx(Item1, sqlTable, "friend_value"))
-	this.m_db.Exec(db.UpdateSqlEx(Item2, sqlTable, "friend_value"))
+	this.m_db.Exec(db.UpdateSql(Item1))
+	this.m_db.Exec(db.UpdateSql(Item2))
 	return Value
 }

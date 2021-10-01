@@ -8,7 +8,6 @@ import (
 	"hash/crc32"
 	"io"
 	"log"
-	"net"
 	"time"
 )
 
@@ -41,16 +40,8 @@ func handleError(err error) {
 	log.Printf("错误：%s\n", err.Error())
 }
 
-func (this *ServerSocketClient) Init(ip string, port int) bool {
-	if this.m_nConnectType == CLIENT_CONNECT {
-		this.m_SendChan = make(chan []byte, MAX_SEND_CHAN)
-		this.m_TimerId = new(int64)
-		*this.m_TimerId = int64(this.m_ClientId)
-		timer.RegisterTimer(this.m_TimerId, (HEART_TIME_OUT/3)*time.Second, func() {
-			this.Update()
-		})
-	}
-	this.Socket.Init(ip, port)
+func (this *ServerSocketClient) Init(ip string, port int, params ...OpOption) bool {
+	this.Socket.Init(ip, port, params...)
 	return true
 }
 
@@ -59,10 +50,18 @@ func (this *ServerSocketClient) Start() bool {
 		return false
 	}
 
+	if this.m_nConnectType == CLIENT_CONNECT {
+		this.m_SendChan = make(chan []byte, MAX_SEND_CHAN)
+		this.m_TimerId = new(int64)
+		*this.m_TimerId = int64(this.m_ClientId)
+		timer.RegisterTimer(this.m_TimerId, (HEART_TIME_OUT/3)*time.Second, func() {
+			this.Update()
+		})
+	}
+
 	if this.m_PacketFuncList.Len() == 0 {
 		this.m_PacketFuncList = this.m_pServer.m_PacketFuncList
 	}
-	this.m_Conn.(*net.TCPConn).SetNoDelay(true)
 	//this.m_Conn.SetKeepAlive(true)
 	//this.m_Conn.SetKeepAlivePeriod(5*time.Second)
 	go this.Run()
@@ -181,6 +180,7 @@ func (this *ServerSocketClient) Run() bool {
 
 // heart
 func (this *ServerSocketClient) Update() {
+	fmt.Println("heart", this.m_ClientId)
 	now := int(time.Now().Unix())
 	// timeout
 	if this.m_HeartTime < now {

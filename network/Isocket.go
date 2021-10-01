@@ -26,7 +26,14 @@ const (
 type (
 	PacketFunc   func(packet rpc.Packet) bool //回调函数
 	HandlePacket func(buff []byte)
-	Socket       struct {
+
+	Op struct {
+		m_kcp bool
+	}
+
+	OpOption func(*Op)
+
+	Socket struct {
 		m_Conn              net.Conn
 		m_nPort             int
 		m_sIP               string
@@ -49,10 +56,11 @@ type (
 		m_nHalfSize    int
 		m_PacketParser PacketParser
 		m_HeartTime    int
+		m_bKcp         bool
 	}
 
 	ISocket interface {
-		Init(string, int) bool
+		Init(string, int, ...OpOption) bool
 		Start() bool
 		Stop() bool
 		Run() bool
@@ -75,13 +83,27 @@ type (
 		GetMaxPacketLen() int
 		BindPacketFunc(PacketFunc)
 		SetConnectType(int)
-		SetTcpConn(net.Conn)
+		SetConn(net.Conn)
 		HandlePacket([]byte)
 	}
 )
 
+func (op *Op) applyOpts(opts []OpOption) {
+	for _, opt := range opts {
+		opt(op)
+	}
+}
+
+func WithKcp() OpOption {
+	return func(op *Op) {
+		op.m_kcp = true
+	}
+}
+
 // virtual
-func (this *Socket) Init(string, int) bool {
+func (this *Socket) Init(ip string, port int, params ...OpOption) bool {
+	op := &Op{}
+	op.applyOpts(params)
 	this.m_PacketFuncList = vector.NewVector()
 	this.SetState(SSF_NULL)
 	this.m_ReceiveBufferSize = 1024
@@ -90,6 +112,9 @@ func (this *Socket) Init(string, int) bool {
 	this.m_nHalfSize = 0
 	this.m_HeartTime = 0
 	this.m_PacketParser = NewPacketParser(PacketConfig{Func: this.HandlePacket})
+	if op.m_kcp {
+		this.m_bKcp = true
+	}
 	return true
 }
 
@@ -177,7 +202,7 @@ func (this *Socket) SetConnectType(nType int) {
 	this.m_nConnectType = nType
 }
 
-func (this *Socket) SetTcpConn(conn net.Conn) {
+func (this *Socket) SetConn(conn net.Conn) {
 	this.m_Conn = conn
 }
 
