@@ -57,6 +57,7 @@ func (this *PlayerRaft) Publish(info *rpc.PlayerClusterInfo) bool {
 		info.LeaseId = int64(leaseId)
 		key := fmt.Sprintf("%s%d", PLAYER_DIR, info.Id)
 		data, _ := json.Marshal(info)
+		//设置key
 		tx := this.m_Client.Txn(context.Background())
 		tx.If(clientv3.Compare(clientv3.CreateRevision(key), "=", 0)).
 			Then(clientv3.OpPut(key, string(data), clientv3.WithLease(leaseId))).
