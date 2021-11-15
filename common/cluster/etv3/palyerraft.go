@@ -57,20 +57,12 @@ func (this *PlayerRaft) Publish(info *rpc.PlayerClusterInfo) bool {
 		info.LeaseId = int64(leaseId)
 		key := PLAYER_DIR + fmt.Sprintf("%d", info.Id)
 		data, _ := json.Marshal(info)
-		key1 := fmt.Sprintf("%d", info.Id)
-		resp, err := this.m_Client.Put(context.Background(), key1, "1", clientv3.WithLease(leaseId), clientv3.WithPrevKV())
-		if err == nil && resp.PrevKv == nil {
-			//设置key
-			_, err = this.m_Client.Put(context.Background(), key, string(data), clientv3.WithLease(leaseId))
-		}
-		return err == nil
-		// etcd 3.4事务读写性能提高 这里消耗有点多
-		//tx := this.m_Client.Txn(context.Background())
-		//tx.If(clientv3.Compare(clientv3.CreateRevision(key), "=", 0)).
-		//	Then(clientv3.OpPut(key, string(data), clientv3.WithLease(leaseId))).
-		//	Else()
-		//txnRes, err := tx.Commit()
-		//return err == nil && txnRes.Succeeded
+		tx := this.m_Client.Txn(context.Background())
+		tx.If(clientv3.Compare(clientv3.CreateRevision(key), "=", 0)).
+			Then(clientv3.OpPut(key, string(data), clientv3.WithLease(leaseId))).
+			Else()
+		txnRes, err := tx.Commit()
+		return err == nil && txnRes.Succeeded
 	}
 	return false
 }
