@@ -266,12 +266,12 @@ func (this *Timer) loop() bool {
 	case <-this.pTimer.C:
 		this.update()
 	}
-	return true
+	return false
 }
 
 func (this *Timer) run() {
 	for {
-		if !this.loop() {
+		if this.loop() {
 			break
 		}
 	}

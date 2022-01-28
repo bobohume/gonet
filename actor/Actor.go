@@ -256,15 +256,15 @@ func (this *Actor) loop() bool {
 		this.consume()
 	case msg := <-this.m_AcotrChan:
 		if msg == DESDORY_EVENT {
-			return false
+			return true
 		}
 	}
-	return true
+	return false
 }
 
 func (this *Actor) run() {
 	for {
-		if !this.loop() {
+		if this.loop() {
 			break
 		}
 	}
