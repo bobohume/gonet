@@ -19,6 +19,6 @@ type (
 func (this *EventProcess) Init() {
 	this.Actor.Init()
 	this.m_db = SERVER.GetDB()
-
+	actor.MGR.RegisterActor(this)
 	this.Actor.Start()
 }

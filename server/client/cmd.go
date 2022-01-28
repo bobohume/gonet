@@ -13,29 +13,11 @@ type (
 	CmdProcess struct {
 		actor.Actor
 	}
-
-	ICmdProcess interface {
-		actor.IActor
-	}
 )
 
 func (this *CmdProcess) Init() {
 	this.Actor.Init()
-	this.RegisterCall("msg", func(ctx context.Context, args string) {
-		packet1 := &message.C_W_ChatMessage{PacketHead:message.BuildPacketHead( PACKET.AccountId, rpc.SERVICE_GATESERVER),
-			Sender:PACKET.PlayerId,
-			Recver:0,
-			MessageType:int32(message.CHAT_MSG_TYPE_WORLD),
-			Message:(args),
-		}
-		SendPacket(packet1)
-	})
-
-	this.RegisterCall("move", func(ctx context.Context, yaw string) {
-		ya, _ := strconv.ParseFloat(yaw, 32)
-		PACKET.Move(float32(ya), 100.0)
-	})
-
+	actor.MGR.RegisterActor(this)
 	this.Actor.Start()
 }
 
@@ -49,3 +31,17 @@ func InitCmd(){
 	common.StartConsole(g_Cmd)
 }
 
+func (this *CmdProcess) Msg(ctx context.Context, args string) {
+	packet1 := &message.C_W_ChatMessage{PacketHead:message.BuildPacketHead( PACKET.AccountId, rpc.SERVICE_GATESERVER),
+		Sender:PACKET.PlayerId,
+		Recver:0,
+		MessageType:int32(message.CHAT_MSG_TYPE_WORLD),
+		Message:(args),
+	}
+	SendPacket(packet1)
+}
+
+func (this *CmdProcess) Move(ctx context.Context, yaw string) {
+	ya, _ := strconv.ParseFloat(yaw, 32)
+	PACKET.Move(float32(ya), 100.0)
+}

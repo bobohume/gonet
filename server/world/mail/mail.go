@@ -32,10 +32,9 @@ var(
 )
 
 func (this *CMailMgr) Init() {
-	this.m_db = world.SERVER.GetDB()
 	this.Actor.Init()
-	actor.MGR.AddActor(this)
-
+	this.m_db = world.SERVER.GetDB()
+	actor.MGR.RegisterActor(this)
 	this.Actor.Start()
 	//this.sendMail(10000238, 10000238, 1000, 60010, 10, "test", "我是大剌剌", 1)
 	//this.loadMialById(2)

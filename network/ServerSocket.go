@@ -142,10 +142,10 @@ func (this *ServerSocket) LoadClient() *ServerSocketClient {
 	return s
 }
 
-func (this *ServerSocket) Send(head rpc.RpcHead, buff []byte) int {
+func (this *ServerSocket) Send(head rpc.RpcHead, packet rpc.Packet) int {
 	pClient := this.GetClientById(head.SocketId)
 	if pClient != nil {
-		pClient.Send(head, buff)
+		pClient.Send(head, packet)
 	}
 	return 0
 }

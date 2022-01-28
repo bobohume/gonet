@@ -1,6 +1,7 @@
  package netgate
 
  import (
+	 "gonet/actor"
 	 "gonet/base"
 	 "gonet/base/ini"
 	 "gonet/common"
@@ -17,7 +18,7 @@ type(
 		m_config         ini.Config
 		m_Log            base.CLog
 		m_TimeTraceTimer *time.Ticker
-		m_PlayerMgr      *PlayerManager
+		m_PlayerMgr      *PlayerMgr
 		m_pCluster       *cluster.Cluster
 	}
 
@@ -26,7 +27,7 @@ type(
 		GetLog() *base.CLog
 		GetServer() *network.ServerSocket
 		GetCluster () *cluster.Service
-		GetPlayerMgr() *PlayerManager
+		GetPlayerMgr() *PlayerMgr
 		OnServerStart()
 	}
 
@@ -54,7 +55,7 @@ func (this *ServerMgr) GetCluster () *cluster.Cluster {
  	return this.m_pCluster
 }
 
-func (this *ServerMgr) GetPlayerMgr() *PlayerManager{
+func (this *ServerMgr) GetPlayerMgr() *PlayerMgr{
 	return this.m_PlayerMgr
 }
 
@@ -101,12 +102,12 @@ func (this *ServerMgr)Init() bool{
 	var packet1 EventProcess
 	packet1.Init()
 	this.m_pCluster = new (cluster.Cluster)
-	this.m_pCluster.Init(&common.ClusterInfo{Type: rpc.SERVICE_GATESERVER, Ip:CONF.Server.Ip, Port:int32(CONF.Server.Port)}, CONF.Etcd.Endpoints, CONF.Nats.Endpoints)
-	this.m_pCluster.BindPacketFunc(packet1.PacketFunc)
+	this.m_pCluster.InitCluster(&common.ClusterInfo{Type: rpc.SERVICE_GATESERVER, Ip:CONF.Server.Ip, Port:int32(CONF.Server.Port)}, CONF.Etcd.Endpoints, CONF.Nats.Endpoints)
+	this.m_pCluster.BindPacketFunc(actor.MGR.PacketFunc)
 	this.m_pCluster.BindPacketFunc(DispatchPacket)
 
 	//初始玩家管理
-	this.m_PlayerMgr = new(PlayerManager)
+	this.m_PlayerMgr = new(PlayerMgr)
 	this.m_PlayerMgr.Init()
 	return  false
 }

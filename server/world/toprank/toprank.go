@@ -96,19 +96,14 @@ func (this *TopMgr) loadDB() {
 
 //分布式考虑直接数据库
 func (this *TopMgr) Init() {
+	this.Actor.Init()
 	this.m_db = world.SERVER.GetDB()
 	this.m_Log = world.SERVER.GetLog()
 	this.m_topRankTimer = common.NewSimpleTimer(TOP_RANK_SYNC_TIME)
-	this.Actor.Init()
-	actor.MGR.AddActor(this)
 	this.clearRank()
-
 	this.RegisterTimer(1000*1000*1000, this.update) //定时器
-	this.RegisterCall("InTopRank", func(ctx context.Context, nType int, id int64, name string, score, val0, val1 int) {
-		this.newInData(nType, id, name, score, val0, val1)
-	})
-
 	this.loadDB()
+	actor.MGR.RegisterActor(this)
 	this.Actor.Start()
 }
 
@@ -242,6 +237,10 @@ func (this *TopMgr) update() {
 	if this.m_topRankTimer.CheckTimer() {
 		this.loadDB()
 	}
+}
+
+func (this *TopMgr) InTopRank(ctx context.Context, nType int, id int64, name string, score, val0, val1 int) {
+	this.newInData(nType, id, name, score, val0, val1)
 }
 
 //sort interface

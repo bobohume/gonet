@@ -34,42 +34,11 @@ var (
 )
 
 func (this *PlayerMgr) Init() {
-	this.m_db = SERVER.GetDB()
 	this.Actor.Init()
+	this.m_db = SERVER.GetDB()
 	this.m_PlayerMap = make(map[int64]*Player)
-	sterTimer(1000*1000*1000, this.update)
 	this.RegisterTimer(1000*1000*1000, this.Update) //定时器
-	//load blob
-	this.RegisterCall("Load_Player", func(ctx context.Context, playerId int64, accountId int64) {
-		pPlayer, bEx := this.m_PlayerMap[playerId]
-		if !bEx {
-			//加载人物数据
-			rows, err := world.SERVER.GetDB().Query("select `player_blob` from tbl_player where player_id = ?", playerId)
-			//加载错误
-			if err != nil {
-
-			}
-			rs := db.Query(rows, err)
-			if rs.Next() {
-				pPlayer = &Player{UpdateTime: time.Now().Unix(), PlayerBlob: rs.Row().Byte("player_blob"), UpdateTTLTime: time.Now().Unix()}
-				this.m_PlayerMap[playerId] = pPlayer
-			}
-		}
-
-		//发送人物数据
-		SERVER.GetServer().SendMsg(rpc.RpcHead{ClusterId: this.GetRpcHead(ctx).SrcClusterId}, "Load_Player_Finish", accountId, pPlayer.PlayerBlob)
-	})
-
-	//save blob
-	this.RegisterCall("Save_Player", func(ctx context.Context, playerId int64, playerBlob []byte, accountId int64) {
-		pPlayer, bEx := this.m_PlayerMap[playerId]
-		if bEx {
-			pPlayer.PlayerBlob = playerBlob
-			pPlayer.UpdateTTLTime = time.Now().Unix()
-			//设置redis ttl
-		}
-	})
-
+	actor.MGR.RegisterActor(this)
 	this.Actor.Start()
 }
 
@@ -91,5 +60,36 @@ func (this *PlayerMgr) Update() {
 	//删除过期缓存
 	for _, v := range DeletePlayers {
 		delete(this.m_PlayerMap, v)
+	}
+}
+
+//load blob
+func (this *PlayerMgr) Load_Player(ctx context.Context, playerId int64, accountId int64) {
+	pPlayer, bEx := this.m_PlayerMap[playerId]
+	if !bEx {
+		//加载人物数据
+		rows, err := world.SERVER.GetDB().Query("select `player_blob` from tbl_player where player_id = ?", playerId)
+		//加载错误
+		if err != nil {
+
+		}
+		rs := db.Query(rows, err)
+		if rs.Next() {
+			pPlayer = &Player{UpdateTime: time.Now().Unix(), PlayerBlob: rs.Row().Byte("player_blob"), UpdateTTLTime: time.Now().Unix()}
+			this.m_PlayerMap[playerId] = pPlayer
+		}
+	}
+
+	//发送人物数据
+	SERVER.GetServer().SendMsg(rpc.RpcHead{ClusterId: this.GetRpcHead(ctx).SrcClusterId}, "Load_Player_Finish", accountId, pPlayer.PlayerBlob)
+}
+
+//save blob
+func (this *PlayerMgr) Save_Player(ctx context.Context, playerId int64, playerBlob []byte, accountId int64) {
+	pPlayer, bEx := this.m_PlayerMap[playerId]
+	if bEx {
+		pPlayer.PlayerBlob = playerBlob
+		pPlayer.UpdateTTLTime = time.Now().Unix()
+		//设置redis ttl
 	}
 }

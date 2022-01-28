@@ -57,29 +57,29 @@ func (this *UserPrcoess) CheckClient(sockId uint32, packetName string, head rpc.
 	return pAccountInfo
 }
 
-func (this *UserPrcoess) SwtichSendToWorld(socketId uint32, packetName string, head rpc.RpcHead, buff []byte) {
+func (this *UserPrcoess) SwtichSendToWorld(socketId uint32, packetName string, head rpc.RpcHead, packet rpc.Packet) {
 	pAccountInfo := this.CheckClient(socketId, packetName, head)
 	if pAccountInfo != nil {
 		head.ClusterId = pAccountInfo.WClusterId
 		head.DestServerType = rpc.SERVICE_WORLDSERVER
-		SERVER.GetCluster().Send(head, buff)
+		SERVER.GetCluster().Send(head, packet)
 	}
 }
 
-func (this *UserPrcoess) SwtichSendToAccount(socketId uint32, packetName string, head rpc.RpcHead, buff []byte) {
+func (this *UserPrcoess) SwtichSendToAccount(socketId uint32, packetName string, head rpc.RpcHead, packet rpc.Packet) {
 	if this.CheckClientEx(socketId, packetName, head) == true {
 		head.SendType = rpc.SEND_BALANCE
 		head.DestServerType = rpc.SERVICE_ACCOUNTSERVER
-		SERVER.GetCluster().Send(head, buff)
+		SERVER.GetCluster().Send(head, packet)
 	}
 }
 
-func (this *UserPrcoess) SwtichSendToZone(socketId uint32, packetName string, head rpc.RpcHead, buff []byte) {
+func (this *UserPrcoess) SwtichSendToZone(socketId uint32, packetName string, head rpc.RpcHead, packet rpc.Packet) {
 	pAccountInfo := this.CheckClient(socketId, packetName, head)
 	if pAccountInfo != nil {
 		head.ClusterId = pAccountInfo.ZClusterId
 		head.DestServerType = rpc.SERVICE_ZONESERVER
-		SERVER.GetCluster().Send(head, buff)
+		SERVER.GetCluster().Send(head, packet)
 	}
 }
 
@@ -133,7 +133,7 @@ func (this *UserPrcoess) PacketFunc(packet1 rpc.Packet) bool {
 	} else if packetHead.DestServerType == message.SERVICE_ZONESERVER {
 		this.SwtichSendToZone(socketid, packetName, head, rpc.Marshal(head, packetName, packet))
 	} else {
-		this.Actor.PacketFunc(rpc.Packet{Id: socketid, Buff: rpc.Marshal(head, packetName, packet)})
+		actor.MGR.PacketFunc(rpc.Packet{Id: socketid, Buff: rpc.Marshal(head, packetName, packet).Buff})
 	}
 
 	return true
@@ -150,38 +150,38 @@ func (this *UserPrcoess) delKey(SocketId uint32) {
 func (this *UserPrcoess) Init() {
 	this.Actor.Init()
 	this.m_KeyMap = map[uint32]*base.Dh{}
-	this.RegisterCall("C_G_LogoutRequest", func(ctx context.Context, accountId int, UID int) {
-		SERVER.GetLog().Printf("logout Socket:%d Account:%d UID:%d ", this.GetRpcHead(ctx).SocketId, accountId, UID)
-		SERVER.GetPlayerMgr().SendMsg(rpc.RpcHead{}, "DEL_ACCOUNT", this.GetRpcHead(ctx).SocketId)
-		SendToClient(this.GetRpcHead(ctx).SocketId, &message.C_G_LogoutResponse{PacketHead: message.BuildPacketHead(0, 0)})
-	})
-
-	this.RegisterCall("C_G_LoginResquest", func(ctx context.Context, packet *message.C_G_LoginResquest) {
-		head := this.GetRpcHead(ctx)
-		dh := base.Dh{}
-		dh.Init()
-		dh.ExchangePubk(packet.GetKey())
-		this.addKey(head.SocketId, &dh)
-		SendToClient(head.SocketId, &message.G_C_LoginResponse{PacketHead: message.BuildPacketHead(0, 0), Key: dh.PubKey()})
-	})
-
-	this.RegisterCall("C_A_LoginRequest", func(ctx context.Context, packet *message.C_A_LoginRequest) {
-		head := this.GetRpcHead(ctx)
-		dh, bEx := this.m_KeyMap[head.SocketId]
-		if bEx {
-			if dh.ShareKey() == packet.GetKey() {
-				this.delKey(head.SocketId)
-				head.Id = int64(base.ToHash(packet.AccountName))
-				this.SwtichSendToAccount(head.SocketId, base.ToLower("C_A_LoginRequest"), head, rpc.Marshal(head, base.ToLower("C_A_LoginRequest"), packet))
-			} else {
-				SERVER.GetLog().Println("client key cheat", dh.ShareKey(), packet.GetKey())
-			}
-		}
-	})
-
-	this.RegisterCall("DISCONNECT", func(ctx context.Context, socketid uint32) {
-		this.delKey(socketid)
-	})
-
+	actor.MGR.RegisterActor(this)
 	this.Actor.Start()
+}
+
+func (this *UserPrcoess) C_G_LogoutRequest(ctx context.Context, accountId int, UID int) {
+	SERVER.GetLog().Printf("logout Socket:%d Account:%d UID:%d ", this.GetRpcHead(ctx).SocketId, accountId, UID)
+	SERVER.GetPlayerMgr().SendMsg(rpc.RpcHead{}, "DEL_ACCOUNT", this.GetRpcHead(ctx).SocketId)
+	SendToClient(this.GetRpcHead(ctx).SocketId, &message.C_G_LogoutResponse{PacketHead: message.BuildPacketHead(0, 0)})
+}
+
+func (this *UserPrcoess) C_G_LoginResquest(ctx context.Context, packet *message.C_G_LoginResquest) {
+	head := this.GetRpcHead(ctx)
+	dh := base.Dh{}
+	dh.Init()
+	dh.ExchangePubk(packet.GetKey())
+	this.addKey(head.SocketId, &dh)
+	SendToClient(head.SocketId, &message.G_C_LoginResponse{PacketHead: message.BuildPacketHead(0, 0), Key: dh.PubKey()})
+}
+
+func (this *UserPrcoess) C_A_LoginRequest(ctx context.Context, packet *message.C_A_LoginRequest) {
+	head := this.GetRpcHead(ctx)
+	dh, bEx := this.m_KeyMap[head.SocketId]
+	if bEx {
+		if dh.ShareKey() == packet.GetKey() {
+			this.delKey(head.SocketId)
+			this.SwtichSendToAccount(head.SocketId, base.ToLower("C_A_LoginRequest"), head, rpc.Marshal(head, base.ToLower("C_A_LoginRequest"), packet))
+		} else {
+			SERVER.GetLog().Println("client key cheat", dh.ShareKey(), packet.GetKey())
+		}
+	}
+}
+
+func (this *UserPrcoess) DISCONNECT(ctx context.Context, socketid uint32) {
+	this.delKey(socketid)
 }

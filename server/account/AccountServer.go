@@ -2,6 +2,7 @@ package account
 
 import (
 	"database/sql"
+	"gonet/actor"
 	"gonet/base"
 	"gonet/base/ini"
 	"gonet/common"
@@ -93,12 +94,11 @@ func (this *ServerMgr) Init() bool {
 
 	//本身账号集群管理
 	this.m_pCluster = new(cluster.Cluster)
-	this.m_pCluster.Init(&common.ClusterInfo{Type: rpc.SERVICE_ACCOUNTSERVER, Ip: CONF.Server.Ip, Port: int32(CONF.Server.Port)}, CONF.Etcd.Endpoints, CONF.Nats.Endpoints)
+	this.m_pCluster.InitCluster(&common.ClusterInfo{Type: rpc.SERVICE_ACCOUNTSERVER, Ip: CONF.Server.Ip, Port: int32(CONF.Server.Port)}, CONF.Etcd.Endpoints, CONF.Nats.Endpoints)
 
 	var packet EventProcess
 	packet.Init()
-	this.m_pCluster.BindPacketFunc(packet.PacketFunc)
-	this.m_pCluster.BindPacketFunc(this.m_AccountMgr.PacketFunc)
+	this.m_pCluster.BindPacketFunc(actor.MGR.PacketFunc)
 
 	//snowflake
 	this.m_SnowFlake = cluster.NewSnowflake(CONF.SnowFlake.Endpoints)

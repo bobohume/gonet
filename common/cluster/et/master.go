@@ -17,7 +17,6 @@ type (
 	Master struct {
 		m_ServiceMap map[uint32]*common.ClusterInfo
 		m_KeysAPI client.KeysAPI
-		m_Actor actor.IActor
 		common.IClusterInfo
 	}
 )
@@ -37,7 +36,6 @@ func (this *Master) Init(info common.IClusterInfo, Endpoints []string, pActor ac
 
 	this.m_ServiceMap = make(map[uint32]*common.ClusterInfo)
 	this.m_KeysAPI =  client.NewKeysAPI(etcdClient)
-	this.BindActor(pActor)
 	this.Start()
 	this.IClusterInfo = info
 }
@@ -46,18 +44,14 @@ func (this *Master) Start() {
 	go this.Run()
 }
 
-func (this *Master) BindActor(pActor actor.IActor) {
-	this.m_Actor = pActor
-}
-
 func (this *Master) addService(info *common.ClusterInfo) {
-	this.m_Actor.SendMsg(rpc.RpcHead{},"Cluster_Add", info)
+	actor.MGR.SendMsg(rpc.RpcHead{},"Cluster_Add", info)
 	this.m_ServiceMap[info.Id()] = info
 }
 
 func (this *Master) delService(info *common.ClusterInfo) {
 	delete(this.m_ServiceMap, info.Id())
-	this.m_Actor.SendMsg(rpc.RpcHead{},"Cluster_Del", info)
+	actor.MGR.SendMsg(rpc.RpcHead{},"Cluster_Del", info)
 }
 
 func NodeToService(val []byte) *common.ClusterInfo {

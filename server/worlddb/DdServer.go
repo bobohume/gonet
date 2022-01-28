@@ -2,6 +2,7 @@
 
  import (
 	 "database/sql"
+	 "gonet/actor"
 	 "gonet/base"
 	 "gonet/base/ini"
 	 "gonet/common"
@@ -76,7 +77,7 @@ func (this *ServerMgr)Init() bool{
 
 	var packet EventProcess
 	packet.Init()
-	this.m_pService.BindPacketFunc(packet.PacketFunc)
+	this.m_pService.BindPacketFunc(actor.MGR.PacketFunc)
 
 	return  false
 }

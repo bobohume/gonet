@@ -9,11 +9,11 @@ func (this *Player) SendToZone(funcName string, params  ...interface{}) {
 }
 
 func (this *Player) AddMap() {
-	this.SendToZone("LoginMap", 1, this.AccountId, this.GetGateClusterId(), world.SERVER.GetCluster().Id())
+	this.SendToZone("LoginMap", 200000, this.AccountId, this.GetGateClusterId(), world.SERVER.GetCluster().Id())
 }
 
 func (this *Player) LeaveMap() {
-	this.SendToZone("LogoutMap", 1, this.AccountId)
+	this.SendToZone("LogoutMap", 200000, this.AccountId)
 }
 
 func (this *Player) ReloginMap() {

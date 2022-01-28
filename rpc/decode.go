@@ -28,20 +28,20 @@ func Unmarshal(buff []byte) (*RpcPacket, RpcHead){
 }
 
 //rpc Unmarshal
-//pFuncType for RegisterCall func
+//pFuncType for  (this *X)func(conttext, params)
 func UnmarshalBody(rpcPacket *RpcPacket, pFuncType reflect.Type) []interface{}{
 	nCurLen := pFuncType.NumIn()
 	params := make([]interface{}, nCurLen)
 	buf := bytes.NewBuffer(rpcPacket.RpcBody)
 	dec := gob.NewDecoder(buf)
-	for i := 0; i < nCurLen; i++{
-		if i == 0{
-			params[0] = context.WithValue(context.Background(), "rpcHead", *(*RpcHead)(rpcPacket.RpcHead))
+	for i := 1; i < nCurLen; i++{
+		if i == 1{
+			params[1] = context.WithValue(context.Background(), "rpcHead", *(*RpcHead)(rpcPacket.RpcHead))
 			continue
 		}
 
 		val := reflect.New(pFuncType.In(i))
-		if i < int(rpcPacket.ArgLen + 1) {
+		if i < int(rpcPacket.ArgLen + 2) {
 			dec.DecodeValue(val)
 		}
 		params[i] = val.Elem().Interface()

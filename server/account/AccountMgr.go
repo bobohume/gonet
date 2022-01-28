@@ -33,44 +33,11 @@ var (
 )
 
 func (this *AccountMgr) Init() {
-	this.m_db = SERVER.GetDB()
 	this.Actor.Init()
+	this.m_db = SERVER.GetDB()
 	this.m_AccountMap = make(map[int64]*Account)
 	this.m_AccountNameMap = make(map[string]*Account)
-	//账号登录处理
-	this.RegisterCall("Account_Login", func(ctx context.Context, accountName string, accountId int64, socketId uint32, id uint32) {
-		pPlayer := SERVER.GetPlayerRaft().GetPlayer(accountId)
-		if pPlayer == nil {
-			info := &rpc.PlayerClusterInfo{}
-			info.Id = accountId
-			info.WClusterId = SERVER.GetCluster().RandomCluster(rpc.RpcHead{Id: accountId, DestServerType: rpc.SERVICE_WORLDSERVER}).ClusterId
-			info.ZClusterId = SERVER.GetCluster().RandomCluster(rpc.RpcHead{Id: accountId, DestServerType: rpc.SERVICE_ZONESERVER}).ClusterId
-			if info.WClusterId != 0 {
-				if SERVER.GetPlayerRaft().Publish(info) {
-					pPlayer = info
-				}
-			} else {
-				SERVER.GetLog().Println("没有可用的集群")
-			}
-		}
-
-		if pPlayer != nil {
-			//踢出其他账号服务器
-			this.RemoveAccount(accountId, true)
-			pAccount := this.AddAccount(accountId)
-			if pAccount != nil {
-				SERVER.GetLog().Printf("帐号[%s]返回登录OK", accountName)
-				SERVER.GetCluster().SendMsg(rpc.RpcHead{ClusterId: id, DestServerType: rpc.SERVICE_GATESERVER}, "A_G_Account_Login", socketId, *pPlayer)
-			}
-		}
-	})
-
-	//账号断开连接
-	this.RegisterCall("G_ClientLost", func(ctx context.Context, accountId int64) {
-		SERVER.GetLog().Printf("账号[%d] 断开链接", accountId)
-		this.RemoveAccount(accountId, false)
-	})
-
+	actor.MGR.RegisterActor(this)
 	this.Actor.Start()
 }
 
@@ -132,4 +99,38 @@ func (this *AccountMgr) RemoveAccount(accountId int64, bLogin bool) {
 
 func (this *AccountMgr) KickAccount(accountId int64) {
 
+}
+
+//账号登录处理
+func (this *AccountMgr) Account_Login(ctx context.Context, accountName string, accountId int64, socketId uint32, id uint32) {
+	pPlayer := SERVER.GetPlayerRaft().GetPlayer(accountId)
+	if pPlayer == nil {
+		info := &rpc.PlayerClusterInfo{}
+		info.Id = accountId
+		info.WClusterId = SERVER.GetCluster().RandomCluster(rpc.RpcHead{Id: accountId, DestServerType: rpc.SERVICE_WORLDSERVER}).ClusterId
+		info.ZClusterId = SERVER.GetCluster().RandomCluster(rpc.RpcHead{Id: accountId, DestServerType: rpc.SERVICE_ZONESERVER}).ClusterId
+		if info.WClusterId != 0 {
+			if SERVER.GetPlayerRaft().Publish(info) {
+				pPlayer = info
+			}
+		} else {
+			SERVER.GetLog().Println("没有可用的集群")
+		}
+	}
+
+	if pPlayer != nil {
+		//踢出其他账号服务器
+		this.RemoveAccount(accountId, true)
+		pAccount := this.AddAccount(accountId)
+		if pAccount != nil {
+			SERVER.GetLog().Printf("帐号[%s]返回登录OK", accountName)
+			SERVER.GetCluster().SendMsg(rpc.RpcHead{ClusterId: id, DestServerType: rpc.SERVICE_GATESERVER}, "A_G_Account_Login", socketId, *pPlayer)
+		}
+	}
+}
+
+//账号断开连接
+func (this *AccountMgr) G_ClientLost(ctx context.Context, accountId int64) {
+	SERVER.GetLog().Printf("账号[%d] 断开链接", accountId)
+	this.RemoveAccount(accountId, false)
 }
