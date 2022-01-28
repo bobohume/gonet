@@ -28,17 +28,15 @@ func (this *SnowflakeR) Value() string{
 	return this.m_Ip
 }
 
-func (this *SnowflakeR) Run(){
+func (this *SnowflakeR) Run() {
 	for {
 	TrySET:
 		//设置key
 		key := this.Key()
-		val, err := redis.Int(this.m_KeysAPI.Do("setnx", key, this.Value()))
-		if err == nil && val == 1{
-			this.m_KeysAPI.Do("expire", key, 10)
-		}else{
+		val, err := redis.Int(this.m_KeysAPI.Do("set", key, this.Value(), "nx", "ex", 10))
+		if err != nil {
 			val, err := redis.Strings(this.m_KeysAPI.Do("keys", uuid_keys))
-			if err == nil{
+			if err == nil {
 				Ids := [base.WorkeridMax + 1]bool{}
 				for _, v := range val {
 					Id := base.Int(v[len(uuid_dir2):])
@@ -56,15 +54,15 @@ func (this *SnowflakeR) Run(){
 			this.m_Id = this.m_Id & WorkeridMax
 			goto TrySET
 		}
-		this.m_UUID.Init(this.m_Id)//设置uuid
+		this.m_UUID.Init(this.m_Id) //设置uuid
 
 		//保持ttl
 	TryTTL:
 		val, err = redis.Int(this.m_KeysAPI.Do("expire", key, 10))
-		if err == nil && val == 1{
+		if err == nil && val == 1 {
 			time.Sleep(time.Second * 3)
 			goto TryTTL
-		}else{
+		} else {
 			goto TrySET
 		}
 	}

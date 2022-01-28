@@ -137,6 +137,7 @@ func (this *WebSocketClient) Run() bool {
 		if n > 0 {
 			this.m_PacketParser.Read(buff[:n])
 		}
+		this.m_HeartTime = int(time.Now().Unix()) + HEART_TIME_OUT
 		return true
 	}
 

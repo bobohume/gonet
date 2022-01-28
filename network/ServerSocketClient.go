@@ -180,7 +180,6 @@ func (this *ServerSocketClient) Run() bool {
 
 // heart
 func (this *ServerSocketClient) Update() {
-	fmt.Println("heart", this.m_ClientId)
 	now := int(time.Now().Unix())
 	// timeout
 	if this.m_HeartTime < now {

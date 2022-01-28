@@ -171,6 +171,7 @@ func (this *UserPrcoess) Init() {
 		if bEx {
 			if dh.ShareKey() == packet.GetKey() {
 				this.delKey(head.SocketId)
+				head.Id = int64(base.ToHash(packet.AccountName))
 				this.SwtichSendToAccount(head.SocketId, base.ToLower("C_A_LoginRequest"), head, rpc.Marshal(head, base.ToLower("C_A_LoginRequest"), packet))
 			} else {
 				SERVER.GetLog().Println("client key cheat", dh.ShareKey(), packet.GetKey())

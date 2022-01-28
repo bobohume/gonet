@@ -55,7 +55,7 @@ func (this *PlayerRaft) Publish(info *rpc.PlayerClusterInfo) bool {
 	if err == nil {
 		leaseId := leaseResp.ID
 		info.LeaseId = int64(leaseId)
-		key := PLAYER_DIR + fmt.Sprintf("%d", info.Id)
+		key := fmt.Sprintf("%s%d", PLAYER_DIR, info.Id)
 		data, _ := json.Marshal(info)
 		//设置key
 		tx := this.m_Client.Txn(context.Background())
