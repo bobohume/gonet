@@ -38,6 +38,11 @@ etcd:
   endpoints:
     - http://127.0.0.1:2379
 
+# raft同步
+raft:
+  endpoints:
+    - http://127.0.0.1:2379
+
 # uuid
 snowflake:
   endpoints:
