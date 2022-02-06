@@ -214,9 +214,7 @@ func (this *Cluster) CallMsg(cb interface{}, head rpc.RpcHead, funcName string, 
 				in[i] = reflect.ValueOf(param)
 			}
 
-			this.Trace(funcName)
 			f.Call(in)
-			this.Trace("")
 		}else{
 			log.Printf("CallMsg [%s] params at least one context", funcName)
 			return errors.New("callmsg params at least one context")
