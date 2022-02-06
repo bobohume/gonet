@@ -36,8 +36,8 @@ type (
 	Raft struct {
 		Endpoints []string `yaml:"endpoints"`
 	}
-	
-	Http struct{
+
+	Http struct {
 		Listen string `yaml:"listen"`
 	}
 )

@@ -73,32 +73,31 @@ func (this *ActorPool) BoardCast(funcName string, params ...interface{}){
 }
 
 func (this *ActorPool) SendMsg(head rpc.RpcHead,funcName string, params ...interface{}) {
-	buff := rpc.Marshal(head, funcName, params...)
 	head.SocketId = 0
 	if head.Id != 0{
 		pActor := this.GetActor(head.Id)
-		if pActor != nil && pActor.FindCall(funcName) != nil{
-			pActor.Send(head, buff)
+		if pActor != nil && pActor.HasRpc(funcName){
+			pActor.Send(head, rpc.Marshal(head, funcName, params...))
 			return
 		}
 	}
-	this.Send(head, buff)
+	this.Send(head, rpc.Marshal(head, funcName, params...))
 }
 
 //actor pool must rewrite PacketFunc
 func (this *ActorPool) PacketFunc(packet rpc.Packet) bool{
-	rpcPacket, head := rpc.UnmarshalHead(packet.Buff)
-	if this.FindCall(rpcPacket.FuncName) != nil{
+	rpcPacket, head := rpc.Unmarshal(packet.Buff)
+	if this.HasRpc(rpcPacket.FuncName){
 		head.SocketId = packet.Id
 		head.Reply = packet.Reply
-		this.Send(head, packet.Buff)
+		this.Send(head, packet)
 		return true
 	}else{
 		pActor := this.GetActor(rpcPacket.RpcHead.Id)
-		if pActor != nil && pActor.FindCall(rpcPacket.FuncName) != nil{
+		if pActor != nil && pActor.HasRpc(rpcPacket.FuncName){
 			head.SocketId = packet.Id
 			head.Reply = packet.Reply
-			pActor.Send(head, packet.Buff)
+			pActor.Send(head, packet)
 			return true
 		}
 	}

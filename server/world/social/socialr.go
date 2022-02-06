@@ -47,21 +47,10 @@ func RdKey(nPlayerId int64) string{
 }
 
 func (this *SocialMgrR) Init() {
+	this.Actor.Init()
 	this.m_db = world.SERVER.GetDB()
 	this.m_Log = world.SERVER.GetLog()
-	this.Actor.Init()
-	actor.MGR.AddActor(this)
-
-	this.RegisterCall("C_W_MakeLinkRequest", func(ctx context.Context, PlayerId, TargetId int64, Type int8) {
-		pPlayer := player.SIMPLEMGR.GetPlayerDataById(PlayerId)
-		pTarget	:= player.SIMPLEMGR.GetPlayerDataById(TargetId)
-		if pPlayer == nil || pTarget == nil{
-			this.m_Log.Printf("查询玩家id[%d][%d]数据为空", PlayerId, TargetId)
-			return
-		}
-		this.makeLink(PlayerId, TargetId, Type)
-	})
-
+	actor.MGR.RegisterActor(this)
 	this.Actor.Start()
 }
 
@@ -277,4 +266,14 @@ func (this *SocialMgrR) addFriendValue(PlayerId, TargetId int64, Value int) int{
 		return nil, nil
 	})
 	return Value
+}
+
+func (this *SocialMgrR) C_W_MakeLinkRequest(ctx context.Context, PlayerId, TargetId int64, Type int8) {
+	pPlayer := player.SIMPLEMGR.GetPlayerDataById(PlayerId)
+	pTarget	:= player.SIMPLEMGR.GetPlayerDataById(TargetId)
+	if pPlayer == nil || pTarget == nil{
+		this.m_Log.Printf("查询玩家id[%d][%d]数据为空", PlayerId, TargetId)
+		return
+	}
+	this.makeLink(PlayerId, TargetId, Type)
 }

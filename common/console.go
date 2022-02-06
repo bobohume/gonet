@@ -55,7 +55,7 @@ func consoleError(command string){
 		}
 	}
 
-	if pCmd.FindCall(funcName) != nil{
+	if pCmd.HasRpc(funcName){
 		pCmd.SendMsg(rpc.RpcHead{}, funcName, params...)
 	}else{
 		consoleError(command)

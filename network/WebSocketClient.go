@@ -49,7 +49,7 @@ func (this *WebSocketClient) Start() bool {
 	return true
 }
 
-func (this *WebSocketClient) Send(head rpc.RpcHead, buff []byte) int {
+func (this *WebSocketClient) Send(head rpc.RpcHead, packet rpc.Packet) int {
 	defer func() {
 		if err := recover(); err != nil {
 			base.TraceCode(err)
@@ -58,12 +58,12 @@ func (this *WebSocketClient) Send(head rpc.RpcHead, buff []byte) int {
 
 	if this.m_nConnectType == CLIENT_CONNECT { //对外链接send不阻塞
 		select {
-		case this.m_SendChan <- buff:
+		case this.m_SendChan <- packet.Buff:
 		default: //网络太卡,tcp send缓存满了并且发送队列也满了
 			this.OnNetFail(1)
 		}
 	} else {
-		return this.DoSend(buff)
+		return this.DoSend(packet.Buff)
 	}
 	return 0
 }
@@ -91,7 +91,7 @@ func (this *WebSocketClient) OnNetFail(error int) {
 		stream.WriteInt(int(this.m_ClientId), 32)
 		this.HandlePacket(stream.GetBuffer())
 	} else {
-		this.CallMsg("DISCONNECT", this.m_ClientId)
+		this.CallMsg(rpc.RpcHead{}, "DISCONNECT", this.m_ClientId)
 	}
 	if this.m_pServer != nil {
 		this.m_pServer.DelClinet(this)
@@ -137,7 +137,6 @@ func (this *WebSocketClient) Run() bool {
 		if n > 0 {
 			this.m_PacketParser.Read(buff[:n])
 		}
-		this.m_HeartTime = int(time.Now().Unix()) + HEART_TIME_OUT
 		return true
 	}
 

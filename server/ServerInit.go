@@ -1,9 +1,7 @@
 package main
 
 import (
-	"gonet/actor"
 	"gonet/common"
-	"gonet/server/world"
 	"gonet/server/world/chat"
 	"gonet/server/world/cmd"
 	"gonet/server/world/data"
@@ -28,7 +26,6 @@ func InitMgr(serverName string){
 		toprank.MGR().Init()
 		player.SIMPLEMGR.Init()
 		social.MGR().Init()
-		actor.MGR.InitActorHandle(world.SERVER.GetCluster())
 	}
 }
 

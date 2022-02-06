@@ -71,8 +71,8 @@ type (
 		Clear()
 		Close()
 		SendMsg(rpc.RpcHead, string, ...interface{})
-		Send(rpc.RpcHead, []byte) int
-		CallMsg(string, ...interface{}) //回调消息处理
+		Send(rpc.RpcHead, rpc.Packet) int
+		CallMsg(rpc.RpcHead, string, ...interface{}) //回调消息处理
 
 		GetId() uint32
 		GetState() int32
@@ -164,7 +164,7 @@ func (this *Socket) SetState(state int32) {
 func (this *Socket) SendMsg(head rpc.RpcHead, funcName string, params ...interface{}) {
 }
 
-func (this *Socket) Send(rpc.RpcHead, []byte) int {
+func (this *Socket) Send(rpc.RpcHead, rpc.Packet) int {
 	return 0
 }
 
@@ -210,9 +210,8 @@ func (this *Socket) BindPacketFunc(callfunc PacketFunc) {
 	this.m_PacketFuncList.PushBack(callfunc)
 }
 
-func (this *Socket) CallMsg(funcName string, params ...interface{}) {
-	buff := rpc.Marshal(rpc.RpcHead{}, funcName, params...)
-	this.HandlePacket(buff)
+func (this *Socket) CallMsg(head rpc.RpcHead, funcName string, params ...interface{}) {
+	this.HandlePacket(rpc.Marshal(head, funcName, params...).Buff)
 }
 
 func (this *Socket) HandlePacket(buff []byte) {

@@ -54,6 +54,7 @@ message Packet{
 	uint32 Id = 1;//socketid
 	string Reply = 2;//call sessionid
 	bytes Buff = 3;//buff
+	RpcPacket RpcPacket = 4;//rpc packet
 }
 
 //玩家集群信息

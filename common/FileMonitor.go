@@ -35,20 +35,13 @@ func (this *FileMonitor) Init() {
 	this.Actor.Init()
 	this.m_FilesMap = map[string]*FileInfo{}
 	this.RegisterTimer(3*time.Second, this.update)
-	this.RegisterCall("addfile", func(ctx context.Context, fileName string, p *int64) {
-		pFunc := (*FileRead)(unsafe.Pointer(p))
-		this.addFile(fileName, *pFunc)
-	})
-
-	this.RegisterCall("delfile", func(ctx context.Context, fileName string) {
-		this.delFile(fileName)
-	})
+	actor.MGR.RegisterActor(this)
 	this.Actor.Start()
 }
 
 func (this *FileMonitor) AddFile(fileName string, pFunc FileRead) {
 	ponit := unsafe.Pointer(&pFunc)
-	this.SendMsg(rpc.RpcHead{}, "addfile", fileName, (*int64)(ponit))
+	this.SendMsg(rpc.RpcHead{}, "Addfile", fileName, (*int64)(ponit))
 }
 
 func (this *FileMonitor) addFile(fileName string, pFunc FileRead) {
@@ -77,4 +70,13 @@ func (this *FileMonitor) update() {
 			}
 		}
 	}
+}
+
+func (this *FileMonitor) Addfile(ctx context.Context, fileName string, p *int64) {
+	pFunc := (*FileRead)(unsafe.Pointer(p))
+	this.addFile(fileName, *pFunc)
+}
+
+func (this *FileMonitor) Delfile(ctx context.Context, fileName string) {
+	this.delFile(fileName)
 }

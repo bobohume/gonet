@@ -2,6 +2,7 @@ package world
 
 import (
 	"database/sql"
+	"gonet/actor"
 	"gonet/base"
 	"gonet/common"
 	"gonet/common/cluster"
@@ -109,11 +110,11 @@ func (this *ServerMgr) Init() bool {
 
 	//本身world集群管理
 	this.m_pCluster = new(cluster.Cluster)
-	this.m_pCluster.Init(&common.ClusterInfo{Type: rpc.SERVICE_WORLDSERVER, Ip: CONF.Server.Ip, Port: int32(CONF.Server.Port)}, CONF.Etcd.Endpoints, CONF.Nats.Endpoints)
+	this.m_pCluster.InitCluster(&common.ClusterInfo{Type: rpc.SERVICE_WORLDSERVER, Ip: CONF.Server.Ip, Port: int32(CONF.Server.Port)}, CONF.Etcd.Endpoints, CONF.Nats.Endpoints)
 
 	var packet EventProcess
 	packet.Init()
-	this.m_pCluster.BindPacketFunc(packet.PacketFunc)
+	this.m_pCluster.BindPacketFunc(actor.MGR.PacketFunc)
 	return false
 }
 

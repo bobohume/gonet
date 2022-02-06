@@ -46,11 +46,10 @@ func (this *ClientSocket) Start() bool {
 }
 
 func (this *ClientSocket) SendMsg(head rpc.RpcHead, funcName string, params ...interface{}) {
-	buff := rpc.Marshal(head, funcName, params...)
-	this.Send(head, buff)
+	this.Send(head, rpc.Marshal(head, funcName, params...))
 }
 
-func (this *ClientSocket) Send(head rpc.RpcHead, buff []byte) int {
+func (this *ClientSocket) Send(head rpc.RpcHead, packet rpc.Packet) int {
 	defer func() {
 		if err := recover(); err != nil {
 			base.TraceCode(err)
@@ -61,7 +60,7 @@ func (this *ClientSocket) Send(head rpc.RpcHead, buff []byte) int {
 		return 0
 	}
 
-	n, err := this.m_Conn.Write(this.m_PacketParser.Write(buff))
+	n, err := this.m_Conn.Write(this.m_PacketParser.Write(packet.Buff))
 	handleError(err)
 	if n > 0 {
 		return n
@@ -97,7 +96,7 @@ func (this *ClientSocket) Connect() bool {
 	}
 
 	fmt.Printf("%s 连接成功，请输入信息！\n", connectStr)
-	this.CallMsg("COMMON_RegisterRequest")
+	this.CallMsg(rpc.RpcHead{}, "COMMON_RegisterRequest")
 	return true
 }
 
@@ -106,7 +105,7 @@ func (this *ClientSocket) OnDisconnect() {
 
 func (this *ClientSocket) OnNetFail(int) {
 	this.Stop()
-	this.CallMsg("DISCONNECT", this.m_ClientId)
+	this.CallMsg(rpc.RpcHead{},"DISCONNECT", this.m_ClientId)
 }
 
 func (this *ClientSocket) Run() bool {

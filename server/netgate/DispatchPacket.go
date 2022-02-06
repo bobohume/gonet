@@ -16,7 +16,7 @@ var(
 )
 
 func SendToClient(socketId uint32, packet proto.Message){
-	SERVER.GetServer().Send(rpc.RpcHead{SocketId:socketId}, message.Encode(packet))
+	SERVER.GetServer().Send(rpc.RpcHead{SocketId:socketId}, rpc.Packet{Buff: message.Encode(packet)})
 }
 
 func DispatchPacket(packet rpc.Packet) bool{
@@ -37,13 +37,13 @@ func DispatchPacket(packet rpc.Packet) bool{
 		dec.Decode(packet)
 		buff := message.Encode(packet)
 		if messageName== A_C_RegisterResponse || messageName == A_C_LoginResponse {
-			SERVER.GetServer().Send(rpc.RpcHead{SocketId:head.SocketId}, buff)
+			SERVER.GetServer().Send(rpc.RpcHead{SocketId:head.SocketId}, rpc.Packet{Buff:buff})
 		}else{
 			socketId := SERVER.GetPlayerMgr().GetSocket(head.Id)
-			SERVER.GetServer().Send(rpc.RpcHead{SocketId:socketId}, buff)
+			SERVER.GetServer().Send(rpc.RpcHead{SocketId:socketId}, rpc.Packet{Buff:buff})
 		}
 	default:
-		SERVER.GetCluster().Send(head, packet.Buff)
+		SERVER.GetCluster().Send(head, packet)
 	}
 
 	return true

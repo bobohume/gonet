@@ -138,13 +138,12 @@ func TestUMarshalRpc(t *testing.T){
 		aa = append(aa, int32(nValue))
 	}
 	for i := 0; i < ntimes; i++{
-		buff := rpc.Marshal(rpc.RpcHead{}, "test", aa)
-		parse(buff)
+		parse(rpc.Marshal(rpc.RpcHead{}, "test", aa))
 	}
 }
 
-func parse (buff []byte) {
-	rpcPacket, _ := rpc.UnmarshalHead(buff)
+func parse (packet rpc.Packet) {
+	rpcPacket, _ := rpc.Unmarshal(packet.Buff)
 	pFuncType := reflect.TypeOf(func(ctx context.Context, aa []int32) {
 	})
 	rpc.UnmarshalBody(rpcPacket, pFuncType)

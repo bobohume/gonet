@@ -1,7 +1,7 @@
 package rpc
 
 import (
-	"context"
+	"golang.org/x/net/context"
 	"gonet/actor"
 	"gonet/base"
 	"gonet/common"
@@ -47,29 +47,17 @@ type(
 )
 
 func (this *ClusterServer) InitService(info *common.ClusterInfo, Endpoints []string) {
+	this.Actor.Init()
 	this.m_ClusterLocker = &sync.RWMutex{}
 	//注册服务器
 	this.Service = NewService(info, Endpoints)
 	this.m_ClusterMap = make(HashClusterMap)
 	this.m_ClusterSocketMap = make(HashClusterSocketMap)
 	this.m_HashRing = base.NewHashRing()
+	actor.MGR.RegisterActor(this)
 }
 
 func (this *ClusterServer) RegisterClusterCall(){
-	this.RegisterCall("COMMON_RegisterRequest", func(ctx context.Context, info *common.ClusterInfo) {
-		pServerInfo := info
-		pServerInfo.SocketId = this.GetRpcHead(ctx).SocketId
-
-		this.AddCluster(pServerInfo)
-	})
-
-	//链接断开
-	this.RegisterCall("DISCONNECT", func(ctx context.Context, socketId uint32) {
-		pCluster := this.GetClusterBySocket(socketId)
-		if pCluster != nil{
-			this.DelCluster(pCluster)
-		}
-	})
 }
 
 func (this *ClusterServer) AddCluster(info *common.ClusterInfo){
@@ -128,24 +116,24 @@ func (this *ClusterServer) BindServer(pService *network.ServerSocket){
 	this.m_pService = pService
 }
 
-func (this *ClusterServer) sendPoint(head rpc.RpcHead, buff []byte){
+func (this *ClusterServer) sendPoint(head rpc.RpcHead, packet rpc.Packet){
 	pCluster:= this.GetCluster(head)
 	if pCluster != nil {
 		head.SocketId = pCluster.SocketId
-		this.m_pService.Send(head, buff)
+		this.m_pService.Send(head, packet)
 	}
 }
 
-func (this *ClusterServer) balanceSend(head rpc.RpcHead, buff []byte){
+func (this *ClusterServer) balanceSend(head rpc.RpcHead, packet rpc.Packet){
 	_, head.ClusterId = this.m_HashRing.Get64(head.Id)
 	pCluster := this.GetCluster(head)
 	if pCluster != nil{
 		head.SocketId = pCluster.SocketId
-		this.m_pService.Send(head, buff)
+		this.m_pService.Send(head, packet)
 	}
 }
 
-func (this *ClusterServer) boardCastSend(head rpc.RpcHead, buff []byte){
+func (this *ClusterServer) boardCastSend(head rpc.RpcHead, packet rpc.Packet){
 	clusterList := []*common.ClusterInfo{}
 	this.m_ClusterLocker.RLock()
 	for _ ,v := range this.m_ClusterMap{
@@ -154,26 +142,25 @@ func (this *ClusterServer) boardCastSend(head rpc.RpcHead, buff []byte){
 	this.m_ClusterLocker.RUnlock()
 	for _, v := range clusterList{
 		head.SocketId = v.SocketId
-		this.m_pService.Send(head, buff)
+		this.m_pService.Send(head, packet)
 	}
 }
 
 func (this *ClusterServer) SendMsg(head rpc.RpcHead, funcName string, params  ...interface{}){
-	buff := rpc.Marshal(head, funcName, params...)
-	this.Send(head, buff)
+	this.Send(head, rpc.Marshal(head, funcName, params...))
 }
 
-func (this *ClusterServer) Send(head rpc.RpcHead, buff []byte){
+func (this *ClusterServer) Send(head rpc.RpcHead, packet rpc.Packet){
 	if head.DestServerType != rpc.SERVICE_GATESERVER{
-		this.balanceSend(head, buff)
+		this.balanceSend(head, packet)
 	}else{
 		switch head.SendType{
 		case rpc.SEND_BALANCE:
-			this.balanceSend(head, buff)
+			this.balanceSend(head, packet)
 		case rpc.SEND_POINT:
-			this.sendPoint(head, buff)
+			this.sendPoint(head, packet)
 		default:
-			this.boardCastSend(head, buff)
+			this.boardCastSend(head, packet)
 		}
 	}
 }
@@ -188,4 +175,20 @@ func (this *ClusterServer) RandomCluster(head rpc.RpcHead) rpc.RpcHead{
 		head.SocketId = pCluster.SocketId
 	}
 	return head
+}
+
+
+func (this *ClusterServer) COMMON_RegisterRequest(ctx context.Context, info *common.ClusterInfo) {
+	pServerInfo := info
+	pServerInfo.SocketId = this.GetRpcHead(ctx).SocketId
+
+	this.AddCluster(pServerInfo)
+}
+
+//链接断开
+func (this *ClusterServer) DISCONNECT(ctx context.Context, socketId uint32) {
+	pCluster := this.GetClusterBySocket(socketId)
+	if pCluster != nil{
+		this.DelCluster(pCluster)
+	}
 }

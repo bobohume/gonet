@@ -56,6 +56,7 @@ func (this *PlayerSimpleMgr) Init() {
 	this.m_Log = world.SERVER.GetLog()
 	this.m_SimplePlayerMap = make(map[int64] *model.SimplePlayerData)
 	this.m_SimplePlayerNameMap = make(map[string] *model.SimplePlayerData)
+	actor.MGR.RegisterActor(this)
 	this.Actor.Start()
 }
 

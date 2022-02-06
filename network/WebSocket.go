@@ -116,10 +116,10 @@ func (this *WebSocket) LoadClient() *WebSocketClient {
 	return s
 }
 
-func (this *WebSocket) Send(head rpc.RpcHead, buff []byte) int {
+func (this *WebSocket) Send(head rpc.RpcHead, packet rpc.Packet) int {
 	pClient := this.GetClientById(head.SocketId)
 	if pClient != nil {
-		pClient.Send(head, buff)
+		pClient.Send(head, packet)
 	}
 	return 0
 }
