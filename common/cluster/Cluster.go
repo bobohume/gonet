@@ -37,7 +37,6 @@ type(
 		m_Master    *Master
 		m_ClusterInfoMap map[uint32] *common.ClusterInfo
 		m_PacketFuncList	*vector.Vector//call back
-		m_CallBackMap sync.Map
 		//share_rpc	int `rpc:"GetRpcHead;UpdateTimer"`
 	}
 
@@ -201,14 +200,7 @@ func (this *Cluster) CallMsg(cb interface{}, head rpc.RpcHead, funcName string, 
 	reply, err := this.m_Conn.Request(getRpcCallChannel(head) ,packet.Buff, CALL_TIME_OUT)
 	if err == nil{
 		rpcPacket, _ := rpc.Unmarshal(reply.Data)
-		var cf *CallFunc
-		val, bOk := this.m_CallBackMap.Load(funcName)
-		if !bOk{
-			cf = &CallFunc{Func:cb, FuncVal:reflect.ValueOf(cb), FuncType:reflect.TypeOf(cb), FuncParams:reflect.TypeOf(cb).String()}
-			this.m_CallBackMap.Store(funcName, cf)
-		}else{
-			cf = val.(*CallFunc)
-		}
+		cf := &CallFunc{Func:cb, FuncVal:reflect.ValueOf(cb), FuncType:reflect.TypeOf(cb), FuncParams:reflect.TypeOf(cb).String()}
 		f := cf.FuncVal
 		k := cf.FuncType
 		err, params := rpc.UnmarshalBodyCall(rpcPacket, k)
