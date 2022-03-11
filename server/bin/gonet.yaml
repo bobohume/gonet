@@ -1,14 +1,5 @@
-﻿# accountdb
-accountDB:
-  ip: 127.0.0.1
-  name: md_account
-  user: root
-  password: 123456
-  maxIdleConns: 500
-  maxOpenConns: 1000
-
-# worldDB
-worldDB:
+﻿# DB
+DB:
   ip: 127.0.0.1
   name: md_actor
   user: root
@@ -17,11 +8,11 @@ worldDB:
   maxOpenConns: 1000
 
 # 服务器端口配置
-account:
+gm:
   ip: 127.0.0.1
   port: 31200
 
-world:
+game:
   ip: 127.0.0.1
   port: 31300
 
@@ -29,9 +20,13 @@ zone:
   ip: 127.0.0.1
   port: 31600
 
-netgate:
+db:
   ip: 0.0.0.0
   port: 31700
+
+gate:
+  ip: 0.0.0.0
+  port: 31800
 
 # 服发现
 etcd:
@@ -51,9 +46,3 @@ snowflake:
 # nats
 nats:
   endpoints: 127.0.0.1:4222
-
-# redis配置
-redis:
-  open: true
-  ip: 127.0.0.1
-  password: 123456

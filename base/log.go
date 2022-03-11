@@ -52,6 +52,7 @@ func (this *CLog) Init(fileName string) bool {
 	this.m_LogSuffix = "log"
 	this.m_ErrSuffix = "err"
 	GLOG = this
+	log.SetPrefix(fmt.Sprintf("[%s]", this.m_FileName))
 	return true
 }
 
@@ -66,7 +67,7 @@ func (this *CLog) GetSuffix(nType LG_TYPE) string{
 func (this *CLog) Write(nType LG_TYPE){
 	this.WriteFile(nType)
 	tTime := time.Now()
-	this.m_Logger[nType].SetPrefix(fmt.Sprintf("[%04d-%02d-%02d %02d:%02d:%02d]",tTime.Year(), tTime.Month(), tTime.Day(),
+	this.m_Logger[nType].SetPrefix(fmt.Sprintf("[%s][%04d-%02d-%02d %02d:%02d:%02d]", this.m_FileName, tTime.Year(), tTime.Month(), tTime.Day(),
 		tTime.Hour(), tTime.Minute(), tTime.Second()))
 }
 
@@ -155,7 +156,7 @@ func (this *CLog) WriteFile(nType LG_TYPE){
 		}
 
 		this.m_Logger[nType].SetOutput(this.m_pFile[nType])
-		this.m_Logger[nType].SetPrefix(fmt.Sprintf("[%04d-%02d-%02d %02d:%02d:%02d]",tTime.Year(), tTime.Month(), tTime.Day(),
+		this.m_Logger[nType].SetPrefix(fmt.Sprintf("[%s][%04d-%02d-%02d %02d:%02d:%02d]", this.m_FileName, tTime.Year(), tTime.Month(), tTime.Day(),
 			tTime.Hour(), tTime.Minute(), tTime.Second()))
 		this.m_Logger[nType].SetFlags(log.Llongfile)
 		Stat,_ := this.m_pFile[nType].Stat()

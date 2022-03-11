@@ -115,29 +115,23 @@ func Init(){
 	initCrcNames()
 	//注册消息
 	//PacketHead 中的 DestServerType 决定转发到那个服务器
-	RegisterPacket(&C_A_LoginRequest{PacketHead:BuildPacketHead(0, rpc.SERVICE_GATESERVER)})
-	RegisterPacket(&C_G_LoginResquest{PacketHead:BuildPacketHead(0, rpc.SERVICE_GATESERVER)})
-	RegisterPacket(&C_A_RegisterRequest{PacketHead:BuildPacketHead(0, rpc.SERVICE_ACCOUNTSERVER)})
-	RegisterPacket(&C_G_LogoutResponse{PacketHead:BuildPacketHead(0, rpc.SERVICE_GATESERVER)})
-	RegisterPacket(&C_W_CreatePlayerRequest{PacketHead:BuildPacketHead(0, rpc.SERVICE_WORLDSERVER)})
-	RegisterPacket(&C_W_Game_LoginRequset{PacketHead:BuildPacketHead(0, rpc.SERVICE_WORLDSERVER)})
-	RegisterPacket(&C_W_ChatMessage{PacketHead:BuildPacketHead(0, rpc.SERVICE_WORLDSERVER)})
+	RegisterPacket(&LoginAccountRequest{PacketHead:BuildPacketHead(0, rpc.SERVICE_GATE)})
+	RegisterPacket(&LoginPlayerRequset{PacketHead:BuildPacketHead(0, rpc.SERVICE_GATE)})
+	RegisterPacket(&CreatePlayerRequest{PacketHead:BuildPacketHead(0, rpc.SERVICE_GM)})
+	RegisterPacket(&ChatMessageRequest{PacketHead:BuildPacketHead(0, rpc.SERVICE_GM)})
 
-	RegisterPacket(&C_Z_LoginCopyMap{PacketHead:BuildPacketHead(0, rpc.SERVICE_ZONESERVER)})
-	RegisterPacket(&C_Z_Move{PacketHead:BuildPacketHead(0, rpc.SERVICE_ZONESERVER)})
-	RegisterPacket(&C_Z_Skill{PacketHead:BuildPacketHead(0, rpc.SERVICE_ZONESERVER)})
+	RegisterPacket(&C_Z_LoginCopyMap{PacketHead:BuildPacketHead(0, rpc.SERVICE_ZONE)})
+	RegisterPacket(&C_Z_Move{PacketHead:BuildPacketHead(0, rpc.SERVICE_ZONE)})
+	RegisterPacket(&C_Z_Skill{PacketHead:BuildPacketHead(0, rpc.SERVICE_ZONE)})
 }
 
 //client消息回调
 func InitClient(){
 	initCrcNames()
 	//注册消息
-	RegisterPacket(&W_C_SelectPlayerResponse{})
-	RegisterPacket(&W_C_CreatePlayerResponse{})
 	RegisterPacket(&Z_C_LoginMap{})
 	RegisterPacket(&Z_C_ENTITY{})
-	RegisterPacket(&W_C_ChatMessage{})
-	RegisterPacket(&A_C_LoginResponse{})
-	RegisterPacket(&A_C_RegisterResponse{})
-	RegisterPacket(&G_C_LoginResponse{})
+	RegisterPacket(&ChatMessageResponse{})
+	RegisterPacket(&LoginAccountResponse{})
+	RegisterPacket(&SelectPlayerResponse{})
 }

@@ -3,6 +3,7 @@ package etv3
 import (
 	"encoding/json"
 	"fmt"
+	"gonet/actor"
 	"gonet/rpc"
 	"log"
 	"sync"
@@ -88,6 +89,7 @@ func (this *PlayerRaft) delPlayer(info *rpc.PlayerClusterInfo) {
 	this.m_PlayerLocker.Lock()
 	delete(this.m_PlayerMap, int64(info.Id))
 	this.m_PlayerLocker.Unlock()
+	actor.MGR.SendMsg(rpc.RpcHead{Id: info.Id}, "Player_Lease_Expire")
 }
 
 func (this *PlayerRaft) GetPlayer(Id int64) *rpc.PlayerClusterInfo {
@@ -106,10 +108,10 @@ func (this *PlayerRaft) Run() {
 	for v := range wch {
 		for _, v1 := range v.Events {
 			if v1.Type.String() == "PUT" {
-				info := NodeToPlayer(v1.Kv.Value)
+				info := nodeToPlayerCluster(v1.Kv.Value)
 				this.addPlayer(info)
 			} else {
-				info := NodeToPlayer(v1.PrevKv.Value)
+				info := nodeToPlayerCluster(v1.PrevKv.Value)
 				this.delPlayer(info)
 			}
 		}
@@ -120,13 +122,13 @@ func (this *PlayerRaft) InitPlayers() {
 	resp, err := this.m_Client.Get(context.Background(), PLAYER_DIR, clientv3.WithPrefix())
 	if err == nil && (resp != nil && resp.Kvs != nil) {
 		for _, v := range resp.Kvs {
-			info := NodeToPlayer(v.Value)
+			info := nodeToPlayerCluster(v.Value)
 			this.addPlayer(info)
 		}
 	}
 }
 
-func NodeToPlayer(val []byte) *rpc.PlayerClusterInfo {
+func nodeToPlayerCluster(val []byte) *rpc.PlayerClusterInfo {
 	info := &rpc.PlayerClusterInfo{}
 	err := json.Unmarshal([]byte(val), info)
 	if err != nil {

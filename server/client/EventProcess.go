@@ -78,8 +78,10 @@ func (this *EventProcess) Init() {
 }
 
 func (this *EventProcess) LoginGame() {
-	packet1 := &message.C_W_Game_LoginRequset{PacketHead: message.BuildPacketHead(this.AccountId, rpc.SERVICE_GATESERVER),
-		PlayerId: this.PlayerId}
+	packet1 := &message.LoginPlayerRequset{PacketHead: message.BuildPacketHead(this.AccountId, rpc.SERVICE_GATE),
+		PlayerId: this.PlayerId,
+		Key: this.m_Dh.ShareKey(),
+	}
 	this.SendPacket(packet1)
 }
 
@@ -89,17 +91,11 @@ var (
 
 func (this *EventProcess) LoginAccount() {
 	id := atomic.AddInt32(&id, 1)
-	this.AccountName = fmt.Sprintf("test321%d", id)
+	this.AccountName = fmt.Sprintf("test3211%d", id)
 	this.PassWd = base.MD5(ToSlat(this.AccountName, "123456"))
 	//this.AccountName = fmt.Sprintf("test%d", base.RAND.RandI(0, 7000))
-	packet1 := &message.C_A_LoginRequest{PacketHead: message.BuildPacketHead(0, rpc.SERVICE_GATESERVER),
-		AccountName: this.AccountName, Password: this.PassWd, BuildNo: base.BUILD_NO, Key: this.m_Dh.ShareKey()}
-	this.SendPacket(packet1)
-}
-
-func (this *EventProcess) LoginGate() {
-	packet1 := &message.C_G_LoginResquest{PacketHead: message.BuildPacketHead(0, rpc.SERVICE_GATESERVER),
-		Key: this.m_Dh.PubKey()}
+	packet1 := &message.LoginAccountRequest{PacketHead: message.BuildPacketHead(0, rpc.SERVICE_GATE),
+		AccountName: this.AccountName, Password: this.PassWd, BuildNo: base.BUILD_NO, Key: this.m_Dh.PubKey()}
 	this.SendPacket(packet1)
 }
 
@@ -108,7 +104,7 @@ var (
 )
 
 func (this *EventProcess) Move(yaw float32, time float32) {
-	packet1 := &message.C_Z_Move{PacketHead: message.BuildPacketHead(this.AccountId, rpc.SERVICE_GATESERVER),
+	packet1 := &message.C_Z_Move{PacketHead: message.BuildPacketHead(this.PlayerId, rpc.SERVICE_GATE),
 		Move: &message.C_Z_Move_Move{Mode: 0, Normal: &message.C_Z_Move_Move_Normal{Pos: &message.Point3F{X: this.Pos.X, Y: this.Pos.Y, Z: this.Pos.Z}, Yaw: yaw, Duration: time}}}
 	this.SendPacket(packet1)
 }
@@ -118,12 +114,20 @@ func (this *EventProcess) Update() {
 	this.SendPacket(packet1)
 }
 
-func (this *EventProcess) W_C_SelectPlayerResponse(ctx context.Context, packet *message.W_C_SelectPlayerResponse) {
+func (this *EventProcess) LoginAccountResponse(ctx context.Context, packet *message.LoginAccountResponse) {
+	if packet.GetError() == base.ACCOUNT_NOEXIST {
+	} else if packet.GetError() == base.PASSWORD_ERROR {
+		fmt.Println("账号【", packet.GetAccountName(), "】密码错误")
+	}
+}
+
+func (this *EventProcess) SelectPlayerResponse(ctx context.Context, packet *message.SelectPlayerResponse) {
 	this.AccountId = packet.GetAccountId()
+	this.m_Dh.ExchangePubk(packet.GetKey())
 	nLen := len(packet.GetPlayerData())
 	//fmt.Println(len(packet.PlayerData), this.AccountId, packet.PlayerData)
 	if nLen == 0 {
-		packet1 := &message.C_W_CreatePlayerRequest{PacketHead: message.BuildPacketHead(this.AccountId, rpc.SERVICE_GATESERVER),
+		packet1 := &message.CreatePlayerRequest{PacketHead: message.BuildPacketHead(this.AccountId, rpc.SERVICE_GATE),
 			PlayerName: "我是大坏蛋",
 			Sex:        int32(0)}
 		this.SendPacket(packet1)
@@ -133,37 +137,8 @@ func (this *EventProcess) W_C_SelectPlayerResponse(ctx context.Context, packet *
 	}
 }
 
-func (this *EventProcess) W_C_CreatePlayerResponse(ctx context.Context, packet *message.W_C_CreatePlayerResponse) {
-	if packet.GetError() == 0 {
-		this.PlayerId = packet.GetPlayerId()
-		this.LoginGame()
-	} else { //创建失败
 
-	}
-}
-
-func (this *EventProcess) G_C_LoginResponse(ctx context.Context, packet *message.G_C_LoginResponse) {
-	this.m_Dh.ExchangePubk(packet.GetKey())
-	this.LoginAccount()
-}
-
-func (this *EventProcess) A_C_LoginResponse(ctx context.Context, packet *message.A_C_LoginResponse) {
-	if packet.GetError() == base.ACCOUNT_NOEXIST {
-		packet1 := &message.C_A_RegisterRequest{PacketHead: message.BuildPacketHead(0, rpc.SERVICE_GATESERVER),
-			AccountName: packet.AccountName, Password: this.PassWd}
-		this.SendPacket(packet1)
-	} else if packet.GetError() == base.PASSWORD_ERROR {
-		fmt.Println("账号【", packet.GetAccountName(), "】密码错误")
-	}
-}
-
-func (this *EventProcess) A_C_RegisterResponse(ctx context.Context, packet *message.A_C_RegisterResponse) {
-	//注册失败
-	if packet.GetError() != 0 {
-	}
-}
-
-func (this *EventProcess) W_C_ChatMessage(ctx context.Context, packet *message.W_C_ChatMessage) {
+func (this *EventProcess) ChatMessageResponse(ctx context.Context, packet *message.ChatMessageResponse) {
 	fmt.Println("收到【", packet.GetSenderName(), "】发送的消息[", packet.GetMessage()+"]")
 }
 

@@ -4,12 +4,12 @@ package message;
 //服务器类型
 enum SERVICE{
     NONE= 0;
-    CLIENT= 1;
-    GATESERVER= 2;//网关,转发服务
-    ACCOUNTSERVER=3;//账号
-    WORLDSERVER=4;//世界
-    ZONESERVER=5;//地图
-    WORLDDBSERVER=6;//db
+    CLIENT=1;
+    GATE= 2;//网关,转发服务
+    GM=3;//gamemgr
+    GAME=4;//game
+    ZONE=5;//地图
+    DB=6;//db
 };
 
 enum CHAT{

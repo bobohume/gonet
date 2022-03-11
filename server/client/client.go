@@ -12,7 +12,7 @@ import (
 
 type (
 	Config struct {
-		common.Server `yaml:"netgate"`
+		common.Server `yaml:"gate"`
 	}
 )
 
@@ -31,7 +31,7 @@ func main() {
 	CLIENT.BindPacketFunc(PACKET.PacketFunc)
 	PACKET.Client = CLIENT
 	if CLIENT.Start() {
-		PACKET.LoginGate()
+		PACKET.LoginAccount()
 	}
 
 	InitCmd()

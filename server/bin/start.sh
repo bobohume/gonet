@@ -1,6 +1,8 @@
-nohup ./server "world" &
+nohup ./server "game" &
 sleep 1
-nohup ./server "account" &
+nohup ./server "gm" &
 sleep 1
-nohup ./server "netgate" &
+nohup ./server "gate" &
+sleep 1
+nohup ./server "db" &
 sleep 1

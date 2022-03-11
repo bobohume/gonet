@@ -16,6 +16,7 @@ require (
 	github.com/klauspost/reedsolomon v1.9.13 // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/nats-io/nats.go v1.10.0
+	github.com/tealeg/xlsx v1.0.5
 	github.com/templexxx/cpufeat v0.0.0-20180724012125-cef66df7f161 // indirect
 	github.com/templexxx/xor v0.0.0-20191217153810-f85b25db303b // indirect
 	github.com/tjfoc/gmsm v1.4.1 // indirect

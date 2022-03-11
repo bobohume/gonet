@@ -6,11 +6,11 @@ package rpc;
 enum SERVICE{
     NONE= 0;
     CLIENT= 1;
-    GATESERVER= 2;//网关,转发服务
-    ACCOUNTSERVER=3;//账号
-    WORLDSERVER=4;//世界
-    ZONESERVER=5;//地图
-    WORLDDBSERVER=6;//db
+    GATE= 2;//网关,转发服务
+    GM=3;//gamemgr
+    GAME=4;//game
+    ZONE=5;//地图
+    DB=6;//db
 };
 
 //发送标志
@@ -61,6 +61,14 @@ message Packet{
 message PlayerClusterInfo{
     int64 Id = 1;
     int64  LeaseId = 2;
-    uint32 WClusterId = 3;
-    uint32 ZClusterId = 4;
+    uint32 GClusterId = 3;//game集群
+    uint32 ZClusterId = 4;//地图集群
+    uint32 DClusterId = 5;//db集群
+}
+
+//玩法集群信息
+message GmClusterInfo{
+    int64 Id = 1;
+    int64  LeaseId = 2;
+    uint32 GClusterId = 3;//game集群
 }

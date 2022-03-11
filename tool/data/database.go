@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"gonet/base"
 	"bufio"
 	"fmt"
@@ -13,6 +14,7 @@ import (
 const (
 	COL_NAME = iota
 	COL_CLIENT_NAME
+	COL_VSTO
 	COL_TYPE
 	COL_MAX
 )
@@ -30,7 +32,8 @@ type(
 
 //excel第一行 中文名字
 //excel第二行 客户端data下的列名
-//excel第三行 类型
+//excel第三行 插件值
+//excel第四行 类型
 func OpenExcel(filename string){
 	xlFile, err := xlsx.OpenFile(filename)
 	if err != nil{
@@ -42,26 +45,7 @@ func OpenExcel(filename string){
 	buf := make([]byte,  10 * 1024 * 1024)
 	stream := base.NewBitStream(buf, 10 * 1024 * 1024)
 	enumKVMap := make(map[int] map[string] int) //列 key val
-	enumKMap := map[string] []string{}//列名对应key
-	enumNames := []string{}//列名
-	colNames := []string{}
-	{
-		sheet, bEx := xlFile.Sheet["Settings_Radio"]
-		if bEx{
-			for i, v := range sheet.Rows{
-				for i1, v1 := range v.Cells{
-					if v1.String() == ""{
-						continue
-					}
-					if i == 0{
-						enumNames = append(enumNames, v1.String())
-					}else{
-						enumKMap[enumNames[i1]] = append(enumKMap[enumNames[i1]], v1.String())
-					}
-				}
-			}
-		}
-	}
+	enumKMap := map[int] []string{}//列名对应key
 
 	for page, sheet := range xlFile.Sheets{
 		if page != 0{
@@ -102,53 +86,41 @@ func OpenExcel(filename string){
 
 		for i, row := range sheet.Rows {
 			for j, cell := range row.Cells {
-				colTypeName := cell.String()//在data解析到enum时候重新组装枚举到sheet列名
 				if i == COL_NAME {//excel第一列 中文名字
-					colNames = append(colNames, cell.String())
 					stream.WriteString(cell.String())
 					continue
 				}else if i == COL_CLIENT_NAME {//客户端data下的列名
 					stream.WriteString(cell.String())
 					continue
-				}else if i == COL_TYPE{//类型
-					coltype := strings.ToLower(cell.String())
-					rd :=  bufio.NewReader(strings.NewReader(coltype))
-					data, _, _ := rd.ReadLine()
-					coltype = strings.TrimSpace(string(data))
+				}else if i == COL_VSTO{//插件值
+					stream.WriteString(cell.String())
+					if cell.String() == ""{
+						continue
+					}
+
+					enumNames := strings.Split(cell.String(), "\n")
+					for _, v1 := range enumNames{
+						enumKMap[j] = append(enumKMap[j], v1)
+					}
+					continue
+				} else if i == COL_TYPE{//类型
+					coltype := strings.TrimSpace(strings.ToLower(cell.String()))
 					if coltype == "enum"{
 						num := 0
-						colTypeName = "enum\n"
-						KVMap := map[string] int{}
-						for data, _, _ := rd.ReadLine(); data != nil;{
-							slot := strings.Split(string(data), "=")
+						enumKVMap[j] = make(map[string] int)
+						for _, v1 := range enumKMap[j]{
+							slot := strings.Split(string(v1), "=")
 							if len(slot) == 2{
-								KVMap[slot[0]] = base.Int(slot[1])
+								num = base.Int(slot[1])
+								v1 = slot[0]
 							}
-							data, _, _ = rd.ReadLine()
-						}
-						keys, bEx := enumKMap[colNames[j]]
-						if bEx{
-							_, bEx := enumKVMap[j]
-							if !bEx{
-								enumKVMap[j] = make(map[string] int)
-							}
-							for _, v := range keys{
-								val, bEx := KVMap[v]
-								if bEx{
-									num = val
-								}
-								enumKVMap[j][v] = num
-								colTypeName += fmt.Sprintf("%s=%d\n", v, num)
-								num++
-							}
-						}
-						index := strings.LastIndex(colTypeName, ",")
-						if index!= -1{
-							colTypeName = colTypeName[:index]
+
+							enumKVMap[j][v1] = num
+							num++
 						}
 					}
 					//写入列名
-					stream.WriteString(colTypeName)
+					stream.WriteString(coltype)
 					switch coltype {
 					case "string":
 						stream.WriteInt(base.DType_String, 8)
@@ -272,12 +244,12 @@ func OpenExcel(filename string){
 			}
 
 			//头结束
-			//第一列和第二列都写在头部
-			if i == COL_CLIENT_NAME{
-				for i1 := 0; i1 < 8 - ((COL_CLIENT_NAME+1) * sheet.MaxCol % 8); i1++{
+			//前三行都写在头部
+			if i == COL_VSTO{
+				for i1 := 0; i1 < 8 - ((COL_VSTO+1) * sheet.MaxCol % 8); i1++{
 					stream.WriteFlag(true)
 				}
-				stream.WriteBits([]byte{'@', '\n'}, 16)
+				stream.WriteBits([]byte(base.DATA_END), base.DATA_END_LENGTH << 3)
 				stream.WriteInt(sheet.MaxRow - COL_MAX, 32)
 				stream.WriteInt(sheet.MaxCol, 32)
 				stream.WriteString(sheet.Name)
@@ -296,7 +268,8 @@ func OpenExcel(filename string){
 
 //excel第一列 中文名字
 //excel第二列 客户端data下的列名
-//excel第三列 类型
+//excel第三行 插件值
+//excel第四行 类型
 func SaveExcel(filename string){
 	file, err := os.Open(filename)
 	if err != nil {
@@ -317,15 +290,14 @@ func SaveExcel(filename string){
 	}
 	fstream := base.NewBitStream(buf, len(buf) + 10)
 	hstream := base.NewBitStream(buf, len(buf) + 10)
-	enunKVMap := make(map[int] map[int] string)
-	for {
-		tchr := fstream.ReadInt(8)
-		if tchr == '@'{//找到数据文件的开头
-			tchr = fstream.ReadInt(8)//这个是换行字符
-			//fmt.Println(tchr)
-			break
-		}
+	enumKVMap := make(map[int] map[int] string)
+	enumKMap := map[int] []string{}//列名对应key
+	colNames := []string{}
+	nLen := bytes.Index(buf, []byte(base.DATA_END))
+	if nLen == -1{
+		return
 	}
+	fstream.SetPosition(nLen + base.DATA_END_LENGTH)
 	//得到记录总数
 	RecordNum := fstream.ReadInt(32)
 	//得到列的总数
@@ -339,11 +311,24 @@ func SaveExcel(filename string){
 		return
 	}
 
-	for i := 0; i <= COL_CLIENT_NAME; i++{
+	for i := 0; i <= COL_VSTO; i++{
 		row := sheet.AddRow()
 		for j := 0; j < ColumNum; j++{
 			cell := row.AddCell()
-			cell.SetString(hstream.ReadString())
+			val := hstream.ReadString()
+			cell.SetString(val)
+			if i == COL_NAME {//excel第一列 中文名字
+				colNames = append(colNames, val)
+				continue
+			} else if i == COL_VSTO {
+				if val == ""{
+					continue
+				}
+				enumNames := strings.Split(val, "\n")
+				for _, v1 := range enumNames{
+					enumKMap[j] = append(enumKMap[j], v1)
+				}
+			}
 		}
 	}
 
@@ -354,21 +339,19 @@ func SaveExcel(filename string){
 			typeName := fstream.ReadString()
 			cell := row.AddCell()
 			cell.SetString(typeName)
-			coltype := strings.ToLower(typeName)
-			rd := bufio.NewReader(strings.NewReader(coltype))
-			data, _, _ := rd.ReadLine()
-			coltype = strings.TrimSpace(string(data))
+			coltype := strings.TrimSpace(strings.ToLower(typeName))
 			if coltype == "enum" {
-				for data, _, _ := rd.ReadLine(); data != nil; {
-					slot := strings.Split(string(data), "=")
-					if len(slot) == 2 {
-						_, bEx := enunKVMap[nColumnIndex]
-						if !bEx {
-							enunKVMap[nColumnIndex] = make(map[int]string)
-						}
-						enunKVMap[nColumnIndex][base.Int(slot[1])] = slot[0]
+				num := 0
+				enumKVMap[nColumnIndex] = make(map[int] string)
+				for _, v1 := range enumKMap[nColumnIndex]{
+					slot := strings.Split(string(v1), "=")
+					if len(slot) == 2{
+						num = base.Int(slot[1])
+						v1 = slot[0]
 					}
-					data, _, _ = rd.ReadLine()
+
+					enumKVMap[nColumnIndex][num] = v1
+					num++
 				}
 			}
 			nDataType := fstream.ReadInt(8)
@@ -391,7 +374,7 @@ func SaveExcel(filename string){
 			case base.DType_S32:
 				cell.SetInt(fstream.ReadInt(32))
 			case base.DType_Enum:
-				val, bEx := enunKVMap[j][fstream.ReadInt(16)]
+				val, bEx := enumKVMap[j][fstream.ReadInt(16)]
 				if bEx{
 					cell.SetString(val)
 				}else{

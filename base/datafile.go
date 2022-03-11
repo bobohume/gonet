@@ -1,11 +1,17 @@
 package base
 
 import (
+	"bytes"
 	"fmt"
 	"gonet/base/vector"
 	"io/ioutil"
 	"os"
 	"reflect"
+)
+
+const(
+	DATA_END = "data_end"
+	DATA_END_LENGTH = len(DATA_END) //data结束标记
 )
 
 //datatype
@@ -91,15 +97,11 @@ func (this *CDataFile) ReadDataFile(fileName string) bool{
 		return false
 	}
 	this.fstream = NewBitStream(buf, len(buf))
-
-	for {
-		tchr := this.fstream.ReadInt(8)
-		if tchr == '@'{//找到数据文件的开头
-			tchr = this.fstream.ReadInt(8)//这个是换行字符
-			//fmt.Println(tchr)
-			break
-		}
+	nLen := bytes.Index(buf, []byte(DATA_END))
+	if nLen == -1{
+		return false
 	}
+	this.fstream.SetPosition(nLen + DATA_END_LENGTH)
 	//得到记录总数
 	this.RecordNum = this.fstream.ReadInt(32)
 	//得到列的总数

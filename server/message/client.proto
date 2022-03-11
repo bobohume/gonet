@@ -2,20 +2,8 @@ syntax = "proto3";
 import "message.proto";
 package message;
 
-//登录
-message C_G_LoginResquest{
-    Ipacket PacketHead = 1;
-	int64 Key = 2;
-}
-
-//登录
-message G_C_LoginResponse{
-    Ipacket PacketHead = 1;
-	int64 Key = 2;
-}
-
-//登录
-message C_A_LoginRequest{
+//登录账号
+message LoginAccountRequest{
     Ipacket PacketHead = 1;
     string AccountName = 2;
 	string Password = 3;
@@ -24,59 +12,37 @@ message C_A_LoginRequest{
 	//uint32 Crc = 7;
 }
 
-//登录反馈
-message A_C_LoginResponse{
+//登录账号反馈
+message LoginAccountResponse{
     Ipacket PacketHead = 1;
     int32  Error = 2;
     string AccountName = 4;
 }
 
-//注册
-message C_A_RegisterRequest{
-    Ipacket PacketHead = 1;
-    string AccountName = 2;
-    string Password = 3;
-}
-
-//注册反馈
-message A_C_RegisterResponse{
-    Ipacket PacketHead = 1;
-    int32	Error = 2;
-}
-
 //创角
-message C_W_CreatePlayerRequest{
+message CreatePlayerRequest{
     Ipacket PacketHead = 1;
     string PlayerName = 2;
     int32  Sex = 3;
 }
 
-//创角反馈
-message W_C_CreatePlayerResponse{
-    Ipacket PacketHead = 1;
-    int32 Error = 2;
-    int64 PlayerId = 3;
-}
-
 //登录游戏
-message C_W_Game_LoginRequset{
+message LoginPlayerRequset{
     Ipacket PacketHead = 1;
     int64	PlayerId =2;
+    int64 Key = 3;
 }
 
 //选角反馈
-message W_C_SelectPlayerResponse{
+message SelectPlayerResponse{
     Ipacket PacketHead = 1;
-    int64	AccountId = 2;
-    repeated PlayerData PlayerData = 3;
-}
-
-message C_G_LogoutResponse{
-    Ipacket PacketHead = 1;
+    int64 AccountId = 2;
+    int64 Key = 3;
+    repeated PlayerData PlayerData = 5;
 }
 
 //聊天
-message C_W_ChatMessage{
+message ChatMessageRequest{
     Ipacket PacketHead = 1;
     int64	Sender = 2;
     int64	Recver = 3;
@@ -84,7 +50,7 @@ message C_W_ChatMessage{
     string	Message = 5;
 }
 
-message W_C_ChatMessage{
+message ChatMessageResponse{
     Ipacket PacketHead = 1;
     int64	Sender = 2;
     string	SenderName = 3;

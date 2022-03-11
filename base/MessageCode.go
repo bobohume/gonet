@@ -71,8 +71,8 @@ func GetMessageCode(strName string, m1 *uint32, m2 *uint32){
 }
 
 func GetMessageCode2(strName string) uint32 {
-	PrepareCryptBuffer();
-	return DecryptName1(strName);
+	PrepareCryptBuffer()
+	return DecryptName1(strName)
 }
 
 func GetMessageCode1(strName string) uint32 {

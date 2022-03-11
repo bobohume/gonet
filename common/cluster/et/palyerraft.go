@@ -2,6 +2,7 @@ package et
 
 import (
 	"fmt"
+	"gonet/actor"
 	"gonet/rpc"
 	"log"
 	"sync"
@@ -55,7 +56,7 @@ func (this *PlayerRaft) Publish(info *rpc.PlayerClusterInfo) bool {
 	key := PLAYER_DIR + fmt.Sprintf("%d", info.Id)
 	data, _ := proto.Marshal(info)
 	_, err := this.m_KeysAPI.Set(context.Background(), key, string(data), &client.SetOptions{
-		TTL: ttl_time, PrevExist: client.PrevNoExist, NoValueOnSuccess: true,
+		TTL: OFFLINE_TIME, PrevExist: client.PrevNoExist, NoValueOnSuccess: true,
 	})
 	return err == nil
 }
@@ -63,7 +64,7 @@ func (this *PlayerRaft) Publish(info *rpc.PlayerClusterInfo) bool {
 func (this *PlayerRaft) Lease(Id int64) error {
 	key := PLAYER_DIR + fmt.Sprintf("%d", Id)
 	_, err := this.m_KeysAPI.Set(context.Background(), key, "", &client.SetOptions{
-		TTL: ttl_time, Refresh: true, NoValueOnSuccess: true,
+		TTL: OFFLINE_TIME, Refresh: true, NoValueOnSuccess: true,
 	})
 	return err
 }
@@ -83,6 +84,7 @@ func (this *PlayerRaft) delPlayer(info *rpc.PlayerClusterInfo) {
 	this.m_PlayerLocker.Lock()
 	delete(this.m_PlayerMap, int64(info.Id))
 	this.m_PlayerLocker.Unlock()
+	actor.MGR.SendMsg(rpc.RpcHead{Id: info.Id}, "Player_Lease_Expire")
 }
 
 func (this *PlayerRaft) GetPlayer(Id int64) *rpc.PlayerClusterInfo {
@@ -108,13 +110,13 @@ func (this *PlayerRaft) Run() {
 			continue
 		}
 		if res.Action == "expire" {
-			info := NodeToPlayer([]byte(res.PrevNode.Value))
+			info := nodeToPlayerCluster([]byte(res.PrevNode.Value))
 			this.delPlayer(info)
 		} else if res.Action == "set" {
-			info := NodeToPlayer([]byte(res.Node.Value))
+			info := nodeToPlayerCluster([]byte(res.Node.Value))
 			this.addPlayer(info)
 		} else if res.Action == "delete" {
-			info := NodeToPlayer([]byte(res.Node.Value))
+			info := nodeToPlayerCluster([]byte(res.Node.Value))
 			this.delPlayer(info)
 		}
 	}
@@ -124,13 +126,13 @@ func (this *PlayerRaft) InitPlayers() {
 	resp, err := this.m_KeysAPI.Get(context.Background(), PLAYER_DIR, &client.GetOptions{Recursive: true})
 	if err == nil && (resp != nil && resp.Node != nil) {
 		for _, v := range resp.Node.Nodes {
-			info := NodeToPlayer([]byte(v.Value))
+			info := nodeToPlayerCluster([]byte(v.Value))
 			this.addPlayer(info)
 		}
 	}
 }
 
-func NodeToPlayer(val []byte) *rpc.PlayerClusterInfo {
+func nodeToPlayerCluster(val []byte) *rpc.PlayerClusterInfo {
 	info := &rpc.PlayerClusterInfo{}
 	err := proto.Unmarshal([]byte(val), info)
 	if err != nil {

@@ -12,59 +12,60 @@ import (
 
 const (
 	uuid_dir = "uuid/"
-	ttl_time = time.Minute
+	ttl_time = 60 * 60
+)
+
+type STATUS uint32
+const(
+	SET 		STATUS = iota
+	TTL			STATUS = iota
 )
 
 type Snowflake struct {
 	m_Id      int64
 	m_KeysAPI client.KeysAPI
+	m_Stats STATUS//状态机
 }
 
 func (this *Snowflake) Key() string {
 	return uuid_dir + fmt.Sprintf("%d", this.m_Id)
 }
 
+func (this *Snowflake) SET() bool{
+	//设置key
+	key := this.Key()
+	_, err := this.m_KeysAPI.Set(context.Background(), key, "", &client.SetOptions{
+		TTL: ttl_time, PrevExist: client.PrevNoExist, NoValueOnSuccess: true,
+	})
+	if err != nil {
+		this.m_Id = int64(base.RAND.RandI(1, int(base.WorkeridMax)))
+		return false
+	}
+
+	base.UUID.Init(this.m_Id) //设置uuid
+	this.m_Stats = TTL
+	return true
+}
+
+func (this *Snowflake) TTL(){
+	//保持ttl
+	_, err := this.m_KeysAPI.Set(context.Background(), this.Key(), "", &client.SetOptions{
+		TTL: ttl_time, Refresh: true, NoValueOnSuccess: true,
+	})
+	if err != nil {
+		this.m_Stats = SET
+	} else {
+		time.Sleep(ttl_time / 6)
+	}
+}
+
 func (this *Snowflake) Run() {
 	for {
-	TrySET:
-		//设置key
-		key := this.Key()
-		_, err := this.m_KeysAPI.Set(context.Background(), key, "", &client.SetOptions{
-			TTL: ttl_time, PrevExist: client.PrevNoExist, NoValueOnSuccess: true,
-		})
-		if err != nil {
-			resp, err := this.m_KeysAPI.Get(context.Background(), uuid_dir, &client.GetOptions{Quorum: true})
-			if err == nil && (resp != nil && resp.Node != nil) {
-				Ids := [base.WorkeridMax + 1]bool{}
-				for _, v := range resp.Node.Nodes {
-					Id := base.Int(v.Key[len(uuid_dir)+1:])
-					Ids[Id] = true
-				}
-
-				for i, v := range Ids {
-					if v == false {
-						this.m_Id = int64(i) & base.WorkeridMax
-						goto TrySET
-					}
-				}
-			}
-			this.m_Id++
-			this.m_Id = this.m_Id & base.WorkeridMax
-			goto TrySET
-		}
-
-		base.UUID.Init(this.m_Id) //设置uuid
-
-		//保持ttl
-	TryTTL:
-		_, err = this.m_KeysAPI.Set(context.Background(), key, "", &client.SetOptions{
-			TTL: ttl_time, Refresh: true, NoValueOnSuccess: true,
-		})
-		if err != nil {
-			goto TrySET
-		} else {
-			time.Sleep(time.Second * 10)
-			goto TryTTL
+		switch this.m_Stats {
+		case SET:
+			this.SET()
+		case TTL:
+			this.TTL()
 		}
 	}
 }
@@ -81,8 +82,10 @@ func (this *Snowflake) Init(endpoints []string) {
 	if err != nil {
 		log.Fatal("Error: cannot connec to etcd:", err)
 	}
-	this.m_Id = 0
+	this.m_Id = int64(base.RAND.RandI(1, int(base.WorkeridMax)))
 	this.m_KeysAPI = client.NewKeysAPI(etcdClient)
+	for !this.SET(){
+	}
 	this.Start()
 }
 

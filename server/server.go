@@ -3,9 +3,10 @@ package main
 import (
 	"fmt"
 	"gonet/base"
-	"gonet/server/account"
-	"gonet/server/netgate"
-	"gonet/server/world"
+	"gonet/server/db"
+	"gonet/server/game"
+	"gonet/server/gate"
+	"gonet/server/gm"
 	"os"
 	"os/signal"
 	"syscall"
@@ -13,12 +14,14 @@ import (
 
 func main() {
 	args := os.Args
-	if args[1] == "account"{
-		account.SERVER.Init()
-	}else if args[1] == "netgate"{
-		netgate.SERVER.Init()
-	}else if args[1] == "world"{
-		world.SERVER.Init()
+	if args[1] == "gm"{
+		gm.SERVER.Init()
+	}else if args[1] == "gate"{
+		gate.SERVER.Init()
+	}else if args[1] == "game"{
+		game.SERVER.Init()
+	} else if args[1]  == "db"{
+		db.SERVER.Init()
 	}
 
 	base.SEVERNAME = args[1]

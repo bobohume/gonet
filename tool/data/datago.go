@@ -1,13 +1,34 @@
 package main
 
 import (
-	"bufio"
 	"bytes"
 	"fmt"
 	"github.com/tealeg/xlsx"
 	"gonet/base"
 	"os"
 	"strings"
+)
+
+const(
+	FILE_GENERATE =
+`package data
+
+// 自动生成代码
+type(
+	{StructName} struct{
+{StructBody}
+	}
+
+	{MgrName} struct{
+		{DataMap} map[int] *{StructName}
+	}
+)
+
+var(
+	{MgrHandleName} {MgrName} 
+)
+
+`
 )
 
 func OpenExceGo(filename string){
@@ -28,27 +49,9 @@ func OpenExceGo(filename string){
 	structName = filenames[0] + "Data"
 	structResName = filenames[0] + "DataRes"
 	enumKVMap := make(map[int] map[string] int) //列 key val
-	enumKMap := map[string] []string{}//列名对应key
-	enumNames := []string{}//列名
+	enumKMap := map[int] []string{}//列名对应key
 	dataNames := []string{}
-	colNames := []string{}
-	{
-		sheet, bEx := xlFile.Sheet["Settings_Radio"]
-		if bEx{
-			for i, v := range sheet.Rows{
-				for i1, v1 := range v.Cells{
-					if v1.String() == ""{
-						continue
-					}
-					if i == 0{
-						enumNames = append(enumNames, v1.String())
-					}else{
-						enumKMap[enumNames[i1]] = append(enumKMap[enumNames[i1]], v1.String())
-					}
-				}
-			}
-		}
-	}
+
 	for page, sheet := range xlFile.Sheets{
 		if page != 0{
 			//other sheet
@@ -83,7 +86,6 @@ func OpenExceGo(filename string){
 		for i, row := range sheet.Rows {
 			for j, cell := range row.Cells {
 				if i == COL_NAME {
-					colNames = append(colNames, cell.String())
 					continue
 				} else if i == COL_CLIENT_NAME{
 					colName := cell.String()
@@ -95,35 +97,26 @@ func OpenExceGo(filename string){
 						}
 					}
 					continue
-				}else if i == COL_TYPE{
-					coltype := strings.ToLower(cell.String())
-					rd :=  bufio.NewReader(strings.NewReader(coltype))
-					data, _, _ := rd.ReadLine()
-					coltype = strings.TrimSpace(string(data))
+				} else if i == COL_VSTO {
+					enumNames := strings.Split(cell.String(), "\n")
+					for _, v1 := range enumNames{
+						enumKMap[j] = append(enumKMap[j], v1)
+					}
+					continue
+				} else if i == COL_TYPE{
+					coltype := strings.TrimSpace(strings.ToLower(cell.String()))
 					if coltype == "enum"{
 						num := 0
-						KVMap := map[string] int{}
-						for data, _, _ := rd.ReadLine(); data != nil;{
-							slot := strings.Split(string(data), "=")
+						enumKVMap[j] = make(map[string] int)
+						for _, v1 := range enumKMap[j]{
+							slot := strings.Split(string(v1), "=")
 							if len(slot) == 2{
-								KVMap[slot[0]] = base.Int(slot[1])
+								num = base.Int(slot[1])
+								v1 = slot[0]
 							}
-							data, _, _ = rd.ReadLine()
-						}
-						keys, bEx := enumKMap[colNames[j]]
-						if bEx{
-							_, bEx := enumKVMap[j]
-							if !bEx{
-								enumKVMap[j] = make(map[string] int)
-							}
-							for _, v := range keys{
-								val, bEx := KVMap[v]
-								if bEx{
-									num = val
-								}
-								enumKVMap[j][v] = num
-								num++
-							}
+
+							enumKVMap[j][v1] = num
+							num++
 						}
 					}
 
@@ -180,31 +173,24 @@ func OpenExceGo(filename string){
 					}
 
 					if j == dataColLen{
-						stream.WriteString("package data\n")
-						stream.WriteString("\n")
-						stream.WriteString("type(\n")
 						//定义数据类型结构体
-						stream.WriteString(fmt.Sprintf("\t%s struct{\n", structName))
+						structBody := ""
 						for i1, v := range dataTypeNames{
 							//过滤掉不是客户端的数据
 							if dataNames[i1] == "" || dataNames[i1] == "0"{
 								continue
 							}
 
-							stream.WriteString(fmt.Sprintf("\t\t%s\t%s\n", dataNames[i1], v))
+							structBody += fmt.Sprintf("\t\t%s\t%s\n", dataNames[i1], v)
 						}
-						stream.WriteString("\t}\n\n")
-						//定义数据datares结构体
-						stream.WriteString(fmt.Sprintf("\t%s struct{\n", structResName))
-						stream.WriteString(fmt.Sprintf("\t\tm_DataMap map[int] *%s\n", structName))
-						stream.WriteString("\t}\n")
-						stream.WriteString(")\n")
-						stream.WriteString("\n")
-						//定义全局datares变量
-						stream.WriteString("var(\n")
-						stream.WriteString(fmt.Sprintf("\t%s\t%s\n", strings.ToUpper(structName), structResName))
-						stream.WriteString(")\n")
-						stream.WriteString("\n")
+						structBody = structBody[:len(structBody) - 1]
+						str := FILE_GENERATE
+						str = strings.Replace(str, "{StructName}", structName, -1)
+						str = strings.Replace(str, "{StructBody}", structBody, -1)
+						str = strings.Replace(str, "{DataMap}", "m_DataMap", -1)
+						str = strings.Replace(str, "{MgrName}", structResName, -1)
+						str = strings.Replace(str, "{MgrHandleName}", strings.ToUpper(structResName), -1)
+						stream.WriteString(str)
 						//定义初始函数
 						stream.WriteString(fmt.Sprintf("func (this *%s) Init(){\n", structResName))
 						//定义map
@@ -222,7 +208,7 @@ func OpenExceGo(filename string){
 
 				if j == dataColBeginLen{
 					//map赋值
-					stream.WriteString(fmt.Sprintf("\tthis.m_DataMap[%d] =  &%s{", base.Int(cell.String()), structName))
+					stream.WriteString(fmt.Sprintf("\tthis.m_DataMap[%d] =  &%s{\n", base.Int(cell.String()), structName))
 				}
 
 				switch dataTypes[j] {
