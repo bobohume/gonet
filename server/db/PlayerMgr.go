@@ -61,3 +61,15 @@ func (this *PlayerMgr) Load_Player_DB(ctx context.Context, playerId int64, clust
 		}
 	}
 }
+
+//lease过期
+func (this *PlayerMgr) Player_Lease_Expire(ctx context.Context) {
+	playerId := this.GetRpcHead(ctx).Id
+	pPlayer, bEx := this.m_PlayerMap[playerId]
+	if bEx{
+		pPlayer.SavePlayerDB()
+	}
+	delete(this.m_PlayerMap, playerId)
+	SERVER.GetLog().Printf("[%d] 过期删除玩家", playerId)
+}
+
