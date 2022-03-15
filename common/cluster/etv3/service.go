@@ -12,6 +12,7 @@ import (
 
 const(
 	ETCD_DIR =  "server/"
+	SERVICE_TTL = time.Millisecond * 10
 )
 
 //注册服务器
@@ -20,16 +21,37 @@ type Service struct {
 	m_Client *clientv3.Client
 	m_Lease clientv3.Lease
 	m_LeaseId clientv3.LeaseID
+	m_Stats STATUS//状态机
+}
+
+func (this *Service) SET(){
+	leaseResp, _ := this.m_Lease.Grant(context.Background(),10)
+	this.m_LeaseId = leaseResp.ID
+	key := ETCD_DIR + this.String() + "/" + this.IpString()
+	data, _ := json.Marshal(this.ClusterInfo)
+	this.m_Client.Put(context.Background(), key, string(data),clientv3.WithLease(this.m_LeaseId))
+	this.m_Stats = TTL
+	time.Sleep(time.Second * 3)
+}
+
+func (this *Service) TTL(){
+	//保持ttl
+	_, err := this.m_Lease.KeepAliveOnce(context.Background(), this.m_LeaseId)
+	if err != nil{
+		this.m_Stats = SET
+	}else{
+		time.Sleep(time.Second * 3)
+	}
 }
 
 func (this *Service) Run(){
 	for {
-		leaseResp, _ := this.m_Lease.Grant(context.Background(),10)
-		this.m_LeaseId = leaseResp.ID
-		key := ETCD_DIR + this.String() + "/" + this.IpString()
-		data, _ := json.Marshal(this.ClusterInfo)
-		this.m_Client.Put(context.Background(), key, string(data),clientv3.WithLease(this.m_LeaseId))
-		time.Sleep(time.Second * 3)
+		switch this.m_Stats {
+		case SET:
+			this.SET()
+		case TTL:
+			this.TTL()
+		}
 	}
 }
 

@@ -90,7 +90,7 @@ func (this *SnowflakeT) Start(){
 
 func TestSnowFlake(t *testing.T){
 	group := []*SnowflakeT{}
-	for i := 0; i < int(WorkeridMax); i++{
+	for i := 0; i < int(1000); i++{
 		v := &SnowflakeT{}
 		v.Init([]string{"http://127.0.0.1:2379"})
 		group = append(group, v)

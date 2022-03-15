@@ -1,6 +1,7 @@
 package et
 
 import (
+	"encoding/json"
 	"fmt"
 	"gonet/actor"
 	"gonet/rpc"
@@ -9,8 +10,6 @@ import (
 	"time"
 
 	"go.etcd.io/etcd/client"
-	"google.golang.org/protobuf/proto"
-
 	"golang.org/x/net/context"
 )
 
@@ -53,9 +52,9 @@ func (this *GmRaft) Start() {
 func (this *GmRaft) Publish(info *rpc.GmClusterInfo, ttl int64) bool {
 	info.LeaseId = int64(info.Id)
 	key := GM_DIR + fmt.Sprintf("%d", info.Id)
-	data, _ := proto.Marshal(info)
+	data, _ := json.Marshal(info)
 	_, err := this.m_KeysAPI.Set(context.Background(), key, string(data), &client.SetOptions{
-		TTL: time.Duration(ttl), PrevExist: client.PrevNoExist, NoValueOnSuccess: true,
+		TTL: time.Duration(ttl), PrevExist: client.PrevNoExist,
 	})
 	return err == nil
 }
@@ -111,7 +110,7 @@ func (this *GmRaft) Run() {
 		if res.Action == "expire" {
 			info := nodeToGmCluster([]byte(res.PrevNode.Value))
 			this.delPlayer(info)
-		} else if res.Action == "set" {
+		} else if res.Action == "set" || res.Action == "create"{
 			info := nodeToGmCluster([]byte(res.Node.Value))
 			this.addPlayer(info)
 		} else if res.Action == "delete" {
@@ -133,7 +132,7 @@ func (this *GmRaft) InitPlayers() {
 
 func nodeToGmCluster(val []byte) *rpc.GmClusterInfo {
 	info := &rpc.GmClusterInfo{}
-	err := proto.Unmarshal([]byte(val), info)
+	err := json.Unmarshal([]byte(val), info)
 	if err != nil {
 		log.Print(err)
 	}

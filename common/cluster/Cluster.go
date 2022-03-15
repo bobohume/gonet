@@ -77,9 +77,6 @@ func (this *Cluster) InitCluster(info *common.ClusterInfo, Endpoints []string, n
 		this.m_ClusterMap[i] = make(HashClusterMap)
 		this.m_HashRing[i] = base.NewHashRing()
 	}
-	//注册服务器
-	this.Service = NewService(info, Endpoints)
-	this.m_Master = NewMaster(&EmptyClusterInfo{}, Endpoints, &this.Actor)
 	this.m_ClusterInfoMap = make(map[uint32]*common.ClusterInfo)
 	this.m_PacketFuncList = vector.NewVector()
 
@@ -107,6 +104,9 @@ func (this *Cluster) InitCluster(info *common.ClusterInfo, Endpoints []string, n
 	rpc.GCall = reflect.ValueOf(this.call)
 	actor.MGR.RegisterActor(this)
 	this.Actor.Start()
+	//注册服务器
+	this.Service = NewService(info, Endpoints)
+	this.m_Master = NewMaster(&EmptyClusterInfo{}, Endpoints, &this.Actor)
 }
 
 //params[0]:rpc.RpcHead

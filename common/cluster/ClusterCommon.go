@@ -5,6 +5,7 @@ import (
 	"gonet/actor"
 	"gonet/base"
 	"gonet/common"
+	"gonet/common/cluster/et"
 	"gonet/common/cluster/etv3"
 	"gonet/rpc"
 	"strings"
@@ -18,50 +19,53 @@ const (
 )
 
 type (
-	Service    etv3.Service
-	Master     etv3.Master
-	Snowflake  etv3.Snowflake
-	PlayerRaft etv3.PlayerRaft
+	Service    et.Service
+	Master     et.Master
+	Snowflake  et.Snowflake
+	PlayerRaft et.PlayerRaft
+	//etv2 like redis, save in memroy and store in qucikphoto
+	//etv3 like b+ tree, key is key + version so must auto compact delte the old verison
+	//if key is lease time out, the old version already in db
 )
 
 //注册服务器
 func NewService(info *common.ClusterInfo, Endpoints []string) *Service {
-	service := &etv3.Service{}
+	service := &et.Service{}
 	service.Init(info, Endpoints)
 	return (*Service)(service)
 }
 
 //监控服务器
 func NewMaster(info common.IClusterInfo, Endpoints []string, pActor actor.IActor) *Master {
-	master := &etv3.Master{}
+	master := &et.Master{}
 	master.Init(info, Endpoints, pActor)
 	return (*Master)(master)
 }
 
 //uuid生成器
 func NewSnowflake(Endpoints []string) *Snowflake {
-	uuid := &etv3.Snowflake{}
+	uuid := &et.Snowflake{}
 	uuid.Init(Endpoints)
 	return (*Snowflake)(uuid)
 }
 
 //注册playerraft
 func NewPlayerRaft(Endpoints []string) *PlayerRaft {
-	playerRaft := &etv3.PlayerRaft{}
+	playerRaft := &et.PlayerRaft{}
 	playerRaft.Init(Endpoints)
 	return (*PlayerRaft)(playerRaft)
 }
 
 func (this *PlayerRaft) GetPlayer(Id int64) *rpc.PlayerClusterInfo {
-	return (*etv3.PlayerRaft)(this).GetPlayer(Id)
+	return (*et.PlayerRaft)(this).GetPlayer(Id)
 }
 
 func (this *PlayerRaft) Publish(info *rpc.PlayerClusterInfo) bool {
-	return (*etv3.PlayerRaft)(this).Publish(info)
+	return (*et.PlayerRaft)(this).Publish(info)
 }
 
 func (this *PlayerRaft) Lease(leaseId int64) error {
-	return (*etv3.PlayerRaft)(this).Lease(leaseId)
+	return (*et.PlayerRaft)(this).Lease(leaseId)
 }
 
 func getChannel(clusterInfo common.ClusterInfo) string {

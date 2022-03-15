@@ -12,7 +12,7 @@ import (
 
 const (
 	uuid_dir = "uuid/"
-	ttl_time = 60 * 60
+	ttl_time = 60 * 60 * time.Second
 )
 
 type STATUS uint32

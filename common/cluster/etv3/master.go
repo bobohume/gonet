@@ -2,19 +2,17 @@ package etv3
 
 import (
 	"encoding/json"
+	"go.etcd.io/etcd/clientv3"
 	"gonet/actor"
 	"gonet/common"
 	"gonet/rpc"
 	"log"
-
-	"go.etcd.io/etcd/clientv3"
 
 	"golang.org/x/net/context"
 )
 
 //监控服务器
 type Master struct {
-	m_ServiceMap map[uint32]*common.ClusterInfo
 	m_Client     *clientv3.Client
 	m_Actor      actor.IActor
 	common.IClusterInfo
@@ -31,11 +29,11 @@ func (this *Master) Init(info common.IClusterInfo, Endpoints []string, pActor ac
 		log.Fatal("Error: cannot connec to etcd:", err)
 	}
 
-	this.m_ServiceMap = make(map[uint32]*common.ClusterInfo)
 	this.m_Client = etcdClient
 	this.BindActor(pActor)
 	this.Start()
 	this.IClusterInfo = info
+	this.InitServices()
 }
 
 func (this *Master) Start() {
@@ -51,7 +49,6 @@ func (this *Master) addService(info *common.ClusterInfo) {
 }
 
 func (this *Master) delService(info *common.ClusterInfo) {
-	delete(this.m_ServiceMap, info.Id())
 	actor.MGR.SendMsg(rpc.RpcHead{}, "Cluster_Del", info)
 }
 
@@ -75,6 +72,16 @@ func (this *Master) Run() {
 				info := NodeToService(v1.PrevKv.Value)
 				this.delService(info)
 			}
+		}
+	}
+}
+
+func (this *Master) InitServices() {
+	resp, err := this.m_Client.Get(context.Background(), ETCD_DIR, clientv3.WithPrefix())
+	if err == nil && (resp != nil && resp.Kvs != nil) {
+		for _, v := range resp.Kvs {
+			info := NodeToService(v.Value)
+			this.addService(info)
 		}
 	}
 }

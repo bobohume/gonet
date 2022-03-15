@@ -3,11 +3,10 @@ package player
 import (
 	"context"
 	"gonet/actor"
-	"gonet/base"
 	"gonet/common/cluster"
 	"gonet/rpc"
-	"gonet/server/model"
 	"gonet/server/game"
+	"gonet/server/model"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -76,6 +75,7 @@ func (this *Player) ReLogin (ctx context.Context, gateClusterId uint32, clusterI
 	if this.m_InGameFlag{
 		this.m_offline_flag = false
 		this.UpdateLease()
+		this.LoginFinish()
 	}else{
 		this.Login(ctx, gateClusterId, clusterInfo)
 	}
@@ -87,14 +87,12 @@ func (this *Player) Load_Player_DB_Finish(ctx context.Context, data model.Player
 	this.m_InGameFlag = true
 	this.PlayerData = data
 	//加载到地图
-	this.AddMap()
-	//添加到世界频道
-	for i := 0; i < 10; i++{
-		item := &model.Item{base.UUID.UUID(), this.PlayerId, 1, 100}
-		this.Bag.DataMap[item.Id] = item
-	}
-	this.SaveItemData()
+	this.LoginFinish()
+}
 
+func (this *Player) LoginFinish() {
+	//加载到地图
+	this.AddMap()
 	game.SendToGM(rpc.RpcHead{Id:this.PlayerId}, "AddPlayerToChannel", this.PlayerId, int64(-3000), this.PlayerName, this.GetGateClusterId())
 }
 

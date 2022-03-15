@@ -19,18 +19,41 @@ type(
 	Service struct {
 		*common.ClusterInfo
 		m_KeysAPI client.KeysAPI
+		m_Stats STATUS//状态机
 	}
 )
 
+func (this *Service) SET() {
+	key := ETCD_DIR + this.String() + "/" + this.IpString()
+	data, _ := json.Marshal(this.ClusterInfo)
+	this.m_KeysAPI.Set(context.Background(), key, string(data), &client.SetOptions{
+		TTL: time.Second * 10,
+	})
+	this.m_Stats = TTL
+	time.Sleep(time.Second * 3)
+}
+
+func (this *Service) TTL() {
+	//保持ttl
+	key := ETCD_DIR + this.String() + "/" + this.IpString()
+	_, err := this.m_KeysAPI.Set(context.Background(), key, "", &client.SetOptions{
+		TTL: time.Second * 10, Refresh: true, NoValueOnSuccess: true,
+	})
+	if err != nil {
+		this.m_Stats = SET
+	} else {
+		time.Sleep(time.Second * 3)
+	}
+}
+
 func (this *Service) Run(){
 	for {
-		key := ETCD_DIR + this.String() + "/" + this.IpString()
-		data, _ := json.Marshal(this.ClusterInfo)
-		this.m_KeysAPI.Set(context.Background(), key, string(data), &client.SetOptions{
-			TTL: time.Second * 10,
-		})
-
-		time.Sleep(time.Second * 3)
+		switch this.m_Stats {
+		case SET:
+			this.SET()
+		case TTL:
+			this.TTL()
+		}
 	}
 }
 

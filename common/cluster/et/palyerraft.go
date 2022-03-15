@@ -1,6 +1,7 @@
 package et
 
 import (
+	"encoding/json"
 	"fmt"
 	"gonet/actor"
 	"gonet/rpc"
@@ -9,14 +10,12 @@ import (
 	"time"
 
 	"go.etcd.io/etcd/client"
-	"google.golang.org/protobuf/proto"
-
 	"golang.org/x/net/context"
 )
 
 const (
 	PLAYER_DIR   = "player/"
-	OFFLINE_TIME = 15 * 60
+	OFFLINE_TIME = 15 * 60 * time.Second
 )
 
 //publish
@@ -54,9 +53,9 @@ func (this *PlayerRaft) Start() {
 func (this *PlayerRaft) Publish(info *rpc.PlayerClusterInfo) bool {
 	info.LeaseId = int64(info.Id)
 	key := PLAYER_DIR + fmt.Sprintf("%d", info.Id)
-	data, _ := proto.Marshal(info)
+	data, _ := json.Marshal(info)
 	_, err := this.m_KeysAPI.Set(context.Background(), key, string(data), &client.SetOptions{
-		TTL: OFFLINE_TIME, PrevExist: client.PrevNoExist, NoValueOnSuccess: true,
+		TTL: OFFLINE_TIME, PrevExist: client.PrevNoExist,
 	})
 	return err == nil
 }
@@ -112,7 +111,7 @@ func (this *PlayerRaft) Run() {
 		if res.Action == "expire" {
 			info := nodeToPlayerCluster([]byte(res.PrevNode.Value))
 			this.delPlayer(info)
-		} else if res.Action == "set" {
+		} else if res.Action == "set" || res.Action == "create"{
 			info := nodeToPlayerCluster([]byte(res.Node.Value))
 			this.addPlayer(info)
 		} else if res.Action == "delete" {
@@ -134,7 +133,7 @@ func (this *PlayerRaft) InitPlayers() {
 
 func nodeToPlayerCluster(val []byte) *rpc.PlayerClusterInfo {
 	info := &rpc.PlayerClusterInfo{}
-	err := proto.Unmarshal([]byte(val), info)
+	err := json.Unmarshal([]byte(val), info)
 	if err != nil {
 		log.Print(err)
 	}
