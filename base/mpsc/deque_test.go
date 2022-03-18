@@ -122,7 +122,7 @@ func benchmarkPushPop(count, c int) {
 		for {
 			r := q.Pop()
 			if r == nil {
-				runtime.Gosched()
+				time.Sleep(1)
 				continue
 			}
 			i++
