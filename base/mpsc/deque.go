@@ -47,8 +47,7 @@ func (this *Queue) Push(x interface{}) {
 // Pop must be called from a single, consumer goroutine
 func (this *Queue) Pop() interface{} {
 	tail := this.tail
-	//next := (*node)(atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&tail.next)))) // acquire
-	next := tail.next
+	next := (*node)(atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&tail.next)))) // acquire
 	if next != nil {
 		this.tail = next
 		v := next.val
