@@ -3,10 +3,11 @@ package mpsc
 import (
 	"fmt"
 	"log"
-	"math/rand"
 	"runtime"
 	"sync"
+	"sync/atomic"
 	"testing"
+	"time"
 )
 
 func TestQueue_PushPop(t *testing.T) {
@@ -93,9 +94,6 @@ func TestMpscQueueConsistency(t *testing.T) {
 		jj := j
 		go func() {
 			for i := 0; i < cmax; i++ {
-				if rand.Intn(10) == 0 {
-					//time.Sleep(time.Duration(rand.Intn(1000)))
-				}
 				q.Push(fmt.Sprintf("%v %v", jj, i))
 			}
 		}()
@@ -122,7 +120,7 @@ func benchmarkPushPop(count, c int) {
 		for {
 			r := q.Pop()
 			if r == nil {
-				runtime.Gosched()
+				time.Sleep(1)
 				continue
 			}
 			i++
@@ -153,22 +151,174 @@ func BenchmarkPushPop(b *testing.B) {
 		concurrency int
 	}{
 		{
-			count:       10000,
+			count:       1000000,
 			concurrency: 1,
 		},
 		{
-			count:       10000,
+			count:       1000000,
 			concurrency: 2,
 		},
 		{
-			count:       10000,
+			count:       1000000,
 			concurrency: 4,
+		},
+		{
+			count:       1000000,
+			concurrency: 8,
+		},
+		{
+			count:       1000000,
+			concurrency: 16,
 		},
 	}
 	for _, bm := range benchmarks {
 		b.Run(fmt.Sprintf("%d_%d", bm.count, bm.concurrency), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				benchmarkPushPop(bm.count, bm.concurrency)
+			}
+		})
+	}
+}
+
+func benchmarkChanPushPop(count, c int) {
+	var wg sync.WaitGroup
+	wg.Add(1)
+	q := make(chan string, 100)
+	go func() {
+		i := 0
+		for {
+			select{
+			case <-q:
+				i++
+				if i == count {
+					wg.Done()
+					return
+				}
+			}
+
+		}
+	}()
+
+	var val = "foo"
+
+	for i := 0; i < c; i++ {
+		go func(n int) {
+			for n > 0 {
+				q <- val
+				n--
+			}
+		}(count / c)
+	}
+
+	wg.Wait()
+}
+
+func BenchmarkChanPushPop(b *testing.B) {
+	benchmarks := []struct {
+		count       int
+		concurrency int
+	}{
+		{
+			count:       1000000,
+			concurrency: 1,
+		},
+		{
+			count:       1000000,
+			concurrency: 2,
+		},
+		{
+			count:       1000000,
+			concurrency: 4,
+		},
+		{
+			count:       1000000,
+			concurrency: 8,
+		},
+		{
+			count:       1000000,
+			concurrency: 16,
+		},
+	}
+	for _, bm := range benchmarks {
+		b.Run(fmt.Sprintf("%d_%d", bm.count, bm.concurrency), func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				benchmarkChanPushPop(bm.count, bm.concurrency)
+			}
+		})
+	}
+}
+
+var g_MailChan =  make(chan bool)
+var g_bMailIn [8]int64
+
+func benchmarkPushPopActor(count, c int) {
+	var wg sync.WaitGroup
+	wg.Add(1)
+	q := New()
+	go func() {
+		i := 0
+		for {
+			select {
+			case <- g_MailChan:
+				atomic.StoreInt64(&g_bMailIn[0], 0)
+				for data := q.Pop(); data != nil; data = q.Pop() {
+					i++
+					if i == count {
+						wg.Done()
+						return
+					}
+				}
+			}
+		}
+	}()
+
+	var val interface{} = "foo"
+
+	for i := 0; i < c; i++ {
+		go func(n int) {
+			for n > 0 {
+				q.Push(val)
+				if atomic.LoadInt64(&g_bMailIn[0]) == 0 && atomic.CompareAndSwapInt64(&g_bMailIn[0], 0, 1) {
+					g_MailChan <- true
+				}
+				n--
+			}
+		}(count / c)
+	}
+
+	wg.Wait()
+}
+
+func BenchmarkPushPopActor(b *testing.B) {
+	benchmarks := []struct {
+		count       int
+		concurrency int
+	}{
+		{
+			count:       1000000,
+			concurrency: 1,
+		},
+		{
+			count:       1000000,
+			concurrency: 2,
+		},
+		{
+			count:       1000000,
+			concurrency: 4,
+		},
+		{
+			count:       1000000,
+			concurrency: 8,
+		},
+		{
+			count:       1000000,
+			concurrency: 16,
+		},
+	}
+	for _, bm := range benchmarks {
+		b.Run(fmt.Sprintf("%d_%d", bm.count, bm.concurrency), func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				benchmarkPushPopActor(bm.count, bm.concurrency)
 			}
 		})
 	}

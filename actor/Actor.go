@@ -46,7 +46,7 @@ type (
 		m_State     int32
 		m_Trace     traceInfo //trace func
 		m_MailBox   *mpsc.Queue
-		m_bMailIn   int32
+		m_bMailIn   [8]int64
 		m_MailChan  chan bool
 		m_TimerId   *int64
 		share_rpc	int `rpc:"GetRpcHead;UpdateTimer"`
@@ -198,7 +198,7 @@ func (this *Actor) Send(head rpc.RpcHead, packet rpc.Packet) {
 	io.RpcPacket = packet.RpcPacket
 	io.Buff = packet.Buff
 	this.m_MailBox.Push(io)
-	if atomic.CompareAndSwapInt32(&this.m_bMailIn, 0, 1) {
+	if atomic.LoadInt64(&this.m_bMailIn[0]) == 0 && atomic.CompareAndSwapInt64(&this.m_bMailIn[0], 0, 1) {
 		this.m_MailChan <- true
 	}
 }
@@ -251,7 +251,7 @@ func (this *Actor) UpdateTimer(ctx context.Context, p *int64) {
 }
 
 func (this *Actor) consume() {
-	atomic.StoreInt32(&this.m_bMailIn, 0)
+	atomic.StoreInt64(&this.m_bMailIn[0], 0)
 	for data := this.m_MailBox.Pop(); data != nil; data = this.m_MailBox.Pop() {
 		this.call(data.(CallIO))
 	}
