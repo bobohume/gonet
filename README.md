@@ -8,7 +8,7 @@ gonet核心思想是actor模式,消息驱动,采用mpsc替换channel.
 
 channel在队列满了,会阻塞produce
 ~~~~
-基准测试如下: i7 10700 2.9GHZ 16核
+基准测试如下: i7 10700 2.9GHZ 16核 执行10万次生产和消费
 BenchmarkChanPushPop/100000_1-16             252           4715405 ns/op
 BenchmarkChanPushPop/100000_2-16             174           6881893 ns/op
 BenchmarkChanPushPop/100000_4-16             180           6635532 ns/op
