@@ -23,6 +23,8 @@ BenchmarkPushPopActor/100000_8-16            297           3986121 ns/op
 BenchmarkPushPopActor/100000_16-16           304           3839012 ns/op
 ~~~~
 
+另外go的定时器是大小堆,对高精度10毫秒定时器会吃掉大部分cpu,这里采用5级时间轮定时器优化到O(1)
+
 微服务，微服务之间使用分布式消息队列
 
 [WIKI](https://github.com/bobohume/gonet/wiki)
