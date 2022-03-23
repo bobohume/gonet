@@ -6,7 +6,9 @@ a星寻路模块。
 
 gonet核心思想是actor模式,消息驱动,采用mpsc替换channel.
 
-channel在队列满了,会阻塞produce
+channel在队列满了,会阻塞produce,mpsc类似mailbox.
+
+分布式一致性采用lease一致性,每个player actor维护自己的lease.
 ~~~~
 基准测试如下: i7 10700 2.9GHZ 16核 执行10万次生产和消费
 BenchmarkChanPushPop/100000_1-16             252           4715405 ns/op
