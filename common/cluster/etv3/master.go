@@ -2,19 +2,20 @@ package etv3
 
 import (
 	"encoding/json"
-	"go.etcd.io/etcd/clientv3"
 	"gonet/actor"
 	"gonet/common"
 	"gonet/rpc"
 	"log"
+
+	"go.etcd.io/etcd/clientv3"
 
 	"golang.org/x/net/context"
 )
 
 //监控服务器
 type Master struct {
-	m_Client     *clientv3.Client
-	m_Actor      actor.IActor
+	m_Client *clientv3.Client
+	m_Actor  actor.IActor
 	common.IClusterInfo
 }
 
@@ -45,11 +46,11 @@ func (this *Master) BindActor(pActor actor.IActor) {
 }
 
 func (this *Master) addService(info *common.ClusterInfo) {
-	actor.MGR.SendMsg(rpc.RpcHead{}, "Cluster_Add", info)
+	actor.MGR.SendMsg(rpc.RpcHead{}, "Cluster.Cluster_Add", info)
 }
 
 func (this *Master) delService(info *common.ClusterInfo) {
-	actor.MGR.SendMsg(rpc.RpcHead{}, "Cluster_Del", info)
+	actor.MGR.SendMsg(rpc.RpcHead{}, "Cluster.Cluster_Del", info)
 }
 
 func NodeToService(val []byte) *common.ClusterInfo {

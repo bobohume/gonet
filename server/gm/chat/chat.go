@@ -1,45 +1,49 @@
 package chat
 
 import (
-	"golang.org/x/net/context"
 	"gonet/actor"
+	"gonet/base"
+	"gonet/common/cluster"
 	"gonet/rpc"
 	"gonet/server/gm"
 	"gonet/server/message"
 	"time"
+
+	"golang.org/x/net/context"
 )
 
-const(
-	CHAT_PENDING_TIME_NORAML = 1
-	CHAT_PENDING_TIME_PRIVATE = 1
+const (
+	CHAT_PENDING_TIME_NORAML    = 1
+	CHAT_PENDING_TIME_PRIVATE   = 1
 	CHAT_PENDING_TIME_WORLDPLUS = 1
 )
 
-type(
-	ChatMessage struct{
-		Sender	int64
-		Recver	int64
+type (
+	ChatMessage struct {
+		Sender      int64
+		Recver      int64
 		MessageType int8
-		Message string
-		SenderName string
-		RecverName string
+		Message     string
+		SenderName  string
+		RecverName  string
 	}
 
 	stPlayerChatRecord struct {
-		nLastTime int64
+		nLastTime    int64
 		nPendingTime int64
 	}
 
-	player struct{
-		playerId int64
-		playerName string
+	player struct {
+		playerId      int64
+		playerName    string
 		gateClusterId uint32
 	}
 
 	ChatMgr struct {
 		actor.Actor
+		cluster.Stub
 		m_channelManager ChannelMgr
-		m_playerChatMap map[int64] *stPlayerChatRecord
+		m_playerChatMap  map[int64]*stPlayerChatRecord
 	}
 
 	IChatMgr interface {
@@ -54,48 +58,58 @@ type(
 	}
 )
 
-var(
+var (
 	MGR ChatMgr
 )
 
 func (this *ChatMgr) Init() {
 	this.Actor.Init()
-	this.m_playerChatMap = make(map[int64] *stPlayerChatRecord)
+	this.m_playerChatMap = make(map[int64]*stPlayerChatRecord)
 	this.m_channelManager.Init()
 	actor.MGR.RegisterActor(this)
+	this.Stub.InitStub(this.GetName(), rpc.STUB_CHAT)
 	this.Actor.Start()
 }
 
-func (this *ChatMgr) GetChannelManager() *ChannelMgr{
+func (this *ChatMgr) Stub_On_Register(ctx context.Context, Id int64) {
+	//这里可以是加载db数据
+	base.LOG.Println("Stub Chat register sucess")
+}
+
+func (this *ChatMgr) Stub_On_UnRegister(ctx context.Context, Id int64) {
+	//lease一致性这里要清理缓存数据了
+	base.LOG.Println("Stub Chat unregister sucess")
+}
+
+func (this *ChatMgr) GetChannelManager() *ChannelMgr {
 	return &this.m_channelManager
 }
 
-func (this *ChatMgr) SendMessageTo(msg *ChatMessage, playerId int64){
+func (this *ChatMgr) SendMessageTo(msg *ChatMessage, playerId int64) {
 	pPlayer := this.m_channelManager.getChannel(g_wordChannelId).GetPlayer(playerId)
-	if pPlayer != nil{
+	if pPlayer != nil {
 		SendMessage(msg, pPlayer)
 	}
 }
 
-func SendMessage(msg *ChatMessage, player *player){
-	gm.SendToClient(rpc.RpcHead{ClusterId:player.gateClusterId}, &message.ChatMessageResponse{
-		PacketHead:message.BuildPacketHead(player.playerId, rpc.SERVICE_GATE),
-		Sender:msg.Sender,
-		SenderName:msg.SenderName,
-		Recver:msg.Recver,
-		RecverName:msg.RecverName,
-		MessageType:int32(msg.MessageType),
-		Message:msg.Message,
+func SendMessage(msg *ChatMessage, player *player) {
+	gm.SendToClient(rpc.RpcHead{ClusterId: player.gateClusterId}, &message.ChatMessageResponse{
+		PacketHead:  message.BuildPacketHead(player.playerId, rpc.SERVICE_GATE),
+		Sender:      msg.Sender,
+		SenderName:  msg.SenderName,
+		Recver:      msg.Recver,
+		RecverName:  msg.RecverName,
+		MessageType: int32(msg.MessageType),
+		Message:     msg.Message,
 	})
 }
 
-func (this *ChatMgr) SendMessageToAll(msg *ChatMessage){
-	gm.SERVER.GetCluster().SendMsg(rpc.RpcHead{DestServerType: rpc.SERVICE_GATE, SendType:rpc.SEND_BOARD_CAST},
-	"Chat_SendMessageAll", msg)
+func (this *ChatMgr) SendMessageToAll(msg *ChatMessage) {
+	cluster.MGR.SendMsg(rpc.RpcHead{DestServerType: rpc.SERVICE_GATE, SendType: rpc.SEND_BOARD_CAST},
+		"Chat_SendMessageAll", msg)
 }
 
-
-func (this *ChatMgr) setPlayerChatLastTime(playerid int64, cMessageType int8, nTime int64){
+func (this *ChatMgr) setPlayerChatLastTime(playerid int64, cMessageType int8, nTime int64) {
 	v := int64(playerid)
 	v = (v << 8) | int64(cMessageType)
 
@@ -103,31 +117,31 @@ func (this *ChatMgr) setPlayerChatLastTime(playerid int64, cMessageType int8, nT
 	this.m_playerChatMap[v].nLastTime = nTime
 }
 
-func (this *ChatMgr) getPlayerChatLastTime(playerid int64, cMessageType int8) int64{
+func (this *ChatMgr) getPlayerChatLastTime(playerid int64, cMessageType int8) int64 {
 	v := int64(playerid)
 	v = (v << 8) | int64(cMessageType)
 
 	pData, exist := this.m_playerChatMap[v]
-	if exist{
-		return  pData.nLastTime
+	if exist {
+		return pData.nLastTime
 	}
 	return 0
 }
 
-func (this *ChatMgr) getPlayerChatPendingTime(playerid int64, cMessageType int8) int64{
+func (this *ChatMgr) getPlayerChatPendingTime(playerid int64, cMessageType int8) int64 {
 	v := int64(playerid)
 	v = (v << 8) | int64(cMessageType)
 
 	pData, exist := this.m_playerChatMap[v]
-	if !exist{
+	if !exist {
 		return 0
 	}
 
-	if pData.nPendingTime == 0{
+	if pData.nPendingTime == 0 {
 		switch cMessageType {
 		case int8(message.CHAT_MSG_TYPE_PRIVATE):
 			pData.nPendingTime = CHAT_PENDING_TIME_PRIVATE
-		case  int8(message.CHAT_MSG_TYPE_WORLD):
+		case int8(message.CHAT_MSG_TYPE_WORLD):
 			pData.nPendingTime = CHAT_PENDING_TIME_WORLDPLUS
 		default:
 			pData.nPendingTime = CHAT_PENDING_TIME_NORAML
@@ -138,7 +152,7 @@ func (this *ChatMgr) getPlayerChatPendingTime(playerid int64, cMessageType int8)
 }
 
 //聊天信息
-func (this *ChatMgr) ChatMessageRequest(ctx context.Context, packet *message.ChatMessageRequest){
+func (this *ChatMgr) ChatMessageRequest(ctx context.Context, packet *message.ChatMessageRequest) {
 	playerId := packet.GetSender()
 
 	msg := &ChatMessage{}
@@ -156,7 +170,7 @@ func (this *ChatMgr) ChatMessageRequest(ctx context.Context, packet *message.Cha
 	nLastTime := this.getPlayerChatLastTime(playerId, msg.MessageType)
 	nCurTime := time.Now().Unix()
 
-	if nCurTime - nLastTime < nPendingTime{
+	if nCurTime-nLastTime < nPendingTime {
 		return
 	}
 
@@ -165,12 +179,12 @@ func (this *ChatMgr) ChatMessageRequest(ctx context.Context, packet *message.Cha
 
 	channelId := this.GetChannelManager().GetChannelIdByType(playerId, msg.MessageType)
 
-	if msg.MessageType == int8(message.CHAT_MSG_TYPE_PRIVATE) && msg.Recver != msg.Sender{// 不能给自己发点对点消息
+	if msg.MessageType == int8(message.CHAT_MSG_TYPE_PRIVATE) && msg.Recver != msg.Sender { // 不能给自己发点对点消息
 		this.SendMessageTo(msg, msg.Recver)
-	}else if msg.MessageType == int8(message.CHAT_MSG_TYPE_WORLD){
+	} else if msg.MessageType == int8(message.CHAT_MSG_TYPE_WORLD) {
 		//this.SendMessageToAll(msg)
 		this.m_channelManager.SendMessageToChannel(msg, channelId)
-	}else{
+	} else {
 		if channelId == 0 {
 			return
 		}
@@ -183,11 +197,11 @@ func (this *ChatMgr) ChatMessageRequest(ctx context.Context, packet *message.Cha
 func (this *ChatMgr) RegisterChannel(ctx context.Context, messageType int8, channelId int64) {
 	this.GetChannelManager().RegisterChannel(messageType, "", channelId)
 
-	if 0 == channelId{
+	if 0 == channelId {
 		return
 	}
 
-	if messageType == int8(message.CHAT_MSG_TYPE_ORG){
+	if messageType == int8(message.CHAT_MSG_TYPE_ORG) {
 	}
 }
 

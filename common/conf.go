@@ -1,5 +1,9 @@
 package common
 
+import (
+	"gonet/rpc"
+)
+
 type (
 	Server struct {
 		Ip   string `yaml:"ip"`
@@ -40,4 +44,28 @@ type (
 	Http struct {
 		Listen string `yaml:"listen"`
 	}
+
+	StubRoute struct {
+		STUB rpc.STUB `yaml:"stub"`
+	}
+
+	Stub struct {
+		StubStrRoute map[string]string `yaml:"stub_route"`
+		StubStrCount map[string]int    `yaml:"stub_count"`
+		GmCount      int               `yaml:"gm_count"`
+		StubRoute    map[string]rpc.STUB
+		StubCount    map[rpc.STUB]int
+	}
 )
+
+func (this *Stub) Init() {
+	this.StubRoute = map[string]rpc.STUB{}
+	this.StubCount = map[rpc.STUB]int{}
+	for k, v := range this.StubStrRoute {
+		this.StubRoute[k] = rpc.STUB(rpc.STUB_value[v])
+	}
+
+	for k, v := range this.StubStrCount {
+		this.StubCount[rpc.STUB(rpc.STUB_value[k])] = v
+	}
+}

@@ -46,7 +46,7 @@ func (this *ClientSocket) Start() bool {
 }
 
 func (this *ClientSocket) SendMsg(head rpc.RpcHead, funcName string, params ...interface{}) {
-	this.Send(head, rpc.Marshal(head, funcName, params...))
+	this.Send(head, rpc.Marshal(&head, &funcName, params...))
 }
 
 func (this *ClientSocket) Send(head rpc.RpcHead, packet rpc.Packet) int {

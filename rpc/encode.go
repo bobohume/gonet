@@ -5,31 +5,31 @@ import (
 	"encoding/gob"
 	"github.com/golang/protobuf/proto"
 	"gonet/base"
-	"strings"
 )
 
 //rpc  Marshal
-func Marshal(head RpcHead, funcName string, params ...interface{}) Packet{
+func Marshal(head* RpcHead, funcName *string, params ...interface{}) Packet {
 	return marshal(head, funcName, params...)
 }
 
 //rpc  marshal
-func marshal(head RpcHead, funcName string, params ...interface{}) Packet{
+func marshal(head *RpcHead, funcName *string, params ...interface{}) Packet {
 	defer func() {
 		if err := recover(); err != nil {
 			base.TraceCode(err)
 		}
 	}()
 
-	rpcPacket := &RpcPacket{FuncName:strings.ToLower(funcName), ArgLen:int32(len(params)), RpcHead:(*RpcHead)(&head)}
+	*funcName = Route(head, *funcName)
+	rpcPacket := &RpcPacket{FuncName: *funcName, ArgLen: int32(len(params)), RpcHead: (*RpcHead)(head)}
 	buf := bytes.NewBuffer([]byte{})
 	enc := gob.NewEncoder(buf)
-	for _, param := range params{
+	for _, param := range params {
 		enc.Encode(param)
 	}
 	rpcPacket.RpcBody = buf.Bytes()
 	dat, _ := proto.Marshal(rpcPacket)
-	return Packet{Buff:dat, RpcPacket:rpcPacket}
+	return Packet{Buff: dat, RpcPacket: rpcPacket}
 }
 
 //rpc  MarshalPB

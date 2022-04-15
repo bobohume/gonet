@@ -3,42 +3,44 @@ package etv3
 import (
 	"context"
 	"fmt"
-	"go.etcd.io/etcd/clientv3"
 	"gonet/base"
 	"log"
 	"time"
+
+	"go.etcd.io/etcd/clientv3"
 )
 
-const(
-	uuid_dir =  "uuid/"
-	ttl_time = 60 * 60
+const (
+	uuid_dir = "uuid/"
+	ttl_time = 30 * 60
 )
 
 type STATUS uint32
-const(
-	SET 		STATUS = iota
-	TTL			STATUS = iota
+
+const (
+	SET STATUS = iota
+	TTL STATUS = iota
 )
 
 type Snowflake struct {
-	m_Id int64
-	m_Client *clientv3.Client
-	m_Lease clientv3.Lease
+	m_Id      int64
+	m_Client  *clientv3.Client
+	m_Lease   clientv3.Lease
 	m_LeaseId clientv3.LeaseID
-	m_Stats STATUS//状态机
+	m_Stats   STATUS //状态机
 }
 
-func (this *Snowflake) Key() string{
+func (this *Snowflake) Key() string {
 	return uuid_dir + fmt.Sprintf("%d", this.m_Id)
 }
 
-func (this *Snowflake) SET() bool{
+func (this *Snowflake) SET() bool {
 	//设置key
 	key := this.Key()
 	tx := this.m_Client.Txn(context.Background())
 	//key no exist
-	leaseResp,err := this.m_Lease.Grant(context.Background(),ttl_time)
-	if err != nil{
+	leaseResp, err := this.m_Lease.Grant(context.Background(), ttl_time)
+	if err != nil {
 		return false
 	}
 	this.m_LeaseId = leaseResp.ID
@@ -46,27 +48,27 @@ func (this *Snowflake) SET() bool{
 		Then(clientv3.OpPut(key, "", clientv3.WithLease(this.m_LeaseId))).
 		Else()
 	txnRes, err := tx.Commit()
-	if err != nil || !txnRes.Succeeded{//抢锁失败
+	if err != nil || !txnRes.Succeeded { //抢锁失败
 		this.m_Id = int64(base.RAND.RandI(1, int(base.WorkeridMax)))
 		return false
 	}
 
-	base.UUID.Init(this.m_Id)//设置uuid
+	base.UUID.Init(this.m_Id) //设置uuid
 	this.m_Stats = TTL
 	return true
 }
 
-func (this *Snowflake) TTL(){
+func (this *Snowflake) TTL() {
 	//保持ttl
 	_, err := this.m_Lease.KeepAliveOnce(context.Background(), this.m_LeaseId)
-	if err != nil{
+	if err != nil {
 		this.m_Stats = SET
-	}else{
-		time.Sleep(ttl_time / 6)
+	} else {
+		time.Sleep(ttl_time / 3)
 	}
 }
 
-func (this *Snowflake) Run(){
+func (this *Snowflake) Run() {
 	for {
 		switch this.m_Stats {
 		case SET:
@@ -78,9 +80,9 @@ func (this *Snowflake) Run(){
 }
 
 //uuid生成器
-func (this *Snowflake) Init(endpoints []string){
+func (this *Snowflake) Init(endpoints []string) {
 	cfg := clientv3.Config{
-		Endpoints:               endpoints,
+		Endpoints: endpoints,
 	}
 
 	etcdClient, err := clientv3.New(cfg)
@@ -91,11 +93,11 @@ func (this *Snowflake) Init(endpoints []string){
 	this.m_Id = int64(base.RAND.RandI(1, int(base.WorkeridMax)))
 	this.m_Client = etcdClient
 	this.m_Lease = lease
-	for !this.SET(){
+	for !this.SET() {
 	}
 	this.Start()
 }
 
-func (this *Snowflake) Start(){
+func (this *Snowflake) Start() {
 	go this.Run()
 }

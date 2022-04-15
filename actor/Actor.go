@@ -31,12 +31,11 @@ const (
 //********************************************************
 type (
 	ActorBase struct {
-		m_ActorName  string
-		m_RType      reflect.Type
-		m_RVal       reflect.Value
-		m_ActorType  ACTOR_TYPE
-		Self     	 IActor //when parent interface class call interface, it call parent not child  use for virtual
-		m_RpcMethodMap  map[string] string
+		m_ActorName string
+		m_RType     reflect.Type
+		m_RVal      reflect.Value
+		m_ActorType ACTOR_TYPE
+		Self        IActor //when parent interface class call interface, it call parent not child  use for virtual
 	}
 
 	Actor struct {
@@ -49,7 +48,7 @@ type (
 		m_bMailIn   [8]int64
 		m_MailChan  chan bool
 		m_TimerId   *int64
-		share_rpc	int `rpc:"GetRpcHead;UpdateTimer"`
+		m_Pool      IActorPool //ACTOR_TYPE_PLAYER,ACTOR_TYPE_POOL
 	}
 
 	IActor interface {
@@ -61,13 +60,19 @@ type (
 		RegisterTimer(duration time.Duration, fun func(), opts ...timer.OpOption) //注册定时器,时间为纳秒 1000 * 1000 * 1000
 		GetId() int64
 		GetState() int32
-		setState(state int32)
 		GetRpcHead(ctx context.Context) rpc.RpcHead //rpc is safe
 		GetName() string
 		GetActorType() ACTOR_TYPE
-		Register(IActor,  Op)
 		HasRpc(string) bool
 		GetAcotr() *Actor
+		register(IActor, Op)
+		setState(state int32)
+		bindPool(IActorPool) //ACTOR_TYPE_PLAYER,ACTOR_TYPE_POOL
+		getPool() IActorPool //ACTOR_TYPE_PLAYER,ACTOR_TYPE_POOL
+	}
+
+	IActorPool interface {
+		SendAcotr(head rpc.RpcHead, packet rpc.Packet) bool //ACTOR_TYPE_PLAYER,ACTOR_TYPE_POOL特殊判断
 	}
 
 	CallIO struct {
@@ -100,7 +105,7 @@ func (this *Actor) GetId() int64 {
 	return this.m_Id
 }
 
-func (this *Actor) SetId(id int64)  {
+func (this *Actor) SetId(id int64) {
 	this.m_Id = id
 }
 
@@ -117,7 +122,7 @@ func (this *Actor) GetState() int32 {
 	return atomic.LoadInt32(&this.m_State)
 }
 
-func (this *Actor) GetActorType() ACTOR_TYPE{
+func (this *Actor) GetActorType() ACTOR_TYPE {
 	return this.m_ActorType
 }
 
@@ -125,12 +130,20 @@ func (this *Actor) setState(state int32) {
 	atomic.StoreInt32(&this.m_State, state)
 }
 
-func (this *Actor) HasRpc(funcName string) bool{
-	_, bEx := this.m_RpcMethodMap[funcName]
+func (this *Actor) bindPool(pPool IActorPool) {
+	this.m_Pool = pPool
+}
+
+func (this *Actor) getPool() IActorPool {
+	return this.m_Pool
+}
+
+func (this *Actor) HasRpc(funcName string) bool {
+	_, bEx := this.m_RType.MethodByName(funcName)
 	return bEx
 }
 
-func (this *Actor) GetAcotr() *Actor{
+func (this *Actor) GetAcotr() *Actor {
 	return this
 }
 
@@ -145,9 +158,9 @@ func (this *Actor) Init() {
 	}
 }
 
-func (this *Actor) Register(pActor IActor, op Op){
+func (this *Actor) register(pActor IActor, op Op) {
 	rType := reflect.TypeOf(pActor)
-	this.ActorBase = ActorBase{m_RType: rType, m_RVal: reflect.ValueOf(pActor), Self:pActor, m_ActorName:op.m_name, m_ActorType:op.m_type, m_RpcMethodMap: op.m_RpcMethodMap}
+	this.ActorBase = ActorBase{m_RType: rType, m_RVal: reflect.ValueOf(pActor), Self: pActor, m_ActorName: op.m_name, m_ActorType: op.m_type}
 }
 
 func (this *Actor) RegisterTimer(duration time.Duration, fun func(), opts ...timer.OpOption) {
@@ -157,7 +170,7 @@ func (this *Actor) RegisterTimer(duration time.Duration, fun func(), opts ...tim
 	}
 
 	timer.RegisterTimer(this.m_TimerId, duration, func() {
-		this.SendMsg(rpc.RpcHead{ActorName:this.m_ActorName}, "UpdateTimer", (*int64)(unsafe.Pointer(&fun)))
+		this.SendMsg(rpc.RpcHead{ActorName: this.m_ActorName}, "UpdateTimer", (*int64)(unsafe.Pointer(&fun)))
 	}, opts...)
 }
 
@@ -183,7 +196,7 @@ func (this *Actor) Start() {
 
 func (this *Actor) SendMsg(head rpc.RpcHead, funcName string, params ...interface{}) {
 	head.SocketId = 0
-	this.Send(head, rpc.Marshal(head, funcName, params...))
+	this.Send(head, rpc.Marshal(&head, &funcName, params...))
 }
 
 func (this *Actor) Send(head rpc.RpcHead, packet rpc.Packet) {
@@ -215,16 +228,14 @@ func (this *Actor) call(io CallIO) {
 		log.Printf("func [%s] has no method", funcName)
 		return
 	}
-
-	methodName := this.m_RpcMethodMap[funcName]
-	m,_ := this.m_RType.MethodByName(methodName)
+	m, _ := this.m_RType.MethodByName(funcName)
 	rpcPacket.RpcHead.SocketId = io.SocketId
 	params := rpc.UnmarshalBody(rpcPacket, m.Type)
 	if len(params) >= 1 {
 		in := make([]reflect.Value, len(params))
 		in[0] = this.m_RVal
-		for i, param := range params{
-			if i == 0{
+		for i, param := range params {
+			if i == 0 {
 				continue
 			}
 			in[i] = reflect.ValueOf(param)
@@ -258,7 +269,7 @@ func (this *Actor) consume() {
 }
 
 func (this *Actor) loop() bool {
-	defer func(){
+	defer func() {
 		if err := recover(); err != nil {
 			base.TraceCode(this.m_Trace.ToString(), err)
 		}
@@ -304,15 +315,15 @@ func (this *traceInfo) ToString() string {
 	return fmt.Sprintf("trace go file[%s] call[%s]\n", this.fileName, this.funcName)
 }
 
-func GetRpcMethodMap(rType reflect.Type, tagName string) map[string] string{
-	rpcMethod := map[string] string{}
+func GetRpcMethodMap(rType reflect.Type, tagName string) map[string]string {
+	rpcMethod := map[string]string{}
 	sf, bEx := rType.Elem().FieldByName(tagName)
-	if !bEx{
+	if !bEx {
 		return rpcMethod
 	}
 	tag := sf.Tag.Get("rpc")
 	methodNames := strings.Split(tag, ";")
-	for _, methodName := range methodNames{
+	for _, methodName := range methodNames {
 		funcName := strings.ToLower(methodName)
 		rpcMethod[funcName] = methodName
 	}

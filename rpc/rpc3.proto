@@ -16,8 +16,8 @@ enum SERVICE{
 //发送标志
 enum SEND{
     POINT = 0;//指定集群id
-    BALANCE = 1;//负载
-    BOARD_CAST = 2;//广播
+    BOARD_CAST = 1;//广播
+    //BALANCE = 2;//负载
 };
 
 //rpc 包头
@@ -57,18 +57,26 @@ message Packet{
 	RpcPacket RpcPacket = 4;//rpc packet
 }
 
-//玩家集群信息
-message PlayerClusterInfo{
-    int64 Id = 1;
+//邮箱
+message MailBox{
+    int64  Id = 1;
     int64  LeaseId = 2;
-    uint32 GClusterId = 3;//game集群
-    uint32 ZClusterId = 4;//地图集群
-    uint32 DClusterId = 5;//db集群
+    uint32 ClusterId = 3;//集群id
 }
 
 //玩法集群信息
-message GmClusterInfo{
-    int64 Id = 1;
+message StubMailBox{
+    int64  Id = 1;
     int64  LeaseId = 2;
-    uint32 GClusterId = 3;//game集群
+    STUB   StubType = 3;
+    uint32 ClusterId = 5;//集群id
 }
+
+//STUB类型
+enum STUB{
+    MASTER = 0;//master
+    PLAYERDB = 1;//db
+    LOGIN = 2;//登录
+    CHAT = 3;//聊天
+    END = 4;
+};

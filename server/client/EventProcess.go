@@ -55,13 +55,15 @@ func (this *EventProcess) SendPacket(packet proto.Message) {
 
 func (this *EventProcess) PacketFunc(packet1 rpc.Packet) bool {
 	packetId, data := message.Decode(packet1.Buff)
-	packet := message.GetPakcet(packetId)
-	if packet == nil {
+	packetRoute := message.GetPakcetRoute(packetId)
+	if packetRoute == nil {
 		return true
 	}
+	packet := packetRoute.Func()
 	err := message.UnmarshalText(packet, data)
 	if err == nil {
-		this.Send(rpc.RpcHead{}, rpc.Marshal(rpc.RpcHead{}, message.GetMessageName(packet), packet))
+		head := rpc.RpcHead{}
+		this.Send(head, rpc.Marshal(&head, &packetRoute.FuncName, packet))
 		return true
 	}
 

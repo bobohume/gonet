@@ -128,7 +128,6 @@ func WithWhereStr(str string) OpOption {
 	}
 }
 
-
 func WithForce() OpOption {
 	return func(op *Op) {
 		op.forceFlag = true
@@ -189,15 +188,16 @@ func GetDBTimeString(t int64) string {
 	return tm.Format("2006-01-02 15:04:05")
 }
 
-func OpenDB(conf common.Db) *sql.DB {
+func OpenDB(conf common.Db) error {
 	sqlstr := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4", conf.User, conf.Password, conf.Ip, conf.Name)
-	mydb, err := sql.Open("mysql", sqlstr)
+	var err error
+	DB, err = sql.Open("mysql", sqlstr)
 	base.ChechErr(err)
 	if err == nil {
-		mydb.SetMaxOpenConns(conf.MaxOpenConns)
-		mydb.SetMaxIdleConns(conf.MaxIdleConns)
+		DB.SetMaxOpenConns(conf.MaxOpenConns)
+		DB.SetMaxIdleConns(conf.MaxIdleConns)
 	}
-	return mydb
+	return DB.Ping()
 }
 
 func getProperties(sf reflect.StructField) *Properties {
@@ -412,6 +412,10 @@ func getTableName(obj interface{}, sqlData *SqlData) {
 	table := getTable(classType)
 	sqlData.Table = table.Name
 }
+
+var (
+	DB *sql.DB
+)
 
 //--------------------note存储过程----------------------//
 //mysql存储过程多变更集的时候要用 NextResultSet()

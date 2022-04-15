@@ -14,10 +14,10 @@ import (
 )
 
 type (
-	Service    etv3.Service
-	Master     etv3.Master
-	Snowflake  etv3.Snowflake
-	PlayerRaft etv3.PlayerRaft
+	Service   etv3.Service
+	Master    etv3.Master
+	Snowflake etv3.Snowflake
+	MailBox   etv3.MailBox
 	//集群包管理
 	IClusterPacket interface {
 		actor.IActor
@@ -108,7 +108,7 @@ func (this *Cluster) Cluster_Del(ctx context.Context, info *common.ClusterInfo) 
 }
 
 //链接断开
-func (this *Cluster) DISCONNECT (ctx context.Context, ClusterId uint32) {
+func (this *Cluster) DISCONNECT(ctx context.Context, ClusterId uint32) {
 	pInfo, bEx := this.m_ClusterInfoMap[ClusterId]
 	if bEx {
 		this.DelCluster(pInfo)
@@ -138,7 +138,7 @@ func (this *Cluster) DelCluster(info *common.ClusterInfo) {
 	pCluster, bEx := this.m_ClusterMap[info.Id()]
 	this.m_ClusterLocker.RUnlock()
 	if bEx {
-		pCluster.CallMsg(rpc.RpcHead{},"STOP_ACTOR")
+		pCluster.CallMsg(rpc.RpcHead{}, "STOP_ACTOR")
 		pCluster.Stop()
 	}
 
@@ -194,13 +194,13 @@ func (this *Cluster) boardCastSend(head rpc.RpcHead, packet rpc.Packet) {
 }
 
 func (this *Cluster) SendMsg(head rpc.RpcHead, funcName string, params ...interface{}) {
-	this.Send(head, rpc.Marshal(head, funcName, params...))
+	this.Send(head, rpc.Marshal(&head, &funcName, params...))
 }
 
 func (this *Cluster) Send(head rpc.RpcHead, packet rpc.Packet) {
 	switch head.SendType {
-	case rpc.SEND_BALANCE:
-		this.balanceSend(head, packet)
+	//case rpc.SEND_BALANCE:
+	//	this.balanceSend(head, packet)
 	case rpc.SEND_POINT:
 		this.sendPoint(head, packet)
 	default:

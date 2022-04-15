@@ -17,6 +17,10 @@ type (
 		ServiceType() rpc.SERVICE
 		IpString() string
 	}
+
+	StubMailBox struct {
+		rpc.StubMailBox
+	}
 )
 
 func (this *ClusterInfo) IpString() string {
@@ -33,4 +37,12 @@ func (this *ClusterInfo) Id() uint32 {
 
 func (this *ClusterInfo) ServiceType() rpc.SERVICE {
 	return this.Type
+}
+
+func (this *StubMailBox) StubName() string {
+	return this.StubType.String()
+}
+
+func (this *StubMailBox) Key() string {
+	return fmt.Sprintf("%s/%d", this.StubType.String(), this.Id)
 }

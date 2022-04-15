@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"gonet/actor"
 	"gonet/common"
-	"gonet/rpc"
 	"gonet/server/message"
 	"runtime"
 	"strconv"
@@ -27,17 +26,16 @@ func (this *CmdProcess) Init() {
 	this.Actor.Start()
 }
 
-var(
+var (
 	g_Cmd *CmdProcess
 )
 
-func Init(){
+func Init() {
 	g_Cmd = &CmdProcess{}
 	g_Cmd.Init()
 	common.StartConsole(g_Cmd)
 	//InitWeb()
 }
-
 
 func (this *CmdProcess) Cpus(ctx context.Context) {
 	fmt.Println(runtime.NumCPU(), " cpus and ", runtime.GOMAXPROCS(0), " in use")
@@ -58,21 +56,15 @@ func (this *CmdProcess) Startgc(ctx context.Context) {
 	fmt.Println("gc finished")
 }
 
-func (this *CmdProcess) DoInTopRank(ctx context.Context, argv0,argv1,argv2,argv3,argv4,argv5 string) {
-	nType, _ := strconv.Atoi(argv0)
-	id, _ := strconv.Atoi(argv1)
-	name := argv2
-	score, _ := strconv.Atoi(argv3)
-	val0, _ := strconv.Atoi(argv4)
-	val1, _ := strconv.Atoi(argv5)
-	actor.MGR.SendMsg(rpc.RpcHead{},"InTopRank", nType, int64(id), name, score, val0, val1)
-}
-
 func (this *CmdProcess) Showrpc(ctx context.Context) {
 	fmt.Printf("--------------  PACKET  -------------\n")
-	for i, v := range message.Packet_CrcNamesMap{
+	for i, v := range message.Packet_CrcNamesMap {
 		fmt.Printf("packetName[%s], crc[%d]\n", v, i)
 	}
+	fmt.Printf("--------------  PACKET  -------------\n")
+}
+
+func (this *CmdProcess) HotFix(ctx context.Context, name string) {
 	fmt.Printf("--------------  PACKET  -------------\n")
 }
 

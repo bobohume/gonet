@@ -211,7 +211,7 @@ func (this *Socket) BindPacketFunc(callfunc PacketFunc) {
 }
 
 func (this *Socket) CallMsg(head rpc.RpcHead, funcName string, params ...interface{}) {
-	this.HandlePacket(rpc.Marshal(head, funcName, params...).Buff)
+	this.HandlePacket(rpc.Marshal(&head, &funcName, params...).Buff)
 }
 
 func (this *Socket) HandlePacket(buff []byte) {

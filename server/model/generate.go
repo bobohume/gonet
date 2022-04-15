@@ -38,22 +38,22 @@ var (
 
 	//包头
 	FILE_GENERATE_HEAD_MAP = map[string]string{
-		"game":
-`package player
+		"game": `package player
 
 import(
+	"gonet/base"
+	"gonet/common/cluster"
 	"gonet/rpc"
-	"gonet/server/game"
 )
 
 // 自动生成代码
 `,
 
-		"db":
-`package db
+		"db": `package db
 
 import(
 	"context"
+	"gonet/base"
     "gonet/orm"
     "gonet/server/model"
 )
@@ -64,35 +64,26 @@ import(
 	//包体
 	FILE_GENERATE_BODY_MAP = map[string][]string{
 		"game": []string{
-`
+			`
 func (this *{ClassName}) Save{MemberType}(){
 	this.{MemberName}.Dirty = true
 }
 
 func (this *{ClassName}) __Save{MemberType}DB(){
 	if this.{MemberName}.Dirty{
-    	game.SERVER.GetCluster().SendMsg(rpc.RpcHead{DestServerType:rpc.SERVICE_DB, ClusterId:this.Raft.DClusterId}, "Save{MemberType}", this.{MemberType}.{DbKeyName}, this.{MemberName})
+    	cluster.MGR.SendMsg(rpc.RpcHead{DestServerType:rpc.SERVICE_DB, Id:this.MailBox.Id}, "PlayerMgr.Save{MemberType}", this.{MemberType}.{DbKeyName}, this.{MemberName})
 		this.{MemberName}.Dirty = false
-    	game.SERVER.GetLog().Printf("玩家[%d] Save{MemberType}", this.Raft.Id)
+    	base.LOG.Printf("玩家[%d] Save{MemberType}", this.MailBox.Id)
 	}
 }
 `,
 		},
 
-
 		"db": []string{
-`
-func (this *{ClassName}) __Save{MemberType}(data model.{MemberType}){
-    this.{MemberName} = data
-	this.{MemberName}.Dirty = true
-    SERVER.GetLog().Printf("玩家[%d] Save{MemberType}", this.Raft.Id)
-}
-`,
-
-`
+			`
 func (this *{ClassName}) __Load{MemberType}DB({DbKeyName} {DbKeyTypeName}) error{
     data := &model.{MemberType}{{DbKeyName}:{DbKeyName}}
-    rows, err := SERVER.GetDB().Query(orm.LoadSql(data, orm.WithWhere(data)))
+    rows, err := orm.DB.Query(orm.LoadSql(data, orm.WithWhere(data)))
     rs, err := orm.Query(rows, err)
     if err == nil && rs.Next() {
         orm.LoadObjSql(&this.{MemberName}, rs.Row())
@@ -100,12 +91,23 @@ func (this *{ClassName}) __Load{MemberType}DB({DbKeyName} {DbKeyTypeName}) error
 	return err
 }
 `,
-`
+			`
+func (this *{ClassName}Mgr) Save{MemberType}(ctx context.Context, playerId int64, data model.{MemberType}){
+	orm.DB.Exec(orm.SaveSql(&data))
+	base.LOG.Printf("玩家[%d] Save{MemberType}", playerId)
+}
+/*
 func (this *{ClassName}) __Save{MemberType}DB(){
 	if this.{MemberName}.Dirty{
-    	SERVER.GetDB().Exec(orm.SaveSql(this.{MemberName}))
+    	orm.DB.Exec(orm.SaveSql(this.{MemberName}))
 		this.{MemberName}.Dirty = false
 	}
+}
+
+func (this *{ClassName}) __Save{MemberType}(data model.{MemberType}){
+    this.{MemberName} = data
+	this.{MemberName}.Dirty = true
+    base.LOG.Printf("玩家[%d] Save{MemberType}", this.MailBox.Id)
 }
 
 func (this *{ClassName}Mgr) Save{MemberType}(ctx context.Context, playerId int64, data model.{MemberType}){
@@ -114,6 +116,7 @@ func (this *{ClassName}Mgr) Save{MemberType}(ctx context.Context, playerId int64
 		pPlayer.__Save{MemberType}(data)
 	}
 }
+*/
 `,
 		},
 	}
@@ -143,13 +146,13 @@ func Generate(name string) {
 			}
 		}
 
-		if moduleInfo.moduleName == "db"{
+		if moduleInfo.moduleName == "db" {
 			// func LoadDB
 			stream.WriteString(fmt.Sprintf("\nfunc (this *%s) Load%sDB(%s %s) error{\n", className, name, fileInfo.dbKey, fileInfo.dbKeyType))
 			stream.WriteString(fmt.Sprintf("    this.Init(%s)\n", fileInfo.dbKey))
-			for _, v := range memberNameList{
+			for _, v := range memberNameList {
 				stream.WriteString(fmt.Sprintf("    if err := this.__Load%sDB(%s); err != nil{\n", v, fileInfo.dbKey))
-				stream.WriteString(fmt.Sprintf(`        SERVER.GetLog().Printf("__Load%sDB() error")` + "\n", v))
+				stream.WriteString(fmt.Sprintf(`        base.LOG.Printf("__Load%sDB() error")`+"\n", v))
 				stream.WriteString(fmt.Sprintf("        return err \n"))
 				stream.WriteString(fmt.Sprintf("    }\n"))
 			}
@@ -157,15 +160,15 @@ func Generate(name string) {
 			stream.WriteString("}\n\n")
 
 			// func SaveDB
-			stream.WriteString(fmt.Sprintf("\nfunc (this *%s) Save%sDB(){\n", className, name))
-			for _, v := range memberNameList{
+			/*stream.WriteString(fmt.Sprintf("\nfunc (this *%s) Save%sDB(){\n", className, name))
+			for _, v := range memberNameList {
 				stream.WriteString(fmt.Sprintf("    this.__Save%sDB()\n", v))
 			}
-			stream.WriteString("}\n\n")
-		}else if moduleInfo.moduleName == "game"{
+			stream.WriteString("}\n\n")*/
+		} else if moduleInfo.moduleName == "game" {
 			// func SaveDB
 			stream.WriteString(fmt.Sprintf("\nfunc (this *%s) Save%sDB(){\n", className, name))
-			for _, v := range memberNameList{
+			for _, v := range memberNameList {
 				stream.WriteString(fmt.Sprintf("    this.__Save%sDB()\n", v))
 			}
 			stream.WriteString("}\n\n")

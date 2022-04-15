@@ -22,6 +22,6 @@ func (this *EventProcess) Init() {
 	this.Actor.Start()
 }
 
-func (this *EventProcess) A_G_Account_Login(ctx context.Context, socketId uint32, clusterInfo rpc.PlayerClusterInfo) {
-	actor.MGR.SendMsg(rpc.RpcHead{}, "ADD_ACCOUNT", socketId, clusterInfo)
+func (this *EventProcess) G_Player_Login(ctx context.Context, socketId uint32, mailbox rpc.MailBox) {
+	actor.MGR.SendMsg(rpc.RpcHead{}, "PlayerMgr.ADD_ACCOUNT", socketId, mailbox)
 }

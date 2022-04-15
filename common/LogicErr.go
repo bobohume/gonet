@@ -8,6 +8,6 @@ import (
 	NONE_ERROR		=iota,
 )*/
 
-func DBERROR(msg string, err error){
-	base.GLOG.Printf("db [%s] error [%s]", msg, err.Error())
+func DBERROR(msg string, err error) {
+	base.LOG.Printf("db [%s] error [%s]", msg, err.Error())
 }

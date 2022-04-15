@@ -1,8 +1,9 @@
 package player
 
 import(
+	"gonet/base"
+	"gonet/common/cluster"
 	"gonet/rpc"
-	"gonet/server/game"
 )
 
 // 自动生成代码
@@ -13,9 +14,9 @@ func (this *Player) SaveSimplePlayerData(){
 
 func (this *Player) __SaveSimplePlayerDataDB(){
 	if this.SimplePlayerData.Dirty{
-    	game.SERVER.GetCluster().SendMsg(rpc.RpcHead{DestServerType:rpc.SERVICE_DB, ClusterId:this.Raft.DClusterId}, "SaveSimplePlayerData", this.SimplePlayerData.PlayerId, this.SimplePlayerData)
+    	cluster.MGR.SendMsg(rpc.RpcHead{DestServerType:rpc.SERVICE_DB, Id:this.MailBox.Id}, "PlayerMgr.SaveSimplePlayerData", this.SimplePlayerData.PlayerId, this.SimplePlayerData)
 		this.SimplePlayerData.Dirty = false
-    	game.SERVER.GetLog().Printf("玩家[%d] SaveSimplePlayerData", this.Raft.Id)
+    	base.LOG.Printf("玩家[%d] SaveSimplePlayerData", this.MailBox.Id)
 	}
 }
 
@@ -25,9 +26,9 @@ func (this *Player) SavePlayerKvData(){
 
 func (this *Player) __SavePlayerKvDataDB(){
 	if this.PlayerKvData.Dirty{
-    	game.SERVER.GetCluster().SendMsg(rpc.RpcHead{DestServerType:rpc.SERVICE_DB, ClusterId:this.Raft.DClusterId}, "SavePlayerKvData", this.PlayerKvData.PlayerId, this.PlayerKvData)
+    	cluster.MGR.SendMsg(rpc.RpcHead{DestServerType:rpc.SERVICE_DB, Id:this.MailBox.Id}, "PlayerMgr.SavePlayerKvData", this.PlayerKvData.PlayerId, this.PlayerKvData)
 		this.PlayerKvData.Dirty = false
-    	game.SERVER.GetLog().Printf("玩家[%d] SavePlayerKvData", this.Raft.Id)
+    	base.LOG.Printf("玩家[%d] SavePlayerKvData", this.MailBox.Id)
 	}
 }
 
@@ -37,9 +38,9 @@ func (this *Player) SaveItemData(){
 
 func (this *Player) __SaveItemDataDB(){
 	if this.ItemData.Dirty{
-    	game.SERVER.GetCluster().SendMsg(rpc.RpcHead{DestServerType:rpc.SERVICE_DB, ClusterId:this.Raft.DClusterId}, "SaveItemData", this.ItemData.PlayerId, this.ItemData)
+    	cluster.MGR.SendMsg(rpc.RpcHead{DestServerType:rpc.SERVICE_DB, Id:this.MailBox.Id}, "PlayerMgr.SaveItemData", this.ItemData.PlayerId, this.ItemData)
 		this.ItemData.Dirty = false
-    	game.SERVER.GetLog().Printf("玩家[%d] SaveItemData", this.Raft.Id)
+    	base.LOG.Printf("玩家[%d] SaveItemData", this.MailBox.Id)
 	}
 }
 
@@ -49,9 +50,9 @@ func (this *Player) SaveEquipData(){
 
 func (this *Player) __SaveEquipDataDB(){
 	if this.EquipData.Dirty{
-    	game.SERVER.GetCluster().SendMsg(rpc.RpcHead{DestServerType:rpc.SERVICE_DB, ClusterId:this.Raft.DClusterId}, "SaveEquipData", this.EquipData.PlayerId, this.EquipData)
+    	cluster.MGR.SendMsg(rpc.RpcHead{DestServerType:rpc.SERVICE_DB, Id:this.MailBox.Id}, "PlayerMgr.SaveEquipData", this.EquipData.PlayerId, this.EquipData)
 		this.EquipData.Dirty = false
-    	game.SERVER.GetLog().Printf("玩家[%d] SaveEquipData", this.Raft.Id)
+    	base.LOG.Printf("玩家[%d] SaveEquipData", this.MailBox.Id)
 	}
 }
 
@@ -61,9 +62,9 @@ func (this *Player) SaveMailData(){
 
 func (this *Player) __SaveMailDataDB(){
 	if this.MailData.Dirty{
-    	game.SERVER.GetCluster().SendMsg(rpc.RpcHead{DestServerType:rpc.SERVICE_DB, ClusterId:this.Raft.DClusterId}, "SaveMailData", this.MailData.PlayerId, this.MailData)
+    	cluster.MGR.SendMsg(rpc.RpcHead{DestServerType:rpc.SERVICE_DB, Id:this.MailBox.Id}, "PlayerMgr.SaveMailData", this.MailData.PlayerId, this.MailData)
 		this.MailData.Dirty = false
-    	game.SERVER.GetLog().Printf("玩家[%d] SaveMailData", this.Raft.Id)
+    	base.LOG.Printf("玩家[%d] SaveMailData", this.MailBox.Id)
 	}
 }
 
@@ -73,9 +74,9 @@ func (this *Player) SaveSocialData(){
 
 func (this *Player) __SaveSocialDataDB(){
 	if this.SocialData.Dirty{
-    	game.SERVER.GetCluster().SendMsg(rpc.RpcHead{DestServerType:rpc.SERVICE_DB, ClusterId:this.Raft.DClusterId}, "SaveSocialData", this.SocialData.PlayerId, this.SocialData)
+    	cluster.MGR.SendMsg(rpc.RpcHead{DestServerType:rpc.SERVICE_DB, Id:this.MailBox.Id}, "PlayerMgr.SaveSocialData", this.SocialData.PlayerId, this.SocialData)
 		this.SocialData.Dirty = false
-    	game.SERVER.GetLog().Printf("玩家[%d] SaveSocialData", this.Raft.Id)
+    	base.LOG.Printf("玩家[%d] SaveSocialData", this.MailBox.Id)
 	}
 }
 

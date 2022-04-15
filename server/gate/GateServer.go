@@ -1,79 +1,73 @@
- package gate
+package gate
 
- import (
-	 "gonet/actor"
-	 "gonet/base"
-	 "gonet/base/ini"
-	 "gonet/common"
-	 "gonet/common/cluster"
-	 "gonet/network"
-	 "gonet/rpc"
-	 "time"
- )
+import (
+	"gonet/actor"
+	"gonet/base"
+	"gonet/base/ini"
+	"gonet/common"
+	"gonet/common/cluster"
+	"gonet/network"
+	"gonet/rpc"
+	"time"
+)
 
-type(
-	ServerMgr struct{
+type (
+	ServerMgr struct {
 		m_pService       *network.ServerSocket
 		m_Inited         bool
 		m_config         ini.Config
-		m_Log            base.CLog
 		m_TimeTraceTimer *time.Ticker
 		m_PlayerMgr      *PlayerMgr
 		m_pCluster       *cluster.Cluster
 	}
 
-	IServerMgr interface{
+	IServerMgr interface {
 		Init() bool
-		GetLog() *base.CLog
 		GetServer() *network.ServerSocket
-		GetCluster () *cluster.Service
+		GetCluster() *cluster.Service
 		GetPlayerMgr() *PlayerMgr
 		OnServerStart()
 	}
 
 	Config struct {
-		common.Server	`yaml:"gate"`
-		common.Etcd		`yaml:"etcd"`
-		common.Nats		`yaml:"nats"`
+		common.Server `yaml:"gate"`
+		common.Etcd   `yaml:"etcd"`
+		common.Nats   `yaml:"nats"`
+		common.Raft   `yaml:"raft"`
+		common.Stub   `yaml:"stub"`
 	}
 )
 
-var(
-	CONF Config
+var (
+	CONF   Config
 	SERVER ServerMgr
 )
 
-func (this *ServerMgr) GetLog() *base.CLog{
- 	return &this.m_Log
+func (this *ServerMgr) GetServer() *network.ServerSocket {
+	return this.m_pService
 }
 
-func (this *ServerMgr) GetServer() *network.ServerSocket{
- 	return this.m_pService
+func (this *ServerMgr) GetCluster() *cluster.Cluster {
+	return this.m_pCluster
 }
 
-func (this *ServerMgr) GetCluster () *cluster.Cluster {
- 	return this.m_pCluster
-}
-
-func (this *ServerMgr) GetPlayerMgr() *PlayerMgr{
+func (this *ServerMgr) GetPlayerMgr() *PlayerMgr {
 	return this.m_PlayerMgr
 }
 
-func (this *ServerMgr) Init() bool{
-	if(this.m_Inited){
+func (this *ServerMgr) Init() bool {
+	if this.m_Inited {
 		return true
 	}
 
-	//初始化log文件
-	this.m_Log.Init("gate")
 	//初始配置文件
 	base.ReadConf("gonet.yaml", &CONF)
 
-	ShowMessage := func(){
-		this.m_Log.Println("**********************************************************")
-		this.m_Log.Printf("\tGATE Version:\t%s", base.BUILD_NO)
-		this.m_Log.Printf("\tGATE IP(LAN):\t%s:%d", CONF.Server.Ip, CONF.Server.Port)
-		this.m_Log.Println("**********************************************************");
+	ShowMessage := func() {
+		base.LOG.Println("**********************************************************")
+		base.LOG.Printf("\tGATE Version:\t%s", base.BUILD_NO)
+		base.LOG.Printf("\tGATE IP(LAN):\t%s:%d", CONF.Server.Ip, CONF.Server.Port)
+		base.LOG.Println("**********************************************************")
 	}
 	ShowMessage()
 
@@ -101,17 +95,18 @@ func (this *ServerMgr) Init() bool{
 
 	var packet1 EventProcess
 	packet1.Init()
-	this.m_pCluster = new (cluster.Cluster)
-	this.m_pCluster.InitCluster(&common.ClusterInfo{Type: rpc.SERVICE_GATE, Ip:CONF.Server.Ip, Port:int32(CONF.Server.Port)}, CONF.Etcd.Endpoints, CONF.Nats.Endpoints)
+	this.m_pCluster = new(cluster.Cluster)
+	this.m_pCluster.InitCluster(&common.ClusterInfo{Type: rpc.SERVICE_GATE, Ip: CONF.Server.Ip, Port: int32(CONF.Server.Port)},
+		CONF.Etcd.Endpoints, CONF.Nats.Endpoints, cluster.WithStubMailBoxEtcd(CONF.Raft.Endpoints, &CONF.Stub))
 	this.m_pCluster.BindPacketFunc(actor.MGR.PacketFunc)
 	this.m_pCluster.BindPacketFunc(DispatchPacket)
 
 	//初始玩家管理
 	this.m_PlayerMgr = new(PlayerMgr)
 	this.m_PlayerMgr.Init()
-	return  false
+	return false
 }
 
-func (this *ServerMgr) OnServerStart(){
+func (this *ServerMgr) OnServerStart() {
 	this.m_pService.Start()
 }

@@ -12,4 +12,3 @@ copy /y client.exe .\..\bin
 ::copy /y client.exe .\..\bin
 del client.exe
 ::go install
-pause

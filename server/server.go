@@ -14,6 +14,7 @@ import (
 
 func main() {
 	args := os.Args
+	base.LOG.Init(args[1])
 	if args[1] == "gm"{
 		gm.SERVER.Init()
 	}else if args[1] == "gate"{
