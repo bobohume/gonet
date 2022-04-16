@@ -35,3 +35,6 @@ QQ群:950288306
 
 # 服务器架构如下：
 ![image](框架.jpg)
+
+# gm stub
+![image](gm_stub.jpg)
