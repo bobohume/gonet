@@ -77,6 +77,12 @@ func (this *MailBox) Delete(Id int64) error {
 	return err
 }
 
+func (this *MailBox) DeleteAll() error {
+	_, err := this.m_KeysAPI.Delete(context.Background(), MAILBOX_DIR, &client.DeleteOptions{Recursive:true})
+	return err
+}
+
+
 func (this *MailBox) add(info *rpc.MailBox) {
 	this.m_MailBoxLocker.Lock()
 	pMailBox, bOk := this.m_MailBoxMap[info.Id]
