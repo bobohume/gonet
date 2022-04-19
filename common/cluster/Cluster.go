@@ -8,6 +8,7 @@ import (
 	"gonet/base/vector"
 	"gonet/common"
 	"gonet/common/cluster/etv3"
+	"gonet/hotfix"
 	"gonet/network"
 	"gonet/rpc"
 	"reflect"
@@ -332,6 +333,11 @@ func (this *Cluster) Cluster_Add(ctx context.Context, info *common.ClusterInfo) 
 func (this *Cluster) Cluster_Del(ctx context.Context, info *common.ClusterInfo) {
 	delete(this.m_ClusterInfoMap, info.Id())
 	this.DelCluster(info)
+}
+
+//打patch
+func (this *Cluster) Patch(ctx context.Context, patchName string) {
+	hotfix.HotFix(patchName)
 }
 
 var (

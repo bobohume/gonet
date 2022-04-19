@@ -152,10 +152,10 @@ func (this *UserPrcoess) LoginAccountRequest(ctx context.Context, packet *messag
 	dh.Init()
 	dh.ExchangePubk(packet.GetKey())
 	this.addKey(head.SocketId, &dh)
-	head.Id = int64(head.SocketId)
+	head.Id = int64(base.GetMessageCode1(packet.AccountName))
 	packet.Key = dh.PubKey()
 	funcName := "Login.LoginAccountRequest"
-	this.SwtichSendToGM(head.SocketId, funcName, head, rpc.Marshal(&head, &funcName, packet))
+	this.SwtichSendToGM(head.SocketId, funcName, head, rpc.Marshal(&head, &funcName, packet, head.SocketId))
 }
 
 func (this *UserPrcoess) LoginPlayerRequset(ctx context.Context, packet *message.LoginPlayerRequset) {

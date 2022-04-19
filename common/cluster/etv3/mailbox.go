@@ -107,7 +107,7 @@ func (this *MailBox) del(info *rpc.MailBox) {
 	case rpc.SERVICE_GAME:
 		actor.MGR.SendMsg(rpc.RpcHead{Id: info.Id}, "Player.Player_On_UnRegister")
 	case rpc.SERVICE_GM:
-		actor.MGR.SendMsg(rpc.RpcHead{Id: info.Id}, "AccountMgr.Player_On_UnRegister")
+		actor.MGR.SendMsg(rpc.RpcHead{Id: info.Id, SendType:rpc.SEND_BOARD_CAST}, "AccountMgr.Player_On_UnRegister")
 	case rpc.SERVICE_DB:
 		actor.MGR.SendMsg(rpc.RpcHead{Id: info.Id}, "PlayerMgr.Player_On_UnRegister")
 	}

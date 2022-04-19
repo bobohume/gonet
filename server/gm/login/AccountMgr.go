@@ -19,6 +19,7 @@ type (
 
 		m_AccountMap     map[int64]*Account
 		m_AccountNameMap map[string]*Account
+		m_PlayerMap      map[int64]*Account
 	}
 
 	IAccountMgr interface {
@@ -34,6 +35,7 @@ func (this *AccountMgr) Init() {
 	this.Actor.Init()
 	this.m_AccountMap = make(map[int64]*Account)
 	this.m_AccountNameMap = make(map[string]*Account)
+	this.m_PlayerMap = make(map[int64]*Account)
 	//actor.MGR.RegisterActor(this)
 	this.Actor.Start()
 }
@@ -81,12 +83,15 @@ func (this *AccountMgr) AddAccount(accountId int64) *Account {
 	return nil
 }
 
-func (this *AccountMgr) RemoveAccount(accountId int64) {
-	pAccount := this.GetAccount(accountId)
-	if pAccount != nil {
+func (this *AccountMgr) RemoveAccount(playerId int64) {
+	pAccount, exist := this.m_PlayerMap[playerId]
+	if exist {
 		delete(this.m_AccountNameMap, pAccount.AccountName)
-		delete(this.m_AccountMap, accountId)
-		base.LOG.Printf("账号[%d]断开链接", accountId)
+		delete(this.m_AccountMap, pAccount.AccountId)
+		for _, v := range pAccount.PlayerSimpleDataList {
+			delete(this.m_PlayerMap, v.PlayerId)
+		}
+		base.LOG.Printf("账号[%d]断开链接", pAccount.AccountId)
 	}
 }
 
@@ -101,6 +106,7 @@ func (this *AccountMgr) Account_Login(ctx context.Context, accountName string, a
 	PlayerDataList := make([]*message.PlayerData, len(pAccount.PlayerSimpleDataList))
 	for i, v := range pAccount.PlayerSimpleDataList {
 		PlayerDataList[i] = &message.PlayerData{PlayerID: v.PlayerId, PlayerName: v.PlayerName, PlayerGold: int32(v.Gold)}
+		this.m_PlayerMap[v.PlayerId] = pAccount
 	}
 
 	gm.SendToClient(rpc.RpcHead{ClusterId: id, SocketId: socketId, Id: accountId}, &message.SelectPlayerResponse{PacketHead: message.BuildPacketHead(accountId, rpc.SERVICE_GATE),

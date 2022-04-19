@@ -88,11 +88,11 @@ func (this *Login) LoginPlayer(accountName string) (int64, error) {
 }
 
 //登录账号
-func (this *Login) LoginAccountRequest(ctx context.Context, packet *message.LoginAccountRequest) {
+func (this *Login) LoginAccountRequest(ctx context.Context, packet *message.LoginAccountRequest, gateSocketId uint32) {
 	accountName := packet.GetAccountName()
 	password := packet.GetPassword()
 	buildVersion := packet.GetBuildNo()
-	socketId := uint32(this.GetRpcHead(ctx).Id)
+	socketId := gateSocketId
 	key := packet.GetKey()
 	nError := base.NONE_ERROR
 
