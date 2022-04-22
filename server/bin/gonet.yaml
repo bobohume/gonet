@@ -50,15 +50,8 @@ nats:
 # stub
 stub:
   gm_count: 1
-  stub_route:
-    # actorName -> rpc.STUB
-    PlayerSaveMgr: PLAYERDB
-    PlayerMgr: PLAYERDB
-    Login: LOGIN
-    AccountMgr: LOGIN
-    ChatMgr: CHAT
   stub_count:
-    # rpc.STUB -> stub_count
-    PLAYERDB: 1
-    LOGIN: 1
-    CHAT: 1
+    # ActorName -> stub_count
+    PlayerMgr: 1
+    AccountMgr: 1
+    ChatMgr: 1
