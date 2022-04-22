@@ -39,7 +39,7 @@ const (
 
 func (this *PlayerSaveMgr) Init() {
 	this.InitPool(this, reflect.TypeOf(PlayerMgr{}), MAX_PLAYER_MGR_COUNT)
-	this.Stub.InitStub("", rpc.STUB_PLAYERDB)
+	this.Stub.InitStub(rpc.STUB_PlayerMgr)
 }
 
 func (this *PlayerMgr) Init() {
@@ -59,8 +59,12 @@ func (this *PlayerMgr) Load_Player_DB(ctx context.Context, playerId int64, mailb
 	}
 }
 
-//lease过期
-func (this *PlayerMgr) Player_On_UnRegister(ctx context.Context) {
-	playerId := this.GetRpcHead(ctx).Id
-	base.LOG.Printf("[%d] 过期删除玩家", playerId)
+func (this *PlayerMgr) Stub_On_Register(ctx context.Context, Id int64) {
+	//这里可以是加载db数据
+	base.LOG.Println("Stub db register sucess")
+}
+
+func (this *PlayerMgr) Stub_On_UnRegister(ctx context.Context, Id int64) {
+	//lease一致性这里要清理缓存数据了
+	base.LOG.Println("Stub db unregister sucess")
 }

@@ -21,7 +21,7 @@ var (
 type (
 	PlayerMgr struct {
 		actor.Actor
-		actor.ActorPlayer
+		actor.VirtualActor
 		m_db        *sql.DB
 		m_Log       *base.CLog
 		m_PingTimer common.ISimpleTimer
@@ -36,7 +36,7 @@ func (this *PlayerMgr) Init() {
 	this.Actor.Init()
 	this.m_PingTimer = common.NewSimpleTimer(120)
 	this.m_PingTimer.Start()
-	this.InitPlayer(this, reflect.TypeOf(Player{}))
+	this.InitActor(this, reflect.TypeOf(Player{}))
 	actor.MGR.RegisterActor(this)
 	this.Actor.Start()
 }
@@ -48,7 +48,8 @@ func (this *PlayerMgr) LoginPlayerRequset(ctx context.Context, playerId int64, g
 		info := &rpc.MailBox{}
 		info.Id = playerId
 		info.ClusterId = cluster.MGR.Id()
-		if cluster.MGR.MailBox.Publish(info) {
+		info.MailType = rpc.MAIL_Player
+		if cluster.MGR.MailBox.Create(info) {
 			pMailBox = info
 		} else {
 			return
@@ -61,7 +62,7 @@ func (this *PlayerMgr) LoginPlayerRequset(ctx context.Context, playerId int64, g
 //玩家登录
 func (this *PlayerMgr) Player_Login(ctx context.Context, gateClusterId uint32, mailbox rpc.MailBox) {
 	playerId := mailbox.Id
-	if this.GetPlayer(playerId) != nil {
+	if this.GetActor(playerId) != nil {
 		actor.MGR.SendMsg(rpc.RpcHead{Id: playerId}, "Player.ReLogin", gateClusterId, mailbox)
 		return
 	}
@@ -70,7 +71,7 @@ func (this *PlayerMgr) Player_Login(ctx context.Context, gateClusterId uint32, m
 	pPlayer.PlayerId = playerId
 	pPlayer.SetId(playerId)
 	pPlayer.Init()
-	this.AddPlayer(pPlayer)
+	this.AddActor(pPlayer)
 	actor.MGR.SendMsg(rpc.RpcHead{Id: playerId}, "Player.Login", gateClusterId, mailbox)
 }
 

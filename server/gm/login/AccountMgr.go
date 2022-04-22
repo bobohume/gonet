@@ -19,7 +19,6 @@ type (
 
 		m_AccountMap     map[int64]*Account
 		m_AccountNameMap map[string]*Account
-		m_PlayerMap      map[int64]*Account
 	}
 
 	IAccountMgr interface {
@@ -35,7 +34,6 @@ func (this *AccountMgr) Init() {
 	this.Actor.Init()
 	this.m_AccountMap = make(map[int64]*Account)
 	this.m_AccountNameMap = make(map[string]*Account)
-	this.m_PlayerMap = make(map[int64]*Account)
 	//actor.MGR.RegisterActor(this)
 	this.Actor.Start()
 }
@@ -83,14 +81,11 @@ func (this *AccountMgr) AddAccount(accountId int64) *Account {
 	return nil
 }
 
-func (this *AccountMgr) RemoveAccount(playerId int64) {
-	pAccount, exist := this.m_PlayerMap[playerId]
-	if exist {
+func (this *AccountMgr) RemoveAccount(accountId int64) {
+	pAccount := this.GetAccount(accountId)
+	if pAccount != nil {
 		delete(this.m_AccountNameMap, pAccount.AccountName)
 		delete(this.m_AccountMap, pAccount.AccountId)
-		for _, v := range pAccount.PlayerSimpleDataList {
-			delete(this.m_PlayerMap, v.PlayerId)
-		}
 		base.LOG.Printf("账号[%d]断开链接", pAccount.AccountId)
 	}
 }
@@ -106,7 +101,6 @@ func (this *AccountMgr) Account_Login(ctx context.Context, accountName string, a
 	PlayerDataList := make([]*message.PlayerData, len(pAccount.PlayerSimpleDataList))
 	for i, v := range pAccount.PlayerSimpleDataList {
 		PlayerDataList[i] = &message.PlayerData{PlayerID: v.PlayerId, PlayerName: v.PlayerName, PlayerGold: int32(v.Gold)}
-		this.m_PlayerMap[v.PlayerId] = pAccount
 	}
 
 	gm.SendToClient(rpc.RpcHead{ClusterId: id, SocketId: socketId, Id: accountId}, &message.SelectPlayerResponse{PacketHead: message.BuildPacketHead(accountId, rpc.SERVICE_GATE),
@@ -173,9 +167,9 @@ func (this *AccountMgr) LoginPlayerRequset(ctx context.Context, packet *message.
 }
 
 //账号断开连接
-func (this *AccountMgr) Player_On_UnRegister(ctx context.Context) {
-	playerId := this.GetRpcHead(ctx).Id
-	this.RemoveAccount(playerId)
+func (this *AccountMgr) On_UnRegister(ctx context.Context) {
+	accountId := this.GetRpcHead(ctx).Id
+	this.RemoveAccount(accountId)
 }
 
 func LoadSimplePlayerDatas(accountId int64) []*model.SimplePlayerData {
@@ -203,4 +197,14 @@ func loadSimple(row orm.IRow, s *model.SimplePlayerData) {
 	s.Vip = row.Int("vip")
 	s.LastLoginTime = row.Time("last_login_time")
 	s.LastLogoutTime = row.Time("last_logout_time")
+}
+
+func (this *AccountMgr) Stub_On_Register(ctx context.Context, Id int64) {
+	//这里可以是加载db数据
+	base.LOG.Println("Stub Login register sucess")
+}
+
+func (this *AccountMgr) Stub_On_UnRegister(ctx context.Context, Id int64) {
+	//lease一致性这里要清理缓存数据了
+	base.LOG.Println("Stub Login unregister sucess")
 }

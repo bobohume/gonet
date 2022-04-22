@@ -67,7 +67,7 @@ func (this *ChatMgr) Init() {
 	this.m_playerChatMap = make(map[int64]*stPlayerChatRecord)
 	this.m_channelManager.Init()
 	actor.MGR.RegisterActor(this)
-	this.Stub.InitStub(this.GetName(), rpc.STUB_CHAT)
+	this.Stub.InitStub(rpc.STUB_ChatMgr)
 	this.Actor.Start()
 }
 

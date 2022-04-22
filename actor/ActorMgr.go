@@ -12,7 +12,7 @@ type ACTOR_TYPE uint32
 
 const (
 	ACTOR_TYPE_SINGLETON ACTOR_TYPE = iota //单列
-	ACTOR_TYPE_PLAYER    ACTOR_TYPE = iota //玩家 必须初始一个全局的actor 作为类型判断
+	ACTOR_TYPE_VIRTUAL   ACTOR_TYPE = iota //玩家 必须初始一个全局的actor 作为类型判断
 	ACTOR_TYPE_POOL      ACTOR_TYPE = iota //固定数量actor池
 ) //ACTOR_TYPE
 
@@ -22,7 +22,7 @@ type (
 	Op struct {
 		m_name string //name
 		m_type ACTOR_TYPE
-		m_Pool IActorPool //ACTOR_TYPE_PLAYER ACTOR_TYPE_POOL
+		m_Pool IActorPool //ACTOR_TYPE_VIRTUAL ACTOR_TYPE_POOL
 	}
 
 	OpOption func(*Op)
@@ -61,7 +61,7 @@ func WithType(actor_type ACTOR_TYPE) OpOption {
 	}
 }
 
-func withPool(pPool IActorPool) OpOption { //ACTOR_TYPE_PLAYER ACTOR_TYPE_POOL
+func withPool(pPool IActorPool) OpOption { //ACTOR_TYPE_VIRTUAL ACTOR_TYPE_POOL
 	return func(op *Op) {
 		op.m_Pool = pPool
 	}
@@ -109,9 +109,9 @@ func (this *ActorMgr) SendActor(funcName string, head rpc.RpcHead, packet rpc.Pa
 		if pActor.HasRpc(funcName) {
 			switch pActor.GetActorType() {
 			case ACTOR_TYPE_SINGLETON:
-				pActor.GetAcotr().Send(head, packet)
+				pActor.Acotr().Send(head, packet)
 				return true
-			case ACTOR_TYPE_PLAYER:
+			case ACTOR_TYPE_VIRTUAL:
 				return pActor.getPool().SendAcotr(head, packet)
 			case ACTOR_TYPE_POOL:
 				return pActor.getPool().SendAcotr(head, packet)

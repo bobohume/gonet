@@ -115,10 +115,11 @@ func (this *Player) Logout(ctx context.Context, playerId int64) {
 }
 
 //lease过期
-func (this *Player) Player_On_UnRegister(ctx context.Context) {
+func (this *Player) On_UnRegister(ctx context.Context) {
 	base.LOG.Printf("[%d] 过期删除玩家", this.PlayerId)
-	MGR.DelPlayer(this.PlayerId)
+	MGR.DelActor(this.PlayerId)
 	this.SetGateClusterId(0)
 	this.Stop()
 	this.LeaveMap()
+	cluster.MGR.SendMsg(rpc.RpcHead{Id: this.AccountId}, "gm<-AccountMgr.On_UnRegister")
 }

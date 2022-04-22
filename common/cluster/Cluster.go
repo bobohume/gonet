@@ -8,7 +8,6 @@ import (
 	"gonet/base/vector"
 	"gonet/common"
 	"gonet/common/cluster/etv3"
-	"gonet/hotfix"
 	"gonet/network"
 	"gonet/rpc"
 	"reflect"
@@ -94,7 +93,6 @@ func WithMailBoxEtcd(Endpoints []string) OpOption {
 
 func WithStubMailBoxEtcd(Endpoints []string, stub *common.Stub) OpOption {
 	return func(op *Op) {
-		stub.Init()
 		op.m_stubMailBoxEndpoints = Endpoints
 		op.m_stub = *stub
 	}
@@ -145,7 +143,7 @@ func (this *Cluster) InitCluster(info *common.ClusterInfo, Endpoints []string, n
 		this.Stub = op.m_stub
 	}
 
-	rpc.GCall = reflect.ValueOf(this.call)
+	rpc.MGR = this
 	actor.MGR.RegisterActor(this)
 	this.Actor.Start()
 	//注册服务器
@@ -155,7 +153,7 @@ func (this *Cluster) InitCluster(info *common.ClusterInfo, Endpoints []string, n
 
 //params[0]:rpc.RpcHead
 //params[1]:error
-func (this *Cluster) call(parmas ...interface{}) {
+func (this *Cluster) Call(parmas ...interface{}) {
 	head := *parmas[0].(*rpc.RpcHead)
 	reply := head.Reply
 	head.Reply = ""
@@ -234,9 +232,10 @@ func (this *Cluster) Send(head rpc.RpcHead, packet rpc.Packet) {
 				head.ClusterId = pMailBox.ClusterId
 			}
 		} else if head.ClusterId == 0 {
-			stubType, bEx := this.Stub.StubRoute[head.ActorName]
+			stubCount, bEx := this.Stub.StubCount[head.ActorName]
 			if bEx {
-				index := head.Id % int64(this.Stub.StubCount[stubType])
+				index := head.Id % stubCount
+				stubType:= rpc.STUB(rpc.STUB_value[head.ActorName])
 				pStub := this.StubMailBox.Get(stubType, index)
 				if pStub != nil {
 					head.ClusterId = pStub.ClusterId
@@ -264,9 +263,10 @@ func (this *Cluster) CallMsg(cb interface{}, head rpc.RpcHead, funcName string, 
 				head.ClusterId = pMailBox.ClusterId
 			}
 		} else if head.ClusterId == 0 {
-			stubType, bEx := this.Stub.StubRoute[head.ActorName]
+			stubCount, bEx := this.Stub.StubCount[head.ActorName]
 			if bEx {
-				index := head.Id % int64(this.Stub.StubCount[stubType])
+				index := head.Id % stubCount
+				stubType:= rpc.STUB(rpc.STUB_value[head.ActorName])
 				pStub := this.StubMailBox.Get(stubType, index)
 				if pStub != nil {
 					head.ClusterId = pStub.ClusterId
@@ -317,7 +317,7 @@ func (this *Cluster) RandomCluster(head rpc.RpcHead) rpc.RpcHead {
 }
 
 func (this *Cluster) IsEnoughStub(stub rpc.STUB) bool {
-	return this.StubMailBox.Count(stub) == this.Stub.StubCount[stub]
+	return this.StubMailBox.Count(stub) == this.Stub.StubCount[stub.String()]
 }
 
 //集群新加member
@@ -333,11 +333,6 @@ func (this *Cluster) Cluster_Add(ctx context.Context, info *common.ClusterInfo) 
 func (this *Cluster) Cluster_Del(ctx context.Context, info *common.ClusterInfo) {
 	delete(this.m_ClusterInfoMap, info.Id())
 	this.DelCluster(info)
-}
-
-//打patch
-func (this *Cluster) Patch(ctx context.Context, patchName string) {
-	hotfix.HotFix(patchName)
 }
 
 var (

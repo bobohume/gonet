@@ -6,20 +6,20 @@ import (
 )
 
 type (
-	AccountDB struct{
-		AccountName string `sql:"primary;name:account_name"`//主键
-		AccountId int64 `sql:"name:account_id"`
-		Status int `sql:"name:status"`
-		LoginTime int64 `sql:"datetime;name:login_time"`//日期
-		LogoutTime int64 `sql:"datetime;name:logout_time"`//日期
-		LoginIp string `sql:"name:login_ip"`
+	AccountDB struct {
+		AccountName string `sql:"primary;name:account_name"` //主键
+		AccountId   int64  `sql:"name:account_id"`
+		Status      int    `sql:"name:status"`
+		LoginTime   int64  `sql:"datetime;name:login_time"`  //日期
+		LogoutTime  int64  `sql:"datetime;name:logout_time"` //日期
+		LoginIp     string `sql:"name:login_ip"`
 	}
 
-	Account struct{
+	Account struct {
 		AccountDB
 		PlayerSimpleDataList []*model.SimplePlayerData
-		PlayerId int64
-		GateSocketId uint32
+		PlayerId             int64
+		GateSocketId         uint32
 	}
 
 	IAccount interface {
@@ -28,11 +28,11 @@ type (
 	}
 )
 
-func (this *Account) CheckLoginTime() bool{
-	return  false
+func (this *Account) CheckLoginTime() bool {
+	return false
 }
 
-func (this *Account)  UpdateAccountLogoutTime(){
+func (this *Account) UpdateAccountLogoutTime() {
 	this.LogoutTime = time.Now().Unix()
 	//db
 }

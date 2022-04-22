@@ -50,45 +50,12 @@ func (this *Login) Init() {
 	this.Actor.Init()
 	actor.MGR.RegisterActor(this)
 	this.InitPool(this, reflect.TypeOf(AccountMgr{}), MAX_ACCOUNT_MGR_COUNT)
-	this.Stub.InitStub(this.GetName(), rpc.STUB_LOGIN)
+	this.Stub.InitStub(rpc.STUB_AccountMgr)
 	this.Actor.Start()
 }
 
-func (this *Login) Stub_On_Register(ctx context.Context, Id int64) {
-	//这里可以是加载db数据
-	base.LOG.Println("Stub Login register sucess")
-}
-
-func (this *Login) Stub_On_UnRegister(ctx context.Context, Id int64) {
-	//lease一致性这里要清理缓存数据了
-	base.LOG.Println("Stub Login unregister sucess")
-}
-
-//登录玩家
-func (this *Login) LoginPlayer(accountName string) (int64, error) {
-
-	//查找账号玩家数量
-	rows, err := orm.DB.Query(fmt.Sprintf("select player_id from tbl_player where account_name = '%s'", accountName))
-	rs, err := orm.Query(rows, err)
-	playerId := int64(0)
-	if err == nil {
-		if !rs.Next() {
-			playerId = base.UUID.UUID()
-			_, err := orm.DB.Exec(fmt.Sprintf("insert into tbl_player (player_id, player_name, account_name, sex, level, gold, draw_gold)"+
-				"values(%d, '%s', '%s', %d, 1, 0,	0)", playerId, "test", accountName, 0))
-			if err == nil {
-				base.LOG.Printf("创建玩家[%d]", playerId)
-			}
-		} else {
-			playerId = rs.Row().Int64("player_id")
-		}
-	}
-
-	return playerId, err
-}
-
 //登录账号
-func (this *Login) LoginAccountRequest(ctx context.Context, packet *message.LoginAccountRequest, gateSocketId uint32) {
+func (this *AccountMgr) LoginAccountRequest(ctx context.Context, packet *message.LoginAccountRequest, gateSocketId uint32) {
 	accountName := packet.GetAccountName()
 	password := packet.GetPassword()
 	buildVersion := packet.GetBuildNo()

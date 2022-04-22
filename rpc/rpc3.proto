@@ -61,7 +61,8 @@ message Packet{
 message MailBox{
     int64  Id = 1;
     int64  LeaseId = 2;
-    uint32 ClusterId = 3;//集群id
+    MAIL   MailType = 3;
+    uint32 ClusterId = 5;//集群id
 }
 
 //玩法集群信息
@@ -74,9 +75,14 @@ message StubMailBox{
 
 //STUB类型
 enum STUB{
-    MASTER = 0;//master
-    PLAYERDB = 1;//db
-    LOGIN = 2;//登录
-    CHAT = 3;//聊天
+    Master = 0;//master
+    PlayerMgr = 1;//db
+    AccountMgr = 2;//登录
+    ChatMgr = 3;//聊天
     END = 4;
+};
+
+//邮件类型
+enum MAIL{
+    Player = 0;//player
 };

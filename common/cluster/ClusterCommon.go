@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	ETCD_DIR        = "server/"
+	ETCD_DIR = "server/"
 	MAILBOX_TL_TIME = etv3.MAILBOX_TL_TIME
 )
 

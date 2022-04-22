@@ -48,7 +48,7 @@ type (
 		m_bMailIn   [8]int64
 		m_MailChan  chan bool
 		m_TimerId   *int64
-		m_Pool      IActorPool //ACTOR_TYPE_PLAYER,ACTOR_TYPE_POOL
+		m_Pool      IActorPool //ACTOR_TYPE_VIRTUAL,ACTOR_TYPE_POOL
 	}
 
 	IActor interface {
@@ -64,15 +64,15 @@ type (
 		GetName() string
 		GetActorType() ACTOR_TYPE
 		HasRpc(string) bool
-		GetAcotr() *Actor
+		Acotr() *Actor
 		register(IActor, Op)
 		setState(state int32)
-		bindPool(IActorPool) //ACTOR_TYPE_PLAYER,ACTOR_TYPE_POOL
-		getPool() IActorPool //ACTOR_TYPE_PLAYER,ACTOR_TYPE_POOL
+		bindPool(IActorPool) //ACTOR_TYPE_VIRTUAL,ACTOR_TYPE_POOL
+		getPool() IActorPool //ACTOR_TYPE_VIRTUAL,ACTOR_TYPE_POOL
 	}
 
 	IActorPool interface {
-		SendAcotr(head rpc.RpcHead, packet rpc.Packet) bool //ACTOR_TYPE_PLAYER,ACTOR_TYPE_POOL特殊判断
+		SendAcotr(head rpc.RpcHead, packet rpc.Packet) bool //ACTOR_TYPE_VIRTUAL,ACTOR_TYPE_POOL特殊判断
 	}
 
 	CallIO struct {
@@ -143,7 +143,7 @@ func (this *Actor) HasRpc(funcName string) bool {
 	return bEx
 }
 
-func (this *Actor) GetAcotr() *Actor {
+func (this *Actor) Acotr() *Actor {
 	return this
 }
 
@@ -246,7 +246,7 @@ func (this *Actor) call(io CallIO) {
 		this.Trace("")
 		if ret != nil && head.Reply != "" {
 			ret = append([]reflect.Value{reflect.ValueOf(&head)}, ret...)
-			rpc.GCall.Call(ret)
+			rpc.MGR.Call(ret)
 		}
 	} else {
 		log.Printf("func [%s] params at least one context", funcName)

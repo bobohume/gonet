@@ -54,7 +54,7 @@ func (this *MailBox) Start() {
 	go this.Run()
 }
 
-func (this *MailBox) Publish(info *rpc.MailBox) bool {
+func (this *MailBox) Create(info *rpc.MailBox) bool {
 	leaseResp, err := this.m_Lease.Grant(context.Background(), MAILBOX_TL_TIME)
 	if err == nil {
 		leaseId := leaseResp.ID
@@ -103,14 +103,7 @@ func (this *MailBox) del(info *rpc.MailBox) {
 	this.m_MailBoxLocker.Lock()
 	delete(this.m_MailBoxMap, int64(info.Id))
 	this.m_MailBoxLocker.Unlock()
-	switch this.Type {
-	case rpc.SERVICE_GAME:
-		actor.MGR.SendMsg(rpc.RpcHead{Id: info.Id}, "Player.Player_On_UnRegister")
-	case rpc.SERVICE_GM:
-		actor.MGR.SendMsg(rpc.RpcHead{Id: info.Id, SendType:rpc.SEND_BOARD_CAST}, "AccountMgr.Player_On_UnRegister")
-	case rpc.SERVICE_DB:
-		actor.MGR.SendMsg(rpc.RpcHead{Id: info.Id}, "PlayerMgr.Player_On_UnRegister")
-	}
+	actor.MGR.SendMsg(rpc.RpcHead{Id: info.Id}, fmt.Sprintf("%s.On_UnRegister", info.MailType.String()))
 }
 
 func (this *MailBox) Get(Id int64) *rpc.MailBox {

@@ -154,7 +154,7 @@ func (this *UserPrcoess) LoginAccountRequest(ctx context.Context, packet *messag
 	this.addKey(head.SocketId, &dh)
 	head.Id = int64(base.GetMessageCode1(packet.AccountName))
 	packet.Key = dh.PubKey()
-	funcName := "Login.LoginAccountRequest"
+	funcName := "AccountMgr.LoginAccountRequest"
 	this.SwtichSendToGM(head.SocketId, funcName, head, rpc.Marshal(&head, &funcName, packet, head.SocketId))
 }
 

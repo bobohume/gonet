@@ -1,22 +1,18 @@
 package rpc
 
 import (
-	"reflect"
 	"strings"
 )
 
-//params[0]:rpc.RpcHead
-//params[1]:error
-func Call(parmas ...interface{}) {
-	/*head := *parmas[0].(*RpcHead)
-	if parmas[1] == nil{
-		parmas[1] = ""
-	}else{
-		parmas[1] = parmas[1].(error).Error()
-	}*/
-}
+type (
+	ICluster interface {
+		SendMsg(head RpcHead, funcName string, params ...interface{})
+		Call(parmas ...interface{})
+		Id() uint32
+	}
+)
 
-var GCall = reflect.ValueOf(Call)
+var MGR ICluster
 
 func Route(head *RpcHead, funcName string) string {
 	serverArgs := strings.Split(funcName, "<-")

@@ -23,7 +23,7 @@ func (this *ActorPool) InitPool(pPool IActorPool, rType reflect.Type, num int) {
 	for i := 0; i < num; i++ {
 		pActor := reflect.New(rType).Interface().(IActor)
 		rType := reflect.TypeOf(pActor)
-		op := Op{m_type: ACTOR_TYPE_PLAYER, m_name: rType.Name()}
+		op := Op{m_type: ACTOR_TYPE_POOL, m_name: rType.Name()}
 		pActor.register(pActor, op)
 		pActor.Init()
 		this.m_ActorList[i] = pActor
@@ -41,10 +41,10 @@ func (this *ActorPool) SendAcotr(head rpc.RpcHead, packet rpc.Packet) bool {
 		switch head.SendType {
 		case rpc.SEND_POINT:
 			index := head.Id % int64(this.m_ActorSize)
-			this.m_ActorList[index].GetAcotr().Send(head, packet)
+			this.m_ActorList[index].Acotr().Send(head, packet)
 		default:
 			for i := 0; i < this.m_ActorSize; i++ {
-				this.m_ActorList[i].GetAcotr().Send(head, packet)
+				this.m_ActorList[i].Acotr().Send(head, packet)
 			}
 		}
 		return true
@@ -56,74 +56,74 @@ func (this *ActorPool) SendAcotr(head rpc.RpcHead, packet rpc.Packet) bool {
 // actorpool 管理,这里的actor可以动态添加
 //********************************************************
 type (
-	ActorPlayer struct {
-		m_MGR        IActor
-		m_PlayerMap  map[int64]IActor
-		m_PlayerLock *sync.RWMutex
+	VirtualActor struct {
+		m_MGR       IActor
+		m_ActorMap  map[int64]IActor
+		m_ActorLock *sync.RWMutex
 	}
 
-	IActorPlayer interface {
-		GetPlayer(Id int64) IActor //获取actor
-		AddPlayer(pActor IActor)   //添加actor
-		DelPlayer(Id int64)        //删除actor
-		GetPlayerNum() int
+	IVirtualActor interface {
+		GetActor(Id int64) IActor //获取actor
+		AddActor(pActor IActor)   //添加actor
+		DelActor(Id int64)        //删除actor
+		GetActorNum() int
 		GetMgr() IActor
 	}
 )
 
-func (this *ActorPlayer) InitPlayer(pPool IActorPool, rType reflect.Type) {
-	this.m_PlayerMap = make(map[int64]IActor)
-	this.m_PlayerLock = &sync.RWMutex{}
+func (this *VirtualActor) InitActor(pPool IActorPool, rType reflect.Type) {
+	this.m_ActorMap = make(map[int64]IActor)
+	this.m_ActorLock = &sync.RWMutex{}
 	this.m_MGR = reflect.New(rType).Interface().(IActor)
-	MGR.RegisterActor(this.m_MGR, WithType(ACTOR_TYPE_PLAYER), withPool(pPool))
+	MGR.RegisterActor(this.m_MGR, WithType(ACTOR_TYPE_VIRTUAL), withPool(pPool))
 }
 
-func (this *ActorPlayer) AddPlayer(pActor IActor) {
+func (this *VirtualActor) AddActor(pActor IActor) {
 	rType := reflect.TypeOf(pActor)
-	op := Op{m_type: ACTOR_TYPE_PLAYER, m_name: rType.Name()}
+	op := Op{m_type: ACTOR_TYPE_VIRTUAL, m_name: rType.Name()}
 	pActor.register(pActor, op)
-	this.m_PlayerLock.Lock()
-	this.m_PlayerMap[pActor.GetId()] = pActor
-	this.m_PlayerLock.Unlock()
+	this.m_ActorLock.Lock()
+	this.m_ActorMap[pActor.GetId()] = pActor
+	this.m_ActorLock.Unlock()
 }
 
-func (this *ActorPlayer) DelPlayer(Id int64) {
-	this.m_PlayerLock.Lock()
-	delete(this.m_PlayerMap, Id)
-	this.m_PlayerLock.Unlock()
+func (this *VirtualActor) DelActor(Id int64) {
+	this.m_ActorLock.Lock()
+	delete(this.m_ActorMap, Id)
+	this.m_ActorLock.Unlock()
 }
 
-func (this *ActorPlayer) GetPlayer(Id int64) IActor {
-	this.m_PlayerLock.RLock()
-	pActor, bEx := this.m_PlayerMap[Id]
-	this.m_PlayerLock.RUnlock()
+func (this *VirtualActor) GetActor(Id int64) IActor {
+	this.m_ActorLock.RLock()
+	pActor, bEx := this.m_ActorMap[Id]
+	this.m_ActorLock.RUnlock()
 	if bEx {
 		return pActor
 	}
 	return nil
 }
 
-func (this *ActorPlayer) GetPlayerNum() int {
+func (this *VirtualActor) GeActorrNum() int {
 	nLen := 0
-	this.m_PlayerLock.RLock()
-	nLen = len(this.m_PlayerMap)
-	this.m_PlayerLock.RUnlock()
+	this.m_ActorLock.RLock()
+	nLen = len(this.m_ActorMap)
+	this.m_ActorLock.RUnlock()
 	return nLen
 }
 
-func (this *ActorPlayer) GetMgr() IActor {
+func (this *VirtualActor) GetMgr() IActor {
 	return this.m_MGR
 }
 
-func (this *ActorPlayer) SendAcotr(head rpc.RpcHead, packet rpc.Packet) bool {
+func (this *VirtualActor) SendAcotr(head rpc.RpcHead, packet rpc.Packet) bool {
 	if this.m_MGR.HasRpc(packet.RpcPacket.FuncName) {
 		if head.Id != 0 {
-			pActor := this.GetPlayer(head.Id)
+			pActor := this.GetActor(head.Id)
 			if pActor != nil {
-				pActor.GetAcotr().Send(head, packet)
-				return true
+				pActor.Acotr().Send(head, packet)
 			}
 		}
+		return true
 	}
 	return false
 }

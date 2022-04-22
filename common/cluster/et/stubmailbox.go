@@ -55,7 +55,7 @@ func (this *StubMailBox) Start() {
 	go this.Run()
 }
 
-func (this *StubMailBox) Publish(info *common.StubMailBox) bool {
+func (this *StubMailBox) Create(info *common.StubMailBox) bool {
 	key := fmt.Sprintf("%s%s", STUB_DIR, info.Key())
 	data, _ := json.Marshal(info)
 	_, err := this.m_KeysAPI.Set(context.Background(), key, string(data), &client.SetOptions{
@@ -99,11 +99,11 @@ func (this *StubMailBox) Get(stubType rpc.STUB, Id int64) *common.StubMailBox {
 	return nil
 }
 
-func (this *StubMailBox) Count(stubType rpc.STUB) int {
+func (this *StubMailBox) Count(stubType rpc.STUB) int64 {
 	this.m_StubMailBoxLocker[stubType].RLock()
 	nLen := len(this.m_StubMailBoxMap[stubType])
 	this.m_StubMailBoxLocker[stubType].RUnlock()
-	return nLen
+	return int64(nLen)
 }
 
 // subscribe

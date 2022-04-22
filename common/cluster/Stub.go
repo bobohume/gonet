@@ -24,17 +24,15 @@ type (
 	Stub struct {
 		m_fsm        fsm_type //状态机
 		StubMailBox  common.StubMailBox
-		m_ActorName  string
 		m_isRegister int32
 	}
 )
 
 const STUB_TTL_TIME = et.STUB_TTL_TIME
 
-func (this *Stub) InitStub(actorName string, stub rpc.STUB) {
+func (this *Stub) InitStub(stub rpc.STUB) {
 	this.StubMailBox.StubType = stub
 	this.StubMailBox.ClusterId = MGR.Id()
-	this.m_ActorName = actorName
 	go this.updateFsm()
 }
 
@@ -47,9 +45,7 @@ func (this *Stub) lease() {
 	if err != nil {
 		this.m_fsm = fsm_idle
 		atomic.StoreInt32(&this.m_isRegister, 0)
-		if this.m_ActorName != "" {
-			actor.MGR.SendMsg(rpc.RpcHead{}, fmt.Sprintf("%s.Stub_On_UnRegister", this.m_ActorName), this.StubMailBox.Id)
-		}
+		actor.MGR.SendMsg(rpc.RpcHead{SendType: rpc.SEND_BOARD_CAST}, fmt.Sprintf("%s.Stub_On_UnRegister", this.StubMailBox.StubType.String()), this.StubMailBox.Id)
 		base.LOG.Printf("stub [%s]注销成功[%d]", this.StubMailBox.StubType.String(), this.StubMailBox.Id)
 	} else {
 		time.Sleep(STUB_TTL_TIME / 3)
@@ -57,13 +53,11 @@ func (this *Stub) lease() {
 }
 
 func (this *Stub) publish() {
-	this.StubMailBox.Id = (this.StubMailBox.Id + 1) % int64(MGR.Stub.StubCount[this.StubMailBox.StubType])
-	if MGR.StubMailBox.Publish(&this.StubMailBox) {
+	this.StubMailBox.Id = (this.StubMailBox.Id + 1) % MGR.Stub.StubCount[this.StubMailBox.StubType.String()]
+	if MGR.StubMailBox.Create(&this.StubMailBox) {
 		this.m_fsm = fsm_lease
 		atomic.StoreInt32(&this.m_isRegister, 1)
-		if this.m_ActorName != "" {
-			actor.MGR.SendMsg(rpc.RpcHead{}, fmt.Sprintf("%s.Stub_On_Register", this.m_ActorName), this.StubMailBox.Id)
-		}
+		actor.MGR.SendMsg(rpc.RpcHead{SendType: rpc.SEND_BOARD_CAST}, fmt.Sprintf("%s.Stub_On_Register", this.StubMailBox.StubType.String()), this.StubMailBox.Id)
 		base.LOG.Printf("stub [%s]注册成功[%d]", this.StubMailBox.StubType.String(), this.StubMailBox.Id)
 		time.Sleep(STUB_TTL_TIME / 3)
 	} else if MGR.IsEnoughStub(this.StubMailBox.StubType) {
