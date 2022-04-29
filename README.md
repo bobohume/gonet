@@ -15,7 +15,7 @@ gonet 游戏服务器架构。
 区别gorm,方便开发,玩家存储类似文档,玩家内存改变了定时同步给db,可以为各种嵌套结构
 
 ## 高可用
-无单点服务,raft一致性同步原数组(mailbox(id->ip+port),stub),stub保证virtual actor高可用模式。
+无单点服务,raft一致性同步元数组(mailbox(id->ip+port),stub),stub保证virtual actor高可用模式。
 出故障影响部分玩家，高可以模型在lease内不可用，其余可用
 
 ## 分布式
