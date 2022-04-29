@@ -16,14 +16,14 @@ gonet 游戏服务器架构。
 
 ## 高可用
 无单点服务,raft一致性同步元数组(mailbox(id->ip+port),stub),stub保证virtual actor高可用模式。
-出故障影响部分玩家，高可以模型在lease内不可用，其余可用
+出故障影响部分玩家，高可用在lease内不可用。
 
 ## 分布式
 参考下图的stub高可用(hash一致性)
 以及player的mailbox(lease一致性)
 
 ## rpc
-rpc模块脱离传统的注册-回调模式，只需要集成actor即可，actor的成员函数即可
+rpc模块脱离传统的注册-回调模式，只需要继承actor即可，actor的成员就是消息处理
 
 ## uuid
 采用snowflake + etcd动态分配机器码
