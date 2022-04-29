@@ -1,11 +1,11 @@
 # go-server
 gonet 游戏服务器架构。
 
-#框架优势
-##actor
+框架优势
+## actor
 每个Actor都是一个独立的计算实体，Actor之间不共享数据，各个Actor只能操作自己的数据，所有的交互全部通过传递消息的方式进行，可以有效避免共享数据带来的并发竞争问题。
 
-##virtual actor
+## virtual actor
 降低分布式开发的复杂性，Actor总是存在，即不用关心代码在那个进程上运行，比如gm可以运行任一模块org,rank,activity具体模块actor怎么运行参考下面的stub。
 
 ## 玩家actor
@@ -18,26 +18,26 @@ gonet 游戏服务器架构。
 无单点服务,raft一致性同步原数组(mailbox(id->ip+port),stub),stub保证virtual actor高可用模式。
 出故障影响部分玩家，高可以模型在lease内不可用，其余可用
 
-##分布式
+## 分布式
 参考下图的stub高可用(hash一致性)
 以及player的mailbox(lease一致性)
 
-##rpc
+## rpc
 rpc模块脱离传统的注册-回调模式，只需要集成actor即可，actor的成员函数即可
 
-##uuid
+## uuid
 采用snowflake + etcd动态分配机器码
 
-##时间轮
+## 时间轮
     优势
     5级时间轮性能更佳O(1)
     对比timer
     go的定时器是大小堆,对高精度10毫秒定时器会吃掉大部分cpu
     
-##分布式消息队列
+## 分布式消息队列
 微服务，微服务之间使用分布式消息队列
 
-##mailbox
+## mailbox
     actor之间消息队列采用mpsc的mailbox 
     优势
     actor适合mpsc的模式,消息队列满足邮件思想
