@@ -37,6 +37,10 @@ rpc模块脱离传统的注册-回调模式，只需要继承actor即可，actor
 ## 分布式消息队列
 微服务，微服务之间使用分布式消息队列
 
+
+## hotfix
+不需要数据分离,暴力的jmptextcode
+
 ## mailbox
     actor之间消息队列采用mpsc的mailbox 
     优势
