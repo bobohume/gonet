@@ -11,14 +11,14 @@ import (
 	"time"
 )
 
-func TestMailBox(t *testing.T){
+func TestMailBox(t *testing.T) {
 	mailBox := etv3.MailBox{}
 	mailBox.Init([]string{"http://127.0.0.1:2379"}, &common.ClusterInfo{Type: rpc.SERVICE_GATE})
 	locker := sync.Mutex{}
 	mailBox.DeleteAll()
-	mailBoxMap := map[int64] *rpc.MailBox{}
+	mailBoxMap := map[int64]*rpc.MailBox{}
 	a := sync.WaitGroup{}
-	max_count  := 300
+	max_count := 300
 	one_count := 1000
 	a.Add(max_count)
 	index := int64(0)
@@ -27,7 +27,7 @@ func TestMailBox(t *testing.T){
 			for i := int64(0); i < int64(one_count); i++ {
 				id := atomic.AddInt64(&index, 1)
 				m := &rpc.MailBox{Id: id}
-				if mailBox.Publish(m) {
+				if mailBox.Create(m) {
 					locker.Lock()
 					mailBoxMap[i] = m
 					locker.Unlock()
@@ -41,10 +41,10 @@ func TestMailBox(t *testing.T){
 	}
 
 	a.Wait()
-	for{
-		for _, v := range mailBoxMap{
+	for {
+		for _, v := range mailBoxMap {
 			error := mailBox.Lease(v.LeaseId)
-			if error != nil{
+			if error != nil {
 				fmt.Println(error, v.Id)
 			}
 		}

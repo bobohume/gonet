@@ -23,15 +23,15 @@ type (
 	StubMailBoxMap map[int64]*common.StubMailBox
 	StubMailBox    struct {
 		*common.ClusterInfo
-		m_Client            *clientv3.Client
-		m_Lease             clientv3.Lease
-		m_StubMailBoxMap    [rpc.STUB_END]StubMailBoxMap
-		m_StubMailBoxLocker [rpc.STUB_END]*sync.RWMutex
+		client            *clientv3.Client
+		lease             clientv3.Lease
+		stubMailBoxMap    [rpc.STUB_END]StubMailBoxMap
+		stubMailBoxLocker [rpc.STUB_END]*sync.RWMutex
 	}
 )
 
 //初始化pub
-func (this *StubMailBox) Init(endpoints []string, info *common.ClusterInfo) {
+func (s *StubMailBox) Init(endpoints []string, info *common.ClusterInfo) {
 	cfg := clientv3.Config{
 		Endpoints: endpoints,
 	}
@@ -40,31 +40,31 @@ func (this *StubMailBox) Init(endpoints []string, info *common.ClusterInfo) {
 	if err != nil {
 		log.Fatal("Error: cannot connec to etcd:", err)
 	}
-	this.ClusterInfo = info
+	s.ClusterInfo = info
 	lease := clientv3.NewLease(etcdClient)
-	this.m_Client = etcdClient
-	this.m_Lease = lease
+	s.client = etcdClient
+	s.lease = lease
 	for i := 0; i < int(rpc.STUB_END); i++ {
-		this.m_StubMailBoxLocker[i] = &sync.RWMutex{}
-		this.m_StubMailBoxMap[i] = make(StubMailBoxMap)
+		s.stubMailBoxLocker[i] = &sync.RWMutex{}
+		s.stubMailBoxMap[i] = make(StubMailBoxMap)
 	}
-	this.Start()
-	this.getAll()
+	s.Start()
+	s.getAll()
 }
 
-func (this *StubMailBox) Start() {
-	go this.Run()
+func (s *StubMailBox) Start() {
+	go s.Run()
 }
 
-func (this *StubMailBox) Create(info *common.StubMailBox) bool {
-	leaseResp, err := this.m_Lease.Grant(context.Background(), STUB_TTL_TIME)
+func (s *StubMailBox) Create(info *common.StubMailBox) bool {
+	leaseResp, err := s.lease.Grant(context.Background(), STUB_TTL_TIME)
 	if err == nil {
 		leaseId := leaseResp.ID
 		info.LeaseId = int64(leaseId)
 		key := fmt.Sprintf("%s%s", STUB_DIR, info.Key())
 		data, _ := json.Marshal(info)
 		//设置key
-		tx := this.m_Client.Txn(context.Background())
+		tx := s.client.Txn(context.Background())
 		tx.If(clientv3.Compare(clientv3.CreateRevision(key), "=", 0)).
 			Then(clientv3.OpPut(key, string(data), clientv3.WithLease(leaseId))).
 			Else()
@@ -74,67 +74,67 @@ func (this *StubMailBox) Create(info *common.StubMailBox) bool {
 	return false
 }
 
-func (this *StubMailBox) Lease(info *common.StubMailBox) error {
-	_, err := this.m_Lease.KeepAliveOnce(context.Background(), clientv3.LeaseID(info.LeaseId))
+func (s *StubMailBox) Lease(info *common.StubMailBox) error {
+	_, err := s.lease.KeepAliveOnce(context.Background(), clientv3.LeaseID(info.LeaseId))
 	return err
 }
 
-func (this *StubMailBox) add(info *common.StubMailBox) {
-	this.m_StubMailBoxLocker[info.StubType].Lock()
-	pStubMailBox, bOk := this.m_StubMailBoxMap[info.StubType][info.Id]
+func (s *StubMailBox) add(info *common.StubMailBox) {
+	s.stubMailBoxLocker[info.StubType].Lock()
+	stub, bOk := s.stubMailBoxMap[info.StubType][info.Id]
 	if !bOk {
-		this.m_StubMailBoxMap[info.StubType][info.Id] = info
+		s.stubMailBoxMap[info.StubType][info.Id] = info
 	} else {
-		*pStubMailBox = *info
+		*stub = *info
 	}
-	this.m_StubMailBoxLocker[info.StubType].Unlock()
+	s.stubMailBoxLocker[info.StubType].Unlock()
 }
 
-func (this *StubMailBox) del(info *common.StubMailBox) {
-	this.m_StubMailBoxLocker[info.StubType].Lock()
-	delete(this.m_StubMailBoxMap[info.StubType], info.Id)
-	this.m_StubMailBoxLocker[info.StubType].Unlock()
+func (s *StubMailBox) del(info *common.StubMailBox) {
+	s.stubMailBoxLocker[info.StubType].Lock()
+	delete(s.stubMailBoxMap[info.StubType], info.Id)
+	s.stubMailBoxLocker[info.StubType].Unlock()
 }
 
-func (this *StubMailBox) Get(stubType rpc.STUB, Id int64) *common.StubMailBox {
-	this.m_StubMailBoxLocker[stubType].RLock()
-	pStubMailBox, bEx := this.m_StubMailBoxMap[stubType][Id]
-	this.m_StubMailBoxLocker[stubType].RUnlock()
+func (s *StubMailBox) Get(stubType rpc.STUB, Id int64) *common.StubMailBox {
+	s.stubMailBoxLocker[stubType].RLock()
+	stub, bEx := s.stubMailBoxMap[stubType][Id]
+	s.stubMailBoxLocker[stubType].RUnlock()
 	if bEx {
-		return pStubMailBox
+		return stub
 	}
 	return nil
 }
 
-func (this *StubMailBox) Count(stubType rpc.STUB) int64 {
-	this.m_StubMailBoxLocker[stubType].RLock()
-	nLen := len(this.m_StubMailBoxMap[stubType])
-	this.m_StubMailBoxLocker[stubType].RUnlock()
+func (s *StubMailBox) Count(stubType rpc.STUB) int64 {
+	s.stubMailBoxLocker[stubType].RLock()
+	nLen := len(s.stubMailBoxMap[stubType])
+	s.stubMailBoxLocker[stubType].RUnlock()
 	return int64(nLen)
 }
 
 // subscribe
-func (this *StubMailBox) Run() {
-	wch := this.m_Client.Watch(context.Background(), STUB_DIR, clientv3.WithPrefix(), clientv3.WithPrevKV())
+func (s *StubMailBox) Run() {
+	wch := s.client.Watch(context.Background(), STUB_DIR, clientv3.WithPrefix(), clientv3.WithPrevKV())
 	for v := range wch {
 		for _, v1 := range v.Events {
 			if v1.Type.String() == "PUT" {
 				info := nodeToStubMailBox(v1.Kv.Value)
-				this.add(info)
+				s.add(info)
 			} else {
 				info := nodeToStubMailBox(v1.PrevKv.Value)
-				this.del(info)
+				s.del(info)
 			}
 		}
 	}
 }
 
-func (this *StubMailBox) getAll() {
-	resp, err := this.m_Client.Get(context.Background(), STUB_DIR, clientv3.WithPrefix())
+func (s *StubMailBox) getAll() {
+	resp, err := s.client.Get(context.Background(), STUB_DIR, clientv3.WithPrefix())
 	if err == nil && (resp != nil && resp.Kvs != nil) {
 		for _, v := range resp.Kvs {
 			info := nodeToStubMailBox(v.Value)
-			this.add(info)
+			s.add(info)
 		}
 	}
 }

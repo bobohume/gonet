@@ -28,19 +28,19 @@ type (
 	}
 )
 
-func (this *Account) CheckLoginTime() bool {
+func (a *Account) CheckLoginTime() bool {
 	return false
 }
 
-func (this *Account) UpdateAccountLogoutTime() {
-	this.LogoutTime = time.Now().Unix()
+func (a *Account) UpdateAccountLogoutTime() {
+	a.LogoutTime = time.Now().Unix()
 	//db
 }
 
-func (this *Account) SetPlayerId(PlayerId int64) bool {
-	for i := 0; i < len(this.PlayerSimpleDataList); i++ {
-		if this.PlayerSimpleDataList[i].PlayerId == PlayerId {
-			this.PlayerId = PlayerId
+func (a *Account) SetPlayerId(PlayerId int64) bool {
+	for i := 0; i < len(a.PlayerSimpleDataList); i++ {
+		if a.PlayerSimpleDataList[i].PlayerId == PlayerId {
+			a.PlayerId = PlayerId
 			return true
 		}
 	}

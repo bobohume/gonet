@@ -1,6 +1,6 @@
 package betree
 
-type(
+type (
 	Condition struct {
 		BaseNode
 	}
@@ -10,6 +10,6 @@ type(
 	}
 )
 
-func (this *Condition) Init(){
-	this.Type = CONDITION
+func (c *Condition) Init() {
+	c.Type = CONDITION
 }

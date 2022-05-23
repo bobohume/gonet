@@ -29,8 +29,8 @@ type (
 	}
 
 	stPlayerChatRecord struct {
-		nLastTime    int64
-		nPendingTime int64
+		lastTime    int64
+		pendingTime int64
 	}
 
 	player struct {
@@ -42,8 +42,8 @@ type (
 	ChatMgr struct {
 		actor.Actor
 		cluster.Stub
-		m_channelManager ChannelMgr
-		m_playerChatMap  map[int64]*stPlayerChatRecord
+		channelManager ChannelMgr
+		playerChatMap  map[int64]*stPlayerChatRecord
 	}
 
 	IChatMgr interface {
@@ -62,33 +62,33 @@ var (
 	MGR ChatMgr
 )
 
-func (this *ChatMgr) Init() {
-	this.Actor.Init()
-	this.m_playerChatMap = make(map[int64]*stPlayerChatRecord)
-	this.m_channelManager.Init()
-	actor.MGR.RegisterActor(this)
-	this.Stub.InitStub(rpc.STUB_ChatMgr)
-	this.Actor.Start()
+func (c *ChatMgr) Init() {
+	c.Actor.Init()
+	c.playerChatMap = make(map[int64]*stPlayerChatRecord)
+	c.channelManager.Init()
+	actor.MGR.RegisterActor(c)
+	c.Stub.InitStub(rpc.STUB_ChatMgr)
+	c.Actor.Start()
 }
 
-func (this *ChatMgr) Stub_On_Register(ctx context.Context, Id int64) {
+func (c *ChatMgr) OnStubRegister(ctx context.Context) {
 	//这里可以是加载db数据
 	base.LOG.Println("Stub Chat register sucess")
 }
 
-func (this *ChatMgr) Stub_On_UnRegister(ctx context.Context, Id int64) {
+func (c *ChatMgr) OnStubUnRegister(ctx context.Context) {
 	//lease一致性这里要清理缓存数据了
 	base.LOG.Println("Stub Chat unregister sucess")
 }
 
-func (this *ChatMgr) GetChannelManager() *ChannelMgr {
-	return &this.m_channelManager
+func (c *ChatMgr) GetChannelManager() *ChannelMgr {
+	return &c.channelManager
 }
 
-func (this *ChatMgr) SendMessageTo(msg *ChatMessage, playerId int64) {
-	pPlayer := this.m_channelManager.getChannel(g_wordChannelId).GetPlayer(playerId)
-	if pPlayer != nil {
-		SendMessage(msg, pPlayer)
+func (c *ChatMgr) SendMessageTo(msg *ChatMessage, playerId int64) {
+	player := c.channelManager.getChannel(g_wordChannelId).GetPlayer(playerId)
+	if player != nil {
+		SendMessage(msg, player)
 	}
 }
 
@@ -104,55 +104,55 @@ func SendMessage(msg *ChatMessage, player *player) {
 	})
 }
 
-func (this *ChatMgr) SendMessageToAll(msg *ChatMessage) {
+func (c *ChatMgr) SendMessageToAll(msg *ChatMessage) {
 	cluster.MGR.SendMsg(rpc.RpcHead{DestServerType: rpc.SERVICE_GATE, SendType: rpc.SEND_BOARD_CAST},
 		"Chat_SendMessageAll", msg)
 }
 
-func (this *ChatMgr) setPlayerChatLastTime(playerid int64, cMessageType int8, nTime int64) {
+func (c *ChatMgr) setPlayerChatLastTime(playerid int64, cMessageType int8, nTime int64) {
 	v := int64(playerid)
 	v = (v << 8) | int64(cMessageType)
 
-	this.m_playerChatMap[v] = &stPlayerChatRecord{}
-	this.m_playerChatMap[v].nLastTime = nTime
+	c.playerChatMap[v] = &stPlayerChatRecord{}
+	c.playerChatMap[v].lastTime = nTime
 }
 
-func (this *ChatMgr) getPlayerChatLastTime(playerid int64, cMessageType int8) int64 {
+func (c *ChatMgr) getPlayerChatLastTime(playerid int64, cMessageType int8) int64 {
 	v := int64(playerid)
 	v = (v << 8) | int64(cMessageType)
 
-	pData, exist := this.m_playerChatMap[v]
+	data, exist := c.playerChatMap[v]
 	if exist {
-		return pData.nLastTime
+		return data.lastTime
 	}
 	return 0
 }
 
-func (this *ChatMgr) getPlayerChatPendingTime(playerid int64, cMessageType int8) int64 {
+func (c *ChatMgr) getPlayerChatPendingTime(playerid int64, cMessageType int8) int64 {
 	v := int64(playerid)
 	v = (v << 8) | int64(cMessageType)
 
-	pData, exist := this.m_playerChatMap[v]
+	data, exist := c.playerChatMap[v]
 	if !exist {
 		return 0
 	}
 
-	if pData.nPendingTime == 0 {
+	if data.pendingTime == 0 {
 		switch cMessageType {
 		case int8(message.CHAT_MSG_TYPE_PRIVATE):
-			pData.nPendingTime = CHAT_PENDING_TIME_PRIVATE
+			data.pendingTime = CHAT_PENDING_TIME_PRIVATE
 		case int8(message.CHAT_MSG_TYPE_WORLD):
-			pData.nPendingTime = CHAT_PENDING_TIME_WORLDPLUS
+			data.pendingTime = CHAT_PENDING_TIME_WORLDPLUS
 		default:
-			pData.nPendingTime = CHAT_PENDING_TIME_NORAML
+			data.pendingTime = CHAT_PENDING_TIME_NORAML
 		}
 	}
 
-	return pData.nPendingTime
+	return data.pendingTime
 }
 
 //聊天信息
-func (this *ChatMgr) ChatMessageRequest(ctx context.Context, packet *message.ChatMessageRequest) {
+func (c *ChatMgr) ChatMessageRequest(ctx context.Context, packet *message.ChatMessageRequest) {
 	playerId := packet.GetSender()
 
 	msg := &ChatMessage{}
@@ -166,36 +166,36 @@ func (this *ChatMgr) ChatMessageRequest(ctx context.Context, packet *message.Cha
 	//data.ReplaceBanWord(msg.Message, "*")
 
 	// 检查发送时间间隔
-	nPendingTime := this.getPlayerChatPendingTime(playerId, msg.MessageType)
-	nLastTime := this.getPlayerChatLastTime(playerId, msg.MessageType)
+	pendingTime := c.getPlayerChatPendingTime(playerId, msg.MessageType)
+	lastTime := c.getPlayerChatLastTime(playerId, msg.MessageType)
 	nCurTime := time.Now().Unix()
 
-	if nCurTime-nLastTime < nPendingTime {
+	if nCurTime-lastTime < pendingTime {
 		return
 	}
 
-	this.setPlayerChatLastTime(playerId, msg.MessageType, nCurTime)
+	c.setPlayerChatLastTime(playerId, msg.MessageType, nCurTime)
 	//writelog
 
-	channelId := this.GetChannelManager().GetChannelIdByType(playerId, msg.MessageType)
+	channelId := c.GetChannelManager().GetChannelIdByType(playerId, msg.MessageType)
 
 	if msg.MessageType == int8(message.CHAT_MSG_TYPE_PRIVATE) && msg.Recver != msg.Sender { // 不能给自己发点对点消息
-		this.SendMessageTo(msg, msg.Recver)
+		c.SendMessageTo(msg, msg.Recver)
 	} else if msg.MessageType == int8(message.CHAT_MSG_TYPE_WORLD) {
-		//this.SendMessageToAll(msg)
-		this.m_channelManager.SendMessageToChannel(msg, channelId)
+		//c.SendMessageToAll(msg)
+		c.channelManager.SendMessageToChannel(msg, channelId)
 	} else {
 		if channelId == 0 {
 			return
 		}
 
-		this.m_channelManager.SendMessageToChannel(msg, channelId)
+		c.channelManager.SendMessageToChannel(msg, channelId)
 	}
 }
 
 //注册频道
-func (this *ChatMgr) RegisterChannel(ctx context.Context, messageType int8, channelId int64) {
-	this.GetChannelManager().RegisterChannel(messageType, "", channelId)
+func (c *ChatMgr) RegisterChannel(ctx context.Context, messageType int8, channelId int64) {
+	c.GetChannelManager().RegisterChannel(messageType, "", channelId)
 
 	if 0 == channelId {
 		return
@@ -206,16 +206,16 @@ func (this *ChatMgr) RegisterChannel(ctx context.Context, messageType int8, chan
 }
 
 //销毁频道
-func (this *ChatMgr) UnRegisterChannel(ctx context.Context, channelId int64) {
-	this.GetChannelManager().UnregisterChannel(channelId)
+func (c *ChatMgr) UnRegisterChannel(ctx context.Context, channelId int64) {
+	c.GetChannelManager().UnregisterChannel(channelId)
 }
 
 //添加玩家到频道
-func (this *ChatMgr) AddPlayerToChannel(ctx context.Context, playerId int64, channelId int64, playerName string, gateClusterId uint32) {
-	this.GetChannelManager().AddPlayer(playerId, channelId, playerName, gateClusterId)
+func (c *ChatMgr) AddPlayerToChannel(ctx context.Context, playerId int64, channelId int64, playerName string, gateClusterId uint32) {
+	c.GetChannelManager().AddPlayer(playerId, channelId, playerName, gateClusterId)
 }
 
 //删除玩家到频道
-func (this *ChatMgr) RemovePlayerToChannel(ctx context.Context, playerId int64, channelId int64) {
-	this.GetChannelManager().RemovePlayer(playerId, channelId)
+func (c *ChatMgr) RemovePlayerToChannel(ctx context.Context, playerId int64, channelId int64) {
+	c.GetChannelManager().RemovePlayer(playerId, channelId)
 }

@@ -18,45 +18,45 @@ const (
 //注册服务器
 type Service struct {
 	*common.ClusterInfo
-	m_Client  *clientv3.Client
-	m_Lease   clientv3.Lease
-	m_LeaseId clientv3.LeaseID
-	m_Stats   STATUS //状态机
+	client  *clientv3.Client
+	lease   clientv3.Lease
+	leaseId clientv3.LeaseID
+	status  STATUS //状态机
 }
 
-func (this *Service) SET() {
-	leaseResp, _ := this.m_Lease.Grant(context.Background(), 10)
-	this.m_LeaseId = leaseResp.ID
-	key := ETCD_DIR + this.String() + "/" + this.IpString()
-	data, _ := json.Marshal(this.ClusterInfo)
-	this.m_Client.Put(context.Background(), key, string(data), clientv3.WithLease(this.m_LeaseId))
-	this.m_Stats = TTL
+func (s *Service) SET() {
+	leaseResp, _ := s.lease.Grant(context.Background(), 10)
+	s.leaseId = leaseResp.ID
+	key := ETCD_DIR + s.String() + "/" + s.IpString()
+	data, _ := json.Marshal(s.ClusterInfo)
+	s.client.Put(context.Background(), key, string(data), clientv3.WithLease(s.leaseId))
+	s.status = TTL
 	time.Sleep(time.Second * 3)
 }
 
-func (this *Service) TTL() {
+func (s *Service) TTL() {
 	//保持ttl
-	_, err := this.m_Lease.KeepAliveOnce(context.Background(), this.m_LeaseId)
+	_, err := s.lease.KeepAliveOnce(context.Background(), s.leaseId)
 	if err != nil {
-		this.m_Stats = SET
+		s.status = SET
 	} else {
 		time.Sleep(time.Second * 3)
 	}
 }
 
-func (this *Service) Run() {
+func (s *Service) Run() {
 	for {
-		switch this.m_Stats {
+		switch s.status {
 		case SET:
-			this.SET()
+			s.SET()
 		case TTL:
-			this.TTL()
+			s.TTL()
 		}
 	}
 }
 
 //注册服务器
-func (this *Service) Init(info *common.ClusterInfo, endpoints []string) {
+func (s *Service) Init(info *common.ClusterInfo, endpoints []string) {
 	cfg := clientv3.Config{
 		Endpoints: endpoints,
 	}
@@ -66,12 +66,12 @@ func (this *Service) Init(info *common.ClusterInfo, endpoints []string) {
 		log.Fatal("Error: cannot connec to etcd:", err)
 	}
 	lease := clientv3.NewLease(etcdClient)
-	this.m_Client = etcdClient
-	this.m_Lease = lease
-	this.ClusterInfo = info
-	this.Start()
+	s.client = etcdClient
+	s.lease = lease
+	s.ClusterInfo = info
+	s.Start()
 }
 
-func (this *Service) Start() {
-	go this.Run()
+func (s *Service) Start() {
+	go s.Run()
 }

@@ -1,7 +1,6 @@
 package betree
 
-
-type(
+type (
 	Decorator struct {
 		BaseNode
 		child IBaseNode
@@ -18,27 +17,25 @@ type(
 	}
 )
 
-func (this *Decorator) Init() {
-	this.Type = DECORATOR
+func (d *Decorator) Init() {
+	d.Type = DECORATOR
 }
 
 //GetChild
-func (this *Decorator) GetChild() IBaseNode {
-	return this.child
+func (d *Decorator) GetChild() IBaseNode {
+	return d.child
 }
 
-func (this *Decorator) SetChild(child IBaseNode) {
-	this.child = child
+func (d *Decorator) SetChild(child IBaseNode) {
+	d.child = child
 }
 
 //  它将它的Child Node执行
 //  后返回的结果值做额外处理后，再返回给它的Parent Node
-func (this *DecoratorN) OnExec(tick int64) bool{
-	if this.GetChild() == nil {
+func (d *DecoratorN) OnExec(tick int64) bool {
+	if d.GetChild() == nil {
 		return false
 	}
 
-	return this.GetChild().OnExec(tick)
+	return d.GetChild().OnExec(tick)
 }
-
-

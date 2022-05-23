@@ -10,7 +10,7 @@ import (
 //  * Decorator Node
 //  * Condition Node
 //  * Action Node
-type(
+type (
 	BehaviorList struct {
 		vector.Vector
 	}
@@ -33,58 +33,58 @@ type(
 	}
 )
 
-func (this *BehaviorList) Less(i, j int) bool{
-	return this.Get(i).(IBaseNode).GetName() < this.Get(j).(IBaseNode).GetName()
+func (b *BehaviorList) Less(i, j int) bool {
+	return b.Get(i).(IBaseNode).GetName() < b.Get(j).(IBaseNode).GetName()
 }
 
-func (this *BehaviorList) AddChild(name string, pNode IBaseNode){
+func (b *BehaviorList) AddChild(name string, pNode IBaseNode) {
 	pNode.Init()
 	if pNode.GetType() != COMPOSITE && pNode.GetType() != DECORATOR && pNode.GetType() != ACTION && pNode.GetType() != CONDITION {
 		return
 	}
 
-	pCurNode := this.GetChild(name)
-	if pCurNode != nil{
-		if pCurNode.GetType() == COMPOSITE && pNode.(IComposite) != nil{
+	pCurNode := b.GetChild(name)
+	if pCurNode != nil {
+		if pCurNode.GetType() == COMPOSITE && pNode.(IComposite) != nil {
 			pCurNode.(IComposite).AddChild(name, pNode)
-		}else if pCurNode.GetType() == DECORATOR && pNode.(IDecorator) != nil{
+		} else if pCurNode.GetType() == DECORATOR && pNode.(IDecorator) != nil {
 			pCurNode.(IDecorator).SetChild(pNode)
 		}
-	}else{
+	} else {
 		pNode.SetName(name)
-		this.PushFront(pNode)
-		sort.Sort(this)
+		b.PushFront(pNode)
+		sort.Sort(b)
 	}
 }
 
-func (this *BehaviorList) DelChild(name string){
-	nIndex := sort.Search(this.Len(), func(i int) bool {
-		return this.Get(i).(IBaseNode).GetName() >= name
+func (b *BehaviorList) DelChild(name string) {
+	nIndex := sort.Search(b.Len(), func(i int) bool {
+		return b.Get(i).(IBaseNode).GetName() >= name
 	})
-	if nIndex < this.Len() && this.Get(nIndex).(IBaseNode).GetName() == name{
-		this.Erase(nIndex)
+	if nIndex < b.Len() && b.Get(nIndex).(IBaseNode).GetName() == name {
+		b.Erase(nIndex)
 	}
 }
 
-func (this *BehaviorList) GetChild(name string) IBaseNode {
-	nIndex := sort.Search(this.Len(), func(i int) bool {
-		return this.Get(i).(IBaseNode).GetName() >= name
+func (b *BehaviorList) GetChild(name string) IBaseNode {
+	nIndex := sort.Search(b.Len(), func(i int) bool {
+		return b.Get(i).(IBaseNode).GetName() >= name
 	})
-	if nIndex < this.Len() && this.Get(nIndex).(IBaseNode).GetName() == name{
-		return this.Get(nIndex).(IBaseNode)
+	if nIndex < b.Len() && b.Get(nIndex).(IBaseNode).GetName() == name {
+		return b.Get(nIndex).(IBaseNode)
 	}
 	return nil
 }
 
-func (this *BehaviorList) GetChildCount() int {
-	return this.Len()
+func (b *BehaviorList) GetChildCount() int {
+	return b.Len()
 }
 
-func (this *BehaviorTree) Init(){
+func (b *BehaviorTree) Init() {
 }
 
-func (this *BehaviorTree) OnExec(tick int64){
-	for _,v := range this.Values() {
+func (b *BehaviorTree) OnExec(tick int64) {
+	for _, v := range b.Values() {
 		v.(IBaseNode).OnExec(tick)
 	}
 }

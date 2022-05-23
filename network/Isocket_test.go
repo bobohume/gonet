@@ -22,7 +22,9 @@ func TestEndFlag(t *testing.T) {
 	buff := []byte{}
 	packetParse := network.NewPacketParser(network.PacketConfig{})
 	for j := 0; j < 1; j++ {
-		buff = append(buff, packetParse.Write(rpc.Marshal(&rpc.RpcHead{}, "test1", [ARRAY_LEN]int64{1, 2, 3, 4, 5, 6}))...)
+		funcName := "test1"
+		rpcPacket := rpc.Marshal(&rpc.RpcHead{}, &funcName, [ARRAY_LEN]int64{1, 2, 3, 4, 5, 6})
+		buff = append(buff, packetParse.Write(rpcPacket.Buff)...)
 	}
 	for i := 0; i < nTimes; i++ {
 		packetParse.Read(buff)

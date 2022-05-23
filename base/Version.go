@@ -4,39 +4,39 @@ import (
 	"fmt"
 )
 
-const(
+const (
 	BUILD_NO = "1,5,1,1"
 )
 
 type (
-	CVersion struct{
-		m_sBuildVer	int64
+	Version struct {
+		m_sBuildVer int64
 	}
 
-	ICVersion interface {
+	IVersion interface {
 		IsAcceptableBuildVersion(string) bool
 		Init()
 	}
 )
 
-func (this *CVersion)Init(){
+func (v *Version) Init() {
 	var bv1, bv2, bv3, bv4 int
-	fmt.Sscanf(BUILD_NO, "%d,%d,%d,%d", &bv1, &bv2, &bv3, &bv4);
-	this.m_sBuildVer = int64(bv1 * 1000*1000*1000 + bv2 * 1000*1000 + bv3 * 1000 + bv4);
+	fmt.Sscanf(BUILD_NO, "%d,%d,%d,%d", &bv1, &bv2, &bv3, &bv4)
+	v.m_sBuildVer = int64(bv1*1000*1000*1000 + bv2*1000*1000 + bv3*1000 + bv4)
 }
 
-func (this *CVersion)IsAcceptableBuildVersion(version string) bool{
-	var v [4]int
+func (v *Version) IsAcceptableBuildVersion(version string) bool {
+	var _v [4]int
 	var sClient int64
-	fmt.Sscanf(version, "%d,%d,%d,%d",&v[0], &v[1], &v[2], &v[3])
-	sClient = int64(v[0] * 1000*1000*1000 + v[1] * 1000*1000 + v[2] * 1000 + v[3]);
-	return  sClient >= this.m_sBuildVer
+	fmt.Sscanf(version, "%d,%d,%d,%d", &_v[0], &_v[1], &_v[2], &_v[3])
+	sClient = int64(_v[0]*1000*1000*1000 + _v[1]*1000*1000 + _v[2]*1000 + _v[3])
+	return sClient >= v.m_sBuildVer
 }
 
-var(
-	VERSION CVersion
+var (
+	VERSION Version
 )
 
-func init(){
+func init() {
 	VERSION.Init()
 }

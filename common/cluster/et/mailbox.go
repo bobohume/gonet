@@ -23,14 +23,14 @@ const (
 type (
 	MailBox struct {
 		*common.ClusterInfo
-		m_KeysAPI       client.KeysAPI
-		m_MailBoxLocker *sync.RWMutex
-		m_MailBoxMap    map[int64]*rpc.MailBox
+		keysAPI       client.KeysAPI
+		mailBoxLocker *sync.RWMutex
+		mailBoxMap    map[int64]*rpc.MailBox
 	}
 )
 
 //初始化pub
-func (this *MailBox) Init(endpoints []string, info *common.ClusterInfo) {
+func (m *MailBox) Init(endpoints []string, info *common.ClusterInfo) {
 	cfg := client.Config{
 		Endpoints:               endpoints,
 		Transport:               client.DefaultTransport,
@@ -41,79 +41,78 @@ func (this *MailBox) Init(endpoints []string, info *common.ClusterInfo) {
 	if err != nil {
 		log.Fatal("Error: cannot connec to etcd:", err)
 	}
-	this.ClusterInfo = info
-	this.m_KeysAPI = client.NewKeysAPI(etcdClient)
-	this.m_MailBoxLocker = &sync.RWMutex{}
-	this.m_MailBoxMap = map[int64]*rpc.MailBox{}
-	this.Start()
-	this.getAll()
+	m.ClusterInfo = info
+	m.keysAPI = client.NewKeysAPI(etcdClient)
+	m.mailBoxLocker = &sync.RWMutex{}
+	m.mailBoxMap = map[int64]*rpc.MailBox{}
+	m.Start()
+	m.getAll()
 }
 
-func (this *MailBox) Start() {
-	go this.Run()
+func (m *MailBox) Start() {
+	go m.Run()
 }
 
-func (this *MailBox) Create(info *rpc.MailBox) bool {
+func (m *MailBox) Create(info *rpc.MailBox) bool {
 	info.LeaseId = int64(info.Id)
 	key := MAILBOX_DIR + fmt.Sprintf("%d", info.Id)
 	data, _ := json.Marshal(info)
-	_, err := this.m_KeysAPI.Set(context.Background(), key, string(data), &client.SetOptions{
+	_, err := m.keysAPI.Set(context.Background(), key, string(data), &client.SetOptions{
 		TTL: MAILBOX_TL_TIME, PrevExist: client.PrevNoExist,
 	})
 	return err == nil
 }
 
-func (this *MailBox) Lease(Id int64) error {
+func (m *MailBox) Lease(Id int64) error {
 	key := MAILBOX_DIR + fmt.Sprintf("%d", Id)
-	_, err := this.m_KeysAPI.Set(context.Background(), key, "", &client.SetOptions{
+	_, err := m.keysAPI.Set(context.Background(), key, "", &client.SetOptions{
 		TTL: MAILBOX_TL_TIME, Refresh: true, NoValueOnSuccess: true,
 	})
 	return err
 }
 
-func (this *MailBox) Delete(Id int64) error {
+func (m *MailBox) Delete(Id int64) error {
 	key := MAILBOX_DIR + fmt.Sprintf("%d", Id)
-	_, err := this.m_KeysAPI.Delete(context.Background(), key, &client.DeleteOptions{})
+	_, err := m.keysAPI.Delete(context.Background(), key, &client.DeleteOptions{})
 	return err
 }
 
-func (this *MailBox) DeleteAll() error {
-	_, err := this.m_KeysAPI.Delete(context.Background(), MAILBOX_DIR, &client.DeleteOptions{Recursive:true})
+func (m *MailBox) DeleteAll() error {
+	_, err := m.keysAPI.Delete(context.Background(), MAILBOX_DIR, &client.DeleteOptions{Recursive: true})
 	return err
 }
 
-
-func (this *MailBox) add(info *rpc.MailBox) {
-	this.m_MailBoxLocker.Lock()
-	pMailBox, bOk := this.m_MailBoxMap[info.Id]
+func (m *MailBox) add(info *rpc.MailBox) {
+	m.mailBoxLocker.Lock()
+	mail, bOk := m.mailBoxMap[info.Id]
 	if !bOk {
-		this.m_MailBoxMap[info.Id] = info
+		m.mailBoxMap[info.Id] = info
 	} else {
-		*pMailBox = *info
+		*mail = *info
 	}
-	this.m_MailBoxLocker.Unlock()
+	m.mailBoxLocker.Unlock()
 }
 
-func (this *MailBox) del(info *rpc.MailBox) {
-	this.m_MailBoxLocker.Lock()
-	delete(this.m_MailBoxMap, int64(info.Id))
-	this.m_MailBoxLocker.Unlock()
-	actor.MGR.SendMsg(rpc.RpcHead{Id: info.Id}, fmt.Sprintf("%s.On_UnRegister", info.MailType.String()))
+func (m *MailBox) del(info *rpc.MailBox) {
+	m.mailBoxLocker.Lock()
+	delete(m.mailBoxMap, int64(info.Id))
+	m.mailBoxLocker.Unlock()
+	actor.MGR.SendMsg(rpc.RpcHead{Id: info.Id}, fmt.Sprintf("%s.OnUnRegister", info.MailType.String()))
 }
 
-func (this *MailBox) Get(Id int64) *rpc.MailBox {
-	this.m_MailBoxLocker.RLock()
-	pMailBox, bEx := this.m_MailBoxMap[Id]
-	this.m_MailBoxLocker.RUnlock()
+func (m *MailBox) Get(Id int64) *rpc.MailBox {
+	m.mailBoxLocker.RLock()
+	mail, bEx := m.mailBoxMap[Id]
+	m.mailBoxLocker.RUnlock()
 	if bEx {
-		return pMailBox
+		return mail
 	}
 	return nil
 }
 
 // subscribe
-func (this *MailBox) Run() {
-	watcher := this.m_KeysAPI.Watcher(MAILBOX_DIR, &client.WatcherOptions{
+func (m *MailBox) Run() {
+	watcher := m.keysAPI.Watcher(MAILBOX_DIR, &client.WatcherOptions{
 		Recursive: true,
 	})
 
@@ -125,20 +124,20 @@ func (this *MailBox) Run() {
 		}
 		if res.Action == "expire" || res.Action == "delete" {
 			info := nodeToMailBox([]byte(res.PrevNode.Value))
-			this.del(info)
+			m.del(info)
 		} else if res.Action == "set" || res.Action == "create" {
 			info := nodeToMailBox([]byte(res.Node.Value))
-			this.add(info)
+			m.add(info)
 		}
 	}
 }
 
-func (this *MailBox) getAll() {
-	resp, err := this.m_KeysAPI.Get(context.Background(), MAILBOX_DIR, &client.GetOptions{Recursive: true})
+func (m *MailBox) getAll() {
+	resp, err := m.keysAPI.Get(context.Background(), MAILBOX_DIR, &client.GetOptions{Recursive: true})
 	if err == nil && (resp != nil && resp.Node != nil) {
 		for _, v := range resp.Node.Nodes {
 			info := nodeToMailBox([]byte(v.Value))
-			this.add(info)
+			m.add(info)
 		}
 	}
 }

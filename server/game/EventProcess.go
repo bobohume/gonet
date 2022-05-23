@@ -14,8 +14,8 @@ type (
 	}
 )
 
-func (this *EventProcess) Init() {
-	this.Actor.Init()
-	actor.MGR.RegisterActor(this)
-	this.Actor.Start()
+func (e *EventProcess) Init() {
+	e.Actor.Init()
+	actor.MGR.RegisterActor(e)
+	e.Actor.Start()
 }

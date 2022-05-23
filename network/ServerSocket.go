@@ -24,55 +24,45 @@ type IServerSocket interface {
 
 type ServerSocket struct {
 	Socket
-	m_nClientCount int
-	m_nMaxClients  int
-	m_nMinClients  int
-	m_nIdSeed      uint32
-	m_ClientList   map[uint32]*ServerSocketClient
-	m_ClientLocker *sync.RWMutex
-	m_Listen       *net.TCPListener
-	m_Lock         sync.Mutex
-	m_KcpListern   net.Listener
+	clientCount  int
+	maxClients   int
+	minClients   int
+	idSeed       uint32
+	clientMap    map[uint32]*ServerSocketClient
+	clientLocker *sync.RWMutex
+	listen       *net.TCPListener
+	lock         sync.Mutex
+	kcpListern   net.Listener
 }
 
-type ClientChan struct {
-	pClient *ServerSocketClient
-	state   int
-	id      int
-}
-
-type WriteChan struct {
-	buff []byte
-	id   int
-}
-
-func (this *ServerSocket) Init(ip string, port int, params ...OpOption) bool {
-	this.Socket.Init(ip, port, params...)
-	this.m_ClientList = make(map[uint32]*ServerSocketClient)
-	this.m_ClientLocker = &sync.RWMutex{}
-	this.m_sIP = ip
-	this.m_nPort = port
+func (s *ServerSocket) Init(ip string, port int, params ...OpOption) bool {
+	s.Socket.Init(ip, port, params...)
+	s.clientMap = make(map[uint32]*ServerSocketClient)
+	s.clientLocker = &sync.RWMutex{}
+	s.ip = ip
+	s.port = port
 	return true
 }
-func (this *ServerSocket) Start() bool {
-	if this.m_sIP == "" {
-		this.m_sIP = "127.0.0.1"
+
+func (s *ServerSocket) Start() bool {
+	if s.ip == "" {
+		s.ip = "127.0.0.1"
 	}
 
-	var strRemote = fmt.Sprintf("%s:%d", this.m_sIP, this.m_nPort)
+	var strRemote = fmt.Sprintf("%s:%d", s.ip, s.port)
 	//初始tcp
 	tcpAddr, err := net.ResolveTCPAddr("tcp4", strRemote)
 	if err != nil {
 		log.Fatalf("%v", err)
 	}
-	this.m_Listen, err = net.ListenTCP("tcp4", tcpAddr)
+	s.listen, err = net.ListenTCP("tcp4", tcpAddr)
 	if err != nil {
 		log.Fatalf("%v", err)
 		return false
 	}
 
 	//初始kcp
-	this.m_KcpListern, err = kcp.Listen(strRemote)
+	s.kcpListern, err = kcp.Listen(strRemote)
 	if err != nil {
 		log.Fatalf("%v", err)
 	}
@@ -80,19 +70,19 @@ func (this *ServerSocket) Start() bool {
 	fmt.Printf("启动监听，等待链接！\n")
 	//延迟，监听关闭
 	//defer ln.Close()
-	go this.Run()
-	go this.RunKcp()
+	go s.Run()
+	go s.RunKcp()
 	return true
 }
 
-func (this *ServerSocket) AssignClientId() uint32 {
-	return atomic.AddUint32(&this.m_nIdSeed, 1)
+func (s *ServerSocket) AssignClientId() uint32 {
+	return atomic.AddUint32(&s.idSeed, 1)
 }
 
-func (this *ServerSocket) GetClientById(id uint32) *ServerSocketClient {
-	this.m_ClientLocker.RLock()
-	client, exist := this.m_ClientList[id]
-	this.m_ClientLocker.RUnlock()
+func (s *ServerSocket) GetClientById(id uint32) *ServerSocketClient {
+	s.clientLocker.RLock()
+	client, exist := s.clientMap[id]
+	s.clientLocker.RUnlock()
 	if exist == true {
 		return client
 	}
@@ -100,87 +90,87 @@ func (this *ServerSocket) GetClientById(id uint32) *ServerSocketClient {
 	return nil
 }
 
-func (this *ServerSocket) AddClinet(conn net.Conn, addr string, connectType int) *ServerSocketClient {
-	pClient := this.LoadClient()
-	if pClient != nil {
-		pClient.Init("", 0)
-		pClient.m_pServer = this
-		pClient.m_ReceiveBufferSize = this.m_ReceiveBufferSize
-		pClient.SetMaxPacketLen(this.GetMaxPacketLen())
-		pClient.m_ClientId = this.AssignClientId()
-		pClient.m_sIP = addr
-		pClient.SetConnectType(connectType)
-		pClient.SetConn(conn)
-		this.m_ClientLocker.Lock()
-		this.m_ClientList[pClient.m_ClientId] = pClient
-		this.m_ClientLocker.Unlock()
-		pClient.Start()
-		this.m_nClientCount++
-		return pClient
+func (s *ServerSocket) AddClinet(conn net.Conn, addr string, connectType int) *ServerSocketClient {
+	client := s.LoadClient()
+	if client != nil {
+		client.Init("", 0)
+		client.server = s
+		client.receiveBufferSize = s.receiveBufferSize
+		client.SetMaxPacketLen(s.GetMaxPacketLen())
+		client.clientId = s.AssignClientId()
+		client.ip = addr
+		client.SetConnectType(connectType)
+		client.SetConn(conn)
+		s.clientLocker.Lock()
+		s.clientMap[client.clientId] = client
+		s.clientLocker.Unlock()
+		client.Start()
+		s.clientCount++
+		return client
 	} else {
 		log.Printf("%s", "无法创建客户端连接对象")
 	}
 	return nil
 }
 
-func (this *ServerSocket) DelClinet(pClient *ServerSocketClient) bool {
-	this.m_ClientLocker.Lock()
-	delete(this.m_ClientList, pClient.m_ClientId)
-	this.m_ClientLocker.Unlock()
+func (s *ServerSocket) DelClinet(client *ServerSocketClient) bool {
+	s.clientLocker.Lock()
+	delete(s.clientMap, client.clientId)
+	s.clientLocker.Unlock()
 	return true
 }
 
-func (this *ServerSocket) StopClient(id uint32) {
-	pClinet := this.GetClientById(id)
-	if pClinet != nil {
-		pClinet.Stop()
+func (s *ServerSocket) StopClient(id uint32) {
+	client := s.GetClientById(id)
+	if client != nil {
+		client.Stop()
 	}
 }
 
-func (this *ServerSocket) LoadClient() *ServerSocketClient {
-	s := &ServerSocketClient{}
-	return s
+func (s *ServerSocket) LoadClient() *ServerSocketClient {
+	se := &ServerSocketClient{}
+	return se
 }
 
-func (this *ServerSocket) Send(head rpc.RpcHead, packet rpc.Packet) int {
-	pClient := this.GetClientById(head.SocketId)
-	if pClient != nil {
-		pClient.Send(head, packet)
+func (s *ServerSocket) Send(head rpc.RpcHead, packet rpc.Packet) int {
+	client := s.GetClientById(head.SocketId)
+	if client != nil {
+		client.Send(head, packet)
 	}
 	return 0
 }
 
-func (this *ServerSocket) SendMsg(head rpc.RpcHead, funcName string, params ...interface{}) {
-	pClient := this.GetClientById(head.SocketId)
-	if pClient != nil {
-		pClient.Send(head, rpc.Marshal(&head, &funcName, params...))
+func (s *ServerSocket) SendMsg(head rpc.RpcHead, funcName string, params ...interface{}) {
+	client := s.GetClientById(head.SocketId)
+	if client != nil {
+		client.Send(head, rpc.Marshal(&head, &funcName, params...))
 	}
 }
 
-func (this *ServerSocket) Restart() bool {
+func (s *ServerSocket) Restart() bool {
 	return true
 }
 
-func (this *ServerSocket) Connect() bool {
+func (s *ServerSocket) Connect() bool {
 	return true
 }
 
-func (this *ServerSocket) Disconnect(bool) bool {
+func (s *ServerSocket) Disconnect(bool) bool {
 	return true
 }
 
-func (this *ServerSocket) OnNetFail(int) {
+func (s *ServerSocket) OnNetFail(int) {
 }
 
-func (this *ServerSocket) Close() {
-	defer this.m_Listen.Close()
-	defer this.m_KcpListern.Close()
-	this.Clear()
+func (s *ServerSocket) Close() {
+	defer s.listen.Close()
+	defer s.kcpListern.Close()
+	s.Clear()
 }
 
-func (this *ServerSocket) Run() bool {
+func (s *ServerSocket) Run() bool {
 	for {
-		tcpConn, err := this.m_Listen.AcceptTCP()
+		tcpConn, err := s.listen.AcceptTCP()
 		handleError(err)
 		if err != nil {
 			return false
@@ -189,13 +179,13 @@ func (this *ServerSocket) Run() bool {
 		fmt.Printf("客户端：%s已连接！\n", tcpConn.RemoteAddr().String())
 		//延迟，关闭链接
 		//defer tcpConn.Close()
-		this.handleConn(tcpConn, tcpConn.RemoteAddr().String())
+		s.handleConn(tcpConn, tcpConn.RemoteAddr().String())
 	}
 }
 
-func (this *ServerSocket) RunKcp() bool {
+func (s *ServerSocket) RunKcp() bool {
 	for {
-		kcpConn, err := this.m_KcpListern.Accept()
+		kcpConn, err := s.kcpListern.Accept()
 		handleError(err)
 		if err != nil {
 			return false
@@ -204,17 +194,17 @@ func (this *ServerSocket) RunKcp() bool {
 		fmt.Printf("kcp客户端：%s已连接！\n", kcpConn.RemoteAddr().String())
 		//延迟，关闭链接
 		//defer kcpConn.Close()
-		this.handleConn(kcpConn, kcpConn.RemoteAddr().String())
+		s.handleConn(kcpConn, kcpConn.RemoteAddr().String())
 	}
 }
 
-func (this *ServerSocket) handleConn(tcpConn net.Conn, addr string) bool {
+func (s *ServerSocket) handleConn(tcpConn net.Conn, addr string) bool {
 	if tcpConn == nil {
 		return false
 	}
 
-	pClient := this.AddClinet(tcpConn, addr, this.m_nConnectType)
-	if pClient == nil {
+	client := s.AddClinet(tcpConn, addr, s.connectType)
+	if client == nil {
 		return false
 	}
 

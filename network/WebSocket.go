@@ -24,32 +24,32 @@ type IWebSocket interface {
 
 type WebSocket struct {
 	Socket
-	m_nClientCount int
-	m_nMaxClients  int
-	m_nMinClients  int
-	m_nIdSeed      uint32
-	m_ClientList   map[uint32]*WebSocketClient
-	m_ClientLocker *sync.RWMutex
-	m_Lock         sync.Mutex
+	clientCount  int
+	maxClients   int
+	minClients   int
+	idSeed       uint32
+	clientMap    map[uint32]*WebSocketClient
+	clientLocker *sync.RWMutex
+	lock         sync.Mutex
 }
 
-func (this *WebSocket) Init(ip string, port int, params ...OpOption) bool {
-	this.Socket.Init(ip, port, params...)
-	this.m_ClientList = make(map[uint32]*WebSocketClient)
-	this.m_ClientLocker = &sync.RWMutex{}
-	this.m_sIP = ip
-	this.m_nPort = port
+func (w *WebSocket) Init(ip string, port int, params ...OpOption) bool {
+	w.Socket.Init(ip, port, params...)
+	w.clientMap = make(map[uint32]*WebSocketClient)
+	w.clientLocker = &sync.RWMutex{}
+	w.ip = ip
+	w.port = port
 	return true
 }
 
-func (this *WebSocket) Start() bool {
-	if this.m_sIP == "" {
-		this.m_sIP = "127.0.0.1"
+func (w *WebSocket) Start() bool {
+	if w.ip == "" {
+		w.ip = "127.0.0.1"
 	}
 
 	go func() {
-		var strRemote = fmt.Sprintf("%s:%d", this.m_sIP, this.m_nPort)
-		http.Handle("/ws", websocket.Handler(this.wserverRoutine))
+		var strRemote = fmt.Sprintf("%s:%d", w.ip, w.port)
+		http.Handle("/ws", websocket.Handler(w.wserverRoutine))
 		err := http.ListenAndServe(strRemote, nil)
 		if err != nil {
 			fmt.Errorf("WebSocket ListenAndServe:%v", err)
@@ -60,14 +60,14 @@ func (this *WebSocket) Start() bool {
 	return true
 }
 
-func (this *WebSocket) AssignClientId() uint32 {
-	return atomic.AddUint32(&this.m_nIdSeed, 1)
+func (w *WebSocket) AssignClientId() uint32 {
+	return atomic.AddUint32(&w.idSeed, 1)
 }
 
-func (this *WebSocket) GetClientById(id uint32) *WebSocketClient {
-	this.m_ClientLocker.RLock()
-	client, exist := this.m_ClientList[id]
-	this.m_ClientLocker.RUnlock()
+func (w *WebSocket) GetClientById(id uint32) *WebSocketClient {
+	w.clientLocker.RLock()
+	client, exist := w.clientMap[id]
+	w.clientLocker.RUnlock()
 	if exist == true {
 		return client
 	}
@@ -75,95 +75,95 @@ func (this *WebSocket) GetClientById(id uint32) *WebSocketClient {
 	return nil
 }
 
-func (this *WebSocket) AddClinet(tcpConn *websocket.Conn, addr string, connectType int) *WebSocketClient {
-	pClient := this.LoadClient()
-	if pClient != nil {
-		pClient.Init("", 0)
-		pClient.m_pServer = this
-		pClient.m_ReceiveBufferSize = this.m_ReceiveBufferSize
-		pClient.SetMaxPacketLen(this.GetMaxPacketLen())
-		pClient.m_ClientId = this.AssignClientId()
-		pClient.m_sIP = addr
-		pClient.SetConn(tcpConn)
-		pClient.SetConnectType(connectType)
-		this.m_ClientLocker.Lock()
-		this.m_ClientList[pClient.m_ClientId] = pClient
-		this.m_ClientLocker.Unlock()
-		this.m_nClientCount++
-		return pClient
+func (w *WebSocket) AddClinet(tcpConn *websocket.Conn, addr string, connectType int) *WebSocketClient {
+	client := w.LoadClient()
+	if client != nil {
+		client.Init("", 0)
+		client.server = w
+		client.receiveBufferSize = w.receiveBufferSize
+		client.SetMaxPacketLen(w.GetMaxPacketLen())
+		client.clientId = w.AssignClientId()
+		client.ip = addr
+		client.SetConn(tcpConn)
+		client.SetConnectType(connectType)
+		w.clientLocker.Lock()
+		w.clientMap[client.clientId] = client
+		w.clientLocker.Unlock()
+		w.clientCount++
+		return client
 	} else {
 		log.Printf("%s", "无法创建客户端连接对象")
 	}
 	return nil
 }
 
-func (this *WebSocket) DelClinet(pClient *WebSocketClient) bool {
-	this.m_ClientLocker.Lock()
-	delete(this.m_ClientList, pClient.m_ClientId)
-	this.m_ClientLocker.Unlock()
+func (w *WebSocket) DelClinet(client *WebSocketClient) bool {
+	w.clientLocker.Lock()
+	delete(w.clientMap, client.clientId)
+	w.clientLocker.Unlock()
 	return true
 }
 
-func (this *WebSocket) StopClient(id uint32) {
-	pClinet := this.GetClientById(id)
-	if pClinet != nil {
-		pClinet.Stop()
+func (w *WebSocket) StopClient(id uint32) {
+	client := w.GetClientById(id)
+	if client != nil {
+		client.Stop()
 	}
 }
 
-func (this *WebSocket) LoadClient() *WebSocketClient {
+func (w *WebSocket) LoadClient() *WebSocketClient {
 	s := &WebSocketClient{}
 	return s
 }
 
-func (this *WebSocket) Send(head rpc.RpcHead, packet rpc.Packet) int {
-	pClient := this.GetClientById(head.SocketId)
-	if pClient != nil {
-		pClient.Send(head, packet)
+func (w *WebSocket) Send(head rpc.RpcHead, packet rpc.Packet) int {
+	client := w.GetClientById(head.SocketId)
+	if client != nil {
+		client.Send(head, packet)
 	}
 	return 0
 }
 
-func (this *WebSocket) SendMsg(head rpc.RpcHead, funcName string, params ...interface{}) {
-	pClient := this.GetClientById(head.SocketId)
-	if pClient != nil {
-		pClient.Send(head, rpc.Marshal(&head, &funcName, params...))
+func (w *WebSocket) SendMsg(head rpc.RpcHead, funcName string, params ...interface{}) {
+	client := w.GetClientById(head.SocketId)
+	if client != nil {
+		client.Send(head, rpc.Marshal(&head, &funcName, params...))
 	}
 }
 
-func (this *WebSocket) Restart() bool {
+func (w *WebSocket) Restart() bool {
 	return true
 }
-func (this *WebSocket) Connect() bool {
+func (w *WebSocket) Connect() bool {
 	return true
 }
-func (this *WebSocket) Disconnect(bool) bool {
+func (w *WebSocket) Disconnect(bool) bool {
 	return true
 }
 
-func (this *WebSocket) OnNetFail(int) {
+func (w *WebSocket) OnNetFail(int) {
 }
 
-func (this *WebSocket) Close() {
-	this.Clear()
+func (w *WebSocket) Close() {
+	w.Clear()
 }
 
-func (this *WebSocket) wserverRoutine(conn *websocket.Conn) {
+func (w *WebSocket) wserverRoutine(conn *websocket.Conn) {
 	fmt.Printf("客户端：%s已连接！\n", conn.RemoteAddr().String())
-	this.handleConn(conn, conn.RemoteAddr().String())
+	w.handleConn(conn, conn.RemoteAddr().String())
 }
 
-func (this *WebSocket) handleConn(tcpConn *websocket.Conn, addr string) bool {
+func (w *WebSocket) handleConn(tcpConn *websocket.Conn, addr string) bool {
 	if tcpConn == nil {
 		return false
 	}
 
 	tcpConn.PayloadType = websocket.BinaryFrame
-	pClient := this.AddClinet(tcpConn, addr, this.m_nConnectType)
-	if pClient == nil {
+	client := w.AddClinet(tcpConn, addr, w.connectType)
+	if client == nil {
 		return false
 	}
 
-	pClient.Start()
+	client.Start()
 	return true
 }

@@ -3,25 +3,26 @@ package gate
 import (
 	"bytes"
 	"encoding/gob"
-	"github.com/golang/protobuf/proto"
 	"gonet/base"
 	"gonet/rpc"
 	"gonet/server/message"
 	"reflect"
+
+	"github.com/golang/protobuf/proto"
 )
 
-var(
-	LoginAccountResponse 	 = proto.MessageName(&message.LoginAccountResponse{})
-	SelectPlayerResponse	 = proto.MessageName(&message.SelectPlayerResponse{})
+var (
+	LoginAccountResponse = proto.MessageName(&message.LoginAccountResponse{})
+	SelectPlayerResponse = proto.MessageName(&message.SelectPlayerResponse{})
 )
 
-func SendToClient(socketId uint32, packet proto.Message){
-	SERVER.GetServer().Send(rpc.RpcHead{SocketId:socketId}, rpc.Packet{Buff: message.Encode(packet)})
+func SendToClient(socketId uint32, packet proto.Message) {
+	SERVER.GetServer().Send(rpc.RpcHead{SocketId: socketId}, rpc.Packet{Buff: message.Encode(packet)})
 }
 
-func DispatchPacket(packet rpc.Packet) bool{
-	defer func(){
-		if err := recover(); err != nil{
+func DispatchPacket(packet rpc.Packet) bool {
+	defer func() {
+		if err := recover(); err != nil {
 			base.TraceCode(err)
 		}
 	}()
@@ -36,12 +37,12 @@ func DispatchPacket(packet rpc.Packet) bool{
 		packet := reflect.New(proto.MessageType(messageName).Elem()).Interface().(proto.Message)
 		dec.Decode(packet)
 		buff := message.Encode(packet)
-		switch messageName{
-			case LoginAccountResponse, SelectPlayerResponse:
-				SERVER.GetServer().Send(rpc.RpcHead{SocketId:head.SocketId}, rpc.Packet{Buff:buff})
-			default:
-				socketId := SERVER.GetPlayerMgr().GetSocket(head.Id)
-				SERVER.GetServer().Send(rpc.RpcHead{SocketId:socketId}, rpc.Packet{Buff:buff})
+		switch messageName {
+		case LoginAccountResponse, SelectPlayerResponse:
+			SERVER.GetServer().Send(rpc.RpcHead{SocketId: head.SocketId}, rpc.Packet{Buff: buff})
+		default:
+			socketId := SERVER.GetPlayerMgr().GetSocket(head.Id)
+			SERVER.GetServer().Send(rpc.RpcHead{SocketId: socketId}, rpc.Packet{Buff: buff})
 		}
 
 	default:

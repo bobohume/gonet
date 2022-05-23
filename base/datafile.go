@@ -9,82 +9,82 @@ import (
 	"reflect"
 )
 
-const(
-	DATA_END = "data_end"
+const (
+	DATA_END        = "data_end"
 	DATA_END_LENGTH = len(DATA_END) //data结束标记
 )
 
 //datatype
-const(
-	DType_none    = iota
-	DType_String	= iota
-	DType_Enum		= iota
-	DType_S8		= iota
-	DType_S16		= iota
-	DType_S32		= iota
-	DType_F32		= iota
-	DType_F64		= iota
-	DType_S64		= iota
-	DType_StringArray	= iota
-	DType_S8Array		= iota
-	DType_S16Array		= iota
-	DType_S32Array		= iota
-	DType_F32Array		= iota
-	DType_F64Array		= iota
-	DType_S64Array		= iota
+const (
+	DType_none        = iota
+	DType_String      = iota
+	DType_Enum        = iota
+	DType_S8          = iota
+	DType_S16         = iota
+	DType_S32         = iota
+	DType_F32         = iota
+	DType_F64         = iota
+	DType_S64         = iota
+	DType_StringArray = iota
+	DType_S8Array     = iota
+	DType_S16Array    = iota
+	DType_S32Array    = iota
+	DType_F32Array    = iota
+	DType_F64Array    = iota
+	DType_S64Array    = iota
 )
 
-type(
-	RData struct{
-		m_FileName string
-		m_Type	int
+type (
+	Data struct {
+		fileName string
+		dataType int
 
-		m_String	string
-		m_Enum	int
-		m_S8	int8
-		m_S16	int16
-		m_S32 	int
-		m_F32	float32
-		m_F64	float64
-		m_S64	int64
-		m_StringArray	[]string
-		m_S8Array	[]int8
-		m_S16Array	[]int16
-		m_S32Array	[]int
-		m_F32Array	[]float32
-		m_F64Array	[]float64
-		m_S64Array	[]int64
+		str      string
+		enum     int
+		s8       int8
+		s16      int16
+		s32      int
+		f32      float32
+		f64      float64
+		s64      int64
+		strArray []string
+		s8Array  []int8
+		s16Array []int16
+		s32Array []int
+		f32Array []float32
+		f64Array []float64
+		s64Array []int64
 	}
 
-	CDataFile struct{
-		RecordNum	int//记录数量
-		ColumNum	int//列数量
+	DataFile struct {
+		RecordNum int //记录数量
+		ColumNum  int //列数量
 
-		fileName	string//文件名
-		fstream		*BitStream
-		readstep	int//控制读的总数量
-		dataTypes   vector.Vector
+		fileName           string //文件名
+		fstream            *BitStream
+		readstep           int //控制读的总数量
+		dataTypes          vector.Vector
 		currentColumnIndex int
 	}
 
 	IDateFile interface {
 		ReadDataFile(string) bool
-		GetData(*RData) bool
+		GetData(*Data) bool
 		ReadDataInit()
 	}
 )
 
-func (this *CDataFile) ReadDataInit(){
-	this.ColumNum = 0
-	this.RecordNum = 0
-	this.readstep = 0
-	this.fstream = nil
+func (d *DataFile) ReadDataInit() {
+	d.ColumNum = 0
+	d.RecordNum = 0
+	d.readstep = 0
+	d.fstream = nil
 }
 
-func (this *CDataFile) ReadDataFile(fileName string) bool{
-	this.dataTypes.Clear()
-	this.currentColumnIndex = 0
-	this.fileName = fileName
+func (d *DataFile) ReadDataFile(fileName string) bool {
+	d.dataTypes.Clear()
+	d.currentColumnIndex = 0
+	d.fileName = fileName
 
 	file, err := os.Open(fileName)
 	if err != nil {
@@ -93,28 +93,28 @@ func (this *CDataFile) ReadDataFile(fileName string) bool{
 	}
 	defer file.Close()
 	buf, err := ioutil.ReadAll(file)
-	if err != nil{
+	if err != nil {
 		return false
 	}
-	this.fstream = NewBitStream(buf, len(buf))
+	d.fstream = NewBitStream(buf, len(buf))
 	nLen := bytes.Index(buf, []byte(DATA_END))
-	if nLen == -1{
+	if nLen == -1 {
 		return false
 	}
-	this.fstream.SetPosition(nLen + DATA_END_LENGTH)
+	d.fstream.SetPosition(nLen + DATA_END_LENGTH)
 	//得到记录总数
-	this.RecordNum = this.fstream.ReadInt(32)
+	d.RecordNum = d.fstream.ReadInt(32)
 	//得到列的总数
-	this.ColumNum = this.fstream.ReadInt(32)
+	d.ColumNum = d.fstream.ReadInt(32)
 	//sheet name
-	this.fstream.ReadString()
+	d.fstream.ReadString()
 
-	this.readstep = this.RecordNum * this.ColumNum
-	for nColumnIndex := 0; nColumnIndex < this.ColumNum; nColumnIndex++{
+	d.readstep = d.RecordNum * d.ColumNum
+	for nColumnIndex := 0; nColumnIndex < d.ColumNum; nColumnIndex++ {
 		//col name
-		this.fstream.ReadString()
-		nDataType := this.fstream.ReadInt(8)
-		this.dataTypes.PushBack(int(nDataType))
+		d.fstream.ReadString()
+		nDataType := d.fstream.ReadInt(8)
+		d.dataTypes.PushBack(int(nDataType))
 	}
 	return true
 }
@@ -129,167 +129,167 @@ func (this *CDataFile) ReadDataFile(fileName string) bool{
 	2、字读数据类型(int->2,string->1,enum->3,float->4)
 	3、字段内容(int,string)
 *************************/
-func (this *CDataFile) GetData(pData *RData) bool {
-	if this.readstep == 0 || this.fstream == nil{
+func (d *DataFile) GetData(data *Data) bool {
+	if d.readstep == 0 || d.fstream == nil {
 		return false
 	}
 
-	pData.m_FileName = this.fileName
-	switch this.dataTypes.Get(this.currentColumnIndex).(int) {
+	data.fileName = d.fileName
+	switch d.dataTypes.Get(d.currentColumnIndex).(int) {
 	case DType_String:
-		pData.m_String = this.fstream.ReadString()
+		data.str = d.fstream.ReadString()
 	case DType_S8:
-		pData.m_S8 = int8(this.fstream.ReadInt(8))
+		data.s8 = int8(d.fstream.ReadInt(8))
 	case DType_S16:
-		pData.m_S16 = int16(this.fstream.ReadInt(16))
+		data.s16 = int16(d.fstream.ReadInt(16))
 	case DType_S32:
-		pData.m_S32 = this.fstream.ReadInt(32)
+		data.s32 = d.fstream.ReadInt(32)
 	case DType_Enum:
-		pData.m_Enum = this.fstream.ReadInt(16)
+		data.enum = d.fstream.ReadInt(16)
 	case DType_F32:
-		pData.m_F32 = this.fstream.ReadFloat()
+		data.f32 = d.fstream.ReadFloat()
 	case DType_F64:
-		pData.m_F64 = this.fstream.ReadFloat64()
+		data.f64 = d.fstream.ReadFloat64()
 	case DType_S64:
-		pData.m_S64 = this.fstream.ReadInt64(64)
+		data.s64 = d.fstream.ReadInt64(64)
 
 	case DType_StringArray:
-		nLen := this.fstream.ReadInt(8)
-		pData.m_StringArray = make([]string, nLen)
-		for i := 0; i < nLen; i++{
-			pData.m_StringArray[i] = this.fstream.ReadString()
+		nLen := d.fstream.ReadInt(8)
+		data.strArray = make([]string, nLen)
+		for i := 0; i < nLen; i++ {
+			data.strArray[i] = d.fstream.ReadString()
 		}
 	case DType_S8Array:
-		nLen := this.fstream.ReadInt(8)
-		pData.m_S8Array = make([]int8, nLen)
+		nLen := d.fstream.ReadInt(8)
+		data.s8Array = make([]int8, nLen)
 		for i := 0; i < nLen; i++ {
-			pData.m_S8Array[i] = int8(this.fstream.ReadInt(8))
+			data.s8Array[i] = int8(d.fstream.ReadInt(8))
 		}
 	case DType_S16Array:
-		nLen := this.fstream.ReadInt(8)
-		pData.m_S16Array = make([]int16, nLen)
+		nLen := d.fstream.ReadInt(8)
+		data.s16Array = make([]int16, nLen)
 		for i := 0; i < nLen; i++ {
-			pData.m_S16Array[i] = int16(this.fstream.ReadInt(16))
+			data.s16Array[i] = int16(d.fstream.ReadInt(16))
 		}
 	case DType_S32Array:
-		nLen := this.fstream.ReadInt(8)
-		pData.m_S32Array = make([]int, nLen)
+		nLen := d.fstream.ReadInt(8)
+		data.s32Array = make([]int, nLen)
 		for i := 0; i < nLen; i++ {
-			pData.m_S32Array[i]  = this.fstream.ReadInt(32)
+			data.s32Array[i] = d.fstream.ReadInt(32)
 		}
 	case DType_F32Array:
-		nLen := this.fstream.ReadInt(8)
-		pData.m_F32Array = make([]float32, nLen)
+		nLen := d.fstream.ReadInt(8)
+		data.f32Array = make([]float32, nLen)
 		for i := 0; i < nLen; i++ {
-			pData.m_F32Array[i] = this.fstream.ReadFloat()
+			data.f32Array[i] = d.fstream.ReadFloat()
 		}
 	case DType_F64Array:
-		nLen := this.fstream.ReadInt(8)
-		pData.m_F64Array = make([]float64, nLen)
+		nLen := d.fstream.ReadInt(8)
+		data.f64Array = make([]float64, nLen)
 		for i := 0; i < nLen; i++ {
-			pData.m_F64Array[i] = this.fstream.ReadFloat64()
+			data.f64Array[i] = d.fstream.ReadFloat64()
 		}
 	case DType_S64Array:
-		nLen := this.fstream.ReadInt(8)
-		pData.m_S64Array = make([]int64, nLen)
+		nLen := d.fstream.ReadInt(8)
+		data.s64Array = make([]int64, nLen)
 		for i := 0; i < nLen; i++ {
-			pData.m_S64Array[i] = this.fstream.ReadInt64(64)
+			data.s64Array[i] = d.fstream.ReadInt64(64)
 		}
 	}
 
-	pData.m_Type = this.dataTypes.Get(this.currentColumnIndex).(int)
-	this.currentColumnIndex = (this.currentColumnIndex + 1) % this.ColumNum
-	this.readstep--
+	data.dataType = d.dataTypes.Get(d.currentColumnIndex).(int)
+	d.currentColumnIndex = (d.currentColumnIndex + 1) % d.ColumNum
+	d.readstep--
 	return true
 }
 
 /****************************
-	RData funciton
+	Data funciton
 ****************************/
-func (this *RData) String(datacol string) string{
-	IFAssert(this.m_Type == DType_String,  fmt.Sprintf("read [%s] col[%s] error", this.m_FileName, datacol))
-	return this.m_String
+func (d *Data) String(datacol string) string {
+	IFAssert(d.dataType == DType_String, fmt.Sprintf("read [%s] col[%s] error", d.fileName, datacol))
+	return d.str
 }
 
-func (this *RData) Enum(datacol string) int{
-	IFAssert(this.m_Type == DType_Enum,  fmt.Sprintf("read [%s] col[%s] error", this.m_FileName, datacol))
-	return this.m_Enum
+func (d *Data) Enum(datacol string) int {
+	IFAssert(d.dataType == DType_Enum, fmt.Sprintf("read [%s] col[%s] error", d.fileName, datacol))
+	return d.enum
 }
 
-func (this *RData) Int8(datacol string) int8{
-	IFAssert(this.m_Type == DType_S8,  fmt.Sprintf("read [%s] col[%s] error", this.m_FileName, datacol))
-	return this.m_S8
+func (d *Data) Int8(datacol string) int8 {
+	IFAssert(d.dataType == DType_S8, fmt.Sprintf("read [%s] col[%s] error", d.fileName, datacol))
+	return d.s8
 }
 
-func (this *RData) Int16(datacol string) int16{
-	IFAssert(this.m_Type == DType_S16,  fmt.Sprintf("read [%s] col[%s] error", this.m_FileName, datacol))
-	return this.m_S16
+func (d *Data) Int16(datacol string) int16 {
+	IFAssert(d.dataType == DType_S16, fmt.Sprintf("read [%s] col[%s] error", d.fileName, datacol))
+	return d.s16
 }
 
-func (this *RData) Int(datacol string) int{
-	IFAssert(this.m_Type == DType_S32,  fmt.Sprintf("read [%s] col[%s] error", this.m_FileName, datacol))
-	return this.m_S32
+func (d *Data) Int(datacol string) int {
+	IFAssert(d.dataType == DType_S32, fmt.Sprintf("read [%s] col[%s] error", d.fileName, datacol))
+	return d.s32
 }
 
-func (this *RData) Float32(datacol string) float32{
-	IFAssert(this.m_Type == DType_F32,  fmt.Sprintf("read [%s] col[%s] error", this.m_FileName, datacol))
-	return this.m_F32
+func (d *Data) Float32(datacol string) float32 {
+	IFAssert(d.dataType == DType_F32, fmt.Sprintf("read [%s] col[%s] error", d.fileName, datacol))
+	return d.f32
 }
 
-func (this *RData) Float64(datacol string) float64{
-	IFAssert(this.m_Type == DType_F64,  fmt.Sprintf("read [%s] col[%s] error", this.m_FileName, datacol))
-	return this.m_F64
+func (d *Data) Float64(datacol string) float64 {
+	IFAssert(d.dataType == DType_F64, fmt.Sprintf("read [%s] col[%s] error", d.fileName, datacol))
+	return d.f64
 }
 
-func (this *RData) Int64(datacol string) int64{
-	IFAssert(this.m_Type == DType_S64,  fmt.Sprintf("read [%s] col[%s] error", this.m_FileName, datacol))
-	return this.m_S64
+func (d *Data) Int64(datacol string) int64 {
+	IFAssert(d.dataType == DType_S64, fmt.Sprintf("read [%s] col[%s] error", d.fileName, datacol))
+	return d.s64
 }
 
-func (this *RData) StringArray(datacol string) []string{
-	IFAssert(this.m_Type == DType_StringArray,  fmt.Sprintf("read [%s] col[%s] error", this.m_FileName, datacol))
-	return this.m_StringArray
+func (d *Data) StringArray(datacol string) []string {
+	IFAssert(d.dataType == DType_StringArray, fmt.Sprintf("read [%s] col[%s] error", d.fileName, datacol))
+	return d.strArray
 }
 
-func (this *RData) Int8Array(datacol string) []int8{
-	IFAssert(this.m_Type == DType_S8Array,  fmt.Sprintf("read [%s] col[%s] error", this.m_FileName, datacol))
-	return this.m_S8Array
+func (d *Data) Int8Array(datacol string) []int8 {
+	IFAssert(d.dataType == DType_S8Array, fmt.Sprintf("read [%s] col[%s] error", d.fileName, datacol))
+	return d.s8Array
 }
 
-func (this *RData) Int16Array(datacol string) []int16{
-	IFAssert(this.m_Type == DType_S16Array,  fmt.Sprintf("read [%s] col[%s] error", this.m_FileName, datacol))
-	return this.m_S16Array
+func (d *Data) Int16Array(datacol string) []int16 {
+	IFAssert(d.dataType == DType_S16Array, fmt.Sprintf("read [%s] col[%s] error", d.fileName, datacol))
+	return d.s16Array
 }
 
-func (this *RData) IntArray(datacol string) []int{
-	IFAssert(this.m_Type == DType_S32Array,  fmt.Sprintf("read [%s] col[%s] error", this.m_FileName, datacol))
-	return this.m_S32Array
+func (d *Data) IntArray(datacol string) []int {
+	IFAssert(d.dataType == DType_S32Array, fmt.Sprintf("read [%s] col[%s] error", d.fileName, datacol))
+	return d.s32Array
 }
 
-func (this *RData) Float32Array(datacol string) []float32{
-	IFAssert(this.m_Type == DType_F32Array,  fmt.Sprintf("read [%s] col[%s] error", this.m_FileName, datacol))
-	return this.m_F32Array
+func (d *Data) Float32Array(datacol string) []float32 {
+	IFAssert(d.dataType == DType_F32Array, fmt.Sprintf("read [%s] col[%s] error", d.fileName, datacol))
+	return d.f32Array
 }
 
-func (this *RData) Float64Array(datacol string) []float64{
-	IFAssert(this.m_Type == DType_F64Array,  fmt.Sprintf("read [%s] col[%s] error", this.m_FileName, datacol))
-	return this.m_F64Array
+func (d *Data) Float64Array(datacol string) []float64 {
+	IFAssert(d.dataType == DType_F64Array, fmt.Sprintf("read [%s] col[%s] error", d.fileName, datacol))
+	return d.f64Array
 }
 
-func (this *RData) Int64Array(datacol string) []int64{
-	IFAssert(this.m_Type == DType_S64Array,  fmt.Sprintf("read [%s] col[%s] error", this.m_FileName, datacol))
-	return this.m_S64Array
+func (d *Data) Int64Array(datacol string) []int64 {
+	IFAssert(d.dataType == DType_S64Array, fmt.Sprintf("read [%s] col[%s] error", d.fileName, datacol))
+	return d.s64Array
 }
 
 //--- struct to data
-func LoadData(obj interface{}, file *CDataFile) bool{
-	if file == nil{
+func LoadData(obj interface{}, file *DataFile) bool {
+	if file == nil {
 		return false
 	}
 
 	classVal, classType := getClassInfo(obj)
-	for i := 0; i < classType.NumField(); i++{
-		if !classVal.Field(i).CanInterface(){
+	for i := 0; i < classType.NumField(); i++ {
+		if !classVal.Field(i).CanInterface() {
 			continue
 		}
 
@@ -298,8 +298,7 @@ func LoadData(obj interface{}, file *CDataFile) bool{
 	return true
 }
 
-
-func getClassInfo(obj interface{})(reflect.Value, reflect.Type){
+func getClassInfo(obj interface{}) (reflect.Value, reflect.Type) {
 	classVal := reflect.ValueOf(obj)
 	for classVal.Kind() == reflect.Ptr {
 		classVal = classVal.Elem()
@@ -308,13 +307,13 @@ func getClassInfo(obj interface{})(reflect.Value, reflect.Type){
 	return classVal, classType
 }
 
-func getData(sf reflect.StructField, classVal reflect.Value, file *CDataFile){
-	data := &RData{}
+func getData(sf reflect.StructField, classVal reflect.Value, file *DataFile) {
+	data := &Data{}
 	colName := sf.Name
 
 	file.GetData(data)
 
-	switch data.m_Type {
+	switch data.dataType {
 	case DType_String:
 		classVal.SetString(data.String(colName))
 	case DType_Enum:

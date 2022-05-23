@@ -17,71 +17,71 @@ type IClientSocket interface {
 
 type ClientSocket struct {
 	Socket
-	m_nMaxClients int
-	m_nMinClients int
+	maxClients int
+	minClients int
 }
 
-func (this *ClientSocket) Init(ip string, port int, params ...OpOption) bool {
-	if this.m_nPort == port || this.m_sIP == ip {
+func (c *ClientSocket) Init(ip string, port int, params ...OpOption) bool {
+	if c.port == port || c.ip == ip {
 		return false
 	}
 
-	this.Socket.Init(ip, port, params...)
-	this.m_sIP = ip
-	this.m_nPort = port
+	c.Socket.Init(ip, port, params...)
+	c.ip = ip
+	c.port = port
 	fmt.Println(ip, port)
 	return true
 }
-func (this *ClientSocket) Start() bool {
-	if this.m_sIP == "" {
-		this.m_sIP = "127.0.0.1"
+func (c *ClientSocket) Start() bool {
+	if c.ip == "" {
+		c.ip = "127.0.0.1"
 	}
 
-	if this.Connect() {
-		go this.Run()
+	if c.Connect() {
+		go c.Run()
 	}
 	//延迟，监听关闭
 	//defer ln.Close()
 	return true
 }
 
-func (this *ClientSocket) SendMsg(head rpc.RpcHead, funcName string, params ...interface{}) {
-	this.Send(head, rpc.Marshal(&head, &funcName, params...))
+func (c *ClientSocket) SendMsg(head rpc.RpcHead, funcName string, params ...interface{}) {
+	c.Send(head, rpc.Marshal(&head, &funcName, params...))
 }
 
-func (this *ClientSocket) Send(head rpc.RpcHead, packet rpc.Packet) int {
+func (c *ClientSocket) Send(head rpc.RpcHead, packet rpc.Packet) int {
 	defer func() {
 		if err := recover(); err != nil {
 			base.TraceCode(err)
 		}
 	}()
 
-	if this.m_Conn == nil {
+	if c.conn == nil {
 		return 0
 	}
 
-	n, err := this.m_Conn.Write(this.m_PacketParser.Write(packet.Buff))
+	n, err := c.conn.Write(c.packetParser.Write(packet.Buff))
 	handleError(err)
 	if n > 0 {
 		return n
 	}
-	//this.m_Writer.Flush()
+	//c.m_Writer.Flush()
 	return 0
 }
 
-func (this *ClientSocket) Restart() bool {
+func (c *ClientSocket) Restart() bool {
 	return true
 }
 
-func (this *ClientSocket) Connect() bool {
-	var strRemote = fmt.Sprintf("%s:%d", this.m_sIP, this.m_nPort)
+func (c *ClientSocket) Connect() bool {
+	var strRemote = fmt.Sprintf("%s:%d", c.ip, c.port)
 	connectStr := "Tcp"
-	if this.m_bKcp {
+	if c.isKcp {
 		ln, err1 := kcp.Dial(strRemote)
 		if err1 != nil {
 			return false
 		}
-		this.SetConn(ln)
+		c.SetConn(ln)
 		connectStr = "Kcp"
 	} else {
 		tcpAddr, err := net.ResolveTCPAddr("tcp4", strRemote)
@@ -92,25 +92,25 @@ func (this *ClientSocket) Connect() bool {
 		if err1 != nil {
 			return false
 		}
-		this.SetConn(ln)
+		c.SetConn(ln)
 	}
 
 	fmt.Printf("%s 连接成功，请输入信息！\n", connectStr)
-	this.CallMsg(rpc.RpcHead{}, "COMMON_RegisterRequest")
+	c.CallMsg(rpc.RpcHead{}, "COMMON_RegisterRequest")
 	return true
 }
 
-func (this *ClientSocket) OnDisconnect() {
+func (c *ClientSocket) OnDisconnect() {
 }
 
-func (this *ClientSocket) OnNetFail(int) {
-	this.Stop()
-	this.CallMsg(rpc.RpcHead{},"DISCONNECT", this.m_ClientId)
+func (c *ClientSocket) OnNetFail(int) {
+	c.Stop()
+	c.CallMsg(rpc.RpcHead{}, "DISCONNECT", c.clientId)
 }
 
-func (this *ClientSocket) Run() bool {
-	this.SetState(SSF_RUN)
-	var buff = make([]byte, this.m_ReceiveBufferSize)
+func (c *ClientSocket) Run() bool {
+	c.SetState(SSF_RUN)
+	var buff = make([]byte, c.receiveBufferSize)
 	loop := func() bool {
 		defer func() {
 			if err := recover(); err != nil {
@@ -118,23 +118,23 @@ func (this *ClientSocket) Run() bool {
 			}
 		}()
 
-		if this.m_Conn == nil {
+		if c.conn == nil {
 			return false
 		}
 
-		n, err := this.m_Conn.Read(buff)
+		n, err := c.conn.Read(buff)
 		if err == io.EOF {
-			fmt.Printf("远程链接：%s已经关闭！\n", this.m_Conn.RemoteAddr().String())
-			this.OnNetFail(0)
+			fmt.Printf("远程链接：%s已经关闭！\n", c.conn.RemoteAddr().String())
+			c.OnNetFail(0)
 			return false
 		}
 		if err != nil {
 			handleError(err)
-			this.OnNetFail(0)
+			c.OnNetFail(0)
 			return false
 		}
 		if n > 0 {
-			this.m_PacketParser.Read(buff[:n])
+			c.packetParser.Read(buff[:n])
 		}
 		return true
 	}
@@ -145,6 +145,6 @@ func (this *ClientSocket) Run() bool {
 		}
 	}
 
-	this.Close()
+	c.Close()
 	return true
 }

@@ -32,13 +32,13 @@ type (
 	//集群客户端
 	Cluster struct {
 		actor.Actor
-		m_ClusterMap     map[uint32]*ClusterNode
-		m_ClusterLocker  *sync.RWMutex
-		m_Packet         IClusterPacket
-		m_Master         *Master
-		m_HashRing       *base.HashRing //hash一致性
-		m_ClusterInfoMap map[uint32]*common.ClusterInfo
-		m_PacketFuncList *vector.Vector //call back
+		clusterMap      map[uint32]*ClusterNode
+		clusterLocker   *sync.RWMutex
+		packet          IClusterPacket
+		master          *Master
+		hashRing        *base.HashRing //hash一致性
+		clusterInfoMapg map[uint32]*common.ClusterInfo
+		packetFuncList  *vector.Vector //call back
 	}
 
 	ICluster interface {
@@ -67,9 +67,9 @@ func NewService(info *common.ClusterInfo, Endpoints []string) *Service {
 }
 
 //监控服务器
-func NewMaster(info *common.ClusterInfo, Endpoints []string, pActor actor.IActor) *Master {
+func NewMaster(info *common.ClusterInfo, Endpoints []string) *Master {
 	master := &etv3.Master{}
-	master.Init(info, Endpoints, pActor)
+	master.Init(info, Endpoints)
 	return (*Master)(master)
 }
 
@@ -80,140 +80,140 @@ func NewSnowflake(Endpoints []string) *Snowflake {
 	return (*Snowflake)(uuid)
 }
 
-func (this *Cluster) InitCluster(info *common.ClusterInfo, Endpoints []string) {
-	this.Actor.Init()
-	this.m_ClusterLocker = &sync.RWMutex{}
-	this.m_ClusterMap = make(map[uint32]*ClusterNode)
-	this.m_Master = NewMaster(info, Endpoints, &this.Actor)
-	this.m_HashRing = base.NewHashRing()
-	this.m_ClusterInfoMap = make(map[uint32]*common.ClusterInfo)
-	this.m_PacketFuncList = vector.NewVector()
-	actor.MGR.RegisterActor(this)
-	this.Actor.Start()
+func (c *Cluster) InitCluster(info *common.ClusterInfo, Endpoints []string) {
+	c.Actor.Init()
+	c.clusterLocker = &sync.RWMutex{}
+	c.clusterMap = make(map[uint32]*ClusterNode)
+	c.master = NewMaster(info, Endpoints)
+	c.hashRing = base.NewHashRing()
+	c.clusterInfoMapg = make(map[uint32]*common.ClusterInfo)
+	c.packetFuncList = vector.NewVector()
+	actor.MGR.RegisterActor(c)
+	c.Actor.Start()
 }
 
 //集群新加member
-func (this *Cluster) Cluster_Add(ctx context.Context, info *common.ClusterInfo) {
-	_, bEx := this.m_ClusterInfoMap[info.Id()]
+func (c *Cluster) Cluster_Add(ctx context.Context, info *common.ClusterInfo) {
+	_, bEx := c.clusterInfoMapg[info.Id()]
 	if !bEx {
-		this.AddCluster(info)
-		this.m_ClusterInfoMap[info.Id()] = info
+		c.AddCluster(info)
+		c.clusterInfoMapg[info.Id()] = info
 	}
 }
 
 //集群删除member
-func (this *Cluster) Cluster_Del(ctx context.Context, info *common.ClusterInfo) {
-	delete(this.m_ClusterInfoMap, info.Id())
-	this.DelCluster(info)
+func (c *Cluster) Cluster_Del(ctx context.Context, info *common.ClusterInfo) {
+	delete(c.clusterInfoMapg, info.Id())
+	c.DelCluster(info)
 }
 
 //链接断开
-func (this *Cluster) DISCONNECT(ctx context.Context, ClusterId uint32) {
-	pInfo, bEx := this.m_ClusterInfoMap[ClusterId]
+func (c *Cluster) DISCONNECT(ctx context.Context, ClusterId uint32) {
+	info, bEx := c.clusterInfoMapg[ClusterId]
 	if bEx {
-		this.DelCluster(pInfo)
+		c.DelCluster(info)
 	}
-	delete(this.m_ClusterInfoMap, ClusterId)
+	delete(c.clusterInfoMapg, ClusterId)
 }
 
-func (this *Cluster) AddCluster(info *common.ClusterInfo) {
-	pClient := new(network.ClientSocket)
-	pClient.Init(info.Ip, int(info.Port))
-	packet := reflect.New(reflect.ValueOf(this.m_Packet).Elem().Type()).Interface().(IClusterPacket)
+func (c *Cluster) AddCluster(info *common.ClusterInfo) {
+	client := new(network.ClientSocket)
+	client.Init(info.Ip, int(info.Port))
+	packet := reflect.New(reflect.ValueOf(c.packet).Elem().Type()).Interface().(IClusterPacket)
 	packet.Init()
 	packet.SetClusterId(info.Id())
-	pClient.BindPacketFunc(actor.MGR.PacketFunc)
-	for _, v := range this.m_PacketFuncList.Values() {
-		pClient.BindPacketFunc(v.(network.PacketFunc))
+	client.BindPacketFunc(actor.MGR.PacketFunc)
+	for _, v := range c.packetFuncList.Values() {
+		client.BindPacketFunc(v.(network.PacketFunc))
 	}
-	this.m_ClusterLocker.Lock()
-	this.m_ClusterMap[info.Id()] = &ClusterNode{ClientSocket: pClient, ClusterInfo: info}
-	this.m_ClusterLocker.Unlock()
-	this.m_HashRing.Add(info.IpString())
-	pClient.Start()
+	c.clusterLocker.Lock()
+	c.clusterMap[info.Id()] = &ClusterNode{ClientSocket: client, ClusterInfo: info}
+	c.clusterLocker.Unlock()
+	c.hashRing.Add(info.IpString())
+	client.Start()
 }
 
-func (this *Cluster) DelCluster(info *common.ClusterInfo) {
-	this.m_ClusterLocker.RLock()
-	pCluster, bEx := this.m_ClusterMap[info.Id()]
-	this.m_ClusterLocker.RUnlock()
+func (c *Cluster) DelCluster(info *common.ClusterInfo) {
+	c.clusterLocker.RLock()
+	cluster, bEx := c.clusterMap[info.Id()]
+	c.clusterLocker.RUnlock()
 	if bEx {
-		pCluster.CallMsg(rpc.RpcHead{}, "STOP_ACTOR")
-		pCluster.Stop()
+		cluster.CallMsg(rpc.RpcHead{}, "STOP_ACTOR")
+		cluster.Stop()
 	}
 
-	this.m_ClusterLocker.Lock()
-	delete(this.m_ClusterMap, info.Id())
-	this.m_ClusterLocker.Unlock()
-	this.m_HashRing.Remove(info.IpString())
+	c.clusterLocker.Lock()
+	delete(c.clusterMap, info.Id())
+	c.clusterLocker.Unlock()
+	c.hashRing.Remove(info.IpString())
 }
 
-func (this *Cluster) GetCluster(head rpc.RpcHead) *ClusterNode {
-	this.m_ClusterLocker.RLock()
-	pCluster, bEx := this.m_ClusterMap[head.ClusterId]
-	this.m_ClusterLocker.RUnlock()
+func (c *Cluster) GetCluster(head rpc.RpcHead) *ClusterNode {
+	c.clusterLocker.RLock()
+	cluster, bEx := c.clusterMap[head.ClusterId]
+	c.clusterLocker.RUnlock()
 	if bEx {
-		return pCluster
+		return cluster
 	}
 	return nil
 }
 
-func (this *Cluster) BindPacketFunc(callfunc network.PacketFunc) {
-	this.m_PacketFuncList.PushBack(callfunc)
+func (c *Cluster) BindPacketFunc(callfunc network.PacketFunc) {
+	c.packetFuncList.PushBack(callfunc)
 }
 
-func (this *Cluster) BindPacket(packet IClusterPacket) {
-	this.m_Packet = packet
+func (c *Cluster) BindPacket(packet IClusterPacket) {
+	c.packet = packet
 }
 
-func (this *Cluster) sendPoint(head rpc.RpcHead, packet rpc.Packet) {
-	pCluster := this.GetCluster(head)
+func (c *Cluster) sendPoint(head rpc.RpcHead, packet rpc.Packet) {
+	pCluster := c.GetCluster(head)
 	if pCluster != nil {
 		pCluster.Send(head, packet)
 	}
 }
 
-func (this *Cluster) balanceSend(head rpc.RpcHead, packet rpc.Packet) {
-	_, head.ClusterId = this.m_HashRing.Get64(head.Id)
-	pClient := this.GetCluster(head)
+func (c *Cluster) balanceSend(head rpc.RpcHead, packet rpc.Packet) {
+	_, head.ClusterId = c.hashRing.Get64(head.Id)
+	pClient := c.GetCluster(head)
 	if pClient != nil {
 		pClient.Send(head, packet)
 	}
 }
 
-func (this *Cluster) boardCastSend(head rpc.RpcHead, packet rpc.Packet) {
+func (c *Cluster) boardCastSend(head rpc.RpcHead, packet rpc.Packet) {
 	clusterList := []*ClusterNode{}
-	this.m_ClusterLocker.RLock()
-	for _, v := range this.m_ClusterMap {
+	c.clusterLocker.RLock()
+	for _, v := range c.clusterMap {
 		clusterList = append(clusterList, v)
 	}
-	this.m_ClusterLocker.RUnlock()
+	c.clusterLocker.RUnlock()
 	for _, v := range clusterList {
 		v.Send(head, packet)
 	}
 }
 
-func (this *Cluster) SendMsg(head rpc.RpcHead, funcName string, params ...interface{}) {
-	this.Send(head, rpc.Marshal(&head, &funcName, params...))
+func (c *Cluster) SendMsg(head rpc.RpcHead, funcName string, params ...interface{}) {
+	c.Send(head, rpc.Marshal(&head, &funcName, params...))
 }
 
-func (this *Cluster) Send(head rpc.RpcHead, packet rpc.Packet) {
+func (c *Cluster) Send(head rpc.RpcHead, packet rpc.Packet) {
 	switch head.SendType {
 	//case rpc.SEND_BALANCE:
-	//	this.balanceSend(head, packet)
+	//	c.balanceSend(head, packet)
 	case rpc.SEND_POINT:
-		this.sendPoint(head, packet)
+		c.sendPoint(head, packet)
 	default:
-		this.boardCastSend(head, packet)
+		c.boardCastSend(head, packet)
 	}
 }
 
-func (this *Cluster) RandomCluster(head rpc.RpcHead) rpc.RpcHead {
+func (c *Cluster) RandomCluster(head rpc.RpcHead) rpc.RpcHead {
 	if head.Id == 0 {
 		head.Id = int64(uint32(base.RAND.RandI(1, 0xFFFFFFFF)))
 	}
-	_, head.ClusterId = this.m_HashRing.Get64(head.Id)
-	pCluster := this.GetCluster(head)
+	_, head.ClusterId = c.hashRing.Get64(head.Id)
+	pCluster := c.GetCluster(head)
 	if pCluster != nil {
 		head.SocketId = pCluster.SocketId
 	}

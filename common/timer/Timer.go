@@ -65,8 +65,8 @@ var (
 	g_Id  int64
 )
 
-func (this *TimerNode) LoadId() int64 {
-	return atomic.LoadInt64(this.id)
+func (t *TimerNode) LoadId() int64 {
+	return atomic.LoadInt64(t.id)
 }
 
 func (op *Op) applyOpts(opts []OpOption) {
@@ -106,30 +106,30 @@ func link(list *LinkList, node *TimerNode) {
 }
 
 //创建一个定时器
-func (this *Timer) Init() {
+func (t *Timer) Init() {
 	for i := 0; i < TIME_NEAR; i++ {
-		linkClear(&this.near[i])
+		linkClear(&t.near[i])
 	}
 
 	for i := 0; i < 4; i++ {
 		for j := 0; j < TIME_LEVEL; j++ {
-			linkClear(&this.t[i][j])
+			linkClear(&t.t[i][j])
 		}
 	}
 
-	this.current = 0
-	this.pTimer = time.NewTicker(TICK_INTERVAL)
-	this.current_point = uint64(time.Now().UnixNano()) / uint64(TICK_INTERVAL)
-	go this.run()
+	t.current = 0
+	t.pTimer = time.NewTicker(TICK_INTERVAL)
+	t.current_point = uint64(time.Now().UnixNano()) / uint64(TICK_INTERVAL)
+	go t.run()
 }
 
 //添加一个定时器结点
-func (this *Timer) addNode(node *TimerNode) {
-	time := node.expire       //去看一下它是在哪赋值的
-	current_time := this.time //当前计数
+func (t *Timer) addNode(node *TimerNode) {
+	time := node.expire    //去看一下它是在哪赋值的
+	current_time := t.time //当前计数
 	//没有超时，或者说时间点特别近了
 	if (time | TIME_NEAR_MASK) == (current_time | TIME_NEAR_MASK) {
-		link(&this.near[time&TIME_NEAR_MASK], node)
+		link(&t.near[time&TIME_NEAR_MASK], node)
 	} else { //这里有一种特殊情况，就是当time溢出，回绕的时候
 		i := 0
 		mask := uint32(TIME_NEAR << TIME_LEVEL_SHIFT)
@@ -140,45 +140,45 @@ func (this *Timer) addNode(node *TimerNode) {
 			mask <<= TIME_LEVEL_SHIFT //mask越来越大
 		}
 		//放入数组中
-		link(&this.t[i][(time>>uint(TIME_NEAR_SHIFT+i*TIME_LEVEL_SHIFT))&TIME_LEVEL_MASK], node)
+		link(&t.t[i][(time>>uint(TIME_NEAR_SHIFT+i*TIME_LEVEL_SHIFT))&TIME_LEVEL_MASK], node)
 	}
 }
 
 //添加一个定时器
-func (this *Timer) Add(id *int64, time uint32, handle TimerHandle, opts ...OpOption) *TimerNode {
+func (t *Timer) Add(id *int64, time uint32, handle TimerHandle, opts ...OpOption) *TimerNode {
 	op := Op{}
 	op.applyOpts(opts)
-	node := &TimerNode{expire: time + this.time, handle: handle,
+	node := &TimerNode{expire: time + t.time, handle: handle,
 		time: time, bOnce: op.bOnce, id: id} //超时时间+当前计数
-	this.lock.Lock()
-	this.addNode(node)
-	this.lock.Unlock()
+	t.lock.Lock()
+	t.addNode(node)
+	t.lock.Unlock()
 	return node
 }
 
 //删除一个定时器
-func (this *Timer) Delete(id *int64) {
+func (t *Timer) Delete(id *int64) {
 	atomic.StoreInt64(id, 0)
 }
 
 //移动某个级别的链表内容
-func (this *Timer) moveList(level int, idx int) {
-	current := linkClear(&this.t[level][idx])
+func (t *Timer) moveList(level int, idx int) {
+	current := linkClear(&t.t[level][idx])
 	for current != nil {
 		temp := current.next
-		this.addNode(current)
+		t.addNode(current)
 		current = temp
 	}
 }
 
 //这是一个非常重要的函数
 //定时器的移动都在这里
-func (this *Timer) shift() {
+func (t *Timer) shift() {
 	mask := uint32(TIME_NEAR)
-	this.time += 1
-	ct := this.time
+	t.time += 1
+	ct := t.time
 	if ct == 0 { //time溢出了
-		this.moveList(3, 0) //这里就是那个很重要的3
+		t.moveList(3, 0) //这里就是那个很重要的3
 	} else { //time正常
 		time := ct >> TIME_NEAR_SHIFT
 		i := 0
@@ -186,7 +186,7 @@ func (this *Timer) shift() {
 		for (ct & (mask - 1)) == 0 {
 			idx := time & TIME_LEVEL_MASK
 			if idx != 0 {
-				this.moveList(i, int(idx))
+				t.moveList(i, int(idx))
 				break
 			}
 			mask <<= TIME_LEVEL_SHIFT //mask越来越大
@@ -197,13 +197,13 @@ func (this *Timer) shift() {
 }
 
 //派发消息到目标服务消息队列
-func (this *Timer) dispatch(current *TimerNode) {
+func (t *Timer) dispatch(current *TimerNode) {
 	for current != nil {
 		id := current.LoadId()
 		if id != 0 {
 			current.handle()
 			if !current.bOnce {
-				this.loop_node = append(this.loop_node, current)
+				t.loop_node = append(t.loop_node, current)
 			}
 		}
 		current = current.next
@@ -211,51 +211,51 @@ func (this *Timer) dispatch(current *TimerNode) {
 }
 
 //派发消息
-func (this *Timer) execute() {
-	idx := this.time & TIME_NEAR_MASK
+func (t *Timer) execute() {
+	idx := t.time & TIME_NEAR_MASK
 
-	for this.near[idx].head.next != nil {
-		current := linkClear(&this.near[idx])
-		this.lock.Unlock()
+	for t.near[idx].head.next != nil {
+		current := linkClear(&t.near[idx])
+		t.lock.Unlock()
 		// dispatch don't need lock T
-		this.dispatch(current)
-		this.lock.Lock()
-		for _, v := range this.loop_node {
-			v.expire = v.time + this.time
-			this.addNode(v)
+		t.dispatch(current)
+		t.lock.Lock()
+		for _, v := range t.loop_node {
+			v.expire = v.time + t.time
+			t.addNode(v)
 		}
-		this.loop_node = []*TimerNode{}
+		t.loop_node = []*TimerNode{}
 	}
 }
 
 //时间更新好了以后，这里检查调用各个定时器
-func (this *Timer) advace() {
-	this.lock.Lock()
+func (t *Timer) advace() {
+	t.lock.Lock()
 	// try to dispatch timeout 0 (rare condition)
-	this.execute()
+	t.execute()
 	// shift time first, and then dispatch timer message
-	this.shift()
-	this.execute()
-	this.lock.Unlock()
+	t.shift()
+	t.execute()
+	t.lock.Unlock()
 }
 
 //在线程中不断被调用
 //调用时间 间隔为微秒
-func (this *Timer) update() {
+func (t *Timer) update() {
 	cp := uint64(time.Now().UnixNano()) / uint64(TICK_INTERVAL)
-	if cp < this.current_point {
-		this.current_point = cp
-	} else if cp != this.current_point {
-		diff := cp - this.current_point
-		this.current_point = cp //当前时间，毫秒级
-		this.current += diff    //从启动到现在耗时
+	if cp < t.current_point {
+		t.current_point = cp
+	} else if cp != t.current_point {
+		diff := cp - t.current_point
+		t.current_point = cp //当前时间，毫秒级
+		t.current += diff    //从启动到现在耗时
 		for i := uint64(0); i < diff; i++ {
-			this.advace() //注意这里
+			t.advace() //注意这里
 		}
 	}
 }
 
-func (this *Timer) loop() bool {
+func (t *Timer) loop() bool {
 	defer func() {
 		if err := recover(); err != nil {
 			base.TraceCode(err)
@@ -263,19 +263,19 @@ func (this *Timer) loop() bool {
 	}()
 
 	select {
-	case <-this.pTimer.C:
-		this.update()
+	case <-t.pTimer.C:
+		t.update()
 	}
 	return false
 }
 
-func (this *Timer) run() {
+func (t *Timer) run() {
 	for {
-		if this.loop() {
+		if t.loop() {
 			break
 		}
 	}
-	this.pTimer.Stop()
+	t.pTimer.Stop()
 }
 
 func RegisterTimer(id *int64, duration time.Duration, handle TimerHandle, opts ...OpOption) {

@@ -23,26 +23,26 @@ type (
 	}
 )
 
-func (this *ClusterInfo) IpString() string {
-	return fmt.Sprintf("%s:%d", this.Ip, this.Port)
+func (c *ClusterInfo) IpString() string {
+	return fmt.Sprintf("%s:%d", c.Ip, c.Port)
 }
 
-func (this *ClusterInfo) String() string {
-	return strings.ToLower(this.Type.String())
+func (c *ClusterInfo) String() string {
+	return strings.ToLower(c.Type.String())
 }
 
-func (this *ClusterInfo) Id() uint32 {
-	return base.ToHash(this.IpString())
+func (c *ClusterInfo) Id() uint32 {
+	return base.ToHash(c.IpString())
 }
 
-func (this *ClusterInfo) ServiceType() rpc.SERVICE {
-	return this.Type
+func (c *ClusterInfo) ServiceType() rpc.SERVICE {
+	return c.Type
 }
 
-func (this *StubMailBox) StubName() string {
-	return this.StubType.String()
+func (s *StubMailBox) StubName() string {
+	return s.StubType.String()
 }
 
-func (this *StubMailBox) Key() string {
-	return fmt.Sprintf("%s/%d", this.StubType.String(), this.Id)
+func (s *StubMailBox) Key() string {
+	return fmt.Sprintf("%s/%d", s.StubType.String(), s.Id)
 }

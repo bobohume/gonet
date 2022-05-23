@@ -32,11 +32,11 @@ func New() *Queue {
 // Push adds x to the back of the queue.
 //
 // Push can be safely called from multiple goroutines
-func (this *Queue) Push(x interface{}) {
+func (q *Queue) Push(x interface{}) {
 	n := new(node)
 	n.val = x
 	// current producer acquires head node
-	prev := (*node)(atomic.SwapPointer((*unsafe.Pointer)(unsafe.Pointer(&this.head)), unsafe.Pointer(n)))
+	prev := (*node)(atomic.SwapPointer((*unsafe.Pointer)(unsafe.Pointer(&q.head)), unsafe.Pointer(n)))
 
 	// release node to consumer
 	atomic.StorePointer((*unsafe.Pointer)(unsafe.Pointer(&prev.next)), unsafe.Pointer(n))
@@ -45,11 +45,11 @@ func (this *Queue) Push(x interface{}) {
 // Pop removes the item from the front of the queue or nil if the queue is empty
 //
 // Pop must be called from a single, consumer goroutine
-func (this *Queue) Pop() interface{} {
-	tail := this.tail
+func (q *Queue) Pop() interface{} {
+	tail := q.tail
 	next := (*node)(atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&tail.next)))) // acquire
 	if next != nil {
-		this.tail = next
+		q.tail = next
 		v := next.val
 		next.val = nil
 		return v
@@ -60,8 +60,8 @@ func (this *Queue) Pop() interface{} {
 // Empty returns true if the queue is empty
 //
 // Empty must be called from a single, consumer goroutine
-func (this *Queue) Empty() bool {
-	tail := this.tail
+func (q *Queue) Empty() bool {
+	tail := q.tail
 	next := (*node)(atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&tail.next))))
 	return next == nil
 }

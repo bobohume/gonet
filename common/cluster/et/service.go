@@ -10,55 +10,55 @@ import (
 	"golang.org/x/net/context"
 )
 
-const(
-	ETCD_DIR =  "server/"
+const (
+	ETCD_DIR = "server/"
 )
 
 //注册服务器
-type(
+type (
 	Service struct {
 		*common.ClusterInfo
-		m_KeysAPI client.KeysAPI
-		m_Stats STATUS//状态机
+		keysAPI client.KeysAPI
+		status  STATUS //状态机
 	}
 )
 
-func (this *Service) SET() {
-	key := ETCD_DIR + this.String() + "/" + this.IpString()
-	data, _ := json.Marshal(this.ClusterInfo)
-	this.m_KeysAPI.Set(context.Background(), key, string(data), &client.SetOptions{
+func (s *Service) SET() {
+	key := ETCD_DIR + s.String() + "/" + s.IpString()
+	data, _ := json.Marshal(s.ClusterInfo)
+	s.keysAPI.Set(context.Background(), key, string(data), &client.SetOptions{
 		TTL: time.Second * 10,
 	})
-	this.m_Stats = TTL
+	s.status = TTL
 	time.Sleep(time.Second * 3)
 }
 
-func (this *Service) TTL() {
+func (s *Service) TTL() {
 	//保持ttl
-	key := ETCD_DIR + this.String() + "/" + this.IpString()
-	_, err := this.m_KeysAPI.Set(context.Background(), key, "", &client.SetOptions{
+	key := ETCD_DIR + s.String() + "/" + s.IpString()
+	_, err := s.keysAPI.Set(context.Background(), key, "", &client.SetOptions{
 		TTL: time.Second * 10, Refresh: true, NoValueOnSuccess: true,
 	})
 	if err != nil {
-		this.m_Stats = SET
+		s.status = SET
 	} else {
 		time.Sleep(time.Second * 3)
 	}
 }
 
-func (this *Service) Run(){
+func (s *Service) Run() {
 	for {
-		switch this.m_Stats {
+		switch s.status {
 		case SET:
-			this.SET()
+			s.SET()
 		case TTL:
-			this.TTL()
+			s.TTL()
 		}
 	}
 }
 
 //注册服务器
-func (this *Service) Init(info *common.ClusterInfo, endpoints []string){
+func (s *Service) Init(info *common.ClusterInfo, endpoints []string) {
 	cfg := client.Config{
 		Endpoints:               endpoints,
 		Transport:               client.DefaultTransport,
@@ -69,11 +69,11 @@ func (this *Service) Init(info *common.ClusterInfo, endpoints []string){
 	if err != nil {
 		log.Fatal("Error: cannot connec to etcd:", err)
 	}
-	this.ClusterInfo = info
-	this.m_KeysAPI = client.NewKeysAPI(etcdClient)
-	this.Start()
+	s.ClusterInfo = info
+	s.keysAPI = client.NewKeysAPI(etcdClient)
+	s.Start()
 }
 
-func (this *Service) Start(){
-	go this.Run()
+func (s *Service) Start() {
+	go s.Run()
 }

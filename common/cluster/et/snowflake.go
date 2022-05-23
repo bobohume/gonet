@@ -23,56 +23,56 @@ const (
 )
 
 type Snowflake struct {
-	m_Id      int64
-	m_KeysAPI client.KeysAPI
-	m_Stats   STATUS //状态机
+	id      int64
+	keysAPI client.KeysAPI
+	status  STATUS //状态机
 }
 
-func (this *Snowflake) Key() string {
-	return uuid_dir + fmt.Sprintf("%d", this.m_Id)
+func (s *Snowflake) Key() string {
+	return uuid_dir + fmt.Sprintf("%d", s.id)
 }
 
-func (this *Snowflake) SET() bool {
+func (s *Snowflake) SET() bool {
 	//设置key
-	key := this.Key()
-	_, err := this.m_KeysAPI.Set(context.Background(), key, "", &client.SetOptions{
+	key := s.Key()
+	_, err := s.keysAPI.Set(context.Background(), key, "", &client.SetOptions{
 		TTL: ttl_time, PrevExist: client.PrevNoExist, NoValueOnSuccess: true,
 	})
 	if err != nil {
-		this.m_Id = int64(base.RAND.RandI(1, int(base.WorkeridMax)))
+		s.id = int64(base.RAND.RandI(1, int(base.WorkeridMax)))
 		return false
 	}
 
-	base.UUID.Init(this.m_Id) //设置uuid
-	this.m_Stats = TTL
+	base.UUID.Init(s.id) //设置uuid
+	s.status = TTL
 	return true
 }
 
-func (this *Snowflake) TTL() {
+func (s *Snowflake) TTL() {
 	//保持ttl
-	_, err := this.m_KeysAPI.Set(context.Background(), this.Key(), "", &client.SetOptions{
+	_, err := s.keysAPI.Set(context.Background(), s.Key(), "", &client.SetOptions{
 		TTL: ttl_time, Refresh: true, NoValueOnSuccess: true,
 	})
 	if err != nil {
-		this.m_Stats = SET
+		s.status = SET
 	} else {
 		time.Sleep(ttl_time / 3)
 	}
 }
 
-func (this *Snowflake) Run() {
+func (s *Snowflake) Run() {
 	for {
-		switch this.m_Stats {
+		switch s.status {
 		case SET:
-			this.SET()
+			s.SET()
 		case TTL:
-			this.TTL()
+			s.TTL()
 		}
 	}
 }
 
 //uuid生成器
-func (this *Snowflake) Init(endpoints []string) {
+func (s *Snowflake) Init(endpoints []string) {
 	cfg := client.Config{
 		Endpoints:               endpoints,
 		Transport:               client.DefaultTransport,
@@ -83,13 +83,13 @@ func (this *Snowflake) Init(endpoints []string) {
 	if err != nil {
 		log.Fatal("Error: cannot connec to etcd:", err)
 	}
-	this.m_Id = int64(base.RAND.RandI(1, int(base.WorkeridMax)))
-	this.m_KeysAPI = client.NewKeysAPI(etcdClient)
-	for !this.SET() {
+	s.id = int64(base.RAND.RandI(1, int(base.WorkeridMax)))
+	s.keysAPI = client.NewKeysAPI(etcdClient)
+	for !s.SET() {
 	}
-	this.Start()
+	s.Start()
 }
 
-func (this *Snowflake) Start() {
-	go this.Run()
+func (s *Snowflake) Start() {
+	go s.Run()
 }

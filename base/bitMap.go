@@ -5,60 +5,60 @@ import (
 	"unsafe"
 )
 
-const(
+const (
 	size_int = int(unsafe.Sizeof(int(0))) * 8
 )
 
-type(
+type (
 	BitMap struct {
-		m_Bits []int
-		m_Size int
+		bits []int
+		size int
 	}
 
 	IBitMap interface {
 		Init(size int)
-		Set(index int)//设置位
-		Test(index int) bool//位是否被设置
-		Clear(index int)//清楚位
+		Set(index int)       //设置位
+		Test(index int) bool //位是否被设置
+		Clear(index int)     //清楚位
 		ClearAll()
 	}
 )
 
-func (this *BitMap) Init(size int){
-	this.m_Size = int(math.Ceil(float64(size) / float64(size_int) ))
-	this.m_Bits = make([]int, this.m_Size)
+func (b *BitMap) Init(size int) {
+	b.size = int(math.Ceil(float64(size) / float64(size_int)))
+	b.bits = make([]int, b.size)
 }
 
-func (this *BitMap) Set(index int){
-	if index >= this.m_Size * size_int{
+func (b *BitMap) Set(index int) {
+	if index >= b.size*size_int {
 		return
 	}
 
-	this.m_Bits[index / size_int] |= 1 << uint(index % size_int)
+	b.bits[index/size_int] |= 1 << uint(index%size_int)
 }
 
-func (this *BitMap) Test(index int) bool{
-	if index >= this.m_Size * size_int{
+func (b *BitMap) Test(index int) bool {
+	if index >= b.size*size_int {
 		return false
 	}
 
-	return this.m_Bits[index / size_int] & (1 << uint(index % size_int)) != 0
+	return b.bits[index/size_int]&(1<<uint(index%size_int)) != 0
 
 }
 
-func (this *BitMap) Clear(index int){
-	if index >= this.m_Size * size_int{
+func (b *BitMap) Clear(index int) {
+	if index >= b.size*size_int {
 		return
 	}
 
-	this.m_Bits[index / size_int] &= ^(1 << uint(index % size_int))
+	b.bits[index/size_int] &= ^(1 << uint(index%size_int))
 }
 
-func (this *BitMap) ClearAll(){
-	this.Init(this.m_Size * size_int)
+func (b *BitMap) ClearAll() {
+	b.Init(b.size * size_int)
 }
 
-func NewBitMap(size int) *BitMap{
+func NewBitMap(size int) *BitMap {
 	bitmap := &BitMap{}
 	bitmap.Init(size)
 	return bitmap

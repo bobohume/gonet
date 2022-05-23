@@ -1,6 +1,6 @@
 package betree
 
-type(
+type (
 	Action struct {
 		BaseNode
 	}
@@ -10,6 +10,6 @@ type(
 	}
 )
 
-func (this *Action) Init(){
-	this.Type = ACTION
+func (a *Action) Init() {
+	a.Type = ACTION
 }

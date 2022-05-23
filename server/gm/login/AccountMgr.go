@@ -17,7 +17,7 @@ type (
 	AccountMgr struct {
 		actor.Actor
 
-		m_AccountMap     map[int64]*Account
+		accountMap       map[int64]*Account
 		m_AccountNameMap map[string]*Account
 	}
 
@@ -30,16 +30,16 @@ type (
 	}
 )
 
-func (this *AccountMgr) Init() {
-	this.Actor.Init()
-	this.m_AccountMap = make(map[int64]*Account)
-	this.m_AccountNameMap = make(map[string]*Account)
-	//actor.MGR.RegisterActor(this)
-	this.Actor.Start()
+func (a *AccountMgr) Init() {
+	a.Actor.Init()
+	a.accountMap = make(map[int64]*Account)
+	a.m_AccountNameMap = make(map[string]*Account)
+	//actor.MGR.RegisterActor(a)
+	a.Actor.Start()
 }
 
-func (this *AccountMgr) GetAccount(accountId int64) *Account {
-	pAccount, exist := this.m_AccountMap[accountId]
+func (a *AccountMgr) GetAccount(accountId int64) *Account {
+	pAccount, exist := a.accountMap[accountId]
 	if exist {
 		return pAccount
 	}
@@ -55,51 +55,51 @@ func loadAccount(row orm.IRow, a *AccountDB) {
 	a.LogoutTime = row.Time("logout_time")
 }
 
-func (this *AccountMgr) AddAccount(accountId int64) *Account {
+func (a *AccountMgr) AddAccount(accountId int64) *Account {
 	LoadAccountDB := func(accountId int64) *AccountDB {
 		rows, err := orm.DB.Query(fmt.Sprintf("select account_id, account_name, status, login_time, logout_time, login_ip from tbl_account where account_id=%d", accountId))
 		rs, err := orm.Query(rows, err)
 		if err == nil && rs.Next() {
-			pAccountDB := &AccountDB{}
-			pAccountDB.AccountId = accountId
-			loadAccount(rs.Row(), pAccountDB)
-			return pAccountDB
+			accountDb := &AccountDB{}
+			accountDb.AccountId = accountId
+			loadAccount(rs.Row(), accountDb)
+			return accountDb
 		}
 		return nil
 	}
 
-	pAccountDB := LoadAccountDB(accountId)
-	if pAccountDB != nil {
-		pAccount := &Account{}
-		pAccount.AccountDB = *pAccountDB
-		pAccount.PlayerSimpleDataList = LoadSimplePlayerDatas(accountId)
-		this.m_AccountMap[accountId] = pAccount
-		this.m_AccountNameMap[pAccount.AccountName] = pAccount
-		return pAccount
+	accountDb := LoadAccountDB(accountId)
+	if accountDb != nil {
+		account := &Account{}
+		account.AccountDB = *accountDb
+		account.PlayerSimpleDataList = LoadSimplePlayerDatas(accountId)
+		a.accountMap[accountId] = account
+		a.m_AccountNameMap[account.AccountName] = account
+		return account
 	}
 
 	return nil
 }
 
-func (this *AccountMgr) RemoveAccount(accountId int64) {
-	pAccount := this.GetAccount(accountId)
-	if pAccount != nil {
-		delete(this.m_AccountNameMap, pAccount.AccountName)
-		delete(this.m_AccountMap, pAccount.AccountId)
-		base.LOG.Printf("账号[%d]断开链接", pAccount.AccountId)
+func (a *AccountMgr) RemoveAccount(accountId int64) {
+	account := a.GetAccount(accountId)
+	if account != nil {
+		delete(a.m_AccountNameMap, account.AccountName)
+		delete(a.accountMap, account.AccountId)
+		base.LOG.Printf("账号[%d]断开链接", account.AccountId)
 	}
 }
 
 //账号登录处理
-func (this *AccountMgr) Account_Login(ctx context.Context, accountName string, accountId int64, socketId uint32, id uint32, key int64) {
-	pAccount := this.GetAccount(accountId)
-	if pAccount == nil {
-		pAccount = this.AddAccount(accountId)
+func (a *AccountMgr) Account_Login(ctx context.Context, accountName string, accountId int64, socketId uint32, id uint32, key int64) {
+	account := a.GetAccount(accountId)
+	if account == nil {
+		account = a.AddAccount(accountId)
 	}
-	pAccount.GateSocketId = socketId
+	account.GateSocketId = socketId
 	base.LOG.Printf("帐号[%s]返回登录OK", accountName)
-	PlayerDataList := make([]*message.PlayerData, len(pAccount.PlayerSimpleDataList))
-	for i, v := range pAccount.PlayerSimpleDataList {
+	PlayerDataList := make([]*message.PlayerData, len(account.PlayerSimpleDataList))
+	for i, v := range account.PlayerSimpleDataList {
 		PlayerDataList[i] = &message.PlayerData{PlayerID: v.PlayerId, PlayerName: v.PlayerName, PlayerGold: int32(v.Gold)}
 	}
 
@@ -111,8 +111,8 @@ func (this *AccountMgr) Account_Login(ctx context.Context, accountName string, a
 }
 
 //account创建玩家反馈
-func (this *AccountMgr) CreatePlayerRequest(ctx context.Context, packet *message.CreatePlayerRequest) {
-	accountId := this.GetRpcHead(ctx).Id
+func (a *AccountMgr) CreatePlayerRequest(ctx context.Context, packet *message.CreatePlayerRequest) {
+	accountId := a.GetRpcHead(ctx).Id
 	//查找账号玩家数量
 	error := 0
 	rows, err := orm.DB.Query(fmt.Sprintf("select count(player_id) as player_count from tbl_player where account_id = %d", accountId))
@@ -129,8 +129,8 @@ func (this *AccountMgr) CreatePlayerRequest(ctx context.Context, packet *message
 				if err == nil {
 					base.LOG.Printf("账号[%d]创建玩家[%d]", accountId, playerId)
 					//登录游戏
-					this.AddAccount(accountId)
-					this.LoginPlayerRequset(ctx, &message.LoginPlayerRequset{PlayerId: playerId})
+					a.AddAccount(accountId)
+					a.LoginPlayerRequset(ctx, &message.LoginPlayerRequset{PlayerId: playerId})
 				}
 			}
 		}
@@ -141,13 +141,13 @@ func (this *AccountMgr) CreatePlayerRequest(ctx context.Context, packet *message
 	}
 }
 
-func (this *AccountMgr) LoginPlayerRequset(ctx context.Context, packet *message.LoginPlayerRequset) {
-	head := this.GetRpcHead(ctx)
+func (a *AccountMgr) LoginPlayerRequset(ctx context.Context, packet *message.LoginPlayerRequset) {
+	head := a.GetRpcHead(ctx)
 	accountId := head.Id
 	playerId := packet.GetPlayerId()
-	pAccount := this.GetAccount(accountId)
-	if pAccount != nil {
-		if !pAccount.SetPlayerId(playerId) {
+	account := a.GetAccount(accountId)
+	if account != nil {
+		if !account.SetPlayerId(playerId) {
 			base.LOG.Printf("帐号[%d]登入的玩家[%d]不存在", accountId, playerId)
 			return
 		}
@@ -159,29 +159,29 @@ func (this *AccountMgr) LoginPlayerRequset(ctx context.Context, packet *message.
 				base.LOG.Println("没有可用的GAME集群")
 				return
 			}
-			cluster.MGR.SendMsg(rpc.RpcHead{ClusterId: GClusterId}, "game<-PlayerMgr.LoginPlayerRequset", playerId, head.SrcClusterId, pAccount.GateSocketId)
+			cluster.MGR.SendMsg(rpc.RpcHead{ClusterId: GClusterId}, "game<-PlayerMgr.LoginPlayerRequset", playerId, head.SrcClusterId, account.GateSocketId)
 		} else {
-			cluster.MGR.SendMsg(rpc.RpcHead{ClusterId: pMailBox.ClusterId}, "game<-PlayerMgr.LoginPlayerRequset", playerId, head.SrcClusterId, pAccount.GateSocketId)
+			cluster.MGR.SendMsg(rpc.RpcHead{ClusterId: pMailBox.ClusterId}, "game<-PlayerMgr.LoginPlayerRequset", playerId, head.SrcClusterId, account.GateSocketId)
 		}
 	}
 }
 
 //账号断开连接
-func (this *AccountMgr) On_UnRegister(ctx context.Context) {
-	accountId := this.GetRpcHead(ctx).Id
-	this.RemoveAccount(accountId)
+func (a *AccountMgr) OnUnRegister(ctx context.Context) {
+	accountId := a.GetRpcHead(ctx).Id
+	a.RemoveAccount(accountId)
 }
 
 func LoadSimplePlayerDatas(accountId int64) []*model.SimplePlayerData {
 	pList := make([]*model.SimplePlayerData, 0)
-	nPlayerNum := 0
-	pData := new(model.SimplePlayerData)
-	rows, err := orm.DB.Query(orm.LoadSql(pData, orm.WithWhereStr(fmt.Sprintf("account_id=%d", accountId))))
+	playerNum := 0
+	data := new(model.SimplePlayerData)
+	rows, err := orm.DB.Query(orm.LoadSql(data, orm.WithWhereStr(fmt.Sprintf("account_id=%d", accountId))))
 	rs, err := orm.Query(rows, err)
 	for rs.Next() {
-		loadSimple(rs.Row(), pData)
-		pList = append(pList, pData)
-		nPlayerNum++
+		loadSimple(rs.Row(), data)
+		pList = append(pList, data)
+		playerNum++
 	}
 	return pList
 }
@@ -199,12 +199,12 @@ func loadSimple(row orm.IRow, s *model.SimplePlayerData) {
 	s.LastLogoutTime = row.Time("last_logout_time")
 }
 
-func (this *AccountMgr) Stub_On_Register(ctx context.Context, Id int64) {
+func (a *AccountMgr) OnStubRegister(ctx context.Context) {
 	//这里可以是加载db数据
 	base.LOG.Println("Stub Login register sucess")
 }
 
-func (this *AccountMgr) Stub_On_UnRegister(ctx context.Context, Id int64) {
+func (a *AccountMgr) OnStubUnRegister(ctx context.Context) {
 	//lease一致性这里要清理缓存数据了
 	base.LOG.Println("Stub Login unregister sucess")
 }

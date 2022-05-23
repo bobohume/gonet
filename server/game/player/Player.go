@@ -22,104 +22,104 @@ type (
 		actor.Actor
 
 		model.PlayerData
-		MailBox        rpc.MailBox
-		PlayerId       int64
-		GateClusterId  uint32
-		ZoneClusterId  uint32
-		m_offline_flag bool //离线
-		m_online_time  int64
-		m_InGameFlag   bool //登录游戏
+		MailBox       rpc.MailBox
+		PlayerId      int64
+		GateClusterId uint32
+		ZoneClusterId uint32
+		offline_flag  bool //离线
+		online_time   int64
+		isInGame      bool //登录游戏
 	}
 )
 
-func (this *Player) Init() {
-	this.Actor.Init()
-	this.RegisterTimer((MAILBOX_TL_TIME/2)*time.Second, this.UpdateLease) //定时器
-	this.RegisterTimer(60*time.Second, this.SaveDB)                       //定时器
-	this.m_online_time = time.Now().Unix()
-	this.Actor.Start()
+func (p *Player) Init() {
+	p.Actor.Init()
+	p.RegisterTimer((MAILBOX_TL_TIME/2)*time.Second, p.UpdateLease) //定时器
+	p.RegisterTimer(60*time.Second, p.SaveDB)                       //定时器
+	p.online_time = time.Now().Unix()
+	p.Actor.Start()
 }
 
-func (this *Player) SendToClient(packet proto.Message) {
-	game.SendToClient(this.GetGateClusterId(), packet)
+func (p *Player) SendToClient(packet proto.Message) {
+	game.SendToClient(p.GetGateClusterId(), packet)
 }
 
-func (this *Player) UpdateLease() {
-	if !this.m_offline_flag {
-		this.m_online_time = time.Now().Unix()
-		cluster.MGR.MailBox.Lease(this.MailBox.LeaseId)
-	} else if time.Now().Unix()-this.m_online_time >= MAILBOX_TL_TIME {
-		cluster.MGR.MailBox.Delete(this.PlayerId)
+func (p *Player) UpdateLease() {
+	if !p.offline_flag {
+		p.online_time = time.Now().Unix()
+		cluster.MGR.MailBox.Lease(p.MailBox.LeaseId)
+	} else if time.Now().Unix()-p.online_time >= MAILBOX_TL_TIME {
+		cluster.MGR.MailBox.Delete(p.PlayerId)
 	}
 }
 
-func (this *Player) SaveDB() {
-	this.SavePlayerDB()
+func (p *Player) SaveDB() {
+	p.SavePlayerDB()
 }
 
-func (this *Player) SetGateClusterId(clusterId uint32) {
-	this.GateClusterId = clusterId
+func (p *Player) SetGateClusterId(clusterId uint32) {
+	p.GateClusterId = clusterId
 }
 
-func (this *Player) GetGateClusterId() uint32 {
-	return this.GateClusterId
+func (p *Player) GetGateClusterId() uint32 {
+	return p.GateClusterId
 }
 
-func (this *Player) GetPlayerId() int64 {
-	return this.PlayerId
+func (p *Player) GetPlayerId() int64 {
+	return p.PlayerId
 }
 
 //玩家登录
-func (this *Player) Login(ctx context.Context, gateClusterId uint32, mailbox rpc.MailBox) {
-	this.SetGateClusterId(gateClusterId)
-	this.MailBox = mailbox
+func (p *Player) Login(ctx context.Context, gateClusterId uint32, mailbox rpc.MailBox) {
+	p.SetGateClusterId(gateClusterId)
+	p.MailBox = mailbox
 	base.LOG.Println("玩家登录成功")
 	//加载玩家数据
-	cluster.MGR.SendMsg(rpc.RpcHead{Id: this.PlayerId}, "db<-PlayerMgr.Load_Player_DB", this.PlayerId, this.MailBox)
+	cluster.MGR.SendMsg(rpc.RpcHead{Id: p.PlayerId}, "db<-PlayerMgr.Load_Player_DB", p.PlayerId, p.MailBox)
 }
 
 //断线重连
-func (this *Player) ReLogin(ctx context.Context, gateClusterId uint32, mailbox rpc.MailBox) {
-	base.LOG.Printf("[%d] 重连成功", this.PlayerId)
-	this.SetGateClusterId(gateClusterId)
-	this.MailBox = mailbox
-	if this.m_InGameFlag {
-		this.m_offline_flag = false
-		this.m_online_time = time.Now().Unix()
-		this.LoginFinish()
+func (p *Player) ReLogin(ctx context.Context, gateClusterId uint32, mailbox rpc.MailBox) {
+	base.LOG.Printf("[%d] 重连成功", p.PlayerId)
+	p.SetGateClusterId(gateClusterId)
+	p.MailBox = mailbox
+	if p.isInGame {
+		p.offline_flag = false
+		p.online_time = time.Now().Unix()
+		p.LoginFinish()
 	} else {
-		this.Login(ctx, gateClusterId, mailbox)
+		p.Login(ctx, gateClusterId, mailbox)
 	}
 }
 
 //加载玩家结束
-func (this *Player) Load_Player_DB_Finish(ctx context.Context, data model.PlayerData) {
-	this.m_InGameFlag = true
-	this.PlayerData = data
+func (p *Player) Load_Player_DB_Finish(ctx context.Context, data model.PlayerData) {
+	p.isInGame = true
+	p.PlayerData = data
 	//加载到地图
-	this.LoginFinish()
-	this.ZoneClusterId = cluster.MGR.RandomCluster(rpc.RpcHead{Id: this.PlayerId, DestServerType: rpc.SERVICE_ZONE}).ClusterId
+	p.LoginFinish()
+	p.ZoneClusterId = cluster.MGR.RandomCluster(rpc.RpcHead{Id: p.PlayerId, DestServerType: rpc.SERVICE_ZONE}).ClusterId
 }
 
-func (this *Player) LoginFinish() {
+func (p *Player) LoginFinish() {
 	//加载到地图
-	this.AddMap()
-	game.SendToGM(rpc.RpcHead{Id: this.PlayerId}, "ChatMgr.AddPlayerToChannel", this.PlayerId, int64(-3000), this.PlayerName, this.GetGateClusterId())
+	p.AddMap()
+	game.SendToGM(rpc.RpcHead{Id: p.PlayerId}, "ChatMgr.AddPlayerToChannel", p.PlayerId, int64(-3000), p.PlayerName, p.GetGateClusterId())
 }
 
 //玩家断开链接
-func (this *Player) Logout(ctx context.Context, playerId int64) {
+func (p *Player) Logout(ctx context.Context, playerId int64) {
 	base.LOG.Printf("[%d] 断开链接", playerId)
-	this.m_offline_flag = true
-	this.SaveDB()
+	p.offline_flag = true
+	p.SaveDB()
 }
 
 //lease过期
-func (this *Player) On_UnRegister(ctx context.Context) {
-	base.LOG.Printf("[%d] 过期删除玩家", this.PlayerId)
-	MGR.DelActor(this.PlayerId)
-	this.SetGateClusterId(0)
-	this.Stop()
-	this.LeaveMap()
-	cluster.MGR.SendMsg(rpc.RpcHead{Id: this.AccountId}, "gm<-AccountMgr.On_UnRegister")
+func (p *Player) OnUnRegister(ctx context.Context) {
+	base.LOG.Printf("[%d] 过期删除玩家", p.PlayerId)
+	MGR.DelActor(p.PlayerId)
+	p.SetGateClusterId(0)
+	p.Stop()
+	p.LeaveMap()
+	cluster.MGR.SendMsg(rpc.RpcHead{Id: p.AccountId}, "gm<-AccountMgr.OnUnRegister")
 }

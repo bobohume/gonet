@@ -13,9 +13,9 @@ import (
 type (
 	PlayerSimpleMgr struct {
 		actor.Actor
-		m_SimplePlayerMap     map[int64]*model.SimplePlayerData
-		m_SimplePlayerNameMap map[string]*model.SimplePlayerData
-		m_Locker              *sync.RWMutex
+		simplePlayerMap     map[int64]*model.SimplePlayerData
+		simplePlayerNameMap map[string]*model.SimplePlayerData
+		locker              *sync.RWMutex
 	}
 
 	IPlayerSimpleMgr interface {
@@ -45,16 +45,16 @@ func loadSimple(row orm.IRow, s *model.SimplePlayerData) {
 	s.LastLogoutTime = row.Time("last_logout_time")
 }
 
-func (this *PlayerSimpleMgr) Init() {
-	this.Actor.Init()
-	this.m_Locker = &sync.RWMutex{}
-	this.m_SimplePlayerMap = make(map[int64]*model.SimplePlayerData)
-	this.m_SimplePlayerNameMap = make(map[string]*model.SimplePlayerData)
-	actor.MGR.RegisterActor(this)
-	this.Actor.Start()
+func (p *PlayerSimpleMgr) Init() {
+	p.Actor.Init()
+	p.locker = &sync.RWMutex{}
+	p.simplePlayerMap = make(map[int64]*model.SimplePlayerData)
+	p.simplePlayerNameMap = make(map[string]*model.SimplePlayerData)
+	actor.MGR.RegisterActor(p)
+	p.Actor.Start()
 }
 
-func (this *PlayerSimpleMgr) LoadSimplePlayerDatas() {
+func (p *PlayerSimpleMgr) LoadSimplePlayerDatas() {
 	startTime := time.Now().Unix()
 	var simpledata model.SimplePlayerData
 	rows, err := orm.DB.Query(orm.LoadSql(simpledata, orm.WithOutWhere()))
@@ -63,73 +63,73 @@ func (this *PlayerSimpleMgr) LoadSimplePlayerDatas() {
 	}
 	rs, err := orm.Query(rows, err)
 	for err == nil && rs.Next() {
-		pData := &model.SimplePlayerData{}
-		loadSimple(rs.Row(), pData)
-		//rs.Row().Obj(pData)
-		this.m_Locker.Lock()
-		this.m_SimplePlayerMap[pData.PlayerId] = pData
-		this.m_SimplePlayerNameMap[pData.PlayerName] = pData
-		this.m_Locker.Unlock()
+		data := &model.SimplePlayerData{}
+		loadSimple(rs.Row(), data)
+		//rs.Row().Obj(data)
+		p.locker.Lock()
+		p.simplePlayerMap[data.PlayerId] = data
+		p.simplePlayerNameMap[data.PlayerName] = data
+		p.locker.Unlock()
 	}
 
 	endTime := time.Now().Unix()
 	base.LOG.Printf("结束读取玩家的简单信息[%d],timecost[%d]", startTime, endTime-startTime)
 }
 
-func (this *PlayerSimpleMgr) GetPlayerDataByName(name string) *model.SimplePlayerData {
-	this.m_Locker.RLock()
-	pData, exist := this.m_SimplePlayerNameMap[name]
-	this.m_Locker.RUnlock()
+func (p *PlayerSimpleMgr) GetPlayerDataByName(name string) *model.SimplePlayerData {
+	p.locker.RLock()
+	data, exist := p.simplePlayerNameMap[name]
+	p.locker.RUnlock()
 	if exist {
-		return pData
+		return data
 	}
 
-	pData = LoadSimplePlayerDataByName(name)
-	if pData != nil {
-		this.m_Locker.Lock()
-		this.m_SimplePlayerMap[pData.PlayerId] = pData
-		this.m_SimplePlayerNameMap[name] = pData
-		this.m_Locker.Unlock()
+	data = LoadSimplePlayerDataByName(name)
+	if data != nil {
+		p.locker.Lock()
+		p.simplePlayerMap[data.PlayerId] = data
+		p.simplePlayerNameMap[name] = data
+		p.locker.Unlock()
 	}
 
-	return pData
+	return data
 }
 
-func (this *PlayerSimpleMgr) GetPlayerDataById(playerId int64) *model.SimplePlayerData {
-	this.m_Locker.RLock()
-	pData, exist := this.m_SimplePlayerMap[playerId]
-	this.m_Locker.RUnlock()
+func (p *PlayerSimpleMgr) GetPlayerDataById(playerId int64) *model.SimplePlayerData {
+	p.locker.RLock()
+	data, exist := p.simplePlayerMap[playerId]
+	p.locker.RUnlock()
 	if exist {
-		return pData
+		return data
 	}
 
-	pData = LoadSimplePlayerData(playerId)
-	if pData != nil {
-		this.m_Locker.Lock()
-		this.m_SimplePlayerMap[pData.PlayerId] = pData
-		this.m_SimplePlayerNameMap[pData.PlayerName] = pData
-		this.m_Locker.Unlock()
+	data = LoadSimplePlayerData(playerId)
+	if data != nil {
+		p.locker.Lock()
+		p.simplePlayerMap[data.PlayerId] = data
+		p.simplePlayerNameMap[data.PlayerName] = data
+		p.locker.Unlock()
 	}
 
-	return pData
+	return data
 }
 
-func (this *PlayerSimpleMgr) GetPlayerName(playerId int64) string {
-	pData := this.GetPlayerDataById(playerId)
-	if pData != nil {
-		return pData.PlayerName
+func (p *PlayerSimpleMgr) GetPlayerName(playerId int64) string {
+	data := p.GetPlayerDataById(playerId)
+	if data != nil {
+		return data.PlayerName
 	}
 
 	return ""
 }
 
 func LoadSimplePlayerData(playerId int64) *model.SimplePlayerData {
-	pData := &model.SimplePlayerData{PlayerId: playerId}
-	rows, err := orm.DB.Query(orm.LoadSql(pData))
+	data := &model.SimplePlayerData{PlayerId: playerId}
+	rows, err := orm.DB.Query(orm.LoadSql(data))
 	rs, err := orm.Query(rows, err)
 	if err == nil && rs.Next() {
-		loadSimple(rs.Row(), pData)
-		return pData
+		loadSimple(rs.Row(), data)
+		return data
 	} else if err != nil {
 		common.DBERROR("LoadSimplePlayerData", err)
 	}
@@ -137,12 +137,12 @@ func LoadSimplePlayerData(playerId int64) *model.SimplePlayerData {
 }
 
 func LoadSimplePlayerDataByName(name string) *model.SimplePlayerData {
-	pData := new(model.SimplePlayerData)
-	rows, err := orm.DB.Query(orm.LoadSql(pData, orm.WithWhere(model.SimplePlayerData{PlayerName: name})))
+	data := new(model.SimplePlayerData)
+	rows, err := orm.DB.Query(orm.LoadSql(data, orm.WithWhere(model.SimplePlayerData{PlayerName: name})))
 	rs, err := orm.Query(rows, err)
 	if err == nil && rs.Next() {
-		loadSimple(rs.Row(), pData)
-		return pData
+		loadSimple(rs.Row(), data)
+		return data
 	}
 	return nil
 }

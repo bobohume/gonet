@@ -3,22 +3,18 @@ package gate
 import (
 	"gonet/actor"
 	"gonet/base"
-	"gonet/base/ini"
 	"gonet/common"
 	"gonet/common/cluster"
 	"gonet/network"
 	"gonet/rpc"
-	"time"
 )
 
 type (
 	ServerMgr struct {
-		m_pService       *network.ServerSocket
-		m_Inited         bool
-		m_config         ini.Config
-		m_TimeTraceTimer *time.Ticker
-		m_PlayerMgr      *PlayerMgr
-		m_pCluster       *cluster.Cluster
+		service   *network.ServerSocket
+		isInited  bool
+		playerMgr *PlayerMgr
+		cluster   *cluster.Cluster
 	}
 
 	IServerMgr interface {
@@ -43,20 +39,20 @@ var (
 	SERVER ServerMgr
 )
 
-func (this *ServerMgr) GetServer() *network.ServerSocket {
-	return this.m_pService
+func (s *ServerMgr) GetServer() *network.ServerSocket {
+	return s.service
 }
 
-func (this *ServerMgr) GetCluster() *cluster.Cluster {
-	return this.m_pCluster
+func (s *ServerMgr) GetCluster() *cluster.Cluster {
+	return s.cluster
 }
 
-func (this *ServerMgr) GetPlayerMgr() *PlayerMgr {
-	return this.m_PlayerMgr
+func (s *ServerMgr) GetPlayerMgr() *PlayerMgr {
+	return s.playerMgr
 }
 
-func (this *ServerMgr) Init() bool {
-	if this.m_Inited {
+func (s *ServerMgr) Init() bool {
+	if s.isInited {
 		return true
 	}
 
@@ -72,41 +68,41 @@ func (this *ServerMgr) Init() bool {
 	ShowMessage()
 
 	//初始化socket
-	this.m_pService = new(network.ServerSocket)
-	this.m_pService.Init(CONF.Server.Ip, CONF.Server.Port)
-	this.m_pService.SetMaxPacketLen(base.MAX_CLIENT_PACKET)
-	this.m_pService.SetConnectType(network.CLIENT_CONNECT)
-	//this.m_pService.Start()
+	s.service = new(network.ServerSocket)
+	s.service.Init(CONF.Server.Ip, CONF.Server.Port)
+	s.service.SetMaxPacketLen(base.MAX_CLIENT_PACKET)
+	s.service.SetConnectType(network.CLIENT_CONNECT)
+	//s.service.Start()
 	packet := new(UserPrcoess)
 	packet.Init()
-	this.m_pService.BindPacketFunc(packet.PacketFunc)
-	this.m_pService.Start()
+	s.service.BindPacketFunc(packet.PacketFunc)
+	s.service.Start()
 
 	//websocket
-	/*this.m_pService = new(network.WebSocket)
-	this.m_pService.Init(CONF.Server.Ip, CONF.Server.Port)
-	this.m_pService.SetConnectType(network.CLIENT_CONNECT)
-	//this.m_pService.Start()
+	/*s.service = new(network.WebSocket)
+	s.service.Init(CONF.Server.Ip, CONF.Server.Port)
+	s.service.SetConnectType(network.CLIENT_CONNECT)
+	//s.service.Start()
 	packet := new(UserPrcoess)
 	packet.Init()
-	this.m_pService.BindPacketFunc(packet.PacketFunc)
-	this.m_pService.Start()*/
+	s.service.BindPacketFunc(packet.PacketFunc)
+	s.service.Start()*/
 	//注册到集群服务器
 
 	var packet1 EventProcess
 	packet1.Init()
-	this.m_pCluster = new(cluster.Cluster)
-	this.m_pCluster.InitCluster(&common.ClusterInfo{Type: rpc.SERVICE_GATE, Ip: CONF.Server.Ip, Port: int32(CONF.Server.Port)},
+	s.cluster = new(cluster.Cluster)
+	s.cluster.InitCluster(&common.ClusterInfo{Type: rpc.SERVICE_GATE, Ip: CONF.Server.Ip, Port: int32(CONF.Server.Port)},
 		CONF.Etcd.Endpoints, CONF.Nats.Endpoints, cluster.WithStubMailBoxEtcd(CONF.Raft.Endpoints, &CONF.Stub))
-	this.m_pCluster.BindPacketFunc(actor.MGR.PacketFunc)
-	this.m_pCluster.BindPacketFunc(DispatchPacket)
+	s.cluster.BindPacketFunc(actor.MGR.PacketFunc)
+	s.cluster.BindPacketFunc(DispatchPacket)
 
 	//初始玩家管理
-	this.m_PlayerMgr = new(PlayerMgr)
-	this.m_PlayerMgr.Init()
+	s.playerMgr = new(PlayerMgr)
+	s.playerMgr.Init()
 	return false
 }
 
-func (this *ServerMgr) OnServerStart() {
-	this.m_pService.Start()
+func (s *ServerMgr) OnServerStart() {
+	s.service.Start()
 }

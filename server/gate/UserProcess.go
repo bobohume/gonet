@@ -12,7 +12,7 @@ import (
 type (
 	UserPrcoess struct {
 		actor.Actor
-		m_KeyMap map[uint32]*base.Dh
+		keyMap map[uint32]*base.Dh
 	}
 
 	IUserPrcoess interface {
@@ -29,7 +29,7 @@ type (
 	}
 )
 
-func (this *UserPrcoess) CheckClientEx(sockId uint32, packetName string, head rpc.RpcHead) bool {
+func (u *UserPrcoess) CheckClientEx(sockId uint32, packetName string, head rpc.RpcHead) bool {
 	if IsCheckClient(packetName) {
 		return true
 	}
@@ -42,7 +42,7 @@ func (this *UserPrcoess) CheckClientEx(sockId uint32, packetName string, head rp
 	return true
 }
 
-func (this *UserPrcoess) CheckClient(sockId uint32, packetName string, head rpc.RpcHead) *Player {
+func (u *UserPrcoess) CheckClient(sockId uint32, packetName string, head rpc.RpcHead) *Player {
 	pPlayer := SERVER.GetPlayerMgr().GetPlayer(sockId)
 	if pPlayer != nil && (pPlayer.PlayerID <= 0 || pPlayer.PlayerID != head.Id) {
 		base.LOG.Fatalf("Old socket communication or viciousness[%d].", sockId)
@@ -51,8 +51,8 @@ func (this *UserPrcoess) CheckClient(sockId uint32, packetName string, head rpc.
 	return pPlayer
 }
 
-func (this *UserPrcoess) SwtichSendToGame(socketId uint32, packetName string, head rpc.RpcHead, packet rpc.Packet) {
-	pPlayer := this.CheckClient(socketId, packetName, head)
+func (u *UserPrcoess) SwtichSendToGame(socketId uint32, packetName string, head rpc.RpcHead, packet rpc.Packet) {
+	pPlayer := u.CheckClient(socketId, packetName, head)
 	if pPlayer != nil {
 		head.ClusterId = pPlayer.GClusterId
 		head.DestServerType = rpc.SERVICE_GAME
@@ -60,15 +60,15 @@ func (this *UserPrcoess) SwtichSendToGame(socketId uint32, packetName string, he
 	}
 }
 
-func (this *UserPrcoess) SwtichSendToGM(socketId uint32, packetName string, head rpc.RpcHead, packet rpc.Packet) {
-	if this.CheckClientEx(socketId, packetName, head) == true {
+func (u *UserPrcoess) SwtichSendToGM(socketId uint32, packetName string, head rpc.RpcHead, packet rpc.Packet) {
+	if u.CheckClientEx(socketId, packetName, head) == true {
 		head.DestServerType = rpc.SERVICE_GM
 		SERVER.GetCluster().Send(head, packet)
 	}
 }
 
-func (this *UserPrcoess) SwtichSendToZone(socketId uint32, packetName string, head rpc.RpcHead, packet rpc.Packet) {
-	pPlayer := this.CheckClient(socketId, packetName, head)
+func (u *UserPrcoess) SwtichSendToZone(socketId uint32, packetName string, head rpc.RpcHead, packet rpc.Packet) {
+	pPlayer := u.CheckClient(socketId, packetName, head)
 	if pPlayer != nil {
 		head.ClusterId = pPlayer.ZClusterId
 		head.DestServerType = rpc.SERVICE_ZONE
@@ -76,7 +76,7 @@ func (this *UserPrcoess) SwtichSendToZone(socketId uint32, packetName string, he
 	}
 }
 
-func (this *UserPrcoess) PacketFunc(packet1 rpc.Packet) bool {
+func (u *UserPrcoess) PacketFunc(packet1 rpc.Packet) bool {
 	buff := packet1.Buff
 	socketid := packet1.Id
 	packetId, data := message.Decode(buff)
@@ -87,7 +87,7 @@ func (this *UserPrcoess) PacketFunc(packet1 rpc.Packet) bool {
 			stream := base.NewBitStream(buff, len(buff))
 			stream.ReadInt(32)
 			SERVER.GetPlayerMgr().SendMsg(rpc.RpcHead{}, "DEL_ACCOUNT", uint32(stream.ReadInt(32)))
-			this.SendMsg(rpc.RpcHead{}, "DISCONNECT", socketid)
+			u.SendMsg(rpc.RpcHead{}, "DISCONNECT", socketid)
 		} else if packetId == network.HEART_PACKET { //心跳netsocket做处理，这里不处理
 		} else {
 			base.LOG.Printf("包解析错误1  socket=%d", socketid)
@@ -114,11 +114,11 @@ func (this *UserPrcoess) PacketFunc(packet1 rpc.Packet) bool {
 	rpcPacket := rpc.Marshal(&head, &packetName, packet)
 	//解析整个包
 	if head.DestServerType == rpc.SERVICE_GAME {
-		this.SwtichSendToGame(socketid, packetName, head, rpcPacket)
+		u.SwtichSendToGame(socketid, packetName, head, rpcPacket)
 	} else if head.DestServerType == rpc.SERVICE_GM {
-		this.SwtichSendToGM(socketid, packetName, head, rpcPacket)
+		u.SwtichSendToGM(socketid, packetName, head, rpcPacket)
 	} else if head.DestServerType == rpc.SERVICE_ZONE {
-		this.SwtichSendToZone(socketid, packetName, head, rpcPacket)
+		u.SwtichSendToZone(socketid, packetName, head, rpcPacket)
 	} else {
 		actor.MGR.PacketFunc(rpc.Packet{Id: socketid, Buff: rpcPacket.Buff})
 	}
@@ -126,52 +126,52 @@ func (this *UserPrcoess) PacketFunc(packet1 rpc.Packet) bool {
 	return true
 }
 
-func (this *UserPrcoess) addKey(SocketId uint32, pDh *base.Dh) {
-	this.m_KeyMap[SocketId] = pDh
+func (u *UserPrcoess) addKey(SocketId uint32, dh *base.Dh) {
+	u.keyMap[SocketId] = dh
 }
 
-func (this *UserPrcoess) delKey(SocketId uint32) {
-	delete(this.m_KeyMap, SocketId)
+func (u *UserPrcoess) delKey(SocketId uint32) {
+	delete(u.keyMap, SocketId)
 }
 
-func (this *UserPrcoess) Init() {
-	this.Actor.Init()
-	this.m_KeyMap = map[uint32]*base.Dh{}
-	actor.MGR.RegisterActor(this)
-	this.Actor.Start()
+func (u *UserPrcoess) Init() {
+	u.Actor.Init()
+	u.keyMap = map[uint32]*base.Dh{}
+	actor.MGR.RegisterActor(u)
+	u.Actor.Start()
 }
 
-func (this *UserPrcoess) C_G_LogoutRequest(ctx context.Context, playerid int, UID int) {
-	base.LOG.Printf("logout Socket:%d Account:%d UID:%d ", this.GetRpcHead(ctx).SocketId, playerid, UID)
-	SERVER.GetPlayerMgr().SendMsg(rpc.RpcHead{}, "DEL_ACCOUNT", this.GetRpcHead(ctx).SocketId)
+func (u *UserPrcoess) C_G_LogoutRequest(ctx context.Context, playerid int, UID int) {
+	base.LOG.Printf("logout Socket:%d Account:%d UID:%d ", u.GetRpcHead(ctx).SocketId, playerid, UID)
+	SERVER.GetPlayerMgr().SendMsg(rpc.RpcHead{}, "DEL_ACCOUNT", u.GetRpcHead(ctx).SocketId)
 }
 
-func (this *UserPrcoess) LoginAccountRequest(ctx context.Context, packet *message.LoginAccountRequest) {
-	head := this.GetRpcHead(ctx)
+func (u *UserPrcoess) LoginAccountRequest(ctx context.Context, packet *message.LoginAccountRequest) {
+	head := u.GetRpcHead(ctx)
 	dh := base.Dh{}
 	dh.Init()
 	dh.ExchangePubk(packet.GetKey())
-	this.addKey(head.SocketId, &dh)
+	u.addKey(head.SocketId, &dh)
 	head.Id = int64(base.GetMessageCode1(packet.AccountName))
 	packet.Key = dh.PubKey()
 	funcName := "AccountMgr.LoginAccountRequest"
-	this.SwtichSendToGM(head.SocketId, funcName, head, rpc.Marshal(&head, &funcName, packet, head.SocketId))
+	u.SwtichSendToGM(head.SocketId, funcName, head, rpc.Marshal(&head, &funcName, packet, head.SocketId))
 }
 
-func (this *UserPrcoess) LoginPlayerRequset(ctx context.Context, packet *message.LoginPlayerRequset) {
-	head := this.GetRpcHead(ctx)
-	dh, bEx := this.m_KeyMap[head.SocketId]
+func (u *UserPrcoess) LoginPlayerRequset(ctx context.Context, packet *message.LoginPlayerRequset) {
+	head := u.GetRpcHead(ctx)
+	dh, bEx := u.keyMap[head.SocketId]
 	if bEx {
 		if dh.ShareKey() == packet.GetKey() {
-			this.delKey(head.SocketId)
+			u.delKey(head.SocketId)
 			funcName := "AccountMgr.LoginPlayerRequset"
-			this.SwtichSendToGM(head.SocketId, funcName, head, rpc.Marshal(&head, &funcName, packet))
+			u.SwtichSendToGM(head.SocketId, funcName, head, rpc.Marshal(&head, &funcName, packet))
 		} else {
 			base.LOG.Println("client key cheat", dh.ShareKey(), packet.GetKey())
 		}
 	}
 }
 
-func (this *UserPrcoess) DISCONNECT(ctx context.Context, socketid uint32) {
-	this.delKey(socketid)
+func (u *UserPrcoess) DISCONNECT(ctx context.Context, socketid uint32) {
+	u.delKey(socketid)
 }

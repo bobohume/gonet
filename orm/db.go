@@ -34,7 +34,7 @@ type (
 	Datetime int64
 
 	Row struct {
-		m_Resut map[string]string
+		resut map[string]string
 	}
 
 	IRow interface {
@@ -230,16 +230,16 @@ func getProperties(sf reflect.StructField) *Properties {
 }
 
 func (this *Row) init() {
-	this.m_Resut = make(map[string]string)
+	this.resut = make(map[string]string)
 }
 
 func (this *Row) Set(key, val string) {
-	this.m_Resut[key] = val
+	this.resut[key] = val
 }
 
 func (this *Row) Get(key string) string {
 	//key = strings.ToLower(key)
-	v, exist := this.m_Resut[key]
+	v, exist := this.resut[key]
 	if exist {
 		return v
 	}
@@ -289,7 +289,7 @@ func (this *Row) Obj(obj interface{}) bool {
 }
 
 func (this *Row) KV() map[string]string {
-	return this.m_Resut
+	return this.resut
 }
 
 func (this *Rows) init() {
@@ -364,7 +364,7 @@ func Query(rows *sql.Rows, err error) (*Rows, error) {
 				}
 				rows.Scan(value1...)
 				for i, v := range value {
-					r.m_Resut[cloumns[i]] = *v
+					r.resut[cloumns[i]] = *v
 				}
 				rs.m_Rows = append(rs.m_Rows, r)
 			}

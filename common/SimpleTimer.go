@@ -4,12 +4,12 @@ import (
 	"time"
 )
 
-type(
-	SimpleTimer struct{
-		m_interval 	int
-		m_lastTime 	int64
-		m_count 	int
-		m_isActive 	bool
+type (
+	SimpleTimer struct {
+		interval int
+		lastTime int64
+		count    int
+		isActive bool
 	}
 
 	ISimpleTimer interface {
@@ -22,47 +22,46 @@ type(
 	}
 )
 
-func (this *SimpleTimer) SetInterval(interval int){
-	this.m_interval = interval
+func (s *SimpleTimer) SetInterval(interval int) {
+	s.interval = interval
 }
 
-func (this *SimpleTimer)  CheckTimer() bool {
-	if !this.m_isActive{
+func (s *SimpleTimer) CheckTimer() bool {
+	if !s.isActive {
 		return false
 	}
 
 	curTime := time.Now().Unix()
-	if curTime - this.m_lastTime >= int64(this.m_interval){
-		this.m_lastTime = curTime
-		this.m_count++
+	if curTime-s.lastTime >= int64(s.interval) {
+		s.lastTime = curTime
+		s.count++
 		return true
 	}
 	return false
 }
 
-func (this *SimpleTimer)  Start() {
-	this.m_lastTime = time.Now().Unix()
-	this.m_count    = 0
-	this.m_isActive = true
+func (s *SimpleTimer) Start() {
+	s.lastTime = time.Now().Unix()
+	s.count = 0
+	s.isActive = true
 }
 
-func (this *SimpleTimer) Stop() {
-	this.m_lastTime = time.Now().Unix()
-	this.m_count    = 0
-	this.m_isActive = false
+func (s *SimpleTimer) Stop() {
+	s.lastTime = time.Now().Unix()
+	s.count = 0
+	s.isActive = false
 }
 
-func (this *SimpleTimer) GetTimerCount() int {
-	return this.m_count
+func (s *SimpleTimer) GetTimerCount() int {
+	return s.count
 }
 
-func (this *SimpleTimer) IsActived() bool {
-	return this.m_isActive
+func (s *SimpleTimer) IsActived() bool {
+	return s.isActive
 }
 
-func NewSimpleTimer(interval int) *SimpleTimer{
+func NewSimpleTimer(interval int) *SimpleTimer {
 	simpleTimer := new(SimpleTimer)
 	simpleTimer.SetInterval(interval)
 	return simpleTimer
 }
-

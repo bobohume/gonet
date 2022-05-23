@@ -23,64 +23,64 @@ const (
 )
 
 type Snowflake struct {
-	m_Id      int64
-	m_Client  *clientv3.Client
-	m_Lease   clientv3.Lease
-	m_LeaseId clientv3.LeaseID
-	m_Stats   STATUS //状态机
+	id      int64
+	client  *clientv3.Client
+	lease   clientv3.Lease
+	leaseId clientv3.LeaseID
+	status  STATUS //状态机
 }
 
-func (this *Snowflake) Key() string {
-	return uuid_dir + fmt.Sprintf("%d", this.m_Id)
+func (s *Snowflake) Key() string {
+	return uuid_dir + fmt.Sprintf("%d", s.id)
 }
 
-func (this *Snowflake) SET() bool {
+func (s *Snowflake) SET() bool {
 	//设置key
-	key := this.Key()
-	tx := this.m_Client.Txn(context.Background())
+	key := s.Key()
+	tx := s.client.Txn(context.Background())
 	//key no exist
-	leaseResp, err := this.m_Lease.Grant(context.Background(), ttl_time)
+	leaseResp, err := s.lease.Grant(context.Background(), ttl_time)
 	if err != nil {
 		return false
 	}
-	this.m_LeaseId = leaseResp.ID
+	s.leaseId = leaseResp.ID
 	tx.If(clientv3.Compare(clientv3.CreateRevision(key), "=", 0)).
-		Then(clientv3.OpPut(key, "", clientv3.WithLease(this.m_LeaseId))).
+		Then(clientv3.OpPut(key, "", clientv3.WithLease(s.leaseId))).
 		Else()
 	txnRes, err := tx.Commit()
 	if err != nil || !txnRes.Succeeded { //抢锁失败
-		this.m_Id = int64(base.RAND.RandI(1, int(base.WorkeridMax)))
+		s.id = int64(base.RAND.RandI(1, int(base.WorkeridMax)))
 		return false
 	}
 
-	base.UUID.Init(this.m_Id) //设置uuid
-	this.m_Stats = TTL
+	base.UUID.Init(s.id) //设置uuid
+	s.status = TTL
 	return true
 }
 
-func (this *Snowflake) TTL() {
+func (s *Snowflake) TTL() {
 	//保持ttl
-	_, err := this.m_Lease.KeepAliveOnce(context.Background(), this.m_LeaseId)
+	_, err := s.lease.KeepAliveOnce(context.Background(), s.leaseId)
 	if err != nil {
-		this.m_Stats = SET
+		s.status = SET
 	} else {
 		time.Sleep(ttl_time / 3)
 	}
 }
 
-func (this *Snowflake) Run() {
+func (s *Snowflake) Run() {
 	for {
-		switch this.m_Stats {
+		switch s.status {
 		case SET:
-			this.SET()
+			s.SET()
 		case TTL:
-			this.TTL()
+			s.TTL()
 		}
 	}
 }
 
 //uuid生成器
-func (this *Snowflake) Init(endpoints []string) {
+func (s *Snowflake) Init(endpoints []string) {
 	cfg := clientv3.Config{
 		Endpoints: endpoints,
 	}
@@ -90,14 +90,14 @@ func (this *Snowflake) Init(endpoints []string) {
 		log.Fatal("Error: cannot connec to etcd:", err)
 	}
 	lease := clientv3.NewLease(etcdClient)
-	this.m_Id = int64(base.RAND.RandI(1, int(base.WorkeridMax)))
-	this.m_Client = etcdClient
-	this.m_Lease = lease
-	for !this.SET() {
+	s.id = int64(base.RAND.RandI(1, int(base.WorkeridMax)))
+	s.client = etcdClient
+	s.lease = lease
+	for !s.SET() {
 	}
-	this.Start()
+	s.Start()
 }
 
-func (this *Snowflake) Start() {
-	go this.Run()
+func (s *Snowflake) Start() {
+	go s.Run()
 }

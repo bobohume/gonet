@@ -6,8 +6,8 @@ import (
 
 type (
 	ChannelMgr struct {
-		m_hmChannelMap	map[int64] *Channel
-		m_hmPlayerChannelMap map[int8] map[int64] int64
+		channelMap       map[int64]*Channel
+		playerChannelMap map[int8]map[int64]int64
 	}
 
 	IChannelMgr interface {
@@ -27,105 +27,102 @@ var (
 	g_wordChannelId = int64(-3000)
 )
 
-func (this *ChannelMgr) Init() {
-	this.m_hmChannelMap	= make(map[int64] *Channel)
-	this.m_hmPlayerChannelMap = make(map [int8] map[int64] int64)
-	for i := message.CHAT_MSG_TYPE_WORLD; i < message.CHAT_MSG_TYPE_COUNT; i++{
-		this.m_hmPlayerChannelMap[int8(i)] = make(map[int64] int64)
+func (c *ChannelMgr) Init() {
+	c.channelMap = make(map[int64]*Channel)
+	c.playerChannelMap = make(map[int8]map[int64]int64)
+	for i := message.CHAT_MSG_TYPE_WORLD; i < message.CHAT_MSG_TYPE_COUNT; i++ {
+		c.playerChannelMap[int8(i)] = make(map[int64]int64)
 	}
 
-	this.RegisterChannel(int8(message.CHAT_MSG_TYPE_WORLD), "game", g_wordChannelId)
+	c.RegisterChannel(int8(message.CHAT_MSG_TYPE_WORLD), "game", g_wordChannelId)
 }
 
-func (this *ChannelMgr) RegisterChannel(cMessageType int8, ChannelName string, nId int64){
+func (c *ChannelMgr) RegisterChannel(cMessageType int8, ChannelName string, nId int64) {
 	// 大规模消息不能创建频道
 	if cMessageType < int8(message.CHAT_MSG_TYPE_WORLD) {
 		return
 	}
 
-	this.UnregisterChannel(nId)
+	c.UnregisterChannel(nId)
 
-	pChannel := &Channel{}
-	pChannel.Init()
-	pChannel.m_nChannelID = nId
-	pChannel.m_cMessageType = cMessageType
-	pChannel.m_strChannelName = ChannelName
-	this.m_hmChannelMap[nId] = pChannel
+	channel := &Channel{}
+	channel.Init()
+	channel.channelID = nId
+	channel.messageType = cMessageType
+	channel.channelName = ChannelName
+	c.channelMap[nId] = channel
 	return
 }
 
-func (this *ChannelMgr) UnregisterChannel(channelid int64) {
-	delete(this.m_hmChannelMap, channelid)
+func (c *ChannelMgr) UnregisterChannel(channelid int64) {
+	delete(c.channelMap, channelid)
 }
 
-func (this *ChannelMgr) RemoveAllChannel() {
-	for i,_ := range this.m_hmPlayerChannelMap{
-		delete(this.m_hmPlayerChannelMap, i)
+func (c *ChannelMgr) RemoveAllChannel() {
+	for i, _ := range c.playerChannelMap {
+		delete(c.playerChannelMap, i)
 	}
 
-	for i,_ := range this.m_hmChannelMap{
-		delete(this.m_hmChannelMap, i)
+	for i, _ := range c.channelMap {
+		delete(c.channelMap, i)
 	}
 }
 
-func (this *ChannelMgr) AddPlayer(playerId int64, channelId int64, playerName string, gateClusterId uint32) {
-	pChannel := this.getChannel(channelId)
-	if pChannel == nil{
+func (c *ChannelMgr) AddPlayer(playerId int64, channelId int64, playerName string, gateClusterId uint32) {
+	channel := c.getChannel(channelId)
+	if channel == nil {
 		return
 	}
 
-	pChannel.AddPlayer(playerId, playerName, gateClusterId)
-	this.m_hmPlayerChannelMap[pChannel.GetMessageType()][playerId] = pChannel.GetId()
+	channel.AddPlayer(playerId, playerName, gateClusterId)
+	c.playerChannelMap[channel.GetMessageType()][playerId] = channel.GetId()
 }
 
-func (this *ChannelMgr) RemovePlayer(playerid int64, channelid int64){
-	pChannel := this.getChannel(channelid)
-	if pChannel == nil{
+func (c *ChannelMgr) RemovePlayer(playerid int64, channelid int64) {
+	channel := c.getChannel(channelid)
+	if channel == nil {
 		return
 	}
 
-	pChannel.RemovePlayer(playerid)
-	delete(this.m_hmPlayerChannelMap[pChannel.GetMessageType()], playerid)
+	channel.RemovePlayer(playerid)
+	delete(c.playerChannelMap[channel.GetMessageType()], playerid)
 }
 
-func (this *ChannelMgr) GetChannelIdByType(playerid int64, cMessageType int8) int64{
-	pChannel := this.getChannelByType(playerid, cMessageType)
-	if pChannel == nil{
+func (c *ChannelMgr) GetChannelIdByType(playerid int64, cMessageType int8) int64 {
+	channel := c.getChannelByType(playerid, cMessageType)
+	if channel == nil {
 		return 0
 	}
-	return pChannel.GetId()
+	return channel.GetId()
 }
 
-func (this *ChannelMgr) getChannel(channelid int64)  *Channel{
-	pChannel, exist := this.m_hmChannelMap[channelid]
-	if exist{
-		return pChannel
+func (c *ChannelMgr) getChannel(channelid int64) *Channel {
+	channel, exist := c.channelMap[channelid]
+	if exist {
+		return channel
 	}
 	return nil
 }
 
-func (this *ChannelMgr) getChannelByType(playerid int64, cMessageType int8)  *Channel{
+func (c *ChannelMgr) getChannelByType(playerid int64, cMessageType int8) *Channel {
 	// 对于大规模消息来说，没有意义
-	if cMessageType < int8(message.CHAT_MSG_TYPE_WORLD){
+	if cMessageType < int8(message.CHAT_MSG_TYPE_WORLD) {
 		return nil
 	}
 
-	channelid, exist := this.m_hmPlayerChannelMap[cMessageType][playerid]
-	if !exist{
+	channelid, exist := c.playerChannelMap[cMessageType][playerid]
+	if !exist {
 		return nil
 	}
 
-	return this.getChannel(channelid)
+	return c.getChannel(channelid)
 }
 
-func (this *ChannelMgr) SendMessageToChannel(msg *ChatMessage, channelid int64){
-	pChannel := this.getChannel(channelid)
-	if pChannel == nil{
+func (c *ChannelMgr) SendMessageToChannel(msg *ChatMessage, channelid int64) {
+	channel := c.getChannel(channelid)
+	if channel == nil {
 		return
 	}
 
-	pChannel.SendMessage(msg)
+	channel.SendMessage(msg)
 }
-
-
-

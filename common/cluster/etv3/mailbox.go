@@ -23,15 +23,15 @@ const (
 type (
 	MailBox struct {
 		*common.ClusterInfo
-		m_Client        *clientv3.Client
-		m_Lease         clientv3.Lease
-		m_MailBoxLocker *sync.RWMutex
-		m_MailBoxMap    map[int64]*rpc.MailBox
+		client        *clientv3.Client
+		lease         clientv3.Lease
+		mailBoxLocker *sync.RWMutex
+		mailBoxMap    map[int64]*rpc.MailBox
 	}
 )
 
 //初始化pub
-func (this *MailBox) Init(endpoints []string, info *common.ClusterInfo) {
+func (m *MailBox) Init(endpoints []string, info *common.ClusterInfo) {
 	cfg := clientv3.Config{
 		Endpoints: endpoints,
 	}
@@ -40,29 +40,29 @@ func (this *MailBox) Init(endpoints []string, info *common.ClusterInfo) {
 	if err != nil {
 		log.Fatal("Error: cannot connec to etcd:", err)
 	}
-	this.ClusterInfo = info
+	m.ClusterInfo = info
 	lease := clientv3.NewLease(etcdClient)
-	this.m_Client = etcdClient
-	this.m_Lease = lease
-	this.m_MailBoxLocker = &sync.RWMutex{}
-	this.m_MailBoxMap = map[int64]*rpc.MailBox{}
-	this.Start()
-	this.getAll()
+	m.client = etcdClient
+	m.lease = lease
+	m.mailBoxLocker = &sync.RWMutex{}
+	m.mailBoxMap = map[int64]*rpc.MailBox{}
+	m.Start()
+	m.getAll()
 }
 
-func (this *MailBox) Start() {
-	go this.Run()
+func (m *MailBox) Start() {
+	go m.Run()
 }
 
-func (this *MailBox) Create(info *rpc.MailBox) bool {
-	leaseResp, err := this.m_Lease.Grant(context.Background(), MAILBOX_TL_TIME)
+func (m *MailBox) Create(info *rpc.MailBox) bool {
+	leaseResp, err := m.lease.Grant(context.Background(), MAILBOX_TL_TIME)
 	if err == nil {
 		leaseId := leaseResp.ID
 		info.LeaseId = int64(leaseId)
 		key := MAILBOX_DIR + fmt.Sprintf("%d", info.Id)
 		data, _ := json.Marshal(info)
 		//设置key
-		tx := this.m_Client.Txn(context.Background())
+		tx := m.client.Txn(context.Background())
 		tx.If(clientv3.Compare(clientv3.CreateRevision(key), "=", 0)).
 			Then(clientv3.OpPut(key, string(data), clientv3.WithLease(leaseId))).
 			Else()
@@ -72,72 +72,72 @@ func (this *MailBox) Create(info *rpc.MailBox) bool {
 	return false
 }
 
-func (this *MailBox) Lease(leaseId int64) error {
-	_, err := this.m_Lease.KeepAliveOnce(context.Background(), clientv3.LeaseID(leaseId))
+func (m *MailBox) Lease(leaseId int64) error {
+	_, err := m.lease.KeepAliveOnce(context.Background(), clientv3.LeaseID(leaseId))
 	return err
 }
 
-func (this *MailBox) Delete(Id int64) error {
+func (m *MailBox) Delete(Id int64) error {
 	key := MAILBOX_DIR + fmt.Sprintf("%d", Id)
-	_, err := this.m_Client.Delete(context.Background(), key)
+	_, err := m.client.Delete(context.Background(), key)
 	return err
 }
 
-func (this *MailBox) DeleteAll() error {
-	_, err := this.m_Client.Delete(context.Background(), MAILBOX_DIR, clientv3.WithPrefix())
+func (m *MailBox) DeleteAll() error {
+	_, err := m.client.Delete(context.Background(), MAILBOX_DIR, clientv3.WithPrefix())
 	return err
 }
 
-func (this *MailBox) add(info *rpc.MailBox) {
-	this.m_MailBoxLocker.Lock()
-	pMailBox, bOk := this.m_MailBoxMap[info.Id]
+func (m *MailBox) add(info *rpc.MailBox) {
+	m.mailBoxLocker.Lock()
+	mail, bOk := m.mailBoxMap[info.Id]
 	if !bOk {
-		this.m_MailBoxMap[info.Id] = info
+		m.mailBoxMap[info.Id] = info
 	} else {
-		*pMailBox = *info
+		*mail = *info
 	}
-	this.m_MailBoxLocker.Unlock()
+	m.mailBoxLocker.Unlock()
 }
 
-func (this *MailBox) del(info *rpc.MailBox) {
-	this.m_MailBoxLocker.Lock()
-	delete(this.m_MailBoxMap, int64(info.Id))
-	this.m_MailBoxLocker.Unlock()
-	actor.MGR.SendMsg(rpc.RpcHead{Id: info.Id}, fmt.Sprintf("%s.On_UnRegister", info.MailType.String()))
+func (m *MailBox) del(info *rpc.MailBox) {
+	m.mailBoxLocker.Lock()
+	delete(m.mailBoxMap, int64(info.Id))
+	m.mailBoxLocker.Unlock()
+	actor.MGR.SendMsg(rpc.RpcHead{Id: info.Id}, fmt.Sprintf("%s.OnUnRegister", info.MailType.String()))
 }
 
-func (this *MailBox) Get(Id int64) *rpc.MailBox {
-	this.m_MailBoxLocker.RLock()
-	pMailBox, bEx := this.m_MailBoxMap[Id]
-	this.m_MailBoxLocker.RUnlock()
+func (m *MailBox) Get(Id int64) *rpc.MailBox {
+	m.mailBoxLocker.RLock()
+	mail, bEx := m.mailBoxMap[Id]
+	m.mailBoxLocker.RUnlock()
 	if bEx {
-		return pMailBox
+		return mail
 	}
 	return nil
 }
 
 // subscribe
-func (this *MailBox) Run() {
-	wch := this.m_Client.Watch(context.Background(), MAILBOX_DIR, clientv3.WithPrefix(), clientv3.WithPrevKV())
+func (m *MailBox) Run() {
+	wch := m.client.Watch(context.Background(), MAILBOX_DIR, clientv3.WithPrefix(), clientv3.WithPrevKV())
 	for v := range wch {
 		for _, v1 := range v.Events {
 			if v1.Type.String() == "PUT" {
 				info := nodeToMailBox(v1.Kv.Value)
-				this.add(info)
+				m.add(info)
 			} else {
 				info := nodeToMailBox(v1.PrevKv.Value)
-				this.del(info)
+				m.del(info)
 			}
 		}
 	}
 }
 
-func (this *MailBox) getAll() {
-	resp, err := this.m_Client.Get(context.Background(), MAILBOX_DIR, clientv3.WithPrefix())
+func (m *MailBox) getAll() {
+	resp, err := m.client.Get(context.Background(), MAILBOX_DIR, clientv3.WithPrefix())
 	if err == nil && (resp != nil && resp.Kvs != nil) {
 		for _, v := range resp.Kvs {
 			info := nodeToMailBox(v.Value)
-			this.add(info)
+			m.add(info)
 		}
 	}
 }

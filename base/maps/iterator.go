@@ -20,133 +20,133 @@ const (
 )
 
 // Iterator returns a stateful iterator whose elements are key/value pairs.
-func (this *Map) Iterator() Iterator {
-	return Iterator{maps: this, node: nil, position: begin}
+func (it *Map) Iterator() Iterator {
+	return Iterator{maps: it, node: nil, position: begin}
 }
 
 // Next moves the iterator to the next element and returns true if there was a next element in the container.
 // If Next() returns true, then next element's key and value can be retrieved by Key() and Value().
 // If Next() was called for the first time, then it will point the iterator to the first element if it exists.
 // Modifies the state of the iterator.
-func (this *Iterator) Next() bool {
-	if this.position == end {
+func (it *Iterator) Next() bool {
+	if it.position == end {
 		goto end
 	}
-	if this.position == begin {
-		left := this.maps.Left()
+	if it.position == begin {
+		left := it.maps.Left()
 		if left == nil {
 			goto end
 		}
-		this.node = left
+		it.node = left
 		goto between
 	}
-	if this.node.Right != nil {
-		this.node = this.node.Right
-		for this.node.Left != nil {
-			this.node = this.node.Left
+	if it.node.Right != nil {
+		it.node = it.node.Right
+		for it.node.Left != nil {
+			it.node = it.node.Left
 		}
 		goto between
 	}
-	if this.node.Parent != nil {
-		node := this.node
-		for this.node.Parent != nil {
-			this.node = this.node.Parent
-			if this.maps.Comparator(node.Key, this.node.Key) <= 0 {
+	if it.node.Parent != nil {
+		node := it.node
+		for it.node.Parent != nil {
+			it.node = it.node.Parent
+			if it.maps.Comparator(node.Key, it.node.Key) <= 0 {
 				goto between
 			}
 		}
 	}
 
 end:
-	this.node = nil
-	this.position = end
+	it.node = nil
+	it.position = end
 	return false
 
 between:
-	this.position = between
+	it.position = between
 	return true
 }
 
 // Prev moves the iterator to the previous element and returns true if there was a previous element in the container.
 // If Prev() returns true, then previous element's key and value can be retrieved by Key() and Value().
 // Modifies the state of the iterator.
-func (this *Iterator) Prev() bool {
-	if this.position == begin {
+func (it *Iterator) Prev() bool {
+	if it.position == begin {
 		goto begin
 	}
-	if this.position == end {
-		right := this.maps.Right()
+	if it.position == end {
+		right := it.maps.Right()
 		if right == nil {
 			goto begin
 		}
-		this.node = right
+		it.node = right
 		goto between
 	}
-	if this.node.Left != nil {
-		this.node = this.node.Left
-		for this.node.Right != nil {
-			this.node = this.node.Right
+	if it.node.Left != nil {
+		it.node = it.node.Left
+		for it.node.Right != nil {
+			it.node = it.node.Right
 		}
 		goto between
 	}
-	if this.node.Parent != nil {
-		node := this.node
-		for this.node.Parent != nil {
-			this.node = this.node.Parent
-			if this.maps.Comparator(node.Key, this.node.Key) >= 0 {
+	if it.node.Parent != nil {
+		node := it.node
+		for it.node.Parent != nil {
+			it.node = it.node.Parent
+			if it.maps.Comparator(node.Key, it.node.Key) >= 0 {
 				goto between
 			}
 		}
 	}
 
 begin:
-	this.node = nil
-	this.position = begin
+	it.node = nil
+	it.position = begin
 	return false
 
 between:
-	this.position = between
+	it.position = between
 	return true
 }
 
 // Value returns the current element's value.
 // Does not modify the state of the iterator.
-func (this *Iterator) Value() interface{} {
-	return this.node.Value
+func (it *Iterator) Value() interface{} {
+	return it.node.Value
 }
 
 // Key returns the current element's key.
 // Does not modify the state of the iterator.
-func (this *Iterator) Key() interface{} {
-	return this.node.Key
+func (it *Iterator) Key() interface{} {
+	return it.node.Key
 }
 
 // Begin resets the iterator to its initial state (one-before-first)
 // Call Next() to fetch the first element if any.
-func (this *Iterator) Begin() {
-	this.node = nil
-	this.position = begin
+func (it *Iterator) Begin() {
+	it.node = nil
+	it.position = begin
 }
 
 // End moves the iterator past the last element (one-past-the-end).
 // Call Prev() to fetch the last element if any.
-func (this *Iterator) End() {
-	this.node = nil
-	this.position = end
+func (it *Iterator) End() {
+	it.node = nil
+	it.position = end
 }
 
 // First moves the iterator to the first element and returns true if there was a first element in the container.
 // If First() returns true, then first element's key and value can be retrieved by Key() and Value().
 // Modifies the state of the iterator
-func (this *Iterator) First() bool {
-	this.Begin()
-	return this.Next()
+func (it *Iterator) First() bool {
+	it.Begin()
+	return it.Next()
 }
 
 // Last moves the iterator to the last element and returns true if there was a last element in the container.
 // If Last() returns true, then last element's key and value can be retrieved by Key() and Value().
 // Modifies the state of the iterator.
-func (this *Iterator) Last() bool {
-	this.End()
-	return this.Prev()
+func (it *Iterator) Last() bool {
+	it.End()
+	return it.Prev()
 }

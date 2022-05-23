@@ -1,14 +1,13 @@
 package base
 
 import (
-	_ "net/http/pprof"
 	"log"
 	"net/http"
+	_ "net/http/pprof"
 )
 
-type(
+type (
 	PProf struct {
-
 	}
 )
 
@@ -16,12 +15,11 @@ type(
 //http://localhost:6060/debug/pprof/heap
 //go tool pprof -inuse_space http://localhost:6060/debug/pprof/heap
 //go tool pprof http://localhost:6060/debug/pprof/heap?debug=1
-func (this *PProf) Init(){
+func (p *PProf) Init() {
 	go func() {
-	     log.Println(http.ListenAndServe("localhost:6060", nil))
+		log.Println(http.ListenAndServe("localhost:6060", nil))
 	}()
 }
-
 
 // f, err := os.OpenFile("./tmp/cpu.prof", os.O_RDWR|os.O_CREATE, 0644)
 //    if err != nil {

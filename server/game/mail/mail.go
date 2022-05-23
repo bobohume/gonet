@@ -10,7 +10,7 @@ import (
 )
 
 type (
-	CMailMgr struct {
+	MailMgr struct {
 		actor.Actor
 	}
 
@@ -27,33 +27,33 @@ type (
 )
 
 var (
-	MGR CMailMgr
+	MGR MailMgr
 )
 
-func (this *CMailMgr) Init() {
-	this.Actor.Init()
-	actor.MGR.RegisterActor(this)
-	this.Actor.Start()
-	//this.sendMail(10000238, 10000238, 1000, 60010, 10, "test", "我是大剌剌", 1)
-	//this.loadMialById(2)
+func (m *MailMgr) Init() {
+	m.Actor.Init()
+	actor.MGR.RegisterActor(m)
+	m.Actor.Start()
+	//m.sendMail(10000238, 10000238, 1000, 60010, 10, "test", "我是大剌剌", 1)
+	//m.loadMialById(2)
 }
 
-func (this *CMailMgr) sendMail(sender int64, recver int64, money int, itemId int, itemNum int, title string, content string, isSystem int8) {
-	m := &model.MailItem{}
-	m.Id = base.UUID.UUID()
-	m.Sender = sender
-	m.Recver = recver
-	m.ItemId = itemId
-	m.ItemCount = itemNum
-	m.Money = money
-	m.IsSystem = isSystem
-	m.Title = title
-	m.Content = content
+func (m *MailMgr) sendMail(sender int64, recver int64, money int, itemId int, itemNum int, title string, content string, isSystem int8) {
+	mail := &model.MailItem{}
+	mail.Id = base.UUID.UUID()
+	mail.Sender = sender
+	mail.Recver = recver
+	mail.ItemId = itemId
+	mail.ItemCount = itemNum
+	mail.Money = money
+	mail.IsSystem = isSystem
+	mail.Title = title
+	mail.Content = content
 	//离线
 	if cluster.MGR.MailBox.Get(recver) == nil {
-		orm.DB.Exec(orm.InsertSql(m))
+		orm.DB.Exec(orm.InsertSql(mail))
 		base.LOG.Printf("邮件发送给[%d]玩家成功", recver)
 	} else {
-		cluster.MGR.SendMsg(rpc.RpcHead{Id: recver}, "game<-Player.Add_Player_Mail", m)
+		cluster.MGR.SendMsg(rpc.RpcHead{Id: recver}, "game<-Player.Add_Player_Mail", mail)
 	}
 }

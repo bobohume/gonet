@@ -17,127 +17,127 @@ const (
 // --------------
 type (
 	PacketParser struct {
-		m_PacketLen   	int
-		m_MaxPacketLen	int
-		m_LittleEndian  bool
-		m_MaxPacketBuffer []byte//max receive buff
-		m_PacketFunc 	HandlePacket
+		packetLen       int
+		maxPacketLen    int
+		littleEndian    bool
+		maxPacketBuffer []byte //max receive buff
+		packetFunc      HandlePacket
 	}
 
 	PacketConfig struct {
-		MaxPacketLen	*int
-		Func 	HandlePacket
+		MaxPacketLen *int
+		Func         HandlePacket
 	}
 )
 
 func NewPacketParser(conf PacketConfig) PacketParser {
 	p := PacketParser{}
-	p.m_PacketLen = PACKET_LEN_DWORD
-	p.m_MaxPacketLen = base.MAX_PACKET
-	p.m_LittleEndian = true
-	if conf.Func != nil{
-		p.m_PacketFunc = conf.Func
-	}else{
-		p.m_PacketFunc = func(buff []byte) {
+	p.packetLen = PACKET_LEN_DWORD
+	p.maxPacketLen = base.MAX_PACKET
+	p.littleEndian = true
+	if conf.Func != nil {
+		p.packetFunc = conf.Func
+	} else {
+		p.packetFunc = func(buff []byte) {
 		}
 	}
 	return p
 }
 
-func (this *PacketParser) readLen(buff []byte) (bool, int){
+func (p *PacketParser) readLen(buff []byte) (bool, int) {
 	nLen := len(buff)
-	if nLen < this.m_PacketLen{
+	if nLen < p.packetLen {
 		return false, 0
 	}
 
-	bufMsgLen := buff[:this.m_PacketLen]
+	bufMsgLen := buff[:p.packetLen]
 	// parse len
 	var msgLen int
-	switch this.m_PacketLen {
+	switch p.packetLen {
 	case PACKET_LEN_BYTE:
 		msgLen = int(bufMsgLen[0])
 	case PACKET_LEN_WORD:
-		if this.m_LittleEndian {
+		if p.littleEndian {
 			msgLen = int(binary.LittleEndian.Uint16(bufMsgLen))
 		} else {
 			msgLen = int(binary.BigEndian.Uint16(bufMsgLen))
 		}
 	case PACKET_LEN_DWORD:
-		if this.m_LittleEndian {
+		if p.littleEndian {
 			msgLen = int(binary.LittleEndian.Uint32(bufMsgLen))
 		} else {
 			msgLen = int(binary.BigEndian.Uint32(bufMsgLen))
 		}
 	}
 
-	if msgLen + this.m_PacketLen <= nLen{
-		return true, msgLen + this.m_PacketLen
+	if msgLen+p.packetLen <= nLen {
+		return true, msgLen + p.packetLen
 	}
 
 	return false, 0
 }
 
-func (this *PacketParser) Read(dat []byte) bool {
-	buff := append(this.m_MaxPacketBuffer, dat...)
-	this.m_MaxPacketBuffer = []byte{}
+func (p *PacketParser) Read(dat []byte) bool {
+	buff := append(p.maxPacketBuffer, dat...)
+	p.maxPacketBuffer = []byte{}
 	nCurSize := 0
-	//fmt.Println(this.m_MaxPacketBuffer)
+	//fmt.Println(p.maxPacketBuffer)
 ParsePacekt:
 	nPacketSize := 0
 	nBufferSize := len(buff[nCurSize:])
 	bFindFlag := false
-	bFindFlag, nPacketSize = this.readLen(buff[nCurSize:])
+	bFindFlag, nPacketSize = p.readLen(buff[nCurSize:])
 	//fmt.Println(bFindFlag, nPacketSize, nBufferSize)
-	if bFindFlag{
-		if nBufferSize == nPacketSize{		//完整包
-			this.m_PacketFunc(buff[nCurSize + this.m_PacketLen : nCurSize + nPacketSize])
+	if bFindFlag {
+		if nBufferSize == nPacketSize { //完整包
+			p.packetFunc(buff[nCurSize+p.packetLen : nCurSize+nPacketSize])
 			nCurSize += nPacketSize
-		}else if ( nBufferSize > nPacketSize){
-			this.m_PacketFunc(buff[nCurSize + this.m_PacketLen : nCurSize + nPacketSize])
+		} else if nBufferSize > nPacketSize {
+			p.packetFunc(buff[nCurSize+p.packetLen : nCurSize+nPacketSize])
 			nCurSize += nPacketSize
 			goto ParsePacekt
 		}
-	}else if nBufferSize < this.m_MaxPacketLen{
-		this.m_MaxPacketBuffer = buff[nCurSize:]
-	}else{
+	} else if nBufferSize < p.maxPacketLen {
+		p.maxPacketBuffer = buff[nCurSize:]
+	} else {
 		fmt.Println("超出最大包限制，丢弃该包")
 		return false
 	}
 	return true
 }
 
-func (this *PacketParser) Write(dat []byte) []byte {
+func (p *PacketParser) Write(dat []byte) []byte {
 	// get len
 	msgLen := len(dat)
 	// check len
-	if msgLen  + this.m_PacketLen > base.MAX_PACKET{
+	if msgLen+p.packetLen > base.MAX_PACKET {
 		fmt.Println("write over base.MAX_PACKET")
 	}
 
-	msg := make([]byte, this.m_PacketLen + msgLen)
+	msg := make([]byte, p.packetLen+msgLen)
 	// write len
-	switch this.m_PacketLen {
+	switch p.packetLen {
 	case PACKET_LEN_BYTE:
 		msg[0] = byte(msgLen)
 	case PACKET_LEN_WORD:
-		if this.m_LittleEndian {
+		if p.littleEndian {
 			binary.LittleEndian.PutUint16(msg, uint16(msgLen))
 		} else {
 			binary.BigEndian.PutUint16(msg, uint16(msgLen))
 		}
 	case PACKET_LEN_DWORD:
-		if this.m_LittleEndian {
+		if p.littleEndian {
 			binary.LittleEndian.PutUint32(msg, uint32(msgLen))
 		} else {
 			binary.BigEndian.PutUint32(msg, uint32(msgLen))
 		}
 	}
 
-	copy(msg[this.m_PacketLen:], dat)
+	copy(msg[p.packetLen:], dat)
 	return msg
 }
 
-/*func (this *Socket) ReceivePacket(Id uint32, dat []byte) bool{
+/*func (p *Socket) ReceivePacket(Id uint32, dat []byte) bool{
 	//找包结束
 	seekToTcpEnd := func(buff []byte) (bool, int){
 		nLen := len(buff)
@@ -152,10 +152,10 @@ func (this *PacketParser) Write(dat []byte) []byte {
 		return false, 0
 	}
 
-	buff := append(this.m_MaxReceiveBuffer, dat...)
-	this.m_MaxReceiveBuffer = []byte{}
+	buff := append(p.m_MaxReceiveBuffer, dat...)
+	p.m_MaxReceiveBuffer = []byte{}
 	nCurSize := 0
-	//fmt.Println(this.m_MaxReceiveBuffer)
+	//fmt.Println(p.m_MaxReceiveBuffer)
 ParsePacekt:
 	nPacketSize := 0
 	nBufferSize := len(buff[nCurSize:])
@@ -164,15 +164,15 @@ ParsePacekt:
 	//fmt.Println(bFindFlag, nPacketSize, nBufferSize)
 	if bFindFlag{
 		if nBufferSize == nPacketSize{		//完整包
-			this.HandlePacket(Id, buff[nCurSize+base.TCP_HEAD_SIZE:nCurSize+nPacketSize])
+			p.HandlePacket(Id, buff[nCurSize+base.TCP_HEAD_SIZE:nCurSize+nPacketSize])
 			nCurSize += nPacketSize
 		}else if ( nBufferSize > nPacketSize){
-			this.HandlePacket(Id, buff[nCurSize+base.TCP_HEAD_SIZE:nCurSize+nPacketSize])
+			p.HandlePacket(Id, buff[nCurSize+base.TCP_HEAD_SIZE:nCurSize+nPacketSize])
 			nCurSize += nPacketSize
 			goto ParsePacekt
 		}
-	}else if nBufferSize < this.m_MaxReceiveBufferSize{
-		this.m_MaxReceiveBuffer = buff[nCurSize:]
+	}else if nBufferSize < p.m_MaxReceiveBufferSize{
+		p.m_MaxReceiveBuffer = buff[nCurSize:]
 	}else{
 		fmt.Println("超出最大包限制，丢弃该包")
 		return false
@@ -181,7 +181,7 @@ ParsePacekt:
 }*/
 
 //tcp粘包特殊结束标志
-/*func (this *Socket) ReceivePacket(Id int, dat []byte) bool{
+/*func (p *Socket) ReceivePacket(Id int, dat []byte) bool{
 	//找包结束
 	seekToTcpEnd := func(buff []byte) (bool, int) {
 		nLen := bytes.Index(buff, []byte(base.TCP_END))
@@ -191,10 +191,10 @@ ParsePacekt:
 		return false, 0
 	}
 
-	buff := append(this.m_MaxReceiveBuffer, dat...)
-	this.m_MaxReceiveBuffer = []byte{}
+	buff := append(p.m_MaxReceiveBuffer, dat...)
+	p.m_MaxReceiveBuffer = []byte{}
 	nCurSize := 0
-	//fmt.Println(this.m_MaxReceiveBuffer)
+	//fmt.Println(p.m_MaxReceiveBuffer)
 ParsePacekt:
 	nPacketSize := 0
 	nBufferSize := len(buff[nCurSize:])
@@ -203,15 +203,15 @@ ParsePacekt:
 	//fmt.Println(bFindFlag, nPacketSize, nBufferSize)
 	if bFindFlag {
 		if nBufferSize == nPacketSize { //完整包
-			this.HandlePacket(Id, buff[nCurSize:nCurSize+nPacketSize-base.TCP_END_LENGTH])
+			p.HandlePacket(Id, buff[nCurSize:nCurSize+nPacketSize-base.TCP_END_LENGTH])
 			nCurSize += nPacketSize
 		} else if (nBufferSize > nPacketSize) {
-			this.HandlePacket(Id, buff[nCurSize:nCurSize+nPacketSize-base.TCP_END_LENGTH])
+			p.HandlePacket(Id, buff[nCurSize:nCurSize+nPacketSize-base.TCP_END_LENGTH])
 			nCurSize += nPacketSize
 			goto ParsePacekt
 		}
-	}else if nBufferSize < this.m_MaxReceiveBufferSize{
-		this.m_MaxReceiveBuffer = buff[nCurSize:]
+	}else if nBufferSize < p.m_MaxReceiveBufferSize{
+		p.m_MaxReceiveBuffer = buff[nCurSize:]
 	}else{
 		fmt.Println("超出最大包限制，丢弃该包")
 		return false

@@ -2,7 +2,6 @@ package cluster
 
 import (
 	"fmt"
-	"gonet/actor"
 	"gonet/base"
 	"gonet/common"
 	"gonet/common/cluster/etv3"
@@ -13,7 +12,7 @@ import (
 )
 
 const (
-	ETCD_DIR = "server/"
+	ETCD_DIR        = "server/"
 	MAILBOX_TL_TIME = etv3.MAILBOX_TL_TIME
 )
 
@@ -31,9 +30,9 @@ func NewService(info *common.ClusterInfo, Endpoints []string) *Service {
 }
 
 //监控服务器
-func NewMaster(info common.IClusterInfo, Endpoints []string, pActor actor.IActor) *Master {
+func NewMaster(info common.IClusterInfo, Endpoints []string) *Master {
 	master := &etv3.Master{}
-	master.Init(info, Endpoints, pActor)
+	master.Init(info, Endpoints)
 	return (*Master)(master)
 }
 

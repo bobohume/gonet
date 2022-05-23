@@ -46,16 +46,16 @@ func Init() {
 	LOGIN.Init()
 }
 
-func (this *Login) Init() {
-	this.Actor.Init()
-	actor.MGR.RegisterActor(this)
-	this.InitPool(this, reflect.TypeOf(AccountMgr{}), MAX_ACCOUNT_MGR_COUNT)
-	this.Stub.InitStub(rpc.STUB_AccountMgr)
-	this.Actor.Start()
+func (l *Login) Init() {
+	l.Actor.Init()
+	actor.MGR.RegisterActor(l)
+	l.InitPool(l, reflect.TypeOf(AccountMgr{}), MAX_ACCOUNT_MGR_COUNT)
+	l.Stub.InitStub(rpc.STUB_AccountMgr)
+	l.Actor.Start()
 }
 
 //登录账号
-func (this *AccountMgr) LoginAccountRequest(ctx context.Context, packet *message.LoginAccountRequest, gateSocketId uint32) {
+func (l *AccountMgr) LoginAccountRequest(ctx context.Context, packet *message.LoginAccountRequest, gateSocketId uint32) {
 	accountName := packet.GetAccountName()
 	password := packet.GetPassword()
 	buildVersion := packet.GetBuildNo()
@@ -75,7 +75,7 @@ func (this *AccountMgr) LoginAccountRequest(ctx context.Context, packet *message
 				passWd := rs.Row().String("password")
 				if password == passWd {
 					nError = base.NONE_ERROR
-					cluster.MGR.SendMsg(rpc.RpcHead{Id: accountId}, "gm<-AccountMgr.Account_Login", accountName, accountId, socketId, this.GetRpcHead(ctx).SrcClusterId, key)
+					cluster.MGR.SendMsg(rpc.RpcHead{Id: accountId}, "gm<-AccountMgr.Account_Login", accountName, accountId, socketId, l.GetRpcHead(ctx).SrcClusterId, key)
 				} else { //密码错误
 					nError = base.PASSWORD_ERROR
 				}
@@ -85,7 +85,7 @@ func (this *AccountMgr) LoginAccountRequest(ctx context.Context, packet *message
 				_, err := orm.DB.Exec(fmt.Sprintf("insert into tbl_account (account_name, password, account_id) values('%s', '%s', %d)", accountName, password, accountId))
 				if err == nil {
 					base.LOG.Printf("帐号[%s]创建成功", accountName)
-					cluster.MGR.SendMsg(rpc.RpcHead{Id: accountId}, "gm<-AccountMgr.Account_Login", accountName, accountId, socketId, this.GetRpcHead(ctx).SrcClusterId, key)
+					cluster.MGR.SendMsg(rpc.RpcHead{Id: accountId}, "gm<-AccountMgr.Account_Login", accountName, accountId, socketId, l.GetRpcHead(ctx).SrcClusterId, key)
 				}
 			}
 		}
@@ -95,7 +95,7 @@ func (this *AccountMgr) LoginAccountRequest(ctx context.Context, packet *message
 	}
 
 	if nError != base.NONE_ERROR {
-		gm.SendToClient(rpc.RpcHead{ClusterId: this.GetRpcHead(ctx).SrcClusterId, SocketId: socketId}, &message.LoginAccountResponse{
+		gm.SendToClient(rpc.RpcHead{ClusterId: l.GetRpcHead(ctx).SrcClusterId, SocketId: socketId}, &message.LoginAccountResponse{
 			PacketHead:  message.BuildPacketHead(0, 0),
 			Error:       int32(nError),
 			AccountName: packet.AccountName,

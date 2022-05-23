@@ -7,14 +7,14 @@ const (
 	ERROR   = iota
 )
 
-const(
+const (
 	COMPOSITE = "composite"
 	DECORATOR = "decorator"
 	ACTION    = "action"
 	CONDITION = "condition"
 )
 
-type(
+type (
 	BaseNode struct {
 		Type string
 		Name string
@@ -38,7 +38,7 @@ type(
  * @method enter
  * @param {Tick} tick A tick instance.
 **/
-func (this *BaseNode) OnEnter(tick int64) {
+func (b *BaseNode) OnEnter(tick int64) {
 
 }
 
@@ -50,7 +50,7 @@ func (this *BaseNode) OnEnter(tick int64) {
  * @method tick
  * @param {Tick} tick A tick instance.
 **/
-func (this *BaseNode) OnExec(tick int64) bool {
+func (b *BaseNode) OnExec(tick int64) bool {
 	fmt.Println("tick BaseWorker")
 	return false
 }
@@ -62,23 +62,22 @@ func (this *BaseNode) OnExec(tick int64) bool {
  * @method exit
  * @param {Tick} tick A tick instance.
 **/
-func (this *BaseNode) OnExit(tick int64) {
+func (b *BaseNode) OnExit(tick int64) {
 
 }
 
-func (this *BaseNode) Init() {
+func (b *BaseNode) Init() {
 
 }
 
-func (this *BaseNode) GetType() string{
-	return this.Type
+func (b *BaseNode) GetType() string {
+	return b.Type
 }
 
-func (this *BaseNode) GetName() string{
-	return this.Name
+func (b *BaseNode) GetName() string {
+	return b.Name
 }
 
-func (this *BaseNode) SetName(name string){
-	this.Name = name
+func (b *BaseNode) SetName(name string) {
+	b.Name = name
 }
-

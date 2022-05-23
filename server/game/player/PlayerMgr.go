@@ -2,10 +2,7 @@ package player
 
 import (
 	"context"
-	"database/sql"
 	"gonet/actor"
-	"gonet/base"
-	"gonet/common"
 	"gonet/common/cluster"
 	"gonet/rpc"
 	"reflect"
@@ -22,9 +19,6 @@ type (
 	PlayerMgr struct {
 		actor.Actor
 		actor.VirtualActor
-		m_db        *sql.DB
-		m_Log       *base.CLog
-		m_PingTimer common.ISimpleTimer
 	}
 
 	IPlayerMgr interface {
@@ -32,17 +26,15 @@ type (
 	}
 )
 
-func (this *PlayerMgr) Init() {
-	this.Actor.Init()
-	this.m_PingTimer = common.NewSimpleTimer(120)
-	this.m_PingTimer.Start()
-	this.InitActor(this, reflect.TypeOf(Player{}))
-	actor.MGR.RegisterActor(this)
-	this.Actor.Start()
+func (p *PlayerMgr) Init() {
+	p.Actor.Init()
+	p.InitActor(p, reflect.TypeOf(Player{}))
+	actor.MGR.RegisterActor(p)
+	p.Actor.Start()
 }
 
 //玩家登录
-func (this *PlayerMgr) LoginPlayerRequset(ctx context.Context, playerId int64, gateClusterId uint32, socketId uint32) {
+func (p *PlayerMgr) LoginPlayerRequset(ctx context.Context, playerId int64, gateClusterId uint32, socketId uint32) {
 	pMailBox := cluster.MGR.MailBox.Get(playerId)
 	if pMailBox == nil {
 		info := &rpc.MailBox{}
@@ -60,9 +52,9 @@ func (this *PlayerMgr) LoginPlayerRequset(ctx context.Context, playerId int64, g
 }
 
 //玩家登录
-func (this *PlayerMgr) Player_Login(ctx context.Context, gateClusterId uint32, mailbox rpc.MailBox) {
+func (p *PlayerMgr) Player_Login(ctx context.Context, gateClusterId uint32, mailbox rpc.MailBox) {
 	playerId := mailbox.Id
-	if this.GetActor(playerId) != nil {
+	if p.GetActor(playerId) != nil {
 		actor.MGR.SendMsg(rpc.RpcHead{Id: playerId}, "Player.ReLogin", gateClusterId, mailbox)
 		return
 	}
@@ -71,11 +63,11 @@ func (this *PlayerMgr) Player_Login(ctx context.Context, gateClusterId uint32, m
 	pPlayer.PlayerId = playerId
 	pPlayer.SetId(playerId)
 	pPlayer.Init()
-	this.AddActor(pPlayer)
+	p.AddActor(pPlayer)
 	actor.MGR.SendMsg(rpc.RpcHead{Id: playerId}, "Player.Login", gateClusterId, mailbox)
 }
 
 //玩家断开链接
-func (this *PlayerMgr) G_ClientLost(ctx context.Context, playerId int64) {
+func (p *PlayerMgr) G_ClientLost(ctx context.Context, playerId int64) {
 	actor.MGR.SendMsg(rpc.RpcHead{Id: playerId}, "Player.Logout", playerId)
 }

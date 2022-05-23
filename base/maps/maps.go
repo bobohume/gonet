@@ -63,18 +63,18 @@ func NewWithStringComparator() *Map {
 
 // Put inserts node into the tree.
 // Key should adhere to the comparator's type assertion, otherwise method panics.
-func (this *Map) Put(key interface{}, value interface{}) {
+func (m *Map) Put(key interface{}, value interface{}) {
 	var insertedNode *Node
-	if this.Root == nil {
+	if m.Root == nil {
 		// Assert key is of comparator's type for initial tree
-		this.Comparator(key, key)
-		this.Root = &Node{Key: key, Value: value, color: red}
-		insertedNode = this.Root
+		m.Comparator(key, key)
+		m.Root = &Node{Key: key, Value: value, color: red}
+		insertedNode = m.Root
 	} else {
-		node := this.Root
+		node := m.Root
 		loop := true
 		for loop {
-			compare := this.Comparator(key, node.Key)
+			compare := m.Comparator(key, node.Key)
 			switch {
 			case compare == 0:
 				node.Key = key
@@ -100,15 +100,15 @@ func (this *Map) Put(key interface{}, value interface{}) {
 		}
 		insertedNode.Parent = node
 	}
-	this.insertCase1(insertedNode)
-	this.size++
+	m.insertCase1(insertedNode)
+	m.size++
 }
 
 // Get searches the node in the tree by key and returns its value or nil if key is not found in tree.
 // Second return parameter is true if key was found, otherwise false.
 // Key should adhere to the comparator's type assertion, otherwise method panics.
-func (this *Map) Get(key interface{}) (value interface{}, found bool) {
-	node := this.lookup(key)
+func (m *Map) Get(key interface{}) (value interface{}, found bool) {
+	node := m.lookup(key)
 	if node != nil {
 		return node.Value, true
 	}
@@ -117,9 +117,9 @@ func (this *Map) Get(key interface{}) (value interface{}, found bool) {
 
 // Remove remove the node from the tree by key.
 // Key should adhere to the comparator's type assertion, otherwise method panics.
-func (this *Map) Remove(key interface{}) {
+func (m *Map) Remove(key interface{}) {
 	var child *Node
-	node := this.lookup(key)
+	node := m.lookup(key)
 	if node == nil {
 		return
 	}
@@ -137,30 +137,30 @@ func (this *Map) Remove(key interface{}) {
 		}
 		if node.color == black {
 			node.color = nodeColor(child)
-			this.deleteCase1(node)
+			m.deleteCase1(node)
 		}
-		this.replaceNode(node, child)
+		m.replaceNode(node, child)
 		if node.Parent == nil && child != nil {
 			child.color = black
 		}
 	}
-	this.size--
+	m.size--
 }
 
 // Empty returns true if tree does not contain any nodes
-func (this *Map) Empty() bool {
-	return this.size == 0
+func (m *Map) Empty() bool {
+	return m.size == 0
 }
 
 // Size returns number of nodes in the tree.
-func (this *Map) Size() int {
-	return this.size
+func (m *Map) Size() int {
+	return m.size
 }
 
 // Keys returns all keys in-order
-func (this *Map) Keys() []interface{} {
-	keys := make([]interface{}, this.size)
-	it := this.Iterator()
+func (m *Map) Keys() []interface{} {
+	keys := make([]interface{}, m.size)
+	it := m.Iterator()
 	for i := 0; it.Next(); i++ {
 		keys[i] = it.Key()
 	}
@@ -168,9 +168,9 @@ func (this *Map) Keys() []interface{} {
 }
 
 // Values returns all values in-order based on the key.
-func (this *Map) Values() []interface{} {
-	values := make([]interface{}, this.size)
-	it := this.Iterator()
+func (m *Map) Values() []interface{} {
+	values := make([]interface{}, m.size)
+	it := m.Iterator()
 	for i := 0; it.Next(); i++ {
 		values[i] = it.Value()
 	}
@@ -178,9 +178,9 @@ func (this *Map) Values() []interface{} {
 }
 
 // Left returns the left-most (min) node or nil if tree is empty.
-func (this *Map) Left() *Node {
+func (m *Map) Left() *Node {
 	var parent *Node
-	current := this.Root
+	current := m.Root
 	for current != nil {
 		parent = current
 		current = current.Left
@@ -189,9 +189,9 @@ func (this *Map) Left() *Node {
 }
 
 // Right returns the right-most (max) node or nil if tree is empty.
-func (this *Map) Right() *Node {
+func (m *Map) Right() *Node {
 	var parent *Node
-	current := this.Root
+	current := m.Root
 	for current != nil {
 		parent = current
 		current = current.Right
@@ -207,11 +207,11 @@ func (this *Map) Right() *Node {
 // all nodes in the tree are larger than the given node.
 //
 // Key should adhere to the comparator's type assertion, otherwise method panics.
-func (this *Map) Floor(key interface{}) (floor *Node, found bool) {
+func (m *Map) Floor(key interface{}) (floor *Node, found bool) {
 	found = false
-	node := this.Root
+	node := m.Root
 	for node != nil {
-		compare := this.Comparator(key, node.Key)
+		compare := m.Comparator(key, node.Key)
 		switch {
 		case compare == 0:
 			return node, true
@@ -236,11 +236,11 @@ func (this *Map) Floor(key interface{}) (floor *Node, found bool) {
 // all nodes in the tree are smaller than the given node.
 //
 // Key should adhere to the comparator's type assertion, otherwise method panics.
-func (this *Map) Ceiling(key interface{}) (ceiling *Node, found bool) {
+func (m *Map) Ceiling(key interface{}) (ceiling *Node, found bool) {
 	found = false
-	node := this.Root
+	node := m.Root
 	for node != nil {
-		compare := this.Comparator(key, node.Key)
+		compare := m.Comparator(key, node.Key)
 		switch {
 		case compare == 0:
 			return node, true
@@ -258,16 +258,16 @@ func (this *Map) Ceiling(key interface{}) (ceiling *Node, found bool) {
 }
 
 // Clear removes all nodes from the tree.
-func (this *Map) Clear() {
-	this.Root = nil
-	this.size = 0
+func (m *Map) Clear() {
+	m.Root = nil
+	m.size = 0
 }
 
 // String returns a string representation of container
-func (this *Map) String() string {
+func (m *Map) String() string {
 	str := "RedBlackTree\n"
-	if !this.Empty() {
-		output(this.Root, "", true, &str)
+	if !m.Empty() {
+		output(m.Root, "", true, &str)
 	}
 	return str
 }
@@ -304,10 +304,10 @@ func output(node *Node, prefix string, isTail bool, str *string) {
 	}
 }
 
-func (this *Map) lookup(key interface{}) *Node {
-	node := this.Root
+func (m *Map) lookup(key interface{}) *Node {
+	node := m.Root
 	for node != nil {
-		compare := this.Comparator(key, node.Key)
+		compare := m.Comparator(key, node.Key)
 		switch {
 		case compare == 0:
 			return node
@@ -344,9 +344,9 @@ func (node *Node) sibling() *Node {
 	return node.Parent.Left
 }
 
-func (this *Map) rotateLeft(node *Node) {
+func (m *Map) rotateLeft(node *Node) {
 	right := node.Right
-	this.replaceNode(node, right)
+	m.replaceNode(node, right)
 	node.Right = right.Left
 	if right.Left != nil {
 		right.Left.Parent = node
@@ -355,9 +355,9 @@ func (this *Map) rotateLeft(node *Node) {
 	node.Parent = right
 }
 
-func (this *Map) rotateRight(node *Node) {
+func (m *Map) rotateRight(node *Node) {
 	left := node.Left
-	this.replaceNode(node, left)
+	m.replaceNode(node, left)
 	node.Left = left.Right
 	if left.Right != nil {
 		left.Right.Parent = node
@@ -366,9 +366,9 @@ func (this *Map) rotateRight(node *Node) {
 	node.Parent = left
 }
 
-func (this *Map) replaceNode(old *Node, new *Node) {
+func (m *Map) replaceNode(old *Node, new *Node) {
 	if old.Parent == nil {
-		this.Root = new
+		m.Root = new
 	} else {
 		if old == old.Parent.Left {
 			old.Parent.Left = new
@@ -381,53 +381,53 @@ func (this *Map) replaceNode(old *Node, new *Node) {
 	}
 }
 
-func (this *Map) insertCase1(node *Node) {
+func (m *Map) insertCase1(node *Node) {
 	if node.Parent == nil {
 		node.color = black
 	} else {
-		this.insertCase2(node)
+		m.insertCase2(node)
 	}
 }
 
-func (this *Map) insertCase2(node *Node) {
+func (m *Map) insertCase2(node *Node) {
 	if nodeColor(node.Parent) == black {
 		return
 	}
-	this.insertCase3(node)
+	m.insertCase3(node)
 }
 
-func (this *Map) insertCase3(node *Node) {
+func (m *Map) insertCase3(node *Node) {
 	uncle := node.uncle()
 	if nodeColor(uncle) == red {
 		node.Parent.color = black
 		uncle.color = black
 		node.grandparent().color = red
-		this.insertCase1(node.grandparent())
+		m.insertCase1(node.grandparent())
 	} else {
-		this.insertCase4(node)
+		m.insertCase4(node)
 	}
 }
 
-func (this *Map) insertCase4(node *Node) {
+func (m *Map) insertCase4(node *Node) {
 	grandparent := node.grandparent()
 	if node == node.Parent.Right && node.Parent == grandparent.Left {
-		this.rotateLeft(node.Parent)
+		m.rotateLeft(node.Parent)
 		node = node.Left
 	} else if node == node.Parent.Left && node.Parent == grandparent.Right {
-		this.rotateRight(node.Parent)
+		m.rotateRight(node.Parent)
 		node = node.Right
 	}
-	this.insertCase5(node)
+	m.insertCase5(node)
 }
 
-func (this *Map) insertCase5(node *Node) {
+func (m *Map) insertCase5(node *Node) {
 	node.Parent.color = black
 	grandparent := node.grandparent()
 	grandparent.color = red
 	if node == node.Parent.Left && node.Parent == grandparent.Left {
-		this.rotateRight(grandparent)
+		m.rotateRight(grandparent)
 	} else if node == node.Parent.Right && node.Parent == grandparent.Right {
-		this.rotateLeft(grandparent)
+		m.rotateLeft(grandparent)
 	}
 }
 
@@ -441,41 +441,41 @@ func (node *Node) maximumNode() *Node {
 	return node
 }
 
-func (this *Map) deleteCase1(node *Node) {
+func (m *Map) deleteCase1(node *Node) {
 	if node.Parent == nil {
 		return
 	}
-	this.deleteCase2(node)
+	m.deleteCase2(node)
 }
 
-func (this *Map) deleteCase2(node *Node) {
+func (m *Map) deleteCase2(node *Node) {
 	sibling := node.sibling()
 	if nodeColor(sibling) == red {
 		node.Parent.color = red
 		sibling.color = black
 		if node == node.Parent.Left {
-			this.rotateLeft(node.Parent)
+			m.rotateLeft(node.Parent)
 		} else {
-			this.rotateRight(node.Parent)
+			m.rotateRight(node.Parent)
 		}
 	}
-	this.deleteCase3(node)
+	m.deleteCase3(node)
 }
 
-func (this *Map) deleteCase3(node *Node) {
+func (m *Map) deleteCase3(node *Node) {
 	sibling := node.sibling()
 	if nodeColor(node.Parent) == black &&
 		nodeColor(sibling) == black &&
 		nodeColor(sibling.Left) == black &&
 		nodeColor(sibling.Right) == black {
 		sibling.color = red
-		this.deleteCase1(node.Parent)
+		m.deleteCase1(node.Parent)
 	} else {
-		this.deleteCase4(node)
+		m.deleteCase4(node)
 	}
 }
 
-func (this *Map) deleteCase4(node *Node) {
+func (m *Map) deleteCase4(node *Node) {
 	sibling := node.sibling()
 	if nodeColor(node.Parent) == red &&
 		nodeColor(sibling) == black &&
@@ -484,11 +484,11 @@ func (this *Map) deleteCase4(node *Node) {
 		sibling.color = red
 		node.Parent.color = black
 	} else {
-		this.deleteCase5(node)
+		m.deleteCase5(node)
 	}
 }
 
-func (this *Map) deleteCase5(node *Node) {
+func (m *Map) deleteCase5(node *Node) {
 	sibling := node.sibling()
 	if node == node.Parent.Left &&
 		nodeColor(sibling) == black &&
@@ -496,28 +496,28 @@ func (this *Map) deleteCase5(node *Node) {
 		nodeColor(sibling.Right) == black {
 		sibling.color = red
 		sibling.Left.color = black
-		this.rotateRight(sibling)
+		m.rotateRight(sibling)
 	} else if node == node.Parent.Right &&
 		nodeColor(sibling) == black &&
 		nodeColor(sibling.Right) == red &&
 		nodeColor(sibling.Left) == black {
 		sibling.color = red
 		sibling.Right.color = black
-		this.rotateLeft(sibling)
+		m.rotateLeft(sibling)
 	}
-	this.deleteCase6(node)
+	m.deleteCase6(node)
 }
 
-func (this *Map) deleteCase6(node *Node) {
+func (m *Map) deleteCase6(node *Node) {
 	sibling := node.sibling()
 	sibling.color = nodeColor(node.Parent)
 	node.Parent.color = black
 	if node == node.Parent.Left && nodeColor(sibling.Right) == red {
 		sibling.Right.color = black
-		this.rotateLeft(node.Parent)
+		m.rotateLeft(node.Parent)
 	} else if nodeColor(sibling.Left) == red {
 		sibling.Left.color = black
-		this.rotateRight(node.Parent)
+		m.rotateRight(node.Parent)
 	}
 }
 

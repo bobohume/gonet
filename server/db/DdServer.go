@@ -3,7 +3,6 @@ package db
 import (
 	"gonet/actor"
 	"gonet/base"
-	"gonet/base/ini"
 	"gonet/common"
 	"gonet/common/cluster"
 	"gonet/network"
@@ -14,8 +13,7 @@ import (
 
 type (
 	ServerMgr struct {
-		m_pService *network.ServerSocket
-		m_config   ini.Config
+		service *network.ServerSocket
 	}
 
 	IServerMgr interface {
@@ -39,7 +37,7 @@ var (
 	SERVER ServerMgr
 )
 
-func (this *ServerMgr) Init() bool {
+func (s *ServerMgr) Init() bool {
 	//初始配置文件
 	base.ReadConf("gonet.yaml", &CONF)
 
@@ -54,7 +52,7 @@ func (this *ServerMgr) Init() bool {
 	ShowMessage()
 
 	base.LOG.Println("正在初始化数据库连接...")
-	if this.InitDB() {
+	if s.InitDB() {
 		base.LOG.Printf("[%s]数据库连接是失败...", CONF.Db.Name)
 		log.Fatalf("[%s]数据库连接是失败...", CONF.Db.Name)
 		return false
@@ -62,9 +60,9 @@ func (this *ServerMgr) Init() bool {
 	base.LOG.Printf("[%s]数据库初始化成功!", CONF.Db.Name)
 
 	//初始化socket
-	this.m_pService = new(network.ServerSocket)
-	this.m_pService.Init(CONF.Server.Ip, CONF.Server.Port)
-	this.m_pService.Start()
+	s.service = new(network.ServerSocket)
+	s.service.Init(CONF.Server.Ip, CONF.Server.Port)
+	s.service.Start()
 
 	//本身db集群管理
 	cluster.MGR.InitCluster(&common.ClusterInfo{Type: rpc.SERVICE_DB, Ip: CONF.Server.Ip, Port: int32(CONF.Server.Port)}, CONF.Etcd.Endpoints, CONF.Nats.Endpoints,
@@ -76,10 +74,10 @@ func (this *ServerMgr) Init() bool {
 	return false
 }
 
-func (this *ServerMgr) InitDB() bool {
+func (s *ServerMgr) InitDB() bool {
 	return orm.OpenDB(CONF.Db) != nil
 }
 
-func (this *ServerMgr) GetServer() *network.ServerSocket {
-	return this.m_pService
+func (s *ServerMgr) GetServer() *network.ServerSocket {
+	return s.service
 }
