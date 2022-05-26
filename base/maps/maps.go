@@ -2,21 +2,7 @@ package maps
 
 import (
 	"fmt"
-	"gonet/base/containers"
 )
-
-// Map interface that all Maps implement
-type IMap interface {
-	containers.Container
-	// Empty() bool
-	// Size() int
-	// Clear()
-	// Values() []interface{}
-}
-
-func assertMapImplementation() {
-	var _ IMap = (*Map)(nil)
-}
 
 type color bool
 
@@ -24,57 +10,66 @@ const (
 	black, red color = true, false
 )
 
+type OrderKey interface {
+	int | int8 | int16 | int32 | int64 | uint | uint8 | uint16 |
+		uint32 | uint64 | uintptr | float32 | float64 | string
+}
+
+// IntComparator provides a basic comparison on int
+func Comparator[K OrderKey](a, b K) int {
+	switch {
+	case a > b:
+		return 1
+	case a < b:
+		return -1
+	default:
+		return 0
+	}
+}
+
+// Map interface that all Maps implement
+type IMap[K OrderKey, V any] interface {
+	Empty() bool
+	Size() int
+	Clear()
+	Values() []V
+}
+
+func assertMapImplementation() {
+	var _ IMap[int, interface{}] = (*Map[int, interface{}])(nil)
+}
+
 // Map holds elements of the red-black tree
-type Map struct {
-	Root       *Node
-	size       int
-	Comparator containers.Comparator
+type Map[K OrderKey, V any] struct {
+	Root *Node[K, V]
+	size int
+	Nil  V
 }
 
 // Node is a single element within the Map
-type Node struct {
-	Key    interface{}
-	Value  interface{}
+type Node[K OrderKey, V any] struct {
+	Key    K
+	Value  V
 	color  color
-	Left   *Node
-	Right  *Node
-	Parent *Node
-}
-
-// NewWith instantiates a red-black tree with the custom comparator.
-func NewWith(comparator containers.Comparator) *Map {
-	return &Map{Comparator: comparator}
-}
-
-// NewWithIntComparator instantiates a red-black tree with the IntComparator, i.e. keys are of type int.
-func NewWithIntComparator() *Map {
-	return &Map{Comparator: containers.IntComparator}
-}
-
-// NewWithIntComparator instantiates a red-black tree with the UInt32Comparator, i.e. keys are of type int.
-func NewWithUInt32Comparator() *Map {
-	return &Map{Comparator: containers.UInt32Comparator}
-}
-
-// NewWithStringComparator instantiates a red-black tree with the StringComparator, i.e. keys are of type string.
-func NewWithStringComparator() *Map {
-	return &Map{Comparator: containers.StringComparator}
+	Left   *Node[K, V]
+	Right  *Node[K, V]
+	Parent *Node[K, V]
 }
 
 // Put inserts node into the tree.
 // Key should adhere to the comparator's type assertion, otherwise method panics.
-func (m *Map) Put(key interface{}, value interface{}) {
-	var insertedNode *Node
+func (m *Map[K, V]) Put(key K, value V) {
+	var insertedNode *Node[K, V]
 	if m.Root == nil {
 		// Assert key is of comparator's type for initial tree
-		m.Comparator(key, key)
-		m.Root = &Node{Key: key, Value: value, color: red}
+		Comparator(key, key)
+		m.Root = &Node[K, V]{Key: key, Value: value, color: red}
 		insertedNode = m.Root
 	} else {
 		node := m.Root
 		loop := true
 		for loop {
-			compare := m.Comparator(key, node.Key)
+			compare := Comparator(key, node.Key)
 			switch {
 			case compare == 0:
 				node.Key = key
@@ -82,7 +77,7 @@ func (m *Map) Put(key interface{}, value interface{}) {
 				return
 			case compare < 0:
 				if node.Left == nil {
-					node.Left = &Node{Key: key, Value: value, color: red}
+					node.Left = &Node[K, V]{Key: key, Value: value, color: red}
 					insertedNode = node.Left
 					loop = false
 				} else {
@@ -90,7 +85,7 @@ func (m *Map) Put(key interface{}, value interface{}) {
 				}
 			case compare > 0:
 				if node.Right == nil {
-					node.Right = &Node{Key: key, Value: value, color: red}
+					node.Right = &Node[K, V]{Key: key, Value: value, color: red}
 					insertedNode = node.Right
 					loop = false
 				} else {
@@ -107,18 +102,18 @@ func (m *Map) Put(key interface{}, value interface{}) {
 // Get searches the node in the tree by key and returns its value or nil if key is not found in tree.
 // Second return parameter is true if key was found, otherwise false.
 // Key should adhere to the comparator's type assertion, otherwise method panics.
-func (m *Map) Get(key interface{}) (value interface{}, found bool) {
+func (m *Map[K, V]) Get(key K) (value V, found bool) {
 	node := m.lookup(key)
 	if node != nil {
 		return node.Value, true
 	}
-	return nil, false
+	return m.Nil, false
 }
 
 // Remove remove the node from the tree by key.
 // Key should adhere to the comparator's type assertion, otherwise method panics.
-func (m *Map) Remove(key interface{}) {
-	var child *Node
+func (m *Map[K, V]) Remove(key K) {
+	var child *Node[K, V]
 	node := m.lookup(key)
 	if node == nil {
 		return
@@ -148,18 +143,18 @@ func (m *Map) Remove(key interface{}) {
 }
 
 // Empty returns true if tree does not contain any nodes
-func (m *Map) Empty() bool {
+func (m *Map[K, V]) Empty() bool {
 	return m.size == 0
 }
 
 // Size returns number of nodes in the tree.
-func (m *Map) Size() int {
+func (m *Map[K, V]) Size() int {
 	return m.size
 }
 
 // Keys returns all keys in-order
-func (m *Map) Keys() []interface{} {
-	keys := make([]interface{}, m.size)
+func (m *Map[K, V]) Keys() []K {
+	keys := make([]K, m.size)
 	it := m.Iterator()
 	for i := 0; it.Next(); i++ {
 		keys[i] = it.Key()
@@ -168,8 +163,8 @@ func (m *Map) Keys() []interface{} {
 }
 
 // Values returns all values in-order based on the key.
-func (m *Map) Values() []interface{} {
-	values := make([]interface{}, m.size)
+func (m *Map[K, V]) Values() []V {
+	values := make([]V, m.size)
 	it := m.Iterator()
 	for i := 0; it.Next(); i++ {
 		values[i] = it.Value()
@@ -178,8 +173,8 @@ func (m *Map) Values() []interface{} {
 }
 
 // Left returns the left-most (min) node or nil if tree is empty.
-func (m *Map) Left() *Node {
-	var parent *Node
+func (m *Map[K, V]) Left() *Node[K, V] {
+	var parent *Node[K, V]
 	current := m.Root
 	for current != nil {
 		parent = current
@@ -189,8 +184,8 @@ func (m *Map) Left() *Node {
 }
 
 // Right returns the right-most (max) node or nil if tree is empty.
-func (m *Map) Right() *Node {
-	var parent *Node
+func (m *Map[K, V]) Right() *Node[K, V] {
+	var parent *Node[K, V]
 	current := m.Root
 	for current != nil {
 		parent = current
@@ -207,11 +202,11 @@ func (m *Map) Right() *Node {
 // all nodes in the tree are larger than the given node.
 //
 // Key should adhere to the comparator's type assertion, otherwise method panics.
-func (m *Map) Floor(key interface{}) (floor *Node, found bool) {
+func (m *Map[K, V]) Floor(key K) (floor *Node[K, V], found bool) {
 	found = false
 	node := m.Root
 	for node != nil {
-		compare := m.Comparator(key, node.Key)
+		compare := Comparator(key, node.Key)
 		switch {
 		case compare == 0:
 			return node, true
@@ -236,11 +231,11 @@ func (m *Map) Floor(key interface{}) (floor *Node, found bool) {
 // all nodes in the tree are smaller than the given node.
 //
 // Key should adhere to the comparator's type assertion, otherwise method panics.
-func (m *Map) Ceiling(key interface{}) (ceiling *Node, found bool) {
+func (m *Map[K, V]) Ceiling(key K) (ceiling *Node[K, V], found bool) {
 	found = false
 	node := m.Root
 	for node != nil {
-		compare := m.Comparator(key, node.Key)
+		compare := Comparator(key, node.Key)
 		switch {
 		case compare == 0:
 			return node, true
@@ -258,13 +253,13 @@ func (m *Map) Ceiling(key interface{}) (ceiling *Node, found bool) {
 }
 
 // Clear removes all nodes from the tree.
-func (m *Map) Clear() {
+func (m *Map[K, V]) Clear() {
 	m.Root = nil
 	m.size = 0
 }
 
 // String returns a string representation of container
-func (m *Map) String() string {
+func (m *Map[K, V]) String() string {
 	str := "RedBlackTree\n"
 	if !m.Empty() {
 		output(m.Root, "", true, &str)
@@ -272,11 +267,11 @@ func (m *Map) String() string {
 	return str
 }
 
-func (node *Node) String() string {
+func (node *Node[K, V]) String() string {
 	return fmt.Sprintf("%v", node.Key)
 }
 
-func output(node *Node, prefix string, isTail bool, str *string) {
+func output[K OrderKey, V any](node *Node[K, V], prefix string, isTail bool, str *string) {
 	if node.Right != nil {
 		newPrefix := prefix
 		if isTail {
@@ -304,10 +299,10 @@ func output(node *Node, prefix string, isTail bool, str *string) {
 	}
 }
 
-func (m *Map) lookup(key interface{}) *Node {
+func (m *Map[K, V]) lookup(key K) *Node[K, V] {
 	node := m.Root
 	for node != nil {
-		compare := m.Comparator(key, node.Key)
+		compare := Comparator(key, node.Key)
 		switch {
 		case compare == 0:
 			return node
@@ -320,21 +315,21 @@ func (m *Map) lookup(key interface{}) *Node {
 	return nil
 }
 
-func (node *Node) grandparent() *Node {
+func (node *Node[K, V]) grandparent() *Node[K, V] {
 	if node != nil && node.Parent != nil {
 		return node.Parent.Parent
 	}
 	return nil
 }
 
-func (node *Node) uncle() *Node {
+func (node *Node[K, V]) uncle() *Node[K, V] {
 	if node == nil || node.Parent == nil || node.Parent.Parent == nil {
 		return nil
 	}
 	return node.Parent.sibling()
 }
 
-func (node *Node) sibling() *Node {
+func (node *Node[K, V]) sibling() *Node[K, V] {
 	if node == nil || node.Parent == nil {
 		return nil
 	}
@@ -344,7 +339,7 @@ func (node *Node) sibling() *Node {
 	return node.Parent.Left
 }
 
-func (m *Map) rotateLeft(node *Node) {
+func (m *Map[K, V]) rotateLeft(node *Node[K, V]) {
 	right := node.Right
 	m.replaceNode(node, right)
 	node.Right = right.Left
@@ -355,7 +350,7 @@ func (m *Map) rotateLeft(node *Node) {
 	node.Parent = right
 }
 
-func (m *Map) rotateRight(node *Node) {
+func (m *Map[K, V]) rotateRight(node *Node[K, V]) {
 	left := node.Left
 	m.replaceNode(node, left)
 	node.Left = left.Right
@@ -366,7 +361,7 @@ func (m *Map) rotateRight(node *Node) {
 	node.Parent = left
 }
 
-func (m *Map) replaceNode(old *Node, new *Node) {
+func (m *Map[K, V]) replaceNode(old *Node[K, V], new *Node[K, V]) {
 	if old.Parent == nil {
 		m.Root = new
 	} else {
@@ -381,7 +376,7 @@ func (m *Map) replaceNode(old *Node, new *Node) {
 	}
 }
 
-func (m *Map) insertCase1(node *Node) {
+func (m *Map[K, V]) insertCase1(node *Node[K, V]) {
 	if node.Parent == nil {
 		node.color = black
 	} else {
@@ -389,14 +384,14 @@ func (m *Map) insertCase1(node *Node) {
 	}
 }
 
-func (m *Map) insertCase2(node *Node) {
+func (m *Map[K, V]) insertCase2(node *Node[K, V]) {
 	if nodeColor(node.Parent) == black {
 		return
 	}
 	m.insertCase3(node)
 }
 
-func (m *Map) insertCase3(node *Node) {
+func (m *Map[K, V]) insertCase3(node *Node[K, V]) {
 	uncle := node.uncle()
 	if nodeColor(uncle) == red {
 		node.Parent.color = black
@@ -408,7 +403,7 @@ func (m *Map) insertCase3(node *Node) {
 	}
 }
 
-func (m *Map) insertCase4(node *Node) {
+func (m *Map[K, V]) insertCase4(node *Node[K, V]) {
 	grandparent := node.grandparent()
 	if node == node.Parent.Right && node.Parent == grandparent.Left {
 		m.rotateLeft(node.Parent)
@@ -420,7 +415,7 @@ func (m *Map) insertCase4(node *Node) {
 	m.insertCase5(node)
 }
 
-func (m *Map) insertCase5(node *Node) {
+func (m *Map[K, V]) insertCase5(node *Node[K, V]) {
 	node.Parent.color = black
 	grandparent := node.grandparent()
 	grandparent.color = red
@@ -431,7 +426,7 @@ func (m *Map) insertCase5(node *Node) {
 	}
 }
 
-func (node *Node) maximumNode() *Node {
+func (node *Node[K, V]) maximumNode() *Node[K, V] {
 	if node == nil {
 		return nil
 	}
@@ -441,14 +436,14 @@ func (node *Node) maximumNode() *Node {
 	return node
 }
 
-func (m *Map) deleteCase1(node *Node) {
+func (m *Map[K, V]) deleteCase1(node *Node[K, V]) {
 	if node.Parent == nil {
 		return
 	}
 	m.deleteCase2(node)
 }
 
-func (m *Map) deleteCase2(node *Node) {
+func (m *Map[K, V]) deleteCase2(node *Node[K, V]) {
 	sibling := node.sibling()
 	if nodeColor(sibling) == red {
 		node.Parent.color = red
@@ -462,7 +457,7 @@ func (m *Map) deleteCase2(node *Node) {
 	m.deleteCase3(node)
 }
 
-func (m *Map) deleteCase3(node *Node) {
+func (m *Map[K, V]) deleteCase3(node *Node[K, V]) {
 	sibling := node.sibling()
 	if nodeColor(node.Parent) == black &&
 		nodeColor(sibling) == black &&
@@ -475,7 +470,7 @@ func (m *Map) deleteCase3(node *Node) {
 	}
 }
 
-func (m *Map) deleteCase4(node *Node) {
+func (m *Map[K, V]) deleteCase4(node *Node[K, V]) {
 	sibling := node.sibling()
 	if nodeColor(node.Parent) == red &&
 		nodeColor(sibling) == black &&
@@ -488,7 +483,7 @@ func (m *Map) deleteCase4(node *Node) {
 	}
 }
 
-func (m *Map) deleteCase5(node *Node) {
+func (m *Map[K, V]) deleteCase5(node *Node[K, V]) {
 	sibling := node.sibling()
 	if node == node.Parent.Left &&
 		nodeColor(sibling) == black &&
@@ -508,7 +503,7 @@ func (m *Map) deleteCase5(node *Node) {
 	m.deleteCase6(node)
 }
 
-func (m *Map) deleteCase6(node *Node) {
+func (m *Map[K, V]) deleteCase6(node *Node[K, V]) {
 	sibling := node.sibling()
 	sibling.color = nodeColor(node.Parent)
 	node.Parent.color = black
@@ -521,7 +516,7 @@ func (m *Map) deleteCase6(node *Node) {
 	}
 }
 
-func nodeColor(node *Node) color {
+func nodeColor[K OrderKey, V any](node *Node[K, V]) color {
 	if node == nil {
 		return black
 	}

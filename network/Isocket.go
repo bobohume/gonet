@@ -50,7 +50,7 @@ type (
 
 		sendTimes      int
 		receiveTimes   int
-		packetFuncList *vector.Vector //call back
+		packetFuncList *vector.Vector[PacketFunc] //call back
 
 		isHalf       bool
 		halfSize     int
@@ -104,7 +104,7 @@ func WithKcp() OpOption {
 func (this *Socket) Init(ip string, port int, params ...OpOption) bool {
 	op := &Op{}
 	op.applyOpts(params)
-	this.packetFuncList = vector.NewVector()
+	this.packetFuncList = &vector.Vector[PacketFunc]{}
 	this.SetState(SSF_NULL)
 	this.receiveBufferSize = 1024
 	this.connectType = SERVER_CONNECT
@@ -217,7 +217,7 @@ func (this *Socket) CallMsg(head rpc.RpcHead, funcName string, params ...interfa
 func (this *Socket) HandlePacket(buff []byte) {
 	packet := rpc.Packet{Id: this.clientId, Buff: buff}
 	for _, v := range this.packetFuncList.Values() {
-		if v.(PacketFunc)(packet) {
+		if v(packet) {
 			break
 		}
 	}

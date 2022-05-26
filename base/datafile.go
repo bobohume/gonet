@@ -63,7 +63,7 @@ type (
 		fileName           string //文件名
 		fstream            *BitStream
 		readstep           int //控制读的总数量
-		dataTypes          vector.Vector
+		dataTypes          vector.Vector[int]
 		currentColumnIndex int
 	}
 
@@ -114,7 +114,7 @@ func (d *DataFile) ReadDataFile(fileName string) bool {
 		//col name
 		d.fstream.ReadString()
 		nDataType := d.fstream.ReadInt(8)
-		d.dataTypes.PushBack(int(nDataType))
+		d.dataTypes.PushBack(nDataType)
 	}
 	return true
 }
@@ -135,7 +135,7 @@ func (d *DataFile) GetData(data *Data) bool {
 	}
 
 	data.fileName = d.fileName
-	switch d.dataTypes.Get(d.currentColumnIndex).(int) {
+	switch d.dataTypes.Get(d.currentColumnIndex) {
 	case DType_String:
 		data.str = d.fstream.ReadString()
 	case DType_S8:
@@ -197,7 +197,7 @@ func (d *DataFile) GetData(data *Data) bool {
 		}
 	}
 
-	data.dataType = d.dataTypes.Get(d.currentColumnIndex).(int)
+	data.dataType = d.dataTypes.Get(d.currentColumnIndex)
 	d.currentColumnIndex = (d.currentColumnIndex + 1) % d.ColumNum
 	d.readstep--
 	return true

@@ -47,7 +47,7 @@ type (
 
 	WorkIdQue struct { //workid que
 		workMap map[uint32]int
-		idelVec *vector.Vector
+		idelVec *vector.Vector[int]
 		id      int
 	}
 
@@ -101,7 +101,7 @@ func ParseUUID(id int64) (ts int64, workerId int64, seq int64) {
 //----------WorkIdQue----------//
 func (w *WorkIdQue) Init(id int) {
 	w.workMap = make(map[uint32]int)
-	w.idelVec = vector.NewVector()
+	w.idelVec = &vector.Vector[int]{}
 	w.id = id
 }
 
@@ -113,11 +113,10 @@ func (w *WorkIdQue) Add(val string) int {
 	}
 
 	if !w.idelVec.Empty() {
-		back := w.idelVec.Back()
-		nId = back.(int)
+		nId := w.idelVec.Back()
 		w.idelVec.PopBack()
 		w.workMap[nVal] = nId
-		return back.(int)
+		return nId
 	}
 
 	nId = w.id

@@ -44,7 +44,7 @@ type (
 		id        int64
 		state     int32
 		trace     traceInfo //trace func
-		mailBox   *mpsc.Queue
+		mailBox   *mpsc.Queue[*CallIO]
 		mailIn    [8]int64
 		mailChan  chan bool
 		timerId   *int64
@@ -149,7 +149,7 @@ func (a *Actor) Acotr() *Actor {
 
 func (a *Actor) Init() {
 	a.mailChan = make(chan bool)
-	a.mailBox = mpsc.New()
+	a.mailBox = mpsc.New[*CallIO]()
 	a.acotrChan = make(chan int, 1)
 	//trance
 	a.trace.Init()
@@ -210,7 +210,7 @@ func (a *Actor) Send(head rpc.RpcHead, packet rpc.Packet) {
 	io.RpcHead = head
 	io.RpcPacket = packet.RpcPacket
 	io.Buff = packet.Buff
-	a.mailBox.Push(io)
+	a.mailBox.Push(&io)
 	if atomic.LoadInt64(&a.mailIn[0]) == 0 && atomic.CompareAndSwapInt64(&a.mailIn[0], 0, 1) {
 		a.mailChan <- true
 	}
@@ -220,7 +220,7 @@ func (a *Actor) Trace(funcName string) {
 	a.trace.funcName = funcName
 }
 
-func (a *Actor) call(io CallIO) {
+func (a *Actor) call(io *CallIO) {
 	rpcPacket := io.RpcPacket
 	head := io.RpcHead
 	funcName := rpcPacket.FuncName
@@ -264,7 +264,7 @@ func (a *Actor) UpdateTimer(ctx context.Context, p *int64) {
 func (a *Actor) consume() {
 	atomic.StoreInt64(&a.mailIn[0], 0)
 	for data := a.mailBox.Pop(); data != nil; data = a.mailBox.Pop() {
-		a.call(data.(CallIO))
+		a.call(data)
 	}
 }
 

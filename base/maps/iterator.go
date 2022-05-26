@@ -1,15 +1,9 @@
 package maps
 
-import "gonet/base/containers"
-
-func assertIteratorImplementation() {
-	var _ containers.ReverseIteratorWithKey = (*Iterator)(nil)
-}
-
 // Iterator holding the iterator's state
-type Iterator struct {
-	maps     *Map
-	node     *Node
+type Iterator[K OrderKey, V any] struct {
+	maps     *Map[K, V]
+	node     *Node[K, V]
 	position position
 }
 
@@ -20,15 +14,15 @@ const (
 )
 
 // Iterator returns a stateful iterator whose elements are key/value pairs.
-func (it *Map) Iterator() Iterator {
-	return Iterator{maps: it, node: nil, position: begin}
+func (it *Map[K, V]) Iterator() Iterator[K, V] {
+	return Iterator[K, V]{maps: it, node: nil, position: begin}
 }
 
 // Next moves the iterator to the next element and returns true if there was a next element in the container.
 // If Next() returns true, then next element's key and value can be retrieved by Key() and Value().
 // If Next() was called for the first time, then it will point the iterator to the first element if it exists.
 // Modifies the state of the iterator.
-func (it *Iterator) Next() bool {
+func (it *Iterator[K, V]) Next() bool {
 	if it.position == end {
 		goto end
 	}
@@ -51,7 +45,7 @@ func (it *Iterator) Next() bool {
 		node := it.node
 		for it.node.Parent != nil {
 			it.node = it.node.Parent
-			if it.maps.Comparator(node.Key, it.node.Key) <= 0 {
+			if Comparator(node.Key, it.node.Key) <= 0 {
 				goto between
 			}
 		}
@@ -70,7 +64,7 @@ between:
 // Prev moves the iterator to the previous element and returns true if there was a previous element in the container.
 // If Prev() returns true, then previous element's key and value can be retrieved by Key() and Value().
 // Modifies the state of the iterator.
-func (it *Iterator) Prev() bool {
+func (it *Iterator[K, V]) Prev() bool {
 	if it.position == begin {
 		goto begin
 	}
@@ -93,7 +87,7 @@ func (it *Iterator) Prev() bool {
 		node := it.node
 		for it.node.Parent != nil {
 			it.node = it.node.Parent
-			if it.maps.Comparator(node.Key, it.node.Key) >= 0 {
+			if Comparator(node.Key, it.node.Key) >= 0 {
 				goto between
 			}
 		}
@@ -111,26 +105,26 @@ between:
 
 // Value returns the current element's value.
 // Does not modify the state of the iterator.
-func (it *Iterator) Value() interface{} {
+func (it *Iterator[K, V]) Value() V {
 	return it.node.Value
 }
 
 // Key returns the current element's key.
 // Does not modify the state of the iterator.
-func (it *Iterator) Key() interface{} {
+func (it *Iterator[K, V]) Key() K {
 	return it.node.Key
 }
 
 // Begin resets the iterator to its initial state (one-before-first)
 // Call Next() to fetch the first element if any.
-func (it *Iterator) Begin() {
+func (it *Iterator[K, V]) Begin() {
 	it.node = nil
 	it.position = begin
 }
 
 // End moves the iterator past the last element (one-past-the-end).
 // Call Prev() to fetch the last element if any.
-func (it *Iterator) End() {
+func (it *Iterator[K, V]) End() {
 	it.node = nil
 	it.position = end
 }
@@ -138,7 +132,7 @@ func (it *Iterator) End() {
 // First moves the iterator to the first element and returns true if there was a first element in the container.
 // If First() returns true, then first element's key and value can be retrieved by Key() and Value().
 // Modifies the state of the iterator
-func (it *Iterator) First() bool {
+func (it *Iterator[K, V]) First() bool {
 	it.Begin()
 	return it.Next()
 }
@@ -146,7 +140,7 @@ func (it *Iterator) First() bool {
 // Last moves the iterator to the last element and returns true if there was a last element in the container.
 // If Last() returns true, then last element's key and value can be retrieved by Key() and Value().
 // Modifies the state of the iterator.
-func (it *Iterator) Last() bool {
+func (it *Iterator[K, V]) Last() bool {
 	it.End()
 	return it.Prev()
 }

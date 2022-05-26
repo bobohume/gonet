@@ -11,7 +11,7 @@ import (
 )
 
 func TestQueue_PushPop(t *testing.T) {
-	q := New()
+	q := New[int]()
 
 	q.Push(1)
 	q.Push(2)
@@ -21,10 +21,10 @@ func TestQueue_PushPop(t *testing.T) {
 }
 
 func TestQueue_Empty(t *testing.T) {
-	q := New()
+	q := New[int]()
 	t.Log(q.Empty())
 	q.Push(1)
-	t.Log( q.Empty())
+	t.Log(q.Empty())
 }
 
 func TestQueue_PushPopOneProducer(t *testing.T) {
@@ -32,7 +32,7 @@ func TestQueue_PushPopOneProducer(t *testing.T) {
 
 	var wg sync.WaitGroup
 	wg.Add(1)
-	q := New()
+	q := New[*string]()
 	go func() {
 		i := 0
 		for {
@@ -49,10 +49,10 @@ func TestQueue_PushPopOneProducer(t *testing.T) {
 		}
 	}()
 
-	var val interface{} = "foo"
+	var val string = "foo"
 
 	for i := 0; i < expCount; i++ {
-		q.Push(val)
+		q.Push(&val)
 	}
 
 	wg.Wait()
@@ -64,7 +64,7 @@ func TestMpscQueueConsistency(t *testing.T) {
 	cmax := max / c
 	var wg sync.WaitGroup
 	wg.Add(1)
-	q := New()
+	q := New[*string]()
 	go func() {
 		i := 0
 		seen := make(map[string]string)
@@ -76,7 +76,7 @@ func TestMpscQueueConsistency(t *testing.T) {
 				continue
 			}
 			i++
-			s := r.(string)
+			s := *r
 			_, present := seen[s]
 			if present {
 				log.Printf("item have already been seen %v", s)
@@ -94,7 +94,8 @@ func TestMpscQueueConsistency(t *testing.T) {
 		jj := j
 		go func() {
 			for i := 0; i < cmax; i++ {
-				q.Push(fmt.Sprintf("%v %v", jj, i))
+				val := fmt.Sprintf("%v %v", jj, i)
+				q.Push(&val)
 			}
 		}()
 	}
@@ -114,7 +115,7 @@ func TestMpscQueueConsistency(t *testing.T) {
 func benchmarkPushPop(count, c int) {
 	var wg sync.WaitGroup
 	wg.Add(1)
-	q := New()
+	q := New[*string]()
 	go func() {
 		i := 0
 		for {
@@ -131,12 +132,12 @@ func benchmarkPushPop(count, c int) {
 		}
 	}()
 
-	var val interface{} = "foo"
+	var val string = "foo"
 
 	for i := 0; i < c; i++ {
 		go func(n int) {
 			for n > 0 {
-				q.Push(val)
+				q.Push(&val)
 				n--
 			}
 		}(count / c)
@@ -187,7 +188,7 @@ func benchmarkChanPushPop(count, c int) {
 	go func() {
 		i := 0
 		for {
-			select{
+			select {
 			case <-q:
 				i++
 				if i == count {
@@ -248,18 +249,18 @@ func BenchmarkChanPushPop(b *testing.B) {
 	}
 }
 
-var g_MailChan =  make(chan bool)
+var g_MailChan = make(chan bool)
 var g_bMailIn [8]int64
 
 func benchmarkPushPopActor(count, c int) {
 	var wg sync.WaitGroup
 	wg.Add(1)
-	q := New()
+	q := New[*string]()
 	go func() {
 		i := 0
 		for {
 			select {
-			case <- g_MailChan:
+			case <-g_MailChan:
 				atomic.StoreInt64(&g_bMailIn[0], 0)
 				for data := q.Pop(); data != nil; data = q.Pop() {
 					i++
@@ -272,12 +273,12 @@ func benchmarkPushPopActor(count, c int) {
 		}
 	}()
 
-	var val interface{} = "foo"
+	var val string = "foo"
 
 	for i := 0; i < c; i++ {
 		go func(n int) {
 			for n > 0 {
-				q.Push(val)
+				q.Push(&val)
 				if atomic.LoadInt64(&g_bMailIn[0]) == 0 && atomic.CompareAndSwapInt64(&g_bMailIn[0], 0, 1) {
 					g_MailChan <- true
 				}
