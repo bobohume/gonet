@@ -39,7 +39,7 @@ rpc模块脱离传统的注册-回调模式，只需要继承actor即可，actor
 
 
 ## hotfix
-不需要数据分离,暴力的jmptextcode
+不需要数据分离,暴力的textcode jmp
 
 ## mailbox
     actor之间消息队列采用mpsc的mailbox 
