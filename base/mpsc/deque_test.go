@@ -248,7 +248,7 @@ func BenchmarkChanPushPop(b *testing.B) {
 	}
 }
 
-var g_MailChan =  make(chan bool)
+var g_MailChan =  make(chan bool, 1)
 var g_bMailIn [8]int64
 
 func benchmarkPushPopActor(count, c int) {
