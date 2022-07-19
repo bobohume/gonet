@@ -224,11 +224,11 @@ func (a *Actor) call(io *CallIO) {
 	rpcPacket := io.RpcPacket
 	head := io.RpcHead
 	funcName := rpcPacket.FuncName
-	if !a.HasRpc(funcName) {
+	m, bEx := rType.MethodByName(funcName)
+	if !bEx{
 		log.Printf("func [%s] has no method", funcName)
 		return
 	}
-	m, _ := a.rType.MethodByName(funcName)
 	rpcPacket.RpcHead.SocketId = io.SocketId
 	params := rpc.UnmarshalBody(rpcPacket, m.Type)
 	if len(params) >= 1 {
