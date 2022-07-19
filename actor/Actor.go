@@ -224,7 +224,7 @@ func (a *Actor) call(io *CallIO) {
 	rpcPacket := io.RpcPacket
 	head := io.RpcHead
 	funcName := rpcPacket.FuncName
-	m, bEx := rType.MethodByName(funcName)
+	m, bEx := a.rType.MethodByName(funcName)
 	if !bEx{
 		log.Printf("func [%s] has no method", funcName)
 		return
