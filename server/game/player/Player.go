@@ -35,7 +35,7 @@ type (
 func (p *Player) Init() {
 	p.Actor.Init()
 	p.RegisterTimer((MAILBOX_TL_TIME/2)*time.Second, p.UpdateLease) //定时器
-	p.RegisterTimer(60*time.Second, p.SaveDB)                       //定时器
+	p.RegisterTimer(5*time.Second, p.SaveDB)                       //定时器
 	p.online_time = time.Now().Unix()
 	p.Actor.Start()
 }
