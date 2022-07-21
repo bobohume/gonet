@@ -92,11 +92,12 @@ func (this *{ClassName}) __Load{MemberType}DB({DbKeyName} {DbKeyTypeName}) error
 }
 `,
 			`
+/*
 func (this *{ClassName}Mgr) Save{MemberType}(ctx context.Context, playerId int64, data model.{MemberType}){
 	orm.DB.Exec(orm.SaveSql(&data))
 	base.LOG.Printf("玩家[%d] Save{MemberType}", playerId)
 }
-/*
+*/
 func (this *{ClassName}) __Save{MemberType}DB(){
 	if this.{MemberName}.Dirty{
     	orm.DB.Exec(orm.SaveSql(this.{MemberName}))
@@ -107,16 +108,15 @@ func (this *{ClassName}) __Save{MemberType}DB(){
 func (this *{ClassName}) __Save{MemberType}(data model.{MemberType}){
     this.{MemberName} = data
 	this.{MemberName}.Dirty = true
-    base.LOG.Printf("玩家[%d] Save{MemberType}", this.MailBox.Id)
+    base.LOG.Printf("玩家[%d] Save{MemberType}", this.{MemberType}.{DbKeyName})
 }
 
 func (this *{ClassName}Mgr) Save{MemberType}(ctx context.Context, playerId int64, data model.{MemberType}){
-	pPlayer, bEx := this.m_PlayerMap[playerId]
-	if bEx{
-		pPlayer.__Save{MemberType}(data)
+    player := this.GetPlayer(playerId)
+	if player != nil{
+        player.__Save{MemberType}(data)
 	}
 }
-*/
 `,
 		},
 	}
@@ -160,11 +160,11 @@ func Generate(name string) {
 			stream.WriteString("}\n\n")
 
 			// func SaveDB
-			/*stream.WriteString(fmt.Sprintf("\nfunc (this *%s) Save%sDB(){\n", className, name))
+			stream.WriteString(fmt.Sprintf("\nfunc (this *%s) Save%sDB(){\n", className, name))
 			for _, v := range memberNameList {
 				stream.WriteString(fmt.Sprintf("    this.__Save%sDB()\n", v))
 			}
-			stream.WriteString("}\n\n")*/
+			stream.WriteString("}\n\n")
 		} else if moduleInfo.moduleName == "game" {
 			// func SaveDB
 			stream.WriteString(fmt.Sprintf("\nfunc (this *%s) Save%sDB(){\n", className, name))
