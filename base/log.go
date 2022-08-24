@@ -132,7 +132,7 @@ func (this *Log) Fatalf(format string, params ...interface{}) {
 func (this *Log) WriteFile(nType LG_TYPE) {
 	var err error
 	tTime := time.Now()
-	if this.logFile[nType] == nil || this.logTime.Year() != tTime.Year() ||
+	if this.logTime.Year() != tTime.Year() ||
 		this.logTime.Month() != tTime.Month() || this.logTime.Day() != tTime.Day() {
 		this.loceker.Lock()
 		if this.logFile[nType] != nil {
