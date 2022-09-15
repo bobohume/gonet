@@ -9,14 +9,14 @@ import (
 	"strconv"
 )
 
-func marshalBlob(value reflect.Value) ([]byte, error){
+func marshalBlob(value reflect.Value) ([]byte, error) {
 	buf := bytes.NewBuffer([]byte{})
 	enc := gob.NewEncoder(buf)
 	err := enc.Encode(value.Interface())
-	return  buf.Bytes(), err
+	return buf.Bytes(), err
 }
 
-func unMarshalBlob(data  []byte, value reflect.Value) error{
+func unMarshalBlob(data []byte, value reflect.Value) error {
 	buf := bytes.NewBuffer(data)
 	dec := gob.NewDecoder(buf)
 	return dec.Decode(value.Addr().Interface())
@@ -133,7 +133,7 @@ func parseSfSql(p *Properties, classField reflect.StructField, classVal reflect.
 			return true
 		} else if p.IsTable() {
 			return true
-		} else if !op.forceFlag && !p.IsPrimary() && !p.IsFroce() && classVal.IsZero() {
+		} else if !op.forceFlag && !p.IsPrimary() && !p.IsForce() && classVal.IsZero() {
 			return true
 		}
 	case SQLTYPE_DELETE:
@@ -165,7 +165,7 @@ func parseSfSql(p *Properties, classField reflect.StructField, classVal reflect.
 			return true
 		} else if p.IsTable() {
 			return true
-		} else if !op.forceFlag && !p.IsPrimary() && !p.IsFroce() && classVal.IsZero() {
+		} else if !op.forceFlag && !p.IsPrimary() && !p.IsForce() && classVal.IsZero() {
 			return true
 		}
 	case SQLTYPE_LOAD:
@@ -175,7 +175,7 @@ func parseSfSql(p *Properties, classField reflect.StructField, classVal reflect.
 		} else if p.IsBlob() {
 			sqlData.Name += fmt.Sprintf("`%s`,", p.Name)
 			return true
-		}else if p.IsIgnore() {
+		} else if p.IsIgnore() {
 			return true
 		} else if p.IsTable() {
 			return true
@@ -196,7 +196,7 @@ func parseSfSql(p *Properties, classField reflect.StructField, classVal reflect.
 			return true
 		} else if p.IsTable() {
 			return true
-		} else if !op.forceFlag && !p.IsPrimary() && !p.IsFroce() && classVal.IsZero() {
+		} else if !op.forceFlag && !p.IsPrimary() && !p.IsForce() && classVal.IsZero() {
 			return true
 		}
 	case SQLTYPE_WHERE:
