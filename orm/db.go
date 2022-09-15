@@ -72,7 +72,7 @@ type (
 		Json     bool
 		Ignore   bool
 		Table    bool //table name
-		Froce    bool //update ignore is zero
+		Force    bool //update ignore is zero
 		tag      string
 	}
 
@@ -177,9 +177,9 @@ func (this *Properties) IsTable() bool {
 }
 
 //is zero can update
-//tablename `sql:"froce"`
-func (this *Properties) IsFroce() bool {
-	return this.Froce
+//tablename `sql:"force"`
+func (this *Properties) IsForce() bool {
+	return this.Force
 }
 
 //---获取datetime时间
@@ -218,8 +218,8 @@ func getProperties(sf reflect.StructField) *Properties {
 			p.Ignore = true
 		case "table":
 			p.Table = true
-		case "froce":
-			p.Froce = true
+		case "force":
+			p.Force = true
 		default:
 			if strings.Contains(v, "name:") {
 				p.Name = v[5:]
