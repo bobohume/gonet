@@ -9,10 +9,10 @@ func getSliceTypeString(paramType reflect.Type) string {
 	switch sTypeName {
 	case "bool", "float64", "float32", "int8", "uint8", "int16", "uint16",
 		"int32", "uint32", "int64", "uint64", "string", "int", "uint":
-		return "[*]" + sTypeName
+		return "[]" + sTypeName
 	}
 
-	return "[*]struct"
+	return "[]struct"
 }
 
 func getArrayTypeString(paramType reflect.Type) string {
