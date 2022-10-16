@@ -5,7 +5,7 @@ import (
 )
 
 func updateSqlStr(sqlData *SqlData) string {
-	str := sqlData.Value
+	str := sqlData.NameValue
 	primary := sqlData.Key
 	index := strings.LastIndex(str, ",")
 	if index != -1 {
