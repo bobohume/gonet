@@ -8,6 +8,7 @@ import (
 	"hash/crc32"
 	"io"
 	"log"
+	"sync/atomic"
 	"time"
 )
 
@@ -42,6 +43,7 @@ func handleError(err error) {
 
 func (s *ServerSocketClient) Init(ip string, port int, params ...OpOption) bool {
 	s.Socket.Init(ip, port, params...)
+	s.timerId = new(int64)
 	return true
 }
 
@@ -52,8 +54,7 @@ func (s *ServerSocketClient) Start() bool {
 
 	if s.connectType == CLIENT_CONNECT {
 		s.sendChan = make(chan []byte, MAX_SEND_CHAN)
-		s.timerId = new(int64)
-		*s.timerId = int64(s.clientId)
+		timer.StoreTimerId(s.timerId, int64(s.clientId)+1<<32)
 		timer.RegisterTimer(s.timerId, (HEART_TIME_OUT/3)*time.Second, func() {
 			s.Update()
 		})
@@ -119,11 +120,22 @@ func (s *ServerSocketClient) OnNetFail(error int) {
 	}
 }
 
+func (s *ServerSocketClient) Stop() bool {
+	timer.RegisterTimer(s.timerId, timer.TICK_INTERVAL, func() {
+		timer.StopTimer(s.timerId)
+		if atomic.CompareAndSwapInt32(&s.state, SSF_RUN, SSF_STOP) {
+			if s.conn != nil {
+				s.conn.Close()
+			}
+		}
+	})
+	return false
+}
+
 func (s *ServerSocketClient) Close() {
 	if s.connectType == CLIENT_CONNECT {
 		s.sendChan <- nil
 		//close(s.sendChan)
-		timer.StopTimer(s.timerId)
 	}
 	s.Socket.Close()
 	if s.server != nil {

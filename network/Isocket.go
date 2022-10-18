@@ -123,8 +123,10 @@ func (this *Socket) Start() bool {
 }
 
 func (this *Socket) Stop() bool {
-	if this.conn != nil && atomic.CompareAndSwapInt32(&this.state, SSF_RUN, SSF_STOP) {
-		this.conn.Close()
+	if atomic.CompareAndSwapInt32(&this.state, SSF_RUN, SSF_STOP) {
+		if this.conn != nil {
+			this.conn.Close()
+		}
 	}
 	return false
 }
