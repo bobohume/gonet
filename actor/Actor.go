@@ -13,7 +13,6 @@ import (
 	"strings"
 	"sync/atomic"
 	"time"
-	"unsafe"
 )
 
 var (
@@ -26,9 +25,9 @@ const (
 	ASF_STOP = iota //已经关闭
 )
 
-//********************************************************
+// ********************************************************
 // actor 核心actor模式
-//********************************************************
+// ********************************************************
 type (
 	ActorBase struct {
 		actorName string
@@ -48,7 +47,8 @@ type (
 		mailIn    [8]int64
 		mailChan  chan bool
 		timerId   *int64
-		pool      IActorPool //ACTOR_TYPE_VIRTUAL,ACTOR_TYPE_POOL
+		pool      IActorPool         //ACTOR_TYPE_VIRTUAL,ACTOR_TYPE_POOL
+		timerMap  map[uintptr]func() //成员方法转func()会是闭包函数,定时器释放会有问题
 	}
 
 	IActor interface {
@@ -151,11 +151,13 @@ func (a *Actor) Init() {
 	a.mailChan = make(chan bool)
 	a.mailBox = mpsc.New[*CallIO]()
 	a.acotrChan = make(chan int, 1)
+	a.timerMap = make(map[uintptr]func())
 	//trance
 	a.trace.Init()
 	if a.id == 0 {
 		a.id = AssignActorId()
 	}
+	a.timerId = new(int64)
 }
 
 func (a *Actor) register(ac IActor, op Op) {
@@ -164,13 +166,12 @@ func (a *Actor) register(ac IActor, op Op) {
 }
 
 func (a *Actor) RegisterTimer(duration time.Duration, fun func(), opts ...timer.OpOption) {
-	if a.timerId == nil {
-		a.timerId = new(int64)
-		*a.timerId = a.id
-	}
-
+	timer.StoreTimerId(a.timerId, a.id)
+	//&fun这里有问题,会产生一对闭包函数,再释放的释放有问题
+	ptr := uintptr(reflect.ValueOf(fun).Pointer())
+	a.timerMap[ptr] = fun
 	timer.RegisterTimer(a.timerId, duration, func() {
-		a.SendMsg(rpc.RpcHead{ActorName: a.actorName}, "UpdateTimer", (*int64)(unsafe.Pointer(&fun)))
+		a.SendMsg(rpc.RpcHead{ActorName: a.actorName}, "UpdateTimer", ptr)
 	}, opts...)
 }
 
@@ -183,9 +184,12 @@ func (a *Actor) clear() {
 }
 
 func (a *Actor) Stop() {
-	if atomic.CompareAndSwapInt32(&a.state, ASF_RUN, ASF_STOP) {
-		a.acotrChan <- DESDORY_EVENT
-	}
+	timer.RegisterTimer(a.timerId, timer.TICK_INTERVAL, func() {
+		timer.StopTimer(a.timerId)
+		if atomic.CompareAndSwapInt32(&a.state, ASF_RUN, ASF_STOP) {
+			a.acotrChan <- DESDORY_EVENT
+		}
+	})
 }
 
 func (a *Actor) Start() {
@@ -225,7 +229,7 @@ func (a *Actor) call(io *CallIO) {
 	head := io.RpcHead
 	funcName := rpcPacket.FuncName
 	m, bEx := a.rType.MethodByName(funcName)
-	if !bEx{
+	if !bEx {
 		log.Printf("func [%s] has no method", funcName)
 		return
 	}
@@ -254,11 +258,13 @@ func (a *Actor) call(io *CallIO) {
 	}
 }
 
-func (a *Actor) UpdateTimer(ctx context.Context, p *int64) {
-	func1 := (*func())(unsafe.Pointer(p))
-	a.Trace("timer")
-	(*func1)()
-	a.Trace("")
+func (a *Actor) UpdateTimer(ctx context.Context, ptr uintptr) {
+	fun, isEx := a.timerMap[ptr]
+	if isEx {
+		a.Trace("timer")
+		(fun)()
+		a.Trace("")
+	}
 }
 
 func (a *Actor) consume() {

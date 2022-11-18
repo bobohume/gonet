@@ -39,7 +39,10 @@ rpc模块脱离传统的注册-回调模式，只需要继承actor即可，actor
 
 
 ## hotfix
-不需要数据分离,暴力的jmptextcode
+不需要数据分离,应用更广泛的textcode jmp
+
+## 属性同步
+基于内存对比的属性同步,不需要写orm,a.b=1自动存盘,自动同步
 
 ## mailbox
     actor之间消息队列采用mpsc的mailbox 

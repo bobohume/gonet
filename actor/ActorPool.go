@@ -1,6 +1,7 @@
 package actor
 
 import (
+	"gonet/base"
 	"gonet/rpc"
 	"reflect"
 	"sync"
@@ -23,7 +24,7 @@ func (a *ActorPool) InitPool(pPool IActorPool, rType reflect.Type, num int) {
 	for i := 0; i < num; i++ {
 		ac := reflect.New(rType).Interface().(IActor)
 		rType := reflect.TypeOf(ac)
-		op := Op{actorType: ACTOR_TYPE_POOL, name: rType.Name()}
+		op := Op{actorType: ACTOR_TYPE_POOL, name: base.GetClassName(rType)}
 		ac.register(ac, op)
 		ac.Init()
 		a.actorList[i] = ac
@@ -80,7 +81,7 @@ func (a *VirtualActor) InitActor(pPool IActorPool, rType reflect.Type) {
 
 func (a *VirtualActor) AddActor(ac IActor) {
 	rType := reflect.TypeOf(ac)
-	op := Op{actorType: ACTOR_TYPE_VIRTUAL, name: rType.Name()}
+	op := Op{actorType: ACTOR_TYPE_VIRTUAL, name: base.GetClassName(rType)}
 	ac.register(ac, op)
 	a.actorLock.Lock()
 	a.actorMap[ac.GetId()] = ac

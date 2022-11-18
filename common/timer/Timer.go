@@ -17,12 +17,12 @@ const (
 	TICK_INTERVAL    = 10 * time.Millisecond
 )
 
-//先搞清楚下面的单位
-//1秒=1000毫秒 milliseconds
-//1毫秒=1000微秒 microseconds
-//1微秒=1000纳秒 nanoseconds
-//整个timer中毫秒的精度都是10ms，
-//也就是说毫秒的一个三个位，但是最小的位被丢弃
+// 先搞清楚下面的单位
+// 1秒=1000毫秒 milliseconds
+// 1毫秒=1000微秒 microseconds
+// 1微秒=1000纳秒 nanoseconds
+// 整个timer中毫秒的精度都是10ms，
+// 也就是说毫秒的一个三个位，但是最小的位被丢弃
 type (
 	TimerHandle func()
 	TimerNode   struct {
@@ -69,6 +69,10 @@ func (t *TimerNode) LoadId() int64 {
 	return atomic.LoadInt64(t.id)
 }
 
+func StoreTimerId(id *int64, val int64) bool {
+	return atomic.LoadInt64(id) == 0 && atomic.CompareAndSwapInt64(id, 0, val)
+}
+
 func (op *Op) applyOpts(opts []OpOption) {
 	for _, opt := range opts {
 		opt(op)
@@ -90,7 +94,7 @@ func uuid() int64 {
 	return atomic.AddInt64(&g_Id, 1)
 }
 
-//清空链表，返回链表第一个结点
+// 清空链表，返回链表第一个结点
 func linkClear(list *LinkList) *TimerNode {
 	ret := list.head.next
 	list.head.next = nil
@@ -98,14 +102,14 @@ func linkClear(list *LinkList) *TimerNode {
 	return ret
 }
 
-//将结点放入链表
+// 将结点放入链表
 func link(list *LinkList, node *TimerNode) {
 	list.tail.next = node
 	list.tail = node
 	node.next = nil
 }
 
-//创建一个定时器
+// 创建一个定时器
 func (t *Timer) Init() {
 	for i := 0; i < TIME_NEAR; i++ {
 		linkClear(&t.near[i])
@@ -123,7 +127,7 @@ func (t *Timer) Init() {
 	go t.run()
 }
 
-//添加一个定时器结点
+// 添加一个定时器结点
 func (t *Timer) addNode(node *TimerNode) {
 	time := node.expire    //去看一下它是在哪赋值的
 	current_time := t.time //当前计数
@@ -144,7 +148,7 @@ func (t *Timer) addNode(node *TimerNode) {
 	}
 }
 
-//添加一个定时器
+// 添加一个定时器
 func (t *Timer) Add(id *int64, time uint32, handle TimerHandle, opts ...OpOption) *TimerNode {
 	op := Op{}
 	op.applyOpts(opts)
@@ -156,12 +160,12 @@ func (t *Timer) Add(id *int64, time uint32, handle TimerHandle, opts ...OpOption
 	return node
 }
 
-//删除一个定时器
+// 删除一个定时器
 func (t *Timer) Delete(id *int64) {
-	atomic.StoreInt64(id, 0)
+	atomic.StoreInt64(id, -1)
 }
 
-//移动某个级别的链表内容
+// 移动某个级别的链表内容
 func (t *Timer) moveList(level int, idx int) {
 	current := linkClear(&t.t[level][idx])
 	for current != nil {
@@ -171,8 +175,8 @@ func (t *Timer) moveList(level int, idx int) {
 	}
 }
 
-//这是一个非常重要的函数
-//定时器的移动都在这里
+// 这是一个非常重要的函数
+// 定时器的移动都在这里
 func (t *Timer) shift() {
 	mask := uint32(TIME_NEAR)
 	t.time += 1
@@ -196,11 +200,11 @@ func (t *Timer) shift() {
 	}
 }
 
-//派发消息到目标服务消息队列
+// 派发消息到目标服务消息队列
 func (t *Timer) dispatch(current *TimerNode) {
 	for current != nil {
 		id := current.LoadId()
-		if id != 0 {
+		if id > 0 {
 			current.handle()
 			if !current.bOnce {
 				t.loop_node = append(t.loop_node, current)
@@ -210,7 +214,7 @@ func (t *Timer) dispatch(current *TimerNode) {
 	}
 }
 
-//派发消息
+// 派发消息
 func (t *Timer) execute() {
 	idx := t.time & TIME_NEAR_MASK
 
@@ -228,7 +232,7 @@ func (t *Timer) execute() {
 	}
 }
 
-//时间更新好了以后，这里检查调用各个定时器
+// 时间更新好了以后，这里检查调用各个定时器
 func (t *Timer) advace() {
 	t.lock.Lock()
 	// try to dispatch timeout 0 (rare condition)
@@ -239,8 +243,8 @@ func (t *Timer) advace() {
 	t.lock.Unlock()
 }
 
-//在线程中不断被调用
-//调用时间 间隔为微秒
+// 在线程中不断被调用
+// 调用时间 间隔为微秒
 func (t *Timer) update() {
 	cp := uint64(time.Now().UnixNano()) / uint64(TICK_INTERVAL)
 	if cp < t.current_point {
