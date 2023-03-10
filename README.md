@@ -8,6 +8,10 @@ gonet 游戏服务器架构。
 ## virtual actor
 降低分布式开发的复杂性，Actor总是存在，即不用关心代码在那个进程上运行，比如gm可以运行任一模块org,rank,activity具体模块actor怎么运行参考下面的stub。
 
+## 微服务
+stub模型微服务,解决微服务每个模块是不同的二进制,导致部署麻烦,新加进程会很繁琐,stub更像是插件模式,启用不同模块调用不同的微服务,在rpc通信上也无需区别rpcgame或者rpcrank,
+只需要一个rpcgame即可
+
 ## 玩家actor
 每个玩家一个actor,解耦,模块耦合性弱,lease一致性保证分布式一致性问题
 
@@ -45,7 +49,9 @@ rpc模块脱离传统的注册-回调模式，只需要继承actor即可，actor
 基于内存对比的属性同步,不需要写orm,a.b=1自动存盘,自动同步，对比代码自动生成,无需build
 
 ## rpc(进阶版)
-类似脚本,自动生成代码,无需build
+类似grpc,写好回调函数,自动生成rpc代码,无需build
+如回调函数是:func (p *PlayerMgr) PlayerOnUnRegister(head rpc.RpcHead, playerId int64)
+自动生成代码,rpc发起就直接rpcgame.PlayerMgr.PlayerOnUnRegister(rpc.RpcHead{SendType: rpc.SEND_LOCAL}, p.PlayerId)
 
 ## mailbox
     actor之间消息队列采用mpsc的mailbox 
