@@ -45,7 +45,7 @@ type (
 		dieChan        chan bool
 		master         *Master
 		clusterInfoMap map[uint32]*common.ClusterInfo
-		packetFuncList *vector.Vector //call back
+		packetFuncList *vector.Vector[network.PacketFunc] //call back
 		MailBox        etv3.MailBox
 		StubMailBox    etv3.StubMailBox
 		Stub           common.Stub
@@ -109,7 +109,7 @@ func (c *Cluster) InitCluster(info *common.ClusterInfo, Endpoints []string, nats
 		c.hashRing[i] = base.NewHashRing()
 	}
 	c.clusterInfoMap = make(map[uint32]*common.ClusterInfo)
-	c.packetFuncList = vector.NewVector()
+	c.packetFuncList = &vector.Vector[network.PacketFunc]{}
 
 	conn, err := setupNatsConn(
 		natsUrl,
@@ -205,7 +205,7 @@ func (c *Cluster) BindPacketFunc(callfunc network.PacketFunc) {
 
 func (c *Cluster) HandlePacket(packet rpc.Packet) {
 	for _, v := range c.packetFuncList.Values() {
-		if v.(network.PacketFunc)(packet) {
+		if v(packet) {
 			break
 		}
 	}

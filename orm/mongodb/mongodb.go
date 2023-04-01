@@ -1,5 +1,5 @@
 package mongodb
-
+/*
 import (
 	"container/heap"
 	"gopkg.in/mgo.v2"
@@ -181,4 +181,4 @@ func (c *DialContext) EnsureUniqueIndex(db string, collection string, key []stri
 		Unique: true,
 		Sparse: true,
 	})
-}
+}*/

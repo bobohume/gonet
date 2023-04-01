@@ -287,7 +287,7 @@ func ToString(value interface{}) string {
 }
 
 //---------遍历子目录------------//
-func WalkDir(dirpath string, filesVec *vector.Vector) {
+func WalkDir(dirpath string, filesVec *vector.Vector[os.FileInfo]) {
 	files, err := ioutil.ReadDir(dirpath) //读取目录下文件
 	if err != nil {
 		return

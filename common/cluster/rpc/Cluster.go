@@ -38,7 +38,7 @@ type (
 		master          *Master
 		hashRing        *base.HashRing //hash一致性
 		clusterInfoMapg map[uint32]*common.ClusterInfo
-		packetFuncList  *vector.Vector //call back
+		packetFuncList  *vector.Vector[network.PacketFunc] //call back
 	}
 
 	ICluster interface {
@@ -87,7 +87,7 @@ func (c *Cluster) InitCluster(info *common.ClusterInfo, Endpoints []string) {
 	c.master = NewMaster(info, Endpoints)
 	c.hashRing = base.NewHashRing()
 	c.clusterInfoMapg = make(map[uint32]*common.ClusterInfo)
-	c.packetFuncList = vector.NewVector()
+	c.packetFuncList = &vector.Vector[network.PacketFunc]{}
 	actor.MGR.RegisterActor(c)
 	c.Actor.Start()
 }
@@ -124,7 +124,7 @@ func (c *Cluster) AddCluster(info *common.ClusterInfo) {
 	packet.SetClusterId(info.Id())
 	client.BindPacketFunc(actor.MGR.PacketFunc)
 	for _, v := range c.packetFuncList.Values() {
-		client.BindPacketFunc(v.(network.PacketFunc))
+		client.BindPacketFunc(v)
 	}
 	c.clusterLocker.Lock()
 	c.clusterMap[info.Id()] = &ClusterNode{ClientSocket: client, ClusterInfo: info}

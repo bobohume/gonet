@@ -8,23 +8,24 @@ import (
 type (
 	Cursor [8]uint64 // prevent false sharing of the sequence cursor by padding the CPU cache line with 64 *bytes* of data.
 
-	node struct {
+	node[T any] struct {
 		sequence uint64
-		val      interface{}
+		val      T
 	}
 
-	Queue struct {
+	Queue[T any] struct {
 		write      *Cursor // the ring buffer has been written up to q sequence
 		read       *Cursor // q reader has processed up to q sequence
 		bufferSize uint64
 		bufferMask uint64
-		ringBuffer []interface{}
+		ringBuffer []*node[T]
+		Nil        T
 	}
 )
 
-func (n *node) Store(value uint64) { atomic.StoreUint64(&n.sequence, value) }
-func (n *node) Load() uint64       { return atomic.LoadUint64(&n.sequence) }
-func (n *node) CmpAndSwap(old, new uint64) bool {
+func (n *node[T]) Store(value uint64) { atomic.StoreUint64(&n.sequence, value) }
+func (n *node[T]) Load() uint64       { return atomic.LoadUint64(&n.sequence) }
+func (n *node[T]) CmpAndSwap(old, new uint64) bool {
 	return atomic.CompareAndSwapUint64(&n.sequence, old, new)
 }
 
@@ -34,8 +35,8 @@ func NewCursor() *Cursor {
 	return &c
 }
 
-func New(size uint64) *Queue {
-	q := &Queue{}
+func New[T any](size uint64) *Queue[T] {
+	q := &Queue[T]{}
 	q.Init(size)
 	return q
 }
@@ -60,24 +61,24 @@ func roundUp1(v uint64) uint64 {
 	return v
 }
 
-func (q *Queue) Init(size uint64) {
+func (q *Queue[T]) Init(size uint64) {
 	q.bufferSize = roundUp1(size)
 	q.bufferMask = q.bufferSize - 1
 	q.write = NewCursor()
 	q.read = NewCursor()
-	q.ringBuffer = make([]interface{}, q.bufferSize)
+	q.ringBuffer = make([]*node[T], q.bufferSize)
 	for i := uint64(0); i < q.bufferSize; i++ {
-		n := &node{}
+		n := &node[T]{}
 		atomic.StoreUint64(&n.sequence, i)
 		q.ringBuffer[i] = n
 	}
 }
 
-func (q *Queue) Push(data interface{}) {
-	var n *node
+func (q *Queue[T]) Push(data T) {
+	var n *node[T]
 	pos := q.write.Load()
 	for true {
-		n = q.ringBuffer[pos&q.bufferMask].(*node)
+		n = q.ringBuffer[pos&q.bufferMask]
 		seq := n.Load()
 		dif := int64(seq) - int64(pos)
 		if dif == 0 {
@@ -95,11 +96,11 @@ func (q *Queue) Push(data interface{}) {
 	n.Store(pos + 1)
 }
 
-func (q *Queue) Pop() interface{} {
-	var n *node
+func (q *Queue[T]) Pop() T {
+	var n *node[T]
 	pos := q.read.Load()
 	for true {
-		n = q.ringBuffer[pos&q.bufferMask].(*node)
+		n = q.ringBuffer[pos&q.bufferMask]
 		seq := n.Load()
 		dif := int64(seq) - (int64(pos + 1))
 		if dif == 0 {
@@ -107,7 +108,7 @@ func (q *Queue) Pop() interface{} {
 				break
 			}
 		} else if dif < 0 {
-			return nil
+			return q.Nil
 		} else {
 			pos = q.read.Load()
 		}

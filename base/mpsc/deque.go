@@ -12,18 +12,19 @@ import (
 	"unsafe"
 )
 
-type node struct {
-	next *node
-	val  interface{}
+type node[T any] struct {
+	next *node[T]
+	val  T
 }
 
-type Queue struct {
-	head, tail *node
+type Queue[T any] struct {
+	head, tail *node[T]
+	Nil        T
 }
 
-func New() *Queue {
-	q := &Queue{}
-	stub := &node{}
+func New[T any]() *Queue[T] {
+	q := &Queue[T]{}
+	stub := &node[T]{}
 	q.head = stub
 	q.tail = stub
 	return q
@@ -32,11 +33,11 @@ func New() *Queue {
 // Push adds x to the back of the queue.
 //
 // Push can be safely called from multiple goroutines
-func (q *Queue) Push(x interface{}) {
-	n := new(node)
+func (q *Queue[T]) Push(x T) {
+	n := new(node[T])
 	n.val = x
 	// current producer acquires head node
-	prev := (*node)(atomic.SwapPointer((*unsafe.Pointer)(unsafe.Pointer(&q.head)), unsafe.Pointer(n)))
+	prev := (*node[T])(atomic.SwapPointer((*unsafe.Pointer)(unsafe.Pointer(&q.head)), unsafe.Pointer(n)))
 
 	// release node to consumer
 	atomic.StorePointer((*unsafe.Pointer)(unsafe.Pointer(&prev.next)), unsafe.Pointer(n))
@@ -45,23 +46,22 @@ func (q *Queue) Push(x interface{}) {
 // Pop removes the item from the front of the queue or nil if the queue is empty
 //
 // Pop must be called from a single, consumer goroutine
-func (q *Queue) Pop() interface{} {
+func (q *Queue[T]) Pop() T {
 	tail := q.tail
-	next := (*node)(atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&tail.next)))) // acquire
+	next := (*node[T])(atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&tail.next)))) // acquire
 	if next != nil {
 		q.tail = next
 		v := next.val
-		next.val = nil
 		return v
 	}
-	return nil
+	return q.Nil
 }
 
 // Empty returns true if the queue is empty
 //
 // Empty must be called from a single, consumer goroutine
-func (q *Queue) Empty() bool {
+func (q *Queue[T]) Empty() bool {
 	tail := q.tail
-	next := (*node)(atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&tail.next))))
+	next := (*node[T])(atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&tail.next))))
 	return next == nil
 }

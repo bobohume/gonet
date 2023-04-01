@@ -39,7 +39,7 @@ func ToString(value interface{}) string {
 }
 
 // ToJSON outputs the JSON representation of the tree.
-func (tree *Map) ToJSON() ([]byte, error) {
+func (tree *Map[K, V]) ToJSON() ([]byte, error) {
 	elements := make(map[string]interface{})
 	it := tree.Iterator()
 	for it.Next() {
@@ -49,8 +49,8 @@ func (tree *Map) ToJSON() ([]byte, error) {
 }
 
 // FromJSON populates the tree from the input JSON representation.
-func (tree *Map) FromJSON(data []byte) error {
-	elements := make(map[string]interface{})
+func (tree *Map[K, V]) FromJSON(data []byte) error {
+	elements := make(map[K]V)
 	err := json.Unmarshal(data, &elements)
 	if err == nil {
 		tree.Clear()

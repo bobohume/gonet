@@ -12,7 +12,7 @@ import (
 //  * Action Node
 type (
 	BehaviorList struct {
-		vector.Vector
+		vector.Vector[IBaseNode]
 	}
 
 	IBehaviorList interface {
@@ -34,7 +34,7 @@ type (
 )
 
 func (b *BehaviorList) Less(i, j int) bool {
-	return b.Get(i).(IBaseNode).GetName() < b.Get(j).(IBaseNode).GetName()
+	return b.Get(i).GetName() < b.Get(j).GetName()
 }
 
 func (b *BehaviorList) AddChild(name string, pNode IBaseNode) {

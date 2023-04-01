@@ -12,7 +12,7 @@ import (
 const QueSize = 2000
 
 func TestQueue_PushPop(t *testing.T) {
-	q := New(QueSize)
+	q := New[int](QueSize)
 
 	q.Push(1)
 	q.Push(2)
@@ -27,7 +27,7 @@ func TestQueue_PushPopOneProducer(t *testing.T) {
 
 	var wg sync.WaitGroup
 	wg.Add(1)
-	q := New(QueSize)
+	q := New[*string](QueSize)
 	go func() {
 		i := 0
 		for {
@@ -44,10 +44,10 @@ func TestQueue_PushPopOneProducer(t *testing.T) {
 		}
 	}()
 
-	var val interface{} = "foo"
+	var val string = "foo"
 
 	for i := 0; i < expCount; i++ {
-		q.Push(val)
+		q.Push(&val)
 	}
 
 	wg.Wait()
@@ -59,7 +59,7 @@ func TestMpmcQueueConsistency(t *testing.T) {
 	cmax := max / c
 	var wg sync.WaitGroup
 	wg.Add(2)
-	q := New(QueSize)
+	q := New[*string](QueSize)
 	go func() {
 		i := 0
 		seen := make(map[string]string)
@@ -71,14 +71,14 @@ func TestMpmcQueueConsistency(t *testing.T) {
 				continue
 			}
 			i++
-			s := r.(string)
+			s := *r
 			_, present := seen[s]
 			if present {
 				log.Printf("item have already been seen %v", s)
 				t.FailNow()
 			}
 			seen[s] = s
-			if i == cmax*c / 2{
+			if i == cmax*c/2 {
 				wg.Done()
 				return
 			}
@@ -96,14 +96,14 @@ func TestMpmcQueueConsistency(t *testing.T) {
 				continue
 			}
 			i++
-			s := r.(string)
+			s := *r
 			_, present := seen[s]
 			if present {
 				log.Printf("item have already been seen %v", s)
 				t.FailNow()
 			}
 			seen[s] = s
-			if i == cmax*c  / 2{
+			if i == cmax*c/2 {
 				wg.Done()
 				return
 			}
@@ -117,7 +117,8 @@ func TestMpmcQueueConsistency(t *testing.T) {
 				if rand.Intn(10) == 0 {
 					//time.Sleep(time.Duration(rand.Intn(1000)))
 				}
-				q.Push(fmt.Sprintf("%v %v", jj, i))
+				val := fmt.Sprintf("%v %v", jj, i)
+				q.Push(&val)
 			}
 		}()
 	}
@@ -137,7 +138,7 @@ func TestMpmcQueueConsistency(t *testing.T) {
 func benchmarkPushPop(count, c int) {
 	var wg sync.WaitGroup
 	wg.Add(1)
-	q := New(QueSize)
+	q := New[*string](QueSize)
 	go func() {
 		i := 0
 		for {
@@ -154,12 +155,12 @@ func benchmarkPushPop(count, c int) {
 		}
 	}()
 
-	var val interface{} = "foo"
+	var val string = "foo"
 
 	for i := 0; i < c; i++ {
 		go func(n int) {
 			for n > 0 {
-				q.Push(val)
+				q.Push(&val)
 				n--
 			}
 		}(count / c)

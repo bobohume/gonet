@@ -20,7 +20,7 @@ type (
 	HashRing struct {
 		ringMap    map[uint32]string
 		memberMap  map[string]bool
-		sortedKeys *maps.Map
+		sortedKeys *maps.Map[uint32, uint32]
 		sync.RWMutex
 	}
 
@@ -40,7 +40,7 @@ func NewHashRing() *HashRing {
 	ring := new(HashRing)
 	ring.ringMap = make(map[uint32]string)
 	ring.memberMap = make(map[string]bool)
-	ring.sortedKeys = maps.NewWithUInt32Comparator()
+	ring.sortedKeys = &maps.Map[uint32, uint32]{}
 	return ring
 }
 
@@ -122,11 +122,11 @@ func (h *HashRing) Get(name string) (error, string) {
 	if !bOk {
 		itr := h.sortedKeys.Iterator()
 		if itr.First() {
-			return nil, h.ringMap[itr.Key().(uint32)]
+			return nil, h.ringMap[itr.Key()]
 		}
 		return ErrEmptyRing, ""
 	}
-	return nil, h.ringMap[node.Key.(uint32)]
+	return nil, h.ringMap[node.Key]
 }
 
 func (h *HashRing) Get64(val int64) (error, uint32) {
@@ -140,18 +140,18 @@ func (h *HashRing) Get64(val int64) (error, uint32) {
 	if !bOk {
 		itr := h.sortedKeys.Iterator()
 		if itr.First() {
-			return nil, itr.Value().(uint32)
+			return nil, itr.Value()
 		}
 		return ErrEmptyRing, 0
 	}
-	return nil, node.Value.(uint32)
+	return nil, node.Value
 }
 
 // use for stubring
 type (
 	// HashRing holds the information about the members of the consistent hash ring.
 	StubHashRing struct {
-		sortedKeys *maps.Map
+		sortedKeys *maps.Map[uint32, uint32]
 	}
 
 	IStuHashRing interface {
@@ -175,7 +175,7 @@ func (h *StubHashRing) add(elt string) {
 
 // Add inserts a string element in the consistent hash.
 func (h *StubHashRing) Init(endpoints []string) {
-	h.sortedKeys = maps.NewWithUInt32Comparator()
+	h.sortedKeys = &maps.Map[uint32, uint32]{}
 	for _, v := range endpoints {
 		h.add(v)
 	}
@@ -187,9 +187,9 @@ func (h *StubHashRing) Get(val int64) (error, uint32) {
 	if !bOk {
 		itr := h.sortedKeys.Iterator()
 		if itr.First() {
-			return nil, itr.Value().(uint32)
+			return nil, itr.Value()
 		}
 		return ErrEmptyRing, 0
 	}
-	return nil, node.Value.(uint32)
+	return nil, node.Value
 }
