@@ -148,7 +148,7 @@ func (a *Actor) Acotr() *Actor {
 }
 
 func (a *Actor) Init() {
-	a.mailChan = make(chan bool)
+	a.mailChan = make(chan bool, 1)
 	a.mailBox = mpsc.New[*CallIO]()
 	a.acotrChan = make(chan int, 1)
 	a.timerMap = make(map[uintptr]func())
