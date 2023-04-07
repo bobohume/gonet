@@ -19,7 +19,7 @@ const (
 	MAILBOX_TL_TIME = 20 * 60 * time.Second
 )
 
-//publish
+// publish
 type (
 	MailBox struct {
 		*common.ClusterInfo
@@ -29,7 +29,7 @@ type (
 	}
 )
 
-//初始化pub
+// 初始化pub
 func (m *MailBox) Init(endpoints []string, info *common.ClusterInfo) {
 	cfg := client.Config{
 		Endpoints:               endpoints,
@@ -46,7 +46,6 @@ func (m *MailBox) Init(endpoints []string, info *common.ClusterInfo) {
 	m.mailBoxLocker = &sync.RWMutex{}
 	m.mailBoxMap = map[int64]*rpc.MailBox{}
 	m.Start()
-	m.getAll()
 }
 
 func (m *MailBox) Start() {
@@ -115,6 +114,7 @@ func (m *MailBox) Run() {
 	watcher := m.keysAPI.Watcher(MAILBOX_DIR, &client.WatcherOptions{
 		Recursive: true,
 	})
+	m.getAll()
 
 	for {
 		res, err := watcher.Next(context.Background())

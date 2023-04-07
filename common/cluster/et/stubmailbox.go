@@ -18,7 +18,7 @@ const (
 	STUB_TTL_TIME = 30 * time.Second
 )
 
-//publish
+// publish
 type (
 	StubMailBoxMap map[int64]*common.StubMailBox
 	StubMailBox    struct {
@@ -29,7 +29,7 @@ type (
 	}
 )
 
-//初始化pub
+// 初始化pub
 func (s *StubMailBox) Init(endpoints []string, info *common.ClusterInfo) {
 	cfg := client.Config{
 		Endpoints:               endpoints,
@@ -48,7 +48,6 @@ func (s *StubMailBox) Init(endpoints []string, info *common.ClusterInfo) {
 		s.stubMailBoxMap[i] = make(StubMailBoxMap)
 	}
 	s.Start()
-	s.getAll()
 }
 
 func (s *StubMailBox) Start() {
@@ -111,6 +110,7 @@ func (s *StubMailBox) Run() {
 	watcher := s.keysAPI.Watcher(STUB_DIR, &client.WatcherOptions{
 		Recursive: true,
 	})
+	s.getAll()
 
 	for {
 		res, err := watcher.Next(context.Background())

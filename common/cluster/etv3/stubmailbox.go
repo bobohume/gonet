@@ -18,7 +18,7 @@ const (
 	STUB_TTL_TIME = 30
 )
 
-//publish
+// publish
 type (
 	StubMailBoxMap map[int64]*common.StubMailBox
 	StubMailBox    struct {
@@ -30,7 +30,7 @@ type (
 	}
 )
 
-//初始化pub
+// 初始化pub
 func (s *StubMailBox) Init(endpoints []string, info *common.ClusterInfo) {
 	cfg := clientv3.Config{
 		Endpoints: endpoints,
@@ -49,7 +49,6 @@ func (s *StubMailBox) Init(endpoints []string, info *common.ClusterInfo) {
 		s.stubMailBoxMap[i] = make(StubMailBoxMap)
 	}
 	s.Start()
-	s.getAll()
 }
 
 func (s *StubMailBox) Start() {
@@ -116,6 +115,7 @@ func (s *StubMailBox) Count(stubType rpc.STUB) int64 {
 // subscribe
 func (s *StubMailBox) Run() {
 	wch := s.client.Watch(context.Background(), STUB_DIR, clientv3.WithPrefix(), clientv3.WithPrevKV())
+	s.getAll()
 	for v := range wch {
 		for _, v1 := range v.Events {
 			if v1.Type.String() == "PUT" {
