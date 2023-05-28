@@ -23,7 +23,7 @@ type (
 	Log struct {
 		logger    [LG_MAX]log.Logger
 		logFile   [LG_MAX]*os.File
-		logTime   time.Time
+		logTime   [LG_MAX]time.Time
 		fileName  string
 		logSuffix string
 		errSuffix string
@@ -47,124 +47,124 @@ var (
 	LOG Log
 )
 
-func (this *Log) Init(fileName string) bool {
-	//this.logFile = nil
-	this.fileName = fileName
-	this.logSuffix = "log"
-	this.errSuffix = "err"
-	log.SetPrefix(fmt.Sprintf("[%s]", this.fileName))
+func (l *Log) Init(fileName string) bool {
+	//l.logFile = nil
+	l.fileName = fileName
+	l.logSuffix = "log"
+	l.errSuffix = "err"
+	log.SetPrefix(fmt.Sprintf("[%s]", l.fileName))
 	return true
 }
 
-func (this *Log) GetSuffix(nType LG_TYPE) string {
+func (l *Log) GetSuffix(nType LG_TYPE) string {
 	if nType == LG_WARN {
-		return this.logSuffix
+		return l.logSuffix
 	} else {
-		return this.errSuffix
+		return l.errSuffix
 	}
 }
 
-func (this *Log) Write(nType LG_TYPE) {
-	this.WriteFile(nType)
+func (l *Log) Write(nType LG_TYPE) {
+	l.WriteFile(nType)
 	tTime := time.Now()
-	this.logger[nType].SetPrefix(fmt.Sprintf("[%s][%04d-%02d-%02d %02d:%02d:%02d]", this.fileName, tTime.Year(), tTime.Month(), tTime.Day(),
+	l.logger[nType].SetPrefix(fmt.Sprintf("[%s][%04d-%02d-%02d %02d:%02d:%02d]", l.fileName, tTime.Year(), tTime.Month(), tTime.Day(),
 		tTime.Hour(), tTime.Minute(), tTime.Second()))
 }
 
-func (this *Log) Println(v1 ...interface{}) {
-	this.Write(LG_WARN)
+func (l *Log) Println(v1 ...interface{}) {
+	l.Write(LG_WARN)
 	params := make([]interface{}, len(v1)+1)
 	for i, v := range v1 {
 		params[i] = v
 	}
 	params[len(v1)] = "\r"
-	this.logger[LG_WARN].Output(2, fmt.Sprintln(params...))
+	l.logger[LG_WARN].Output(2, fmt.Sprintln(params...))
 	log.Println(params...)
 }
 
-func (this *Log) Print(v1 ...interface{}) {
-	this.Write(LG_WARN)
+func (l *Log) Print(v1 ...interface{}) {
+	l.Write(LG_WARN)
 	params := make([]interface{}, len(v1)+1)
 	for i, v := range v1 {
 		params[i] = v
 	}
 	params[len(v1)] = "\r\n"
-	this.logger[LG_WARN].Output(2, fmt.Sprint(params...))
+	l.logger[LG_WARN].Output(2, fmt.Sprint(params...))
 	log.Print(params...)
 }
 
-func (this *Log) Printf(format string, params ...interface{}) {
-	this.Write(LG_WARN)
+func (l *Log) Printf(format string, params ...interface{}) {
+	l.Write(LG_WARN)
 	format += "\r\n"
-	this.logger[LG_WARN].Output(2, fmt.Sprintf(format, params...))
+	l.logger[LG_WARN].Output(2, fmt.Sprintf(format, params...))
 	log.Printf(format, params...)
 }
 
-func (this *Log) Fatalln(v1 ...interface{}) {
-	this.Write(LG_ERROR)
+func (l *Log) Fatalln(v1 ...interface{}) {
+	l.Write(LG_ERROR)
 	params := make([]interface{}, len(v1)+1)
 	for i, v := range v1 {
 		params[i] = v
 	}
 	params[len(v1)] = "\r"
-	this.logger[LG_ERROR].Output(2, fmt.Sprintln(params...))
+	l.logger[LG_ERROR].Output(2, fmt.Sprintln(params...))
 	log.Println(params...)
 }
 
-func (this *Log) Fatal(v1 ...interface{}) {
-	this.Write(LG_ERROR)
+func (l *Log) Fatal(v1 ...interface{}) {
+	l.Write(LG_ERROR)
 	params := make([]interface{}, len(v1)+1)
 	for i, v := range v1 {
 		params[i] = v
 	}
 	params[len(v1)] = "\r\n"
-	this.logger[LG_ERROR].Output(2, fmt.Sprint(params...))
+	l.logger[LG_ERROR].Output(2, fmt.Sprint(params...))
 	log.Print(params...)
 }
 
-func (this *Log) Fatalf(format string, params ...interface{}) {
-	this.Write(LG_ERROR)
+func (l *Log) Fatalf(format string, params ...interface{}) {
+	l.Write(LG_ERROR)
 	format += "\r\n"
-	this.logger[LG_ERROR].Output(2, fmt.Sprintf(format, params...))
+	l.logger[LG_ERROR].Output(2, fmt.Sprintf(format, params...))
 	log.Printf(format, params...)
 }
 
-func (this *Log) WriteFile(nType LG_TYPE) {
+func (l *Log) WriteFile(nType LG_TYPE) {
 	var err error
 	tTime := time.Now()
-	if this.logTime.Year() != tTime.Year() ||
-		this.logTime.Month() != tTime.Month() || this.logTime.Day() != tTime.Day() {
-		this.loceker.Lock()
-		if this.logFile[nType] != nil {
-			defer this.logFile[nType].Close()
+	if l.logTime[nType].Year() != tTime.Year() ||
+		l.logTime[nType].Month() != tTime.Month() || l.logTime[nType].Day() != tTime.Day() {
+		l.loceker.Lock()
+		if l.logFile[nType] != nil {
+			defer l.logFile[nType].Close()
 		}
 
 		if PathExists(PATH) == false {
 			os.Mkdir(PATH, os.ModeDir)
 		}
 
-		sFileName := fmt.Sprintf("%s/%s_%d%02d%02d.%s", PATH, this.fileName, tTime.Year(), tTime.Month(), tTime.Day(),
-			this.GetSuffix(nType))
+		sFileName := fmt.Sprintf("%s/%s_%d%02d%02d.%s", PATH, l.fileName, tTime.Year(), tTime.Month(), tTime.Day(),
+			l.GetSuffix(nType))
 
 		if PathExists(sFileName) == false {
 			os.Create(sFileName)
 		}
 
-		this.logFile[nType], err = os.OpenFile(sFileName, os.O_RDWR|os.O_APPEND, 0)
+		l.logFile[nType], err = os.OpenFile(sFileName, os.O_RDWR|os.O_APPEND, 0)
 		if err != nil {
 			log.Fatalf("open logfile[%s] error", sFileName)
 		}
 
-		this.logger[nType].SetOutput(this.logFile[nType])
-		this.logger[nType].SetPrefix(fmt.Sprintf("[%s][%04d-%02d-%02d %02d:%02d:%02d]", this.fileName, tTime.Year(), tTime.Month(), tTime.Day(),
+		l.logger[nType].SetOutput(l.logFile[nType])
+		l.logger[nType].SetPrefix(fmt.Sprintf("[%s][%04d-%02d-%02d %02d:%02d:%02d]", l.fileName, tTime.Year(), tTime.Month(), tTime.Day(),
 			tTime.Hour(), tTime.Minute(), tTime.Second()))
-		this.logger[nType].SetFlags(log.Llongfile)
-		Stat, _ := this.logFile[nType].Stat()
+		l.logger[nType].SetFlags(log.Llongfile)
+		Stat, _ := l.logFile[nType].Stat()
 		if Stat != nil {
-			this.logTime = Stat.ModTime()
+			l.logTime[nType] = Stat.ModTime()
 		} else {
-			this.logTime = time.Now()
+			l.logTime[nType] = time.Now()
 		}
-		this.loceker.Unlock()
+		l.loceker.Unlock()
 	}
 }
