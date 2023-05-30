@@ -57,11 +57,10 @@ func (p *PlayerSimpleMgr) Init() {
 func (p *PlayerSimpleMgr) LoadSimplePlayerDatas() {
 	startTime := time.Now().Unix()
 	var simpledata model.SimplePlayerData
-	rows, err := orm.DB.Query(orm.LoadSql(simpledata, orm.WithOutWhere()))
+	rs, err := orm.LoadSql(simpledata, orm.WithOutWhere())
 	if err != nil {
 		common.DBERROR("LoadSimplePlayerDatas", err)
 	}
-	rs, err := orm.Query(rows, err)
 	for err == nil && rs.Next() {
 		data := &model.SimplePlayerData{}
 		loadSimple(rs.Row(), data)
@@ -125,8 +124,7 @@ func (p *PlayerSimpleMgr) GetPlayerName(playerId int64) string {
 
 func LoadSimplePlayerData(playerId int64) *model.SimplePlayerData {
 	data := &model.SimplePlayerData{PlayerId: playerId}
-	rows, err := orm.DB.Query(orm.LoadSql(data))
-	rs, err := orm.Query(rows, err)
+	rs, err := orm.LoadSql(data)
 	if err == nil && rs.Next() {
 		loadSimple(rs.Row(), data)
 		return data
@@ -138,8 +136,7 @@ func LoadSimplePlayerData(playerId int64) *model.SimplePlayerData {
 
 func LoadSimplePlayerDataByName(name string) *model.SimplePlayerData {
 	data := new(model.SimplePlayerData)
-	rows, err := orm.DB.Query(orm.LoadSql(data, orm.WithWhere(model.SimplePlayerData{PlayerName: name})))
-	rs, err := orm.Query(rows, err)
+	rs, err := orm.LoadSql(data, orm.WithWhere(model.SimplePlayerData{PlayerName: name}))
 	if err == nil && rs.Next() {
 		loadSimple(rs.Row(), data)
 		return data

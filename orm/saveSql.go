@@ -4,7 +4,7 @@ import (
 	"strings"
 )
 
-func SaveSqlStr(sqlData *SqlData) string {
+func saveSqlStr(sqlData *SqlData) string {
 	sqlname := sqlData.Name
 	sqlvalue := sqlData.Value
 	sqlext := sqlData.NameValue
@@ -24,12 +24,17 @@ func SaveSqlStr(sqlData *SqlData) string {
 	return "insert into " + sqlData.Table + " (" + sqlname + ") VALUES (" + sqlvalue + ") ON DUPLICATE KEY UPDATE" + sqlext
 }
 
-//--- struct to sql
-func SaveSql(obj interface{}, params ...OpOption) string {
+// --- struct to sql
+func SaveSqlStr(obj interface{}, params ...OpOption) string {
 	op := &Op{sqlType: SQLTYPE_SAVE}
 	op.applyOpts(params)
 	sqlData := &SqlData{}
 	getTableName(obj, sqlData)
 	parseStructSql(obj, sqlData, op)
-	return SaveSqlStr(sqlData)
+	return saveSqlStr(sqlData)
+}
+
+func SaveSql(obj interface{}, params ...OpOption) bool {
+	str := SaveSqlStr(obj, params...)
+	return exec(str) == nil
 }

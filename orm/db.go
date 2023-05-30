@@ -34,7 +34,7 @@ type (
 	Datetime int64
 
 	Row struct {
-		resut map[string]string
+		resut map[string]*string
 	}
 
 	IRow interface {
@@ -50,7 +50,7 @@ type (
 		Time(key string) int64
 		Byte(key string) []byte
 		Obj(obj interface{}) bool
-		KV() map[string]string
+		KV() map[string]*string
 	}
 
 	Rows struct {
@@ -65,15 +65,18 @@ type (
 	}
 
 	Properties struct {
-		Name     string
-		Primary  bool
-		DateTime bool
-		Blob     bool
-		Json     bool
-		Ignore   bool
-		Table    bool //table name
-		Force    bool //update ignore is zero
-		tag      string
+		Name       string
+		Primary    bool
+		DateTime   bool
+		Blob       bool
+		Json       bool
+		Ignore     bool
+		Table      bool //table name
+		Force      bool //update ignore is zero
+		Replicated bool
+		Key        bool
+		Tag        string
+		SType      string
 	}
 
 	Table struct {
@@ -87,13 +90,6 @@ type (
 		Key       string
 		NameValue string
 		Table     string
-		bitMap    *base.BitMap
-	}
-
-	Colunm struct {
-		name   string
-		bArray bool
-		bitMap *base.BitMap
 	}
 
 	Op struct {
@@ -146,43 +142,53 @@ func WithLimit(limit int) OpOption {
 	}
 }
 
-//主键 `sql:"primary"`
-func (this *Properties) IsPrimary() bool {
-	return this.Primary
+// 主键 `sql:"primary"`
+func (p *Properties) IsPrimary() bool {
+	return p.Primary
 }
 
-//日期 `sql:"datetime"`
-func (this *Properties) IsDatetime() bool {
-	return this.DateTime
+// 日期 `sql:"datetime"`
+func (p *Properties) IsDatetime() bool {
+	return p.DateTime
 }
 
-//二进制 `sql:"blob"`
-func (this *Properties) IsBlob() bool {
-	return this.Blob
+// 二进制 `sql:"blob"`
+func (p *Properties) IsBlob() bool {
+	return p.Blob
 }
 
-//json `sql:"json"`
-func (this *Properties) IsJson() bool {
-	return this.Json
+// json `sql:"json"`
+func (p *Properties) IsJson() bool {
+	return p.Json
 }
 
-//ignore `sql:"-"`
-func (this *Properties) IsIgnore() bool {
-	return this.Ignore
+// ignore `sql:"-"`
+func (p *Properties) IsIgnore() bool {
+	return p.Ignore
 }
 
-//tablename `sql:"table"`
-func (this *Properties) IsTable() bool {
-	return this.Table
+// tablename `sql:"table"`
+func (p *Properties) IsTable() bool {
+	return p.Table
 }
 
-//is zero can update
-//tablename `sql:"force"`
-func (this *Properties) IsForce() bool {
-	return this.Force
+// is zero can update
+// froce `sql:"force"`
+func (p *Properties) IsForce() bool {
+	return p.Force
 }
 
-//---获取datetime时间
+// replicated `sql:"replicated"`
+func (p *Properties) IsReplicated() bool {
+	return p.Replicated
+}
+
+// key `sql:"key"`
+func (p *Properties) IsKey() bool {
+	return p.Key
+}
+
+// ---获取datetime时间
 func GetDBTimeString(t int64) string {
 	tm := time.Unix(t, 0)
 	return tm.Format("2006-01-02 15:04:05")
@@ -202,8 +208,8 @@ func OpenDB(conf common.Db) error {
 
 func getProperties(sf reflect.StructField) *Properties {
 	p := &Properties{}
-	p.tag = sf.Tag.Get("sql")
-	fields := strings.Split(p.tag, ";")
+	p.Tag = sf.Tag.Get("sql")
+	fields := strings.Split(p.Tag, ";")
 	for _, v := range fields {
 		switch v {
 		case "primary":
@@ -220,100 +226,105 @@ func getProperties(sf reflect.StructField) *Properties {
 			p.Table = true
 		case "force":
 			p.Force = true
+		case "replicated":
+			p.Replicated = true
+		case "key":
+			p.Key = true
 		default:
 			if strings.Contains(v, "name:") {
 				p.Name = v[5:]
 			}
 		}
 	}
+	p.SType = GetTypeString(sf)
 	return p
 }
 
-func (this *Row) init() {
-	this.resut = make(map[string]string)
+func (r *Row) init() {
+	r.resut = map[string]*string{}
 }
 
-func (this *Row) Set(key, val string) {
-	this.resut[key] = val
+func (r *Row) Set(key, val string) {
+	r.resut[key] = &val
 }
 
-func (this *Row) Get(key string) string {
+func (r *Row) Get(key string) string {
 	//key = strings.ToLower(key)
-	v, exist := this.resut[key]
+	v, exist := r.resut[key]
 	if exist {
-		return v
+		return *v
 	}
 
 	return ""
 }
 
-func (this *Row) String(key string) string {
-	return this.Get(key)
+func (r *Row) String(key string) string {
+	return r.Get(key)
 }
 
-func (this *Row) Int(key string) int {
-	n, _ := strconv.Atoi(this.Get(key))
+func (r *Row) Int(key string) int {
+	n, _ := strconv.Atoi(r.Get(key))
 	return n
 }
 
-func (this *Row) Int64(key string) int64 {
-	n, _ := strconv.ParseInt(this.Get(key), 0, 64)
+func (r *Row) Int64(key string) int64 {
+	n, _ := strconv.ParseInt(r.Get(key), 0, 64)
 	return n
 }
 
-func (this *Row) Float32(key string) float32 {
-	n, _ := strconv.ParseFloat(this.Get(key), 32)
+func (r *Row) Float32(key string) float32 {
+	n, _ := strconv.ParseFloat(r.Get(key), 32)
 	return float32(n)
 }
 
-func (this *Row) Float64(key string) float64 {
-	n, _ := strconv.ParseFloat(this.Get(key), 64)
+func (r *Row) Float64(key string) float64 {
+	n, _ := strconv.ParseFloat(r.Get(key), 64)
 	return n
 }
 
-func (this *Row) Bool(key string) bool {
-	n, _ := strconv.ParseBool(this.Get(key))
+func (r *Row) Bool(key string) bool {
+	n, _ := strconv.ParseBool(r.Get(key))
 	return n
 }
 
-func (this *Row) Time(key string) int64 {
-	return base.GetDBTime(this.Get(key)).Unix()
+func (r *Row) Time(key string) int64 {
+	return base.GetDBTime(r.Get(key)).Unix()
 }
 
-func (this *Row) Byte(key string) []byte {
-	return []byte(this.Get(key))
+func (r *Row) Byte(key string) []byte {
+	return []byte(r.Get(key))
 }
 
-func (this *Row) Obj(obj interface{}) bool {
-	return LoadObjSql(obj, this)
+func (r *Row) Obj(obj interface{}) bool {
+	return LoadObjSql(obj, r)
 }
 
-func (this *Row) KV() map[string]string {
-	return this.resut
+func (r *Row) KV() map[string]*string {
+	return r.resut
 }
 
-func (this *Rows) init() {
-	this.m_posRow = 0
+func (r *Rows) init() {
+	r.m_posRow = 0
 }
 
-func (this *Rows) Next() bool {
-	if this.m_posRow < len(this.m_Rows) {
-		this.m_posRow++
+func (r *Rows) Next() bool {
+	if r.m_posRow < len(r.m_Rows) {
+		r.m_posRow++
 		return true
 	}
 	return false
 }
 
-func (this *Rows) Row() *Row {
-	nPos := this.m_posRow - 1
-	if nPos >= 0 && nPos < len(this.m_Rows) {
-		return this.m_Rows[nPos]
+func (r *Rows) Row() *Row {
+	nPos := r.m_posRow - 1
+	if nPos >= 0 && nPos < len(r.m_Rows) {
+		return r.m_Rows[nPos]
 	}
 
 	return NewRow()
 }
 
-func (this *Rows) Obj(obj interface{}) bool {
+func (rs *Rows) Obj(obj interface{}) bool {
 	defer func() {
 		if err := recover(); err != nil {
 			base.TraceCode(err)
@@ -328,9 +339,9 @@ func (this *Rows) Obj(obj interface{}) bool {
 			isPtr = true
 			rType = rType.Elem()
 		}
-		for this.Next() {
+		for rs.Next() {
 			elem := reflect.New(rType).Elem()
-			LoadObjSql(elem.Addr().Interface(), this.Row())
+			LoadObjSql(elem.Addr().Interface(), rs.Row())
 			if isPtr {
 				r.Set(reflect.Append(r, elem.Addr()))
 			} else {
@@ -347,7 +358,12 @@ func NewRow() *Row {
 	return row
 }
 
-func Query(rows *sql.Rows, err error) (*Rows, error) {
+func Query(query string, args ...any) (*Rows, error) {
+	rows, err := DB.Query(query, args...)
+	return do_query(rows, err)
+}
+
+func do_query(rows *sql.Rows, err error) (*Rows, error) {
 	rs := &Rows{}
 	rs.init()
 	if rows != nil && err == nil {
@@ -356,15 +372,14 @@ func Query(rows *sql.Rows, err error) (*Rows, error) {
 		if err == nil && cloumnsLen > 0 {
 			for rows.Next() {
 				r := NewRow()
-				value := make([]*string, cloumnsLen)
-				value1 := make([]interface{}, cloumnsLen)
-				for i, _ := range value {
-					value[i] = new(string)
-					value1[i] = value[i]
+				value := make([]interface{}, cloumnsLen)
+				for i := 0; i < cloumnsLen; i++ {
+					r.resut[cloumns[i]] = new(string)
+					value[i] = r.resut[cloumns[i]]
 				}
-				rows.Scan(value1...)
-				for i, v := range value {
-					r.resut[cloumns[i]] = *v
+				err = rows.Scan(value...)
+				if err != nil {
+					return rs, err
 				}
 				rs.m_Rows = append(rs.m_Rows, r)
 			}
@@ -374,7 +389,7 @@ func Query(rows *sql.Rows, err error) (*Rows, error) {
 	return rs, err
 }
 
-func getTable(classType reflect.Type) *Table {
+func GetTable(classType reflect.Type) *Table {
 	val, bOk := g_TableCacheMap.Load(classType)
 	if !bOk {
 		table := &Table{}
@@ -393,13 +408,13 @@ func getTable(classType reflect.Type) *Table {
 	return val.(*Table)
 }
 
-func getTableInfo(obj interface{}) (reflect.Value, reflect.Type, *Table) {
+func GetTableInfo(obj interface{}) (reflect.Value, reflect.Type, *Table) {
 	classVal := reflect.ValueOf(obj)
 	for classVal.Kind() == reflect.Ptr {
 		classVal = classVal.Elem()
 	}
 	classType := classVal.Type()
-	table := getTable(classType)
+	table := GetTable(classType)
 	return classVal, classType, table
 }
 
@@ -409,8 +424,16 @@ func getTableName(obj interface{}, sqlData *SqlData) {
 		classVal = classVal.Elem()
 	}
 	classType := classVal.Type()
-	table := getTable(classType)
+	table := GetTable(classType)
 	sqlData.Table = table.Name
+}
+
+func exec(str string) error {
+	_, err := DB.Exec(str)
+	if err != nil {
+		base.LOG.Fatalf("%s %s", str, err.Error())
+	}
+	return err
 }
 
 var (

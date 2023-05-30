@@ -14,12 +14,17 @@ func deleteSqlStr(sqlData *SqlData) string {
 	return "delete from " + sqlData.Table + " where " + key
 }
 
-//--- struct to sql
-func DeleteSql(obj interface{}, params ...OpOption) string {
+// --- struct to sql
+func DeleteSqlStr(obj interface{}, params ...OpOption) string {
 	op := &Op{sqlType: SQLTYPE_DELETE}
 	op.applyOpts(params)
 	sqlData := &SqlData{}
 	getTableName(obj, sqlData)
 	parseStructSql(obj, sqlData, op)
 	return deleteSqlStr(sqlData)
+}
+
+func DeleteSql(obj interface{}, params ...OpOption) bool {
+	str := DeleteSqlStr(obj, params...)
+	return exec(str) == nil
 }

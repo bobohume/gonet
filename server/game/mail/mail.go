@@ -51,7 +51,7 @@ func (m *MailMgr) sendMail(sender int64, recver int64, money int, itemId int, it
 	mail.Content = content
 	//离线
 	if cluster.MGR.MailBox.Get(recver) == nil {
-		orm.DB.Exec(orm.InsertSql(mail))
+		orm.InsertSql(mail)
 		base.LOG.Printf("邮件发送给[%d]玩家成功", recver)
 	} else {
 		cluster.MGR.SendMsg(rpc.RpcHead{Id: recver}, "game<-Player.Add_Player_Mail", mail)

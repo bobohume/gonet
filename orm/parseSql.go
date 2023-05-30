@@ -79,50 +79,51 @@ func parsesqlblob(sqlData *SqlData, p *Properties, op *Op, val []byte) {
 	}
 }
 
-func parsesqlarray(sqlData *SqlData, p *Properties, op *Op, val string, i int) {
-	if sqlData.bitMap != nil && !sqlData.bitMap.Test(i) {
-		return
-	}
-
+func parsesqlarray(sqlData *SqlData, p *Properties, op *Op, classVal reflect.Value) bool {
 	switch op.sqlType {
 	case SQLTYPE_INSERT:
-		sqlData.Value += fmt.Sprintf("'%s',", val)
-		sqlData.Name += fmt.Sprintf("`%s%d`,", p.Name, i)
+		for classVal.Kind() == reflect.Ptr {
+			classVal = classVal.Elem()
+		}
+		data, err := marshalBlob(classVal)
+		parsesqlblob(sqlData, p, op, data)
+		return err == nil
 	case SQLTYPE_DELETE:
-		if p.IsPrimary() {
-			sqlData.Key += fmt.Sprintf("`%s%d`='%s',", p.Name, i, val)
-		}
+		return true
 	case SQLTYPE_UPDATE:
-		if p.IsPrimary() {
-			sqlData.Key += fmt.Sprintf("`%s%d`='%s',", p.Name, i, val)
-		} else {
-			sqlData.NameValue += fmt.Sprintf("`%s%d`='%s',", p.Name, i, val)
+		for classVal.Kind() == reflect.Ptr {
+			classVal = classVal.Elem()
 		}
+		data, err := marshalBlob(classVal)
+		parsesqlblob(sqlData, p, op, data)
+		return err == nil
 	case SQLTYPE_LOAD:
-		if p.IsPrimary() {
-			sqlData.Key += fmt.Sprintf("`%s%d`='%s',", p.Name, i, val)
-		}
-		sqlData.Name += fmt.Sprintf("`%s%d`,", p.Name, i)
+		sqlData.Name += fmt.Sprintf("`%s`,", p.Name)
 	case SQLTYPE_SAVE:
-		sqlData.Value += fmt.Sprintf("'%s',", val)
-		sqlData.Name += fmt.Sprintf("`%s%d`,", p.Name, i)
-		if !p.IsPrimary() {
-			sqlData.NameValue += fmt.Sprintf("`%s%d`='%s',", p.Name, i, val)
+		for classVal.Kind() == reflect.Ptr {
+			classVal = classVal.Elem()
 		}
+		data, err := marshalBlob(classVal)
+		parsesqlblob(sqlData, p, op, data)
+		return err == nil
 	case SQLTYPE_WHERE:
-		sqlData.Key += fmt.Sprintf("`%s%d`='%s',", p.Name, i, val)
+		return true
 	}
+	return true
 }
 
 func parseSfSql(p *Properties, classField reflect.StructField, classVal reflect.Value, sqlData *SqlData, op *Op) bool {
-	sType := getTypeString(classField, classVal)
+	sType := p.SType
 	switch op.sqlType {
 	case SQLTYPE_INSERT:
-		if p.IsJson() {
-			data, _ := json.Marshal(classVal.Interface())
+		if p.IsJson() && !classVal.IsZero() {
+			for classVal.Kind() == reflect.Ptr {
+				classVal = classVal.Elem()
+			}
+			data, err := json.Marshal(classVal.Interface())
 			parsesql(sqlData, p, op, string(data))
-			return true
-		} else if p.IsBlob() {
+			return err == nil
+		} else if p.IsBlob() && !classVal.IsZero() {
 			for classVal.Kind() == reflect.Ptr {
 				classVal = classVal.Elem()
 			}
@@ -150,11 +151,14 @@ func parseSfSql(p *Properties, classField reflect.StructField, classVal reflect.
 			return true
 		}
 	case SQLTYPE_UPDATE:
-		if p.IsJson() {
-			data, _ := json.Marshal(classVal.Interface())
+		if p.IsJson() && !classVal.IsZero() {
+			for classVal.Kind() == reflect.Ptr {
+				classVal = classVal.Elem()
+			}
+			data, err := json.Marshal(classVal.Interface())
 			parsesql(sqlData, p, op, string(data))
-			return true
-		} else if p.IsBlob() {
+			return err == nil
+		} else if p.IsBlob() && !classVal.IsZero() {
 			for classVal.Kind() == reflect.Ptr {
 				classVal = classVal.Elem()
 			}
@@ -181,11 +185,14 @@ func parseSfSql(p *Properties, classField reflect.StructField, classVal reflect.
 			return true
 		}
 	case SQLTYPE_SAVE:
-		if p.IsJson() {
-			data, _ := json.Marshal(classVal.Interface())
+		if p.IsJson() && !classVal.IsZero() {
+			for classVal.Kind() == reflect.Ptr {
+				classVal = classVal.Elem()
+			}
+			data, err := json.Marshal(classVal.Interface())
 			parsesql(sqlData, p, op, string(data))
-			return true
-		} else if p.IsBlob() {
+			return err == nil
+		} else if p.IsBlob() && !classVal.IsZero() {
 			for classVal.Kind() == reflect.Ptr {
 				classVal = classVal.Elem()
 			}
@@ -344,190 +351,30 @@ func parseSfSql(p *Properties, classField reflect.StructField, classVal reflect.
 	case "struct":
 		parseStructSql(classVal.Interface(), sqlData, op)
 
-	case "[]bool":
-		value := []bool{}
-		if !classVal.IsNil() {
-			value = classVal.Interface().([]bool)
-		}
-		for i, v := range value {
-			parsesqlarray(sqlData, p, op, strconv.FormatBool(v), i)
-		}
-	case "[]string":
-		value := []string{}
-		if !classVal.IsNil() {
-			value = classVal.Interface().([]string)
-		}
-		for i, v := range value {
-			parsesqlarray(sqlData, p, op, v, i)
-		}
-	case "[]float32":
-		value := []float32{}
-		if !classVal.IsNil() {
-			value = classVal.Interface().([]float32)
-		}
-		for i, v := range value {
-			parsesqlarray(sqlData, p, op, strconv.FormatFloat(float64(v), 'f', -1, 32), i)
-		}
-	case "[]float64":
-		value := []float64{}
-		if !classVal.IsNil() {
-			value = classVal.Interface().([]float64)
-		}
-		for i, v := range value {
-			parsesqlarray(sqlData, p, op, strconv.FormatFloat(v, 'f', -1, 64), i)
-		}
-	case "[]int":
-		value := []int{}
-		if !classVal.IsNil() {
-			value = classVal.Interface().([]int)
-		}
-		for i, v := range value {
-			parsesqlarray(sqlData, p, op, strconv.FormatInt(int64(v), 10), i)
-		}
-	case "[]int8":
-		value := []int8{}
-		if !classVal.IsNil() {
-			value = classVal.Interface().([]int8)
-		}
-		for i, v := range value {
-			parsesqlarray(sqlData, p, op, strconv.FormatInt(int64(v), 10), i)
-		}
-	case "[]int16":
-		value := []int16{}
-		if !classVal.IsNil() {
-			value = classVal.Interface().([]int16)
-		}
-		for i, v := range value {
-			parsesqlarray(sqlData, p, op, strconv.FormatInt(int64(v), 10), i)
-		}
-	case "[]int32":
-		value := []int32{}
-		if !classVal.IsNil() {
-			value = classVal.Interface().([]int32)
-		}
-		for i, v := range value {
-			parsesqlarray(sqlData, p, op, strconv.FormatInt(int64(v), 10), i)
-		}
-	case "[]int64":
-		value := []int64{}
-		if !classVal.IsNil() {
-			value = classVal.Interface().([]int64)
-		}
-		for i, v := range value {
-			if !p.IsDatetime() {
-				parsesqlarray(sqlData, p, op, strconv.FormatInt(int64(v), 10), i)
-			} else {
-				parsesqlarray(sqlData, p, op, GetDBTimeString(v), i)
-			}
-		}
-	case "[]uint":
-		value := []uint{}
-		if !classVal.IsNil() {
-			value = classVal.Interface().([]uint)
-		}
-		for i, v := range value {
-			parsesqlarray(sqlData, p, op, strconv.FormatUint(uint64(v), 10), i)
-		}
-	case "[]uint8":
-		value := []uint8{}
-		if !classVal.IsNil() {
-			value = classVal.Interface().([]uint8)
-		}
-		for i, v := range value {
-			parsesqlarray(sqlData, p, op, strconv.FormatUint(uint64(v), 10), i)
-		}
-	case "[]uint16":
-		value := []uint16{}
-		if !classVal.IsNil() {
-			value = classVal.Interface().([]uint16)
-		}
-		for i, v := range value {
-			parsesqlarray(sqlData, p, op, strconv.FormatUint(uint64(v), 10), i)
-		}
-	case "[]uint32":
-		value := []uint32{}
-		if !classVal.IsNil() {
-			value = classVal.Interface().([]uint32)
-		}
-		for i, v := range value {
-			parsesqlarray(sqlData, p, op, strconv.FormatUint(uint64(v), 10), i)
-		}
-	case "[]uint64":
-		value := []uint64{}
-		if !classVal.IsNil() {
-			value = classVal.Interface().([]uint64)
-		}
-		for i, v := range value {
-			parsesqlarray(sqlData, p, op, strconv.FormatUint(uint64(v), 10), i)
-		}
+	case "[]bool", "[]string", "[]float32", "[]float64", "[]int", "[]int8", "[]int16",
+		"[]int32", "[]int64", "[]uint", "[]uint8", "[]uint16", "[]uint32", "[]uint64":
+		return parsesqlarray(sqlData, p, op, classVal)
+
 	case "[]struct":
 		for i := 0; i < classVal.Len(); i++ {
 			parseStructSql(classVal.Index(i).Interface(), sqlData, op)
 		}
 
-	case "[*]bool":
-		for i := 0; i < classVal.Len(); i++ {
-			parsesqlarray(sqlData, p, op, strconv.FormatBool(classVal.Index(i).Bool()), i)
-		}
-	case "[*]string":
-		for i := 0; i < classVal.Len(); i++ {
-			parsesqlarray(sqlData, p, op, classVal.Index(i).String(), i)
-		}
-	case "[*]float32":
-		for i := 0; i < classVal.Len(); i++ {
-			parsesqlarray(sqlData, p, op, strconv.FormatFloat(classVal.Index(i).Float(), 'f', -1, 64), i)
-		}
-	case "[*]float64":
-		for i := 0; i < classVal.Len(); i++ {
-			parsesqlarray(sqlData, p, op, strconv.FormatFloat(classVal.Index(i).Float(), 'f', -1, 64), i)
-		}
-	case "[*]int":
-		for i := 0; i < classVal.Len(); i++ {
-			parsesqlarray(sqlData, p, op, strconv.FormatInt(classVal.Index(i).Int(), 10), i)
-		}
-	case "[*]int8":
-		for i := 0; i < classVal.Len(); i++ {
-			parsesqlarray(sqlData, p, op, strconv.FormatInt(classVal.Index(i).Int(), 10), i)
-		}
-	case "[*]int16":
-		for i := 0; i < classVal.Len(); i++ {
-			parsesqlarray(sqlData, p, op, strconv.FormatInt(classVal.Index(i).Int(), 10), i)
-		}
-	case "[*]int32":
-		for i := 0; i < classVal.Len(); i++ {
-			parsesqlarray(sqlData, p, op, strconv.FormatInt(classVal.Index(i).Int(), 10), i)
-		}
-	case "[*]int64":
-		for i := 0; i < classVal.Len(); i++ {
-			parsesqlarray(sqlData, p, op, strconv.FormatInt(classVal.Index(i).Int(), 10), i)
-		}
-	case "[*]uint":
-		for i := 0; i < classVal.Len(); i++ {
-			parsesqlarray(sqlData, p, op, strconv.FormatUint(classVal.Index(i).Uint(), 10), i)
-		}
-	case "[*]uint8":
-		for i := 0; i < classVal.Len(); i++ {
-			parsesqlarray(sqlData, p, op, strconv.FormatUint(classVal.Index(i).Uint(), 10), i)
-		}
-	case "[*]uint16":
-		for i := 0; i < classVal.Len(); i++ {
-			parsesqlarray(sqlData, p, op, strconv.FormatUint(classVal.Index(i).Uint(), 10), i)
-		}
-	case "[*]uint32":
-		for i := 0; i < classVal.Len(); i++ {
-			parsesqlarray(sqlData, p, op, strconv.FormatUint(classVal.Index(i).Uint(), 10), i)
-		}
-	case "[*]uint64":
-		for i := 0; i < classVal.Len(); i++ {
-			parsesqlarray(sqlData, p, op, strconv.FormatUint(classVal.Index(i).Uint(), 10), i)
-		}
+	case "[*]bool", "[*]string", "[*]float32", "[*]float64", "[*]int", "[*]int8", "[*]int16",
+		"[*]int32", "[*]int64", "[*]uint", "[*]uint8", "[*]uint16", "[*]uint32", "[*]uint64":
+		return parsesqlarray(sqlData, p, op, classVal)
+
 	case "[*]struct":
 		for i := 0; i < classVal.Len(); i++ {
 			parseStructSql(classVal.Index(i).Interface(), sqlData, op)
 		}
+
+	case "[m]bool", "[m]string", "[m]float32", "[m]float64", "[m]int", "[m]int8", "[m]int16",
+		"[m]int32", "[m]int64", "[m]uint", "[m]uint8", "[m]uint16", "[m]uint32", "[m]uint64", "[m]struct":
+		return parsesqlarray(sqlData, p, op, classVal)
+
 	default:
-		fmt.Println("parseSfSql type not supported", sType, classField.Type)
-		panic("parseSfSql type not supported")
+		panic(fmt.Sprintf("parseSfSql table [%s] [%s] type[%s] not supported", sqlData.Table, classField.Name, classField.Type.String()))
 		return false
 		//}
 	}
@@ -535,7 +382,7 @@ func parseSfSql(p *Properties, classField reflect.StructField, classVal reflect.
 }
 
 func parseStructSql(obj interface{}, sqlData *SqlData, op *Op) {
-	classVal, classType, table := getTableInfo(obj)
+	classVal, classType, table := GetTableInfo(obj)
 	for i := 0; i < classType.NumField(); i++ {
 		if !classVal.Field(i).CanInterface() {
 			continue

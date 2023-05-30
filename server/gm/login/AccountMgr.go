@@ -57,8 +57,7 @@ func loadAccount(row orm.IRow, a *AccountDB) {
 
 func (a *AccountMgr) AddAccount(accountId int64) *Account {
 	LoadAccountDB := func(accountId int64) *AccountDB {
-		rows, err := orm.DB.Query(fmt.Sprintf("select account_id, account_name, status, login_time, logout_time, login_ip from tbl_account where account_id=%d", accountId))
-		rs, err := orm.Query(rows, err)
+		rs, err := orm.Query(fmt.Sprintf("select account_id, account_name, status, login_time, logout_time, login_ip from tbl_account where account_id=%d", accountId))
 		if err == nil && rs.Next() {
 			accountDb := &AccountDB{}
 			accountDb.AccountId = accountId
@@ -90,7 +89,7 @@ func (a *AccountMgr) RemoveAccount(accountId int64) {
 	}
 }
 
-//账号登录处理
+// 账号登录处理
 func (a *AccountMgr) Account_Login(ctx context.Context, accountName string, accountId int64, socketId uint32, id uint32, key int64) {
 	account := a.GetAccount(accountId)
 	if account == nil {
@@ -110,14 +109,13 @@ func (a *AccountMgr) Account_Login(ctx context.Context, accountName string, acco
 	})
 }
 
-//account创建玩家反馈
+// account创建玩家反馈
 func (a *AccountMgr) CreatePlayerRequest(ctx context.Context, packet *message.CreatePlayerRequest) {
 	accountId := a.GetRpcHead(ctx).Id
 	//查找账号玩家数量
 	error := 0
-	rows, err := orm.DB.Query(fmt.Sprintf("select count(player_id) as player_count from tbl_player where account_id = %d", accountId))
+	rs, err := orm.Query(fmt.Sprintf("select count(player_id) as player_count from tbl_player where account_id = %d", accountId))
 	if err == nil {
-		rs, err := orm.Query(rows, err)
 		if err == nil && rs.Next() {
 			player_count := rs.Row().Int("player_count")
 			if player_count >= 1 { //创建玩家上限
@@ -166,7 +164,7 @@ func (a *AccountMgr) LoginPlayerRequset(ctx context.Context, packet *message.Log
 	}
 }
 
-//账号断开连接
+// 账号断开连接
 func (a *AccountMgr) OnUnRegister(ctx context.Context) {
 	accountId := a.GetRpcHead(ctx).Id
 	a.RemoveAccount(accountId)
@@ -176,8 +174,7 @@ func LoadSimplePlayerDatas(accountId int64) []*model.SimplePlayerData {
 	pList := make([]*model.SimplePlayerData, 0)
 	playerNum := 0
 	data := new(model.SimplePlayerData)
-	rows, err := orm.DB.Query(orm.LoadSql(data, orm.WithWhereStr(fmt.Sprintf("account_id=%d", accountId))))
-	rs, err := orm.Query(rows, err)
+	rs, _ := orm.LoadSql(data, orm.WithWhereStr(fmt.Sprintf("account_id=%d", accountId)))
 	for rs.Next() {
 		loadSimple(rs.Row(), data)
 		pList = append(pList, data)

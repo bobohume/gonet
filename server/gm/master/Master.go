@@ -47,12 +47,11 @@ func (this *Master) OnStubUnRegister(ctx context.Context) {
 	base.LOG.Println("Stub Login unregister sucess")
 }
 
-//登录玩家
+// 登录玩家
 func (this *Master) LoginPlayer(accountName string) (int64, error) {
 
 	//查找账号玩家数量
-	rows, err := orm.DB.Query(fmt.Sprintf("select player_id from tbl_player where account_name = '%s'", accountName))
-	rs, err := orm.Query(rows, err)
+	rs, err := orm.Query(fmt.Sprintf("select player_id from tbl_player where account_name = '%s'", accountName))
 	playerId := int64(0)
 	if err == nil {
 		if !rs.Next() {

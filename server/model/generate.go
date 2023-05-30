@@ -83,8 +83,7 @@ func (this *{ClassName}) __Save{MemberType}DB(){
 			`
 func (this *{ClassName}) __Load{MemberType}DB({DbKeyName} {DbKeyTypeName}) error{
     data := &model.{MemberType}{{DbKeyName}:{DbKeyName}}
-    rows, err := orm.DB.Query(orm.LoadSql(data, orm.WithWhere(data)))
-    rs, err := orm.Query(rows, err)
+    rs, err := orm.LoadSql(data, orm.WithWhere(data))
     if err == nil && rs.Next() {
         orm.LoadObjSql(&this.{MemberName}, rs.Row())
     }
@@ -94,13 +93,13 @@ func (this *{ClassName}) __Load{MemberType}DB({DbKeyName} {DbKeyTypeName}) error
 			`
 /*
 func (this *{ClassName}Mgr) Save{MemberType}(ctx context.Context, playerId int64, data model.{MemberType}){
-	orm.DB.Exec(orm.SaveSql(&data))
+	orm.SaveSql(&data)
 	base.LOG.Printf("玩家[%d] Save{MemberType}", playerId)
 }
 */
 func (this *{ClassName}) __Save{MemberType}DB(){
 	if this.{MemberName}.Dirty{
-    	orm.DB.Exec(orm.SaveSql(this.{MemberName}))
+    	orm.SaveSql(this.{MemberName})
 		this.{MemberName}.Dirty = false
 	}
 }

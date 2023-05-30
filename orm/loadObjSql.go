@@ -17,7 +17,7 @@ func getLoadObjSql(p *Properties, classField reflect.StructField, classVal refle
 	}
 	classType := p.Name
 
-	sType := getTypeString(classField, classVal)
+	sType := p.SType
 	if p.IsJson() {
 		return json.Unmarshal(row.Byte(classType), classVal.Addr().Interface()) == nil
 	} else if p.IsBlob() {
@@ -135,160 +135,27 @@ func getLoadObjSql(p *Properties, classField reflect.StructField, classVal refle
 	case "struct":
 		parseLoadObjSql(classVal.Addr().Interface(), row)
 
-	case "[]bool":
-		if classVal.CanSet() {
-			for i := 0; i < classVal.Len(); i++ {
-				classVal.Index(i).SetBool(row.Bool(fmt.Sprintf(load_obj_sqlarrayname, classType, i)))
-			}
-		}
-	case "[]string":
-		if classVal.CanSet() {
-			for i := 0; i < classVal.Len(); i++ {
-				classVal.Index(i).SetString(row.String(fmt.Sprintf(load_obj_sqlarrayname, classType, i)))
-			}
-		}
-	case "[]float32":
-		if classVal.CanSet() {
-			for i := 0; i < classVal.Len(); i++ {
-				classVal.Index(i).SetFloat(row.Float64(fmt.Sprintf(load_obj_sqlarrayname, classType, i)))
-			}
-		}
-	case "[]float64":
-		if classVal.CanSet() {
-			for i := 0; i < classVal.Len(); i++ {
-				classVal.Index(i).SetFloat(row.Float64(fmt.Sprintf(load_obj_sqlarrayname, classType, i)))
-			}
-		}
-	case "[]int":
-		if classVal.CanSet() {
-			for i := 0; i < classVal.Len(); i++ {
-				classVal.Index(i).SetInt(row.Int64(fmt.Sprintf(load_obj_sqlarrayname, classType, i)))
-			}
-		}
-	case "[]int8":
-		if classVal.CanSet() {
-			for i := 0; i < classVal.Len(); i++ {
-				classVal.Index(i).SetInt(row.Int64(fmt.Sprintf(load_obj_sqlarrayname, classType, i)))
-			}
-		}
-	case "[]int16":
-		if classVal.CanSet() {
-			for i := 0; i < classVal.Len(); i++ {
-				classVal.Index(i).SetInt(row.Int64(fmt.Sprintf(load_obj_sqlarrayname, classType, i)))
-			}
-		}
-	case "[]int32":
-		if classVal.CanSet() {
-			for i := 0; i < classVal.Len(); i++ {
-				classVal.Index(i).SetInt(row.Int64(fmt.Sprintf(load_obj_sqlarrayname, classType, i)))
-			}
-		}
-	case "[]int64":
-		if classVal.CanSet() {
-			for i := 0; i < classVal.Len(); i++ {
-				if !p.IsDatetime() {
-					classVal.Index(i).SetInt(row.Int64(fmt.Sprintf(load_obj_sqlarrayname, classType, i)))
-				} else {
-					classVal.Index(i).SetInt(row.Time(fmt.Sprintf(load_obj_sqlarrayname, classType, i)))
-				}
-			}
-		}
-	case "[]uint":
-		if classVal.CanSet() {
-			for i := 0; i < classVal.Len(); i++ {
-				classVal.Index(i).SetUint(uint64(row.Int64(fmt.Sprintf(load_obj_sqlarrayname, classType, i))))
-			}
-		}
-	case "[]uint8":
-		classVal.SetBytes(row.Byte(classType)) //blob
-		if classVal.CanSet() {
-			for i := 0; i < classVal.Len(); i++ {
-				classVal.Index(i).SetUint(uint64(row.Int64(fmt.Sprintf(load_obj_sqlarrayname, classType, i))))
-			}
-		}
-	case "[]uint16":
-		if classVal.CanSet() {
-			for i := 0; i < classVal.Len(); i++ {
-				classVal.Index(i).SetUint(uint64(row.Int64(fmt.Sprintf(load_obj_sqlarrayname, classType, i))))
-			}
-		}
-	case "[]uint32":
-		if classVal.CanSet() {
-			for i := 0; i < classVal.Len(); i++ {
-				classVal.Index(i).SetUint(uint64(row.Int64(fmt.Sprintf(load_obj_sqlarrayname, classType, i))))
-			}
-		}
-	case "[]uint64":
-		if classVal.CanSet() {
-			for i := 0; i < classVal.Len(); i++ {
-				classVal.Index(i).SetUint(uint64(row.Int64(fmt.Sprintf(load_obj_sqlarrayname, classType, i))))
-			}
-		}
+	case "[]bool", "[]string", "[]float32", "[]float64", "[]int", "[]int8", "[]int16",
+		"[]int32", "[]int64", "[]uint", "[]uint8", "[]uint16", "[]uint32", "[]uint64":
+		return parseLoadarray(classVal, classType, row)
+
 	case "[]struct":
 		for i := 0; i < classVal.Len(); i++ {
 			parseLoadObjSql(classVal.Index(i).Addr().Interface(), row)
 		}
 
-	case "[*]bool":
-		for i := 0; i < classVal.Len(); i++ {
-			classVal.Index(i).SetBool(row.Bool(fmt.Sprintf(load_obj_sqlarrayname, classType, i)))
-		}
-	case "[*]string":
-		for i := 0; i < classVal.Len(); i++ {
-			classVal.Index(i).SetString(row.String(fmt.Sprintf(load_obj_sqlarrayname, classType, i)))
-		}
-	case "[*]float32":
-		for i := 0; i < classVal.Len(); i++ {
-			classVal.Index(i).SetFloat(row.Float64(fmt.Sprintf(load_obj_sqlarrayname, classType, i)))
-		}
-	case "[*]float64":
-		for i := 0; i < classVal.Len(); i++ {
-			classVal.Index(i).SetFloat(row.Float64(fmt.Sprintf(load_obj_sqlarrayname, classType, i)))
-		}
-	case "[*]int":
-		for i := 0; i < classVal.Len(); i++ {
-			classVal.Index(i).SetInt(row.Int64(fmt.Sprintf(load_obj_sqlarrayname, classType, i)))
-		}
-	case "[*]int8":
-		for i := 0; i < classVal.Len(); i++ {
-			classVal.Index(i).SetInt(row.Int64(fmt.Sprintf(load_obj_sqlarrayname, classType, i)))
-		}
-	case "[*]int16":
-		for i := 0; i < classVal.Len(); i++ {
-			classVal.Index(i).SetInt(row.Int64(fmt.Sprintf(load_obj_sqlarrayname, classType, i)))
-		}
-	case "[*]int32":
-		for i := 0; i < classVal.Len(); i++ {
-			classVal.Index(i).SetInt(row.Int64(fmt.Sprintf(load_obj_sqlarrayname, classType, i)))
-		}
-	case "[*]int64":
-		for i := 0; i < classVal.Len(); i++ {
-			classVal.Index(i).SetInt(row.Int64(fmt.Sprintf(load_obj_sqlarrayname, classType, i)))
-		}
-	case "[*]uint":
-		for i := 0; i < classVal.Len(); i++ {
-			classVal.Index(i).SetUint(uint64(row.Int64(fmt.Sprintf(load_obj_sqlarrayname, classType, i))))
-		}
-	case "[*]uint8":
-		for i := 0; i < classVal.Len(); i++ {
-			classVal.Index(i).SetUint(uint64(row.Int64(fmt.Sprintf(load_obj_sqlarrayname, classType, i))))
-		}
-	case "[*]uint16":
-		for i := 0; i < classVal.Len(); i++ {
-			classVal.Index(i).SetUint(uint64(row.Int64(fmt.Sprintf(load_obj_sqlarrayname, classType, i))))
-		}
-	case "[*]uint32":
-		for i := 0; i < classVal.Len(); i++ {
-			classVal.Index(i).SetUint(uint64(row.Int64(fmt.Sprintf(load_obj_sqlarrayname, classType, i))))
-		}
-	case "[*]uint64":
-		for i := 0; i < classVal.Len(); i++ {
-			classVal.Index(i).SetUint(uint64(row.Int64(fmt.Sprintf(load_obj_sqlarrayname, classType, i))))
-		}
+	case "[*]bool", "[*]string", "[*]float32", "[*]float64", "[*]int", "[*]int8", "[*]int16",
+		"[*]int32", "[*]int64", "[*]uint", "[*]uint8", "[*]uint16", "[*]uint32", "[*]uint64":
+		return parseLoadarray(classVal, classType, row)
+
 	case "[*]struct":
 		for i := 0; i < classVal.Len(); i++ {
 			parseLoadObjSql(classVal.Addr().Interface(), row)
 		}
+
+	case "[m]bool", "[m]string", "[m]float32", "[m]float64", "[m]int", "[m]int8", "[m]int16",
+		"[m]int32", "[m]int64", "[m]uint", "[m]uint8", "[m]uint16", "[m]uint32", "[m]uint64", "[m]struct":
+		return parseLoadarray(classVal, classType, row)
 
 	default:
 		fmt.Println("getLoadObjSql type not supported", sType, classField.Type)
@@ -299,8 +166,16 @@ func getLoadObjSql(p *Properties, classField reflect.StructField, classVal refle
 	return true
 }
 
+func parseLoadarray(classVal reflect.Value, classType string, row IRow) bool {
+	for classVal.Kind() == reflect.Ptr {
+		classVal = classVal.Elem()
+	}
+
+	return unMarshalBlob(row.Byte(classType), classVal) == nil
+}
+
 func parseLoadObjSql(obj interface{}, row IRow) bool {
-	classVal, classType, table := getTableInfo(obj)
+	classVal, classType, table := GetTableInfo(obj)
 	for i := 0; i < classType.NumField(); i++ {
 		if !classVal.Field(i).CanInterface() {
 			continue
@@ -317,7 +192,7 @@ func parseLoadObjSql(obj interface{}, row IRow) bool {
 	return true
 }
 
-//--- struct to sql
+// --- struct to sql
 func LoadObjSql(obj interface{}, row IRow) bool {
 	if row == nil {
 		return false

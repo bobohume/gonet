@@ -20,12 +20,17 @@ func updateSqlStr(sqlData *SqlData) string {
 	return "update " + sqlData.Table + " set " + str + " where " + primary
 }
 
-//--- struct to sql
-func UpdateSql(obj interface{}, params ...OpOption) string {
+// --- struct to sql
+func UpdateSqlStr(obj interface{}, params ...OpOption) string {
 	op := &Op{sqlType: SQLTYPE_UPDATE}
 	op.applyOpts(params)
 	sqlData := &SqlData{}
 	getTableName(obj, sqlData)
 	parseStructSql(obj, sqlData, op)
 	return updateSqlStr(sqlData)
+}
+
+func UpdateSql(obj interface{}, params ...OpOption) bool {
+	str := UpdateSqlStr(obj, params...)
+	return exec(str) == nil
 }

@@ -54,7 +54,7 @@ func (l *Login) Init() {
 	l.Actor.Start()
 }
 
-//登录账号
+// 登录账号
 func (l *AccountMgr) LoginAccountRequest(ctx context.Context, packet *message.LoginAccountRequest, gateSocketId uint32) {
 	accountName := packet.GetAccountName()
 	password := packet.GetPassword()
@@ -67,9 +67,8 @@ func (l *AccountMgr) LoginAccountRequest(ctx context.Context, packet *message.Lo
 		nError = base.ACCOUNT_NOEXIST
 	} else if base.VERSION.IsAcceptableBuildVersion(buildVersion) {
 		log.Printf("账号[%s]登陆账号服务器", accountName)
-		rows, err := orm.DB.Query(fmt.Sprintf("select account_id, password from tbl_account where account_name = '%s'", accountName))
+		rs, err := orm.Query(fmt.Sprintf("select account_id, password from tbl_account where account_name = '%s'", accountName))
 		if err == nil {
-			rs, err := orm.Query(rows, err)
 			if err == nil && rs.Next() {
 				accountId := rs.Row().Int64("account_id")
 				passWd := rs.Row().String("password")

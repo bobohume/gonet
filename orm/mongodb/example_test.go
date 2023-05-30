@@ -1,5 +1,5 @@
 package mongodb_test
-/*
+
 import (
 	"fmt"
 	"gonet/orm/mongodb"
@@ -47,4 +47,3 @@ func Example() {
 	// 2
 	// 3
 }
-*/

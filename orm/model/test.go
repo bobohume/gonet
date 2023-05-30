@@ -12,10 +12,11 @@ type (
 		Gold           int                 `sql:"name:gold"`
 		DrawGold       int                 `sql:"name:draw_gold"`
 		Vip            [8]int              `sql:"name:vip"`
-		LastLogoutTime int64               `sql:"datetime;nameg:last_logout_time"`
+		LastLogoutTime int64               `sql:"datetime;name:last_logout_time"`
 		LastLoginTime  int64               `sql:"datetime;name:last_login_time"`
 		PLayerBlob     *message.PlayerData `sql:"blob;name:plaeyr_blob"`
 		PLayerBlobJson *AA                 `sql:"json;name:plaeyr_blob_json"`
+		PPPP           map[int]int         `sql:"name:ppp"`
 	}
 
 	AA struct {
