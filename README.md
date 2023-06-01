@@ -49,7 +49,7 @@ rpc模块脱离传统的注册-回调模式，只需要继承actor即可，actor
 基于内存对比的属性同步,不需要写orm,a.b=1自动存盘,自动同步
 
 ## rpc(进阶版)
-类似grpc,写好回调函数,自动生成rpc代码,无需build
+类似grpc,写好回调函数,无需定义proto结构,自动生成rpc代码,无需build
 如回调函数是:func (p *PlayerMgr) PlayerOnUnRegister(head rpc.RpcHead, playerId int64)
 自动生成代码,rpc发起就直接rpcgame.PlayerMgr.PlayerOnUnRegister(rpc.RpcHead{SendType: rpc.SEND_LOCAL}, p.PlayerId)
 
