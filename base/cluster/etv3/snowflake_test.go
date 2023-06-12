@@ -46,7 +46,7 @@ func (s *SnowflakeT) SET() bool {
 		Else()
 	txnRes, err := tx.Commit()
 	if err != nil || !txnRes.Succeeded { //抢锁失败
-		s.id = int64(base.RAND.RandI(1, WorkeridMax))
+		s.id = int64(base.RandI(1, WorkeridMax))
 		return false
 	}
 
@@ -86,7 +86,7 @@ func (s *SnowflakeT) Init(endpoints []string) {
 		log.Fatal("Error: cannot connec to etcd:", err)
 	}
 	lease := clientv3.NewLease(etcdClient)
-	s.id = int64(base.RAND.RandI(1, int(base.WorkeridMax)))
+	s.id = int64(base.RandI(1, int(base.WorkeridMax)))
 	s.client = etcdClient
 	s.lease = lease
 	s.Start()

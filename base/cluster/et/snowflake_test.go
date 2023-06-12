@@ -36,7 +36,7 @@ func (s *SnowflakeT) SET() bool {
 		TTL: ttl_time1, PrevExist: client.PrevNoExist, NoValueOnSuccess: true,
 	})
 	if err != nil {
-		s.id = int64(base.RAND.RandI(1, int(base.WorkeridMax)))
+		s.id = int64(base.RandI(1, int(base.WorkeridMax)))
 		return false
 	}
 
@@ -80,7 +80,7 @@ func (s *SnowflakeT) Init(endpoints []string) {
 	if err != nil {
 		log.Fatal("Error: cannot connec to etcd:", err)
 	}
-	s.id = int64(base.RAND.RandI(1, int(base.WorkeridMax)))
+	s.id = int64(base.RandI(1, int(base.WorkeridMax)))
 	s.keysAPI = client.NewKeysAPI(etcdClient)
 	s.Start()
 }
