@@ -3,8 +3,8 @@ package db
 import (
 	"gonet/actor"
 	"gonet/base"
-	"gonet/common"
-	"gonet/common/cluster"
+	"gonet/base/cluster"
+	"gonet/base/conf"
 	"gonet/network"
 	"gonet/orm"
 	"gonet/rpc"
@@ -23,12 +23,12 @@ type (
 	}
 
 	Config struct {
-		common.Server `yaml:"db"`
-		common.Db     `yaml:"DB"`
-		common.Etcd   `yaml:"etcd"`
-		common.Nats   `yaml:"nats"`
-		common.Raft   `yaml:"raft"`
-		common.Stub   `yaml:"stub"`
+		conf.Server `yaml:"db"`
+		conf.Db     `yaml:"DB"`
+		conf.Etcd   `yaml:"etcd"`
+		conf.Nats   `yaml:"nats"`
+		conf.Raft   `yaml:"raft"`
+		conf.Stub   `yaml:"stub"`
 	}
 )
 
@@ -65,7 +65,7 @@ func (s *ServerMgr) Init() bool {
 	s.service.Start()
 
 	//本身db集群管理
-	cluster.MGR.InitCluster(&common.ClusterInfo{Type: rpc.SERVICE_DB, Ip: CONF.Server.Ip, Port: int32(CONF.Server.Port)}, CONF.Etcd.Endpoints, CONF.Nats.Endpoints,
+	cluster.MGR.InitCluster(&rpc.ClusterInfo{Type: rpc.SERVICE_DB, Ip: CONF.Server.Ip, Port: int32(CONF.Server.Port)}, CONF.Etcd.Endpoints, CONF.Nats.Endpoints,
 		cluster.WithStubMailBoxEtcd(CONF.Raft.Endpoints, &CONF.Stub))
 	cluster.MGR.BindPacketFunc(actor.MGR.PacketFunc)
 

@@ -23,17 +23,17 @@ type (
 	}
 )
 
-//纯随机
+// 纯随机
 func (r *RandGroup) Rand() *RandUnit {
 	nNeed := len(r.Units)
 	if nNeed > 0 {
-		nIndex := base.RAND.RandI(0, nNeed-1)
+		nIndex := base.RandI(0, nNeed-1)
 		return r.Units[nIndex]
 	}
 	return nil
 }
 
-//不重复随机属性
+// 不重复随机属性
 func (r *RandGroup) RandEx(Id []int32, need int) []*RandUnit {
 	randomBuff := []*RandUnit{}
 	buffVec := vector.NewVector()
@@ -52,14 +52,14 @@ func (r *RandGroup) RandEx(Id []int32, need int) []*RandUnit {
 	}
 	nNeed := math.Min(float64(need), float64(buffVec.Len()))
 	for ; nNeed > 0; nNeed-- {
-		nIndex := base.RAND.RandI(0, buffVec.Len()-1)
+		nIndex := base.RandI(0, buffVec.Len()-1)
 		randomBuff = append(randomBuff, buffVec.Get(nIndex).(*RandUnit))
 		buffVec.Erase(nIndex)
 	}
 	return randomBuff
 }
 
-//-------产生随机组-------//
+// -------产生随机组-------//
 func NewRandGroup(str string, bVal bool) *RandGroup {
 	randGroup := &RandGroup{}
 	stream := GetParamStream(str)

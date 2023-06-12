@@ -3,8 +3,8 @@ package game
 import (
 	"gonet/actor"
 	"gonet/base"
-	"gonet/common"
-	"gonet/common/cluster"
+	"gonet/base/cluster"
+	"gonet/base/conf"
 	"gonet/network"
 	"gonet/orm"
 	"gonet/rpc"
@@ -28,13 +28,13 @@ type (
 	}
 
 	Config struct {
-		common.Server    `yaml:"game"`
-		common.Db        `yaml:"DB"`
-		common.Etcd      `yaml:"etcd"`
-		common.SnowFlake `yaml:"snowflake"`
-		common.Raft      `yaml:"raft"`
-		common.Nats      `yaml:"nats"`
-		common.Stub      `yaml:"stub"`
+		conf.Server    `yaml:"game"`
+		conf.Db        `yaml:"DB"`
+		conf.Etcd      `yaml:"etcd"`
+		conf.SnowFlake `yaml:"snowflake"`
+		conf.Raft      `yaml:"raft"`
+		conf.Nats      `yaml:"nats"`
+		conf.Stub      `yaml:"stub"`
 	}
 )
 
@@ -49,7 +49,7 @@ func (s *ServerMgr) Init() bool {
 		return true
 	}
 	//test reload file
-	/*file := &common.FileMonitor{}
+	/*file := &cm.FileMonitor{}
 	file.Init()
 	file.AddFile("GONET_SERVER.CFG", func() {base.ReadConf("gonet.yaml", &CONF)})
 	file.AddFile(data.SKILL_DATA_NAME, func() {
@@ -86,7 +86,7 @@ func (s *ServerMgr) Init() bool {
 	s.snowFlake = cluster.NewSnowflake(CONF.SnowFlake.Endpoints)
 
 	//本身game集群管理
-	cluster.MGR.InitCluster(&common.ClusterInfo{Type: rpc.SERVICE_GAME, Ip: CONF.Server.Ip, Port: int32(CONF.Server.Port)},
+	cluster.MGR.InitCluster(&rpc.ClusterInfo{Type: rpc.SERVICE_GAME, Ip: CONF.Server.Ip, Port: int32(CONF.Server.Port)},
 		CONF.Etcd.Endpoints, CONF.Nats.Endpoints, cluster.WithMailBoxEtcd(CONF.Raft.Endpoints), cluster.WithStubMailBoxEtcd(CONF.Raft.Endpoints, &CONF.Stub))
 
 	var packet EventProcess
@@ -103,13 +103,13 @@ func (s *ServerMgr) GetServer() *network.ServerSocket {
 	return s.service
 }
 
-//发送gamemgr
+// 发送gamemgr
 func SendToGM(head rpc.RpcHead, funcName string, params ...interface{}) {
 	head.DestServerType = rpc.SERVICE_GM
 	cluster.MGR.SendMsg(head, funcName, params...)
 }
 
-//发送给客户端
+// 发送给客户端
 func SendToClient(clusterId uint32, packet proto.Message) {
 	pakcetHead := packet.(message.Packet).GetPacketHead()
 	if pakcetHead != nil {
@@ -117,7 +117,7 @@ func SendToClient(clusterId uint32, packet proto.Message) {
 	}
 }
 
-//--------------发送给地图----------------------//
+// --------------发送给地图----------------------//
 func SendToZone(Id int64, ClusterId uint32, funcName string, params ...interface{}) {
 	head := rpc.RpcHead{Id: Id, ClusterId: ClusterId, DestServerType: rpc.SERVICE_ZONE, SrcClusterId: cluster.MGR.Id()}
 	cluster.MGR.SendMsg(head, funcName, params...)

@@ -3,8 +3,8 @@ package gm
 import (
 	"gonet/actor"
 	"gonet/base"
-	"gonet/common"
-	"gonet/common/cluster"
+	"gonet/base/cluster"
+	"gonet/base/conf"
 	"gonet/network"
 	"gonet/orm"
 	"gonet/rpc"
@@ -28,13 +28,13 @@ type (
 	}
 
 	Config struct {
-		common.Server    `yaml:"gm"`
-		common.Db        `yaml:"DB"`
-		common.Etcd      `yaml:"etcd"`
-		common.SnowFlake `yaml:"snowflake"`
-		common.Raft      `yaml:"raft"`
-		common.Nats      `yaml:"nats"`
-		common.Stub      `yaml:"stub"`
+		conf.Server    `yaml:"gm"`
+		conf.Db        `yaml:"DB"`
+		conf.Etcd      `yaml:"etcd"`
+		conf.SnowFlake `yaml:"snowflake"`
+		conf.Raft      `yaml:"raft"`
+		conf.Nats      `yaml:"nats"`
+		conf.Stub      `yaml:"stub"`
 	}
 )
 
@@ -74,7 +74,7 @@ func (s *ServerMgr) Init() bool {
 	s.service.Start()
 
 	//本身账号集群管理
-	cluster.MGR.InitCluster(&common.ClusterInfo{Type: rpc.SERVICE_GM, Ip: CONF.Server.Ip, Port: int32(CONF.Server.Port)},
+	cluster.MGR.InitCluster(&rpc.ClusterInfo{Type: rpc.SERVICE_GM, Ip: CONF.Server.Ip, Port: int32(CONF.Server.Port)},
 		CONF.Etcd.Endpoints, CONF.Nats.Endpoints, cluster.WithMailBoxEtcd(CONF.Raft.Endpoints), cluster.WithStubMailBoxEtcd(CONF.Raft.Endpoints, &CONF.Stub))
 	cluster.MGR.BindPacketFunc(actor.MGR.PacketFunc)
 
@@ -93,19 +93,19 @@ func (s *ServerMgr) GetServer() *network.ServerSocket {
 	return s.service
 }
 
-//发送game
+// 发送game
 func SendToGame(ClusterId uint32, funcName string, params ...interface{}) {
 	head := rpc.RpcHead{ClusterId: ClusterId, DestServerType: rpc.SERVICE_GAME, SrcClusterId: cluster.MGR.Id()}
 	cluster.MGR.SendMsg(head, funcName, params...)
 }
 
-//广播game
+// 广播game
 func BoardCastToGame(funcName string, params ...interface{}) {
 	head := rpc.RpcHead{DestServerType: rpc.SERVICE_GAME, SendType: rpc.SEND_BOARD_CAST, SrcClusterId: cluster.MGR.Id()}
 	cluster.MGR.SendMsg(head, funcName, params...)
 }
 
-//发送到客户端
+// 发送到客户端
 func SendToClient(head rpc.RpcHead, packet proto.Message) {
 	pakcetHead := packet.(message.Packet).GetPacketHead()
 	if pakcetHead != nil {

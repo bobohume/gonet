@@ -7,12 +7,12 @@ import (
 	"testing"
 )
 
-const(
+const (
 	nHashRingTimes = int32(100000)
-	nHashRingSize = 1000
+	nHashRingSize  = 1000
 )
 
-func TestHashRing(t *testing.T)  {
+func TestHashRing(t *testing.T) {
 	c := base.NewHashRing()
 	for i := 0; i < nHashRingSize; i++ {
 		c.Add(fmt.Sprintf("%d", i))
@@ -23,20 +23,20 @@ func TestHashRing(t *testing.T)  {
 	}
 }
 
-func TestRandom(t *testing.T)  {
-	vec := vector.NewVector()
-	for i := 0; i < nHashRingSize * base.REPLICASNUM; i++ {
+func TestRandom(t *testing.T) {
+	vec := vector.Vector[int]{}
+	for i := 0; i < nHashRingSize*base.REPLICASNUM; i++ {
 		vec.PushBack(i)
 	}
 	for i := 0; i < int(nHashRingTimes); i++ {
-		nRand := base.RAND.RandI(0, vec.Len()-1)
+		nRand := base.RandI(0, vec.Len()-1)
 		vec.Get(nRand)
 	}
 }
 
-func TestMod(t *testing.T)  {
-	vec := vector.NewVector()
-	for i := 0; i < nHashRingSize * base.REPLICASNUM; i++ {
+func TestMod(t *testing.T) {
+	vec := vector.Vector[int]{}
+	for i := 0; i < nHashRingSize*base.REPLICASNUM; i++ {
 		vec.PushBack(i)
 	}
 	for i := 0; i < int(nHashRingTimes); i++ {

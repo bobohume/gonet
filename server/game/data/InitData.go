@@ -2,7 +2,7 @@ package data
 
 import (
 	"gonet/base"
-	"gonet/common"
+	"gonet/server/cm"
 	"sync"
 )
 
@@ -10,8 +10,8 @@ var (
 	waitGroup sync.WaitGroup
 )
 
-//异步读取ata
-func ansyReadData(res common.IBaseDataRes) {
+// 异步读取ata
+func ansyReadData(res cm.IBaseDataRes) {
 	waitGroup.Add(1)
 	go func() {
 		res.Read()

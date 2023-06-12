@@ -3,14 +3,14 @@ package player
 import (
 	"context"
 	"gonet/actor"
-	"gonet/common/cluster"
+	"gonet/base/cluster"
 	"gonet/rpc"
 	"reflect"
 )
 
-//********************************************************
+// ********************************************************
 // 玩家管理
-//********************************************************
+// ********************************************************
 var (
 	MGR PlayerMgr
 )
@@ -33,7 +33,7 @@ func (p *PlayerMgr) Init() {
 	p.Actor.Start()
 }
 
-//玩家登录
+// 玩家登录
 func (p *PlayerMgr) LoginPlayerRequset(ctx context.Context, playerId int64, gateClusterId uint32, socketId uint32) {
 	pMailBox := cluster.MGR.MailBox.Get(playerId)
 	if pMailBox == nil {
@@ -51,7 +51,7 @@ func (p *PlayerMgr) LoginPlayerRequset(ctx context.Context, playerId int64, gate
 	cluster.MGR.SendMsg(rpc.RpcHead{ClusterId: gateClusterId}, "gate<-EventProcess.G_Player_Login", socketId, *pMailBox)
 }
 
-//玩家登录
+// 玩家登录
 func (p *PlayerMgr) Player_Login(ctx context.Context, gateClusterId uint32, mailbox rpc.MailBox) {
 	playerId := mailbox.Id
 	if p.GetActor(playerId) != nil {
@@ -67,7 +67,7 @@ func (p *PlayerMgr) Player_Login(ctx context.Context, gateClusterId uint32, mail
 	actor.MGR.SendMsg(rpc.RpcHead{Id: playerId}, "Player.Login", gateClusterId, mailbox)
 }
 
-//玩家断开链接
+// 玩家断开链接
 func (p *PlayerMgr) G_ClientLost(ctx context.Context, playerId int64) {
 	actor.MGR.SendMsg(rpc.RpcHead{Id: playerId}, "Player.Logout", playerId)
 }

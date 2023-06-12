@@ -4,7 +4,7 @@ import (
 	"context"
 	"gonet/actor"
 	"gonet/base"
-	"gonet/common/cluster"
+	"gonet/base/cluster"
 	"gonet/rpc"
 	"gonet/server/game"
 	"gonet/server/model"
@@ -35,7 +35,7 @@ type (
 func (p *Player) Init() {
 	p.Actor.Init()
 	p.RegisterTimer((MAILBOX_TL_TIME/2)*time.Second, p.UpdateLease) //定时器
-	p.RegisterTimer(5*time.Second, p.SaveDB)                       //定时器
+	p.RegisterTimer(5*time.Second, p.SaveDB)                        //定时器
 	p.online_time = time.Now().Unix()
 	p.Actor.Start()
 }
@@ -69,7 +69,7 @@ func (p *Player) GetPlayerId() int64 {
 	return p.PlayerId
 }
 
-//玩家登录
+// 玩家登录
 func (p *Player) Login(ctx context.Context, gateClusterId uint32, mailbox rpc.MailBox) {
 	p.SetGateClusterId(gateClusterId)
 	p.MailBox = mailbox
@@ -78,7 +78,7 @@ func (p *Player) Login(ctx context.Context, gateClusterId uint32, mailbox rpc.Ma
 	cluster.MGR.SendMsg(rpc.RpcHead{Id: p.PlayerId}, "db<-PlayerMgr.Load_Player_DB", p.PlayerId, p.MailBox)
 }
 
-//断线重连
+// 断线重连
 func (p *Player) ReLogin(ctx context.Context, gateClusterId uint32, mailbox rpc.MailBox) {
 	base.LOG.Printf("[%d] 重连成功", p.PlayerId)
 	p.SetGateClusterId(gateClusterId)
@@ -92,12 +92,13 @@ func (p *Player) ReLogin(ctx context.Context, gateClusterId uint32, mailbox rpc.
 	}
 }
 
-//加载玩家结束
+// 加载玩家结束
 func (p *Player) Load_Player_DB_Finish(ctx context.Context, data model.PlayerData) {
 	p.isInGame = true
 	p.PlayerData = data
 	//加载到地图
 	p.LoginFinish()
+	base.LOG.Printf("[%d] 加载完人物数据", p.PlayerId)
 	p.ZoneClusterId = cluster.MGR.RandomCluster(rpc.RpcHead{Id: p.PlayerId, DestServerType: rpc.SERVICE_ZONE}).ClusterId
 }
 
@@ -107,14 +108,14 @@ func (p *Player) LoginFinish() {
 	game.SendToGM(rpc.RpcHead{Id: p.PlayerId}, "ChatMgr.AddPlayerToChannel", p.PlayerId, int64(-3000), p.PlayerName, p.GetGateClusterId())
 }
 
-//玩家断开链接
+// 玩家断开链接
 func (p *Player) Logout(ctx context.Context, playerId int64) {
 	base.LOG.Printf("[%d] 断开链接", playerId)
 	p.offline_flag = true
 	p.SaveDB()
 }
 
-//lease过期
+// lease过期
 func (p *Player) OnUnRegister(ctx context.Context) {
 	base.LOG.Printf("[%d] 过期删除玩家", p.PlayerId)
 	MGR.DelActor(p.PlayerId)

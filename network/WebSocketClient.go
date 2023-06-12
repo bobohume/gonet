@@ -3,7 +3,7 @@ package network
 import (
 	"fmt"
 	"gonet/base"
-	"gonet/common/timer"
+	"gonet/base/timer"
 	"gonet/rpc"
 	"io"
 	"sync/atomic"

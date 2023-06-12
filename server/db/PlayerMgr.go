@@ -4,7 +4,7 @@ import (
 	"context"
 	"gonet/actor"
 	"gonet/base"
-	"gonet/common/cluster"
+	"gonet/base/cluster"
 	"gonet/rpc"
 	"gonet/server/model"
 	"reflect"
@@ -18,8 +18,8 @@ type (
 	}
 
 	PlayerMgr struct {
-	    actor.Actor
-		PlayerMap  map[int64]*Player
+		actor.Actor
+		PlayerMap map[int64]*Player
 	}
 
 	IPlayerMgr interface {
@@ -48,34 +48,34 @@ func (p *PlayerMgr) Init() {
 	p.Actor.Init()
 	//actor.MGR.RegisterActor(p)
 	p.PlayerMap = make(map[int64]*Player)
-	p.RegisterTimer(60*time.Second, p.SaveDB)//定时器
+	p.RegisterTimer(60*time.Second, p.SaveDB) //定时器
 	p.Actor.Start()
 }
 
 func (p *PlayerMgr) SaveDB() {
-	for _, player := range p.PlayerMap{
-        player.SavePlayerDB()
+	for _, player := range p.PlayerMap {
+		player.SavePlayerDB()
 	}
 }
 
 func (p *PlayerMgr) Load_Player_DB(ctx context.Context, playerId int64, mailbox rpc.MailBox) {
 	player := p.GetPlayer(playerId)
-	if player != nil{
-        cluster.MGR.SendMsg(rpc.RpcHead{ClusterId: p.GetRpcHead(ctx).SrcClusterId, Id: playerId}, "game<-Player.Load_Player_DB_Finish", player.PlayerData)
+	if player != nil {
+		cluster.MGR.SendMsg(rpc.RpcHead{ClusterId: p.GetRpcHead(ctx).SrcClusterId, Id: playerId}, "game<-Player.Load_Player_DB_Finish", player.PlayerData)
 	}
 }
 
-func (p *PlayerMgr) GetPlayer(Id int64) *Player{
+func (p *PlayerMgr) GetPlayer(Id int64) *Player {
 	player, _ := p.PlayerMap[Id]
-	if player == nil{
-	    player = &Player{}
-        err := player.LoadPlayerDB(Id)
-        if err == nil {
-            p.PlayerMap[Id] = player
-            return player
-	    }else{
-            base.LOG.Printf("PlayerMgr GetData [%d] err[%s]", Id, err.Error())
-	    }
+	if player == nil {
+		player = &Player{}
+		err := player.LoadPlayerDB(Id)
+		if err == nil {
+			p.PlayerMap[Id] = player
+			return player
+		} else {
+			base.LOG.Printf("PlayerMgr GetData [%d] err[%s]", Id, err.Error())
+		}
 	}
 	return player
 }

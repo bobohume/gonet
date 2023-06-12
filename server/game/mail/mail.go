@@ -3,7 +3,7 @@ package mail
 import (
 	"gonet/actor"
 	"gonet/base"
-	"gonet/common/cluster"
+	"gonet/base/cluster"
 	"gonet/orm"
 	"gonet/rpc"
 	"gonet/server/model"

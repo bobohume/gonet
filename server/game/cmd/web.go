@@ -1,16 +1,16 @@
 package cmd
 
 import (
-	"gonet/common"
+	"gonet/server/cm"
 	"net/http"
 )
 
-//http://localhost:8080/gm?cmd=cpus()
+// http://localhost:8080/gm?cmd=cpus()
 func cmdHandle(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	cmd := r.FormValue("cmd")
 	if cmd != "" {
-		common.ParseConsole(g_Cmd, (cmd))
+		cm.ParseConsole(g_Cmd, (cmd))
 	}
 }
 

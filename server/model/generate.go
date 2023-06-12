@@ -42,7 +42,7 @@ var (
 
 import(
 	"gonet/base"
-	"gonet/common/cluster"
+	"gonet/base/cluster"
 	"gonet/rpc"
 )
 

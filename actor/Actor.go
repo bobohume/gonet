@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"gonet/base"
 	"gonet/base/mpsc"
-	"gonet/common/timer"
+	"gonet/base/timer"
 	"gonet/rpc"
 	"log"
 	"reflect"

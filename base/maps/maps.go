@@ -15,6 +15,10 @@ type OrderKey interface {
 		uint32 | uint64 | uintptr | float32 | float64 | string
 }
 
+/*type OrderKey interface {
+	~int //~这里所有以int为基础类型的都能被约束到
+}*/
+
 // IntComparator provides a basic comparison on int
 func Comparator[K OrderKey](a, b K) int {
 	switch {

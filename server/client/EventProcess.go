@@ -7,8 +7,8 @@ import (
 	"gonet/base"
 	"gonet/network"
 	"gonet/rpc"
-	"gonet/server/message"
 	"gonet/server/game/lmath"
+	"gonet/server/message"
 	"sync/atomic"
 
 	"github.com/golang/protobuf/proto"
@@ -95,7 +95,7 @@ func (e *EventProcess) LoginAccount() {
 	id := atomic.AddInt32(&id, 1)
 	e.AccountName = fmt.Sprintf("test3211%d", id)
 	e.PassWd = base.MD5(ToSlat(e.AccountName, "123456"))
-	//e.AccountName = fmt.Sprintf("test%d", base.RAND.RandI(0, 7000))
+	//e.AccountName = fmt.Sprintf("test%d", base.RandI(0, 7000))
 	packet1 := &message.LoginAccountRequest{PacketHead: message.BuildPacketHead(0, rpc.SERVICE_GATE),
 		AccountName: e.AccountName, Password: e.PassWd, BuildNo: base.BUILD_NO, Key: e.dh.PubKey()}
 	e.SendPacket(packet1)
@@ -143,7 +143,7 @@ func (e *EventProcess) ChatMessageResponse(ctx context.Context, packet *message.
 	fmt.Println("收到【", packet.GetSenderName(), "】发送的消息[", packet.GetMessage()+"]")
 }
 
-//map
+// map
 func (e *EventProcess) Z_C_LoginMap(ctx context.Context, packet *message.Z_C_LoginMap) {
 	e.SimId = packet.GetId()
 	e.Pos = lmath.Point3F{packet.GetPos().GetX(), packet.GetPos().GetY(), packet.GetPos().GetZ()}
@@ -170,7 +170,7 @@ func (e *EventProcess) Z_C_ENTITY(ctx context.Context, packet *message.Z_C_ENTIT
 	}
 }
 
-//链接断开
+// 链接断开
 func (e *EventProcess) DISCONNECT(ctx context.Context, socketId uint32) {
 	e.Stop()
 }

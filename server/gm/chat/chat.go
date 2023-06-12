@@ -3,7 +3,7 @@ package chat
 import (
 	"gonet/actor"
 	"gonet/base"
-	"gonet/common/cluster"
+	"gonet/base/cluster"
 	"gonet/rpc"
 	"gonet/server/gm"
 	"gonet/server/message"
@@ -151,7 +151,7 @@ func (c *ChatMgr) getPlayerChatPendingTime(playerid int64, cMessageType int8) in
 	return data.pendingTime
 }
 
-//聊天信息
+// 聊天信息
 func (c *ChatMgr) ChatMessageRequest(ctx context.Context, packet *message.ChatMessageRequest) {
 	playerId := packet.GetSender()
 
@@ -193,7 +193,7 @@ func (c *ChatMgr) ChatMessageRequest(ctx context.Context, packet *message.ChatMe
 	}
 }
 
-//注册频道
+// 注册频道
 func (c *ChatMgr) RegisterChannel(ctx context.Context, messageType int8, channelId int64) {
 	c.GetChannelManager().RegisterChannel(messageType, "", channelId)
 
@@ -205,17 +205,17 @@ func (c *ChatMgr) RegisterChannel(ctx context.Context, messageType int8, channel
 	}
 }
 
-//销毁频道
+// 销毁频道
 func (c *ChatMgr) UnRegisterChannel(ctx context.Context, channelId int64) {
 	c.GetChannelManager().UnregisterChannel(channelId)
 }
 
-//添加玩家到频道
+// 添加玩家到频道
 func (c *ChatMgr) AddPlayerToChannel(ctx context.Context, playerId int64, channelId int64, playerName string, gateClusterId uint32) {
 	c.GetChannelManager().AddPlayer(playerId, channelId, playerName, gateClusterId)
 }
 
-//删除玩家到频道
+// 删除玩家到频道
 func (c *ChatMgr) RemovePlayerToChannel(ctx context.Context, playerId int64, channelId int64) {
 	c.GetChannelManager().RemovePlayer(playerId, channelId)
 }

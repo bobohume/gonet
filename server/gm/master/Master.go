@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"gonet/actor"
 	"gonet/base"
-	"gonet/common/cluster"
+	"gonet/base/cluster"
 	"gonet/orm"
 	"gonet/rpc"
 )

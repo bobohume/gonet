@@ -1,7 +1,7 @@
 package player
 
 import (
-	"gonet/common/cluster"
+	"gonet/base/cluster"
 	"gonet/server/game"
 )
 
@@ -21,7 +21,7 @@ func (p *Player) ReloginMap() {
 	p.SendToZone("MapMgr.ReloginMap", p.PlayerId, p.GetGateClusterId())
 }
 
-//添加buff
+// 添加buff
 func (p *Player) AddBuff(Orgint int, BuffId int) {
 	if BuffId < 0 {
 		return
@@ -29,7 +29,7 @@ func (p *Player) AddBuff(Orgint int, BuffId int) {
 	p.SendToZone("Map.AddBuff", p.PlayerId, Orgint, BuffId)
 }
 
-//删除buff
+// 删除buff
 func (p *Player) RemoveBuff(BuffId int) {
 	if BuffId < 0 {
 		return
@@ -37,7 +37,7 @@ func (p *Player) RemoveBuff(BuffId int) {
 	p.SendToZone("Map.RemoveBuff", p.PlayerId, BuffId)
 }
 
-//批量添加buff
+// 批量添加buff
 func (p *Player) AddBuffS(Orgint int, BuffId []int) {
 	BuffIds := []int{}
 	for i := 0; i < len(BuffId); i++ {
@@ -50,7 +50,7 @@ func (p *Player) AddBuffS(Orgint int, BuffId []int) {
 	p.SendToZone("Map.AddBuffS", p.PlayerId, Orgint, BuffIds)
 }
 
-//批量删除buff
+// 批量删除buff
 func (p *Player) RemoveBuffS(BuffId []int) {
 	BuffIds := []int{}
 	for i := 0; i < len(BuffId); i++ {

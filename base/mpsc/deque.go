@@ -19,7 +19,7 @@ type node[T any] struct {
 
 type Queue[T any] struct {
 	head, tail *node[T]
-	Nil        T
+	_nil       T
 }
 
 func New[T any]() *Queue[T] {
@@ -54,7 +54,7 @@ func (q *Queue[T]) Pop() T {
 		v := next.val
 		return v
 	}
-	return q.Nil
+	return q._nil
 }
 
 // Empty returns true if the queue is empty

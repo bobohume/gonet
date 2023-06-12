@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"gonet/base"
-	"gonet/common"
+	"gonet/base/conf"
 	"gonet/network"
 	"gonet/server/message"
 	"os"
@@ -12,7 +12,7 @@ import (
 
 type (
 	Config struct {
-		common.Server `yaml:"gate"`
+		conf.Server `yaml:"gate"`
 	}
 )
 

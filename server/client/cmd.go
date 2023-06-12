@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"gonet/actor"
-	"gonet/common"
 	"gonet/rpc"
+	"gonet/server/cm"
 	"gonet/server/message"
 	"strconv"
 )
@@ -28,7 +28,7 @@ var (
 func InitCmd() {
 	g_Cmd = &CmdProcess{}
 	g_Cmd.Init()
-	common.StartConsole(g_Cmd)
+	cm.StartConsole(g_Cmd)
 }
 
 func (c *CmdProcess) Msg(ctx context.Context, args string) {

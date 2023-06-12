@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"gonet/base"
-	"gonet/common"
+	"gonet/base/conf"
 	"reflect"
 	"strconv"
 	"strings"
@@ -194,7 +194,7 @@ func GetDBTimeString(t int64) string {
 	return tm.Format("2006-01-02 15:04:05")
 }
 
-func OpenDB(conf common.Db) error {
+func OpenDB(conf conf.Db) error {
 	sqlstr := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4", conf.User, conf.Password, conf.Ip, conf.Name)
 	var err error
 	DB, err = sql.Open("mysql", sqlstr)

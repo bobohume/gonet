@@ -19,7 +19,7 @@ type (
 		bufferSize uint64
 		bufferMask uint64
 		ringBuffer []*node[T]
-		Nil        T
+		_nil       T
 	}
 )
 
@@ -108,7 +108,7 @@ func (q *Queue[T]) Pop() T {
 				break
 			}
 		} else if dif < 0 {
-			return q.Nil
+			return q._nil
 		} else {
 			pos = q.read.Load()
 		}

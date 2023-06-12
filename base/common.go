@@ -36,16 +36,27 @@ func Abs(x float32) float32 {
 	return float32(math.Abs(float64(x)))
 }
 
-func Max(a, b int) int {
-	return int(math.Max(float64(a), float64(b)))
+type orderKey interface {
+	~int | ~int8 | ~int16 | ~int32 | ~int64 | ~uint | ~uint8 | ~uint16 |
+		~uint32 | ~uint64 | ~uintptr | ~float32 | ~float64
 }
 
-func Min(a, b int) int {
-	return int(math.Min(float64(a), float64(b)))
+func Max[T orderKey](x, y T) T {
+	if x > y {
+		return x
+	}
+	return y
 }
 
-func Clamp(val, low, high int) int {
-	return int(math.Max(math.Min(float64(val), float64(high)), float64(low)))
+func Min[T orderKey](x, y T) T {
+	if x < y {
+		return x
+	}
+	return y
+}
+
+func Clamp[T orderKey](val, low, high T) T {
+	return Max(Min(val, high), low)
 }
 
 func IFAssert(x bool, y string) {
@@ -62,7 +73,7 @@ func BIT64(x interface{}) interface{} {
 	return (1 << x.(uint64))
 }
 
-//整形转换成字节
+// 整形转换成字节
 func IntToBytes(val int) []byte {
 	tmp := uint32(val)
 	buff := make([]byte, 4)
@@ -70,7 +81,7 @@ func IntToBytes(val int) []byte {
 	return buff
 }
 
-//字节转换成整形
+// 字节转换成整形
 func BytesToInt(data []byte) int {
 	buff := make([]byte, 4)
 	copy(buff, data)
@@ -78,7 +89,7 @@ func BytesToInt(data []byte) int {
 	return int(tmp)
 }
 
-//整形16转换成字节
+// 整形16转换成字节
 func Int16ToBytes(val int16) []byte {
 	tmp := uint16(val)
 	buff := make([]byte, 2)
@@ -86,7 +97,7 @@ func Int16ToBytes(val int16) []byte {
 	return buff
 }
 
-//字节转换成为int16
+// 字节转换成为int16
 func BytesToInt16(data []byte) int16 {
 	buff := make([]byte, 2)
 	copy(buff, data)
@@ -94,7 +105,7 @@ func BytesToInt16(data []byte) int16 {
 	return int16(tmp)
 }
 
-//转化64位
+// 转化64位
 func Int64ToBytes(val int64) []byte {
 	tmp := uint64(val)
 	buff := make([]byte, 8)
@@ -109,7 +120,7 @@ func BytesToInt64(data []byte) int64 {
 	return int64(tmp)
 }
 
-//转化float
+// 转化float
 func Float32ToByte(val float32) []byte {
 	tmp := math.Float32bits(val)
 	buff := make([]byte, 4)
@@ -124,7 +135,7 @@ func BytesToFloat32(data []byte) float32 {
 	return math.Float32frombits(tmp)
 }
 
-//转化float64
+// 转化float64
 func Float64ToByte(val float64) []byte {
 	tmp := math.Float64bits(val)
 	buff := make([]byte, 8)
@@ -139,7 +150,7 @@ func BytesToFloat64(data []byte) float64 {
 	return math.Float64frombits(tmp)
 }
 
-//[]int转[]int32
+// []int转[]int32
 func IntToInt32(val []int) []int32 {
 	tmp := []int32{}
 	for _, v := range val {
@@ -223,7 +234,7 @@ func ToHash(str string) uint32 {
 	return crc32.ChecksumIEEE([]byte(str))
 }
 
-//-----------string strconv type-------------//
+// -----------string strconv type-------------//
 func Int(str string) int {
 	n, _ := strconv.Atoi(str)
 	return n
@@ -231,6 +242,11 @@ func Int(str string) int {
 
 func Int64(str string) int64 {
 	n, _ := strconv.ParseInt(str, 0, 64)
+	return n
+}
+
+func UInt64(str string) uint64 {
+	n, _ := strconv.ParseUint(str, 0, 64)
 	return n
 }
 
@@ -253,7 +269,7 @@ func Time(str string) int64 {
 	return GetDBTime(str).Unix()
 }
 
-//--------------------------------------------//
+// --------------------------------------------//
 // ToString converts a value to string.
 func ToString(value interface{}) string {
 	switch value.(type) {
@@ -286,7 +302,7 @@ func ToString(value interface{}) string {
 	}
 }
 
-//---------遍历子目录------------//
+// ---------遍历子目录------------//
 func WalkDir(dirpath string, filesVec *vector.Vector[os.FileInfo]) {
 	files, err := ioutil.ReadDir(dirpath) //读取目录下文件
 	if err != nil {
@@ -300,4 +316,39 @@ func WalkDir(dirpath string, filesVec *vector.Vector[os.FileInfo]) {
 			filesVec.PushBack(file)
 		}
 	}
+}
+
+// ~map //~这里所有以map为基础类型的都能被约束到
+func Values[M ~map[K]V, K comparable, V any](m M) []V {
+	r := make([]V, len(m))
+	i := 0
+	for _, v := range m {
+		r[i] = v
+		i++
+	}
+	return r
+}
+
+func Keys[M ~map[K]V, K comparable, V any](m M) []K {
+	r := make([]K, len(m))
+	i := 0
+	for k, _ := range m {
+		r[i] = k
+		i++
+	}
+	return r
+}
+
+func CopyMap[M ~map[K]V, K comparable, V any](m M) M {
+	m1 := make(M, len(m))
+	for k, v := range m {
+		m1[k] = v
+	}
+	return m1
+}
+
+func CopySlice[M ~[]V, V any](m M) M {
+	m1 := make(M, len(m))
+	copy(m1, m)
+	return m1
 }

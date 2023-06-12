@@ -43,7 +43,7 @@ func GetNetGateS(w http.ResponseWriter, r *http.Request) {
 	arenas := NETGATECONF.GetNetGates(r.FormValue("arena"))
 	nLen := len(arenas)
 	if nLen > 0 {
-		nIndex := base.RAND.RandI(0, nLen-1)
+		nIndex := base.RandI(0, nLen-1)
 		w.Write([]byte(arenas[nIndex]))
 		return
 	}

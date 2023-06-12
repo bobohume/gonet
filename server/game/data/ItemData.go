@@ -2,7 +2,7 @@ package data
 
 import (
 	"gonet/base"
-	"gonet/common"
+	"gonet/server/cm"
 	"log"
 )
 
@@ -14,11 +14,11 @@ type (
 	}
 
 	ItemDataRes struct {
-		common.BaseDataRes
+		cm.BaseDataRes
 	}
 
 	IItemDataRes interface {
-		common.IBaseDataRes
+		cm.IBaseDataRes
 	}
 )
 

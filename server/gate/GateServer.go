@@ -3,8 +3,8 @@ package gate
 import (
 	"gonet/actor"
 	"gonet/base"
-	"gonet/common"
-	"gonet/common/cluster"
+	"gonet/base/cluster"
+	"gonet/base/conf"
 	"gonet/network"
 	"gonet/rpc"
 )
@@ -26,11 +26,11 @@ type (
 	}
 
 	Config struct {
-		common.Server `yaml:"gate"`
-		common.Etcd   `yaml:"etcd"`
-		common.Nats   `yaml:"nats"`
-		common.Raft   `yaml:"raft"`
-		common.Stub   `yaml:"stub"`
+		conf.Server `yaml:"gate"`
+		conf.Etcd   `yaml:"etcd"`
+		conf.Nats   `yaml:"nats"`
+		conf.Raft   `yaml:"raft"`
+		conf.Stub   `yaml:"stub"`
 	}
 )
 
@@ -92,7 +92,7 @@ func (s *ServerMgr) Init() bool {
 	var packet1 EventProcess
 	packet1.Init()
 	s.cluster = new(cluster.Cluster)
-	s.cluster.InitCluster(&common.ClusterInfo{Type: rpc.SERVICE_GATE, Ip: CONF.Server.Ip, Port: int32(CONF.Server.Port)},
+	s.cluster.InitCluster(&rpc.ClusterInfo{Type: rpc.SERVICE_GATE, Ip: CONF.Server.Ip, Port: int32(CONF.Server.Port)},
 		CONF.Etcd.Endpoints, CONF.Nats.Endpoints, cluster.WithStubMailBoxEtcd(CONF.Raft.Endpoints, &CONF.Stub))
 	s.cluster.BindPacketFunc(actor.MGR.PacketFunc)
 	s.cluster.BindPacketFunc(DispatchPacket)

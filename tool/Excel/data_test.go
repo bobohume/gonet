@@ -2,7 +2,7 @@ package Excel__test
 
 import (
 	"gonet/base"
-	"gonet/common"
+	"gonet/server/cm"
 	"log"
 	"testing"
 )
@@ -24,11 +24,11 @@ type (
 	}
 
 	BuffDataRes struct {
-		common.BaseDataRes
+		cm.BaseDataRes
 	}
 
 	IBuffDataRes interface {
-		common.IBaseDataRes
+		cm.IBaseDataRes
 	}
 )
 

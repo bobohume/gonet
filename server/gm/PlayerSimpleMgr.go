@@ -3,7 +3,6 @@ package gm
 import (
 	"gonet/actor"
 	"gonet/base"
-	"gonet/common"
 	"gonet/orm"
 	"gonet/server/model"
 	"sync"
@@ -59,7 +58,7 @@ func (p *PlayerSimpleMgr) LoadSimplePlayerDatas() {
 	var simpledata model.SimplePlayerData
 	rs, err := orm.LoadSql(simpledata, orm.WithOutWhere())
 	if err != nil {
-		common.DBERROR("LoadSimplePlayerDatas", err)
+		base.DBERROR("LoadSimplePlayerDatas", err)
 	}
 	for err == nil && rs.Next() {
 		data := &model.SimplePlayerData{}
@@ -129,7 +128,7 @@ func LoadSimplePlayerData(playerId int64) *model.SimplePlayerData {
 		loadSimple(rs.Row(), data)
 		return data
 	} else if err != nil {
-		common.DBERROR("LoadSimplePlayerData", err)
+		base.DBERROR("LoadSimplePlayerData", err)
 	}
 	return nil
 }

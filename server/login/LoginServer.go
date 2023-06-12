@@ -2,23 +2,24 @@ package login
 
 import (
 	"gonet/base"
-	"gonet/common"
+	"gonet/base/conf"
+	"gonet/server/cm"
 	"net/http"
 )
 
 type (
 	ServerMgr struct {
 		isInited    bool
-		fileMonitor common.IFileMonitor
+		fileMonitor cm.IFileMonitor
 	}
 
 	IServerMgr interface {
 		Init() bool
-		GetFileMonitor() common.IFileMonitor
+		GetFileMonitor() cm.IFileMonitor
 	}
 
 	Config struct {
-		common.Http `yaml:"login"`
+		conf.Http `yaml:"login"`
 	}
 )
 
@@ -36,7 +37,7 @@ func (s *ServerMgr) Init() bool {
 	base.ReadConf("gonet.yaml", &CONF)
 
 	//动态监控文件改变
-	s.fileMonitor = &common.FileMonitor{}
+	s.fileMonitor = &cm.FileMonitor{}
 	s.fileMonitor.Init()
 
 	NETGATECONF.Init()
@@ -46,6 +47,6 @@ func (s *ServerMgr) Init() bool {
 	return false
 }
 
-func (s *ServerMgr) GetFileMonitor() common.IFileMonitor {
+func (s *ServerMgr) GetFileMonitor() cm.IFileMonitor {
 	return s.fileMonitor
 }

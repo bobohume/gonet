@@ -2,7 +2,7 @@ package data
 
 import (
 	"gonet/base"
-	"gonet/common"
+	"gonet/server/cm"
 	"log"
 	"strings"
 )
@@ -13,7 +13,7 @@ type (
 	}
 
 	BanDataRes struct {
-		common.BaseDataRes
+		cm.BaseDataRes
 	}
 )
 

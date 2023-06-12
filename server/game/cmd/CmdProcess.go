@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"gonet/actor"
-	"gonet/common"
+	"gonet/server/cm"
 	"gonet/server/message"
 	"runtime"
 	"strconv"
@@ -33,7 +33,7 @@ var (
 func Init() {
 	g_Cmd = &CmdProcess{}
 	g_Cmd.Init()
-	common.StartConsole(g_Cmd)
+	cm.StartConsole(g_Cmd)
 	//InitWeb()
 }
 
