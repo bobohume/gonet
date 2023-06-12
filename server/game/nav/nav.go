@@ -3,7 +3,7 @@ package detour
 import (
 	"gonet/base"
 	"gonet/base/vector"
-	"gonet/server/game/lmath"
+	"gonet/server/cm/lmath"
 	"io/ioutil"
 	"math"
 	"strings"

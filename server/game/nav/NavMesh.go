@@ -18,7 +18,7 @@
 
 package detour
 
-import "gonet/server/game/lmath"
+import "gonet/server/cm/lmath"
 
 /// A handle to a polygon within a navigation mesh tile.
 /// @ingroup detour
@@ -120,7 +120,7 @@ const (
 	DT_POLYTYPE_OFFMESH_CONNECTION DtPolyTypes = 1
 )
 
-type(
+type (
 	/// Defines a polygon within a dtMeshTile object.
 	/// @ingroup detour
 	DtPoly struct {
@@ -275,7 +275,7 @@ type(
 	/// @ingroup detour
 	DtNavMesh struct {
 		m_params                  DtNavMeshParams ///< Current initialization params. TODO: do not store this info twice.
-		m_orig                    [3]float32     ///< Origin of the tile (0,0)
+		m_orig                    [3]float32      ///< Origin of the tile (0,0)
 		m_tileWidth, m_tileHeight float32         ///< Dimensions of each tile.
 		m_maxTiles                int32           ///< Max number of tiles.
 		m_tileLutSize             int32           ///< Tile hash lookup size (must be pot).
@@ -289,11 +289,12 @@ type(
 		m_tileBits uint32 ///< Number of tile bits in the tile ID.
 		m_polyBits uint32 ///< Number of poly bits in the tile ID.
 
-		mBounds 	  	  lmath.Box3F //地图大小
-		mTileWidth  	  float32    ///< The width of each tile. (the max x-axis or y-axis )
-		mOrig       	  lmath.Point3F ///< The world space origin of the navigation mesh's tile space. [(x, y, z)]
+		mBounds    lmath.Box3F   //地图大小
+		mTileWidth float32       ///< The width of each tile. (the max x-axis or y-axis )
+		mOrig      lmath.Point3F ///< The world space origin of the navigation mesh's tile space. [(x, y, z)]
 	}
 )
+
 /// @}
 
 /// Allocates a navigation mesh object using the Detour allocator.
@@ -314,6 +315,7 @@ func DtFreeNavMesh(navmesh *DtNavMesh) {
 	}
 	navmesh.destructor()
 }
+
 ///////////////////////////////////////////////////////////////////////////
 
 // This section contains detailed documentation for members that don't have
