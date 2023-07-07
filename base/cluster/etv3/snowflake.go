@@ -12,7 +12,7 @@ import (
 
 const (
 	uuid_dir = "uuid/"
-	ttl_time = 30 * 60 * time.Second
+	ttl_time = 30 * 60
 )
 
 type STATUS uint32
@@ -64,7 +64,7 @@ func (s *Snowflake) TTL() {
 	if err != nil {
 		s.status = SET
 	} else {
-		time.Sleep(ttl_time / 3)
+		time.Sleep(ttl_time * time.Second / 3)
 	}
 }
 
