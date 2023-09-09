@@ -249,12 +249,8 @@ func (a *Actor) call(io *CallIO) {
 		ret := m.Func.Call(in)
 		a.Trace("")
 		if ret != nil && head.Reply != "" {
-			rets := make([]interface{}, len(ret)+1)
-			rets[0] = &head
-			for i, param := range ret {
-				rets[i+1] = param.Interface()
-			}
-			rpc.MGR.Call(rets...)
+			ret = append([]reflect.Value{reflect.ValueOf(&head)}, ret...)
+			rpc.GCall.Call(ret)
 		}
 	} else {
 		log.Printf("func [%s] params at least one context", funcName)

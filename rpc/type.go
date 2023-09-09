@@ -3,6 +3,7 @@ package rpc
 import (
 	"fmt"
 	"gonet/base"
+	"reflect"
 	"strings"
 )
 
@@ -78,4 +79,11 @@ func (s *StubMailBox) StubName() string {
 
 func (s *StubMailBox) Key() string {
 	return fmt.Sprintf("%s/%d", s.StubType.String(), s.Id)
+}
+
+var GCall = reflect.Value{}
+
+func InitMGR(mgr ICluster) {
+	MGR = mgr
+	GCall = reflect.ValueOf(mgr.Call)
 }

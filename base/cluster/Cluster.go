@@ -142,7 +142,7 @@ func (c *Cluster) InitCluster(info *rpc.ClusterInfo, Endpoints []string, natsUrl
 		c.Stub = op.stub
 	}
 
-	rpc.MGR = c
+	rpc.InitMGR(c)
 	actor.MGR.RegisterActor(c)
 	c.Actor.Start()
 	//注册服务器
