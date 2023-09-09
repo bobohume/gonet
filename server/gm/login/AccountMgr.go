@@ -205,3 +205,7 @@ func (a *AccountMgr) OnStubUnRegister(ctx context.Context) {
 	//lease一致性这里要清理缓存数据了
 	base.LOG.Println("Stub Login unregister sucess")
 }
+
+func (a *AccountMgr) Test(ctx context.Context) (error, int) {
+	return nil, 1000
+}
