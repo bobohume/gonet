@@ -26,12 +26,12 @@ type (
 	}
 
 	IDetour interface {
-		Load(path string) int                                        //加载mesh
-		FindPath(start, end lmath.Point3F, path *vector.Vector) bool //巡径
-		RayCast(start, end lmath.Point3F, path *vector.Vector) bool  //射线
-		RandomPosition() (bool, lmath.Point3F)                       //随机点
-		GetPoly(pos lmath.Point3F) bool                              //获取路径点
-		GetPolyPos(pos lmath.Point3F) (bool, lmath.Point3F)          //获取路径带高度
+		Load(path string) int                                                       //加载mesh
+		FindPath(start, end lmath.Point3F, path *vector.Vector[lmath.Point3F]) bool //巡径
+		RayCast(start, end lmath.Point3F, path *vector.Vector[lmath.Point3F]) bool  //射线
+		RandomPosition() (bool, lmath.Point3F)                                      //随机点
+		GetPoly(pos lmath.Point3F) bool                                             //获取路径点
+		GetPolyPos(pos lmath.Point3F) (bool, lmath.Point3F)                         //获取路径带高度
 		TryMove(start, end lmath.Point3F) (bool, lmath.Point3F)
 
 		LineTestCloseToEnd(start, end lmath.Point3F, pos *lmath.Point3F) bool //直线距离
@@ -90,7 +90,7 @@ func (this *Detour) Load(path string) int {
 	return 0
 }
 
-func (this *Detour) FindPath(start, end lmath.Point3F, path *vector.Vector) bool {
+func (this *Detour) FindPath(start, end lmath.Point3F, path *vector.Vector[lmath.Point3F]) bool {
 	filter := DtAllocDtQueryFilter()
 	extents := []float32{1, 100, 1}
 
@@ -140,7 +140,7 @@ func (this *Detour) FindPath(start, end lmath.Point3F, path *vector.Vector) bool
 	return true
 }
 
-func (this *Detour) RayCast(start, end lmath.Point3F, path *vector.Vector) bool {
+func (this *Detour) RayCast(start, end lmath.Point3F, path *vector.Vector[lmath.Point3F]) bool {
 	if this.mQuery == nil {
 		return false
 	}

@@ -34,9 +34,8 @@ func (r *RandGroup) Rand() *RandUnit {
 }
 
 // 不重复随机属性
-func (r *RandGroup) RandEx(Id []int32, need int) []*RandUnit {
-	randomBuff := []*RandUnit{}
-	buffVec := vector.NewVector()
+func (r *RandGroup) RandEx(Id []int32, need int) vector.Vector[*RandUnit] {
+	buffVec := vector.Vector[*RandUnit]{}
 	for _, v := range r.Units {
 		//招到重复的
 		bFind := false
@@ -53,10 +52,9 @@ func (r *RandGroup) RandEx(Id []int32, need int) []*RandUnit {
 	nNeed := math.Min(float64(need), float64(buffVec.Len()))
 	for ; nNeed > 0; nNeed-- {
 		nIndex := base.RandI(0, buffVec.Len()-1)
-		randomBuff = append(randomBuff, buffVec.Get(nIndex).(*RandUnit))
 		buffVec.Erase(nIndex)
 	}
-	return randomBuff
+	return buffVec
 }
 
 // -------产生随机组-------//
