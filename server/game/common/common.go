@@ -52,7 +52,7 @@ func (r *RandGroup) RandEx(Id []int32, need int) vector.Vector[*RandUnit] {
 	nNeed := math.Min(float64(need), float64(buffVec.Len()))
 	for ; nNeed > 0; nNeed-- {
 		nIndex := base.RandI(0, buffVec.Len()-1)
-		buffVec.Erase(nIndex)
+		buffVec.Remove(nIndex)
 	}
 	return buffVec
 }

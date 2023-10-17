@@ -5,11 +5,11 @@ import (
 	"sort"
 )
 
-//  它只有4大类型的Node：
-//  * Composite Node
-//  * Decorator Node
-//  * Condition Node
-//  * Action Node
+// 它只有4大类型的Node：
+// * Composite Node
+// * Decorator Node
+// * Condition Node
+// * Action Node
 type (
 	BehaviorList struct {
 		vector.Vector[IBaseNode]
@@ -62,7 +62,7 @@ func (b *BehaviorList) DelChild(name string) {
 		return b.Get(i).(IBaseNode).GetName() >= name
 	})
 	if nIndex < b.Len() && b.Get(nIndex).(IBaseNode).GetName() == name {
-		b.Erase(nIndex)
+		b.Remove(nIndex)
 	}
 }
 
@@ -84,8 +84,8 @@ func (b *BehaviorTree) Init() {
 }
 
 func (b *BehaviorTree) OnExec(tick int64) {
-	for _, v := range b.Values() {
-		v.(IBaseNode).OnExec(tick)
+	for i := 0; i < b.Len(); i++ {
+		b.Get(i).OnExec(tick)
 	}
 }
 

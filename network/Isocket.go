@@ -218,8 +218,8 @@ func (this *Socket) CallMsg(head rpc.RpcHead, funcName string, params ...interfa
 
 func (this *Socket) HandlePacket(buff []byte) {
 	packet := rpc.Packet{Id: this.clientId, Buff: buff}
-	for _, v := range this.packetFuncList.Values() {
-		if v(packet) {
+	for i := 0; i < this.packetFuncList.Len(); i++ {
+		if this.packetFuncList.Get(i)(packet) {
 			break
 		}
 	}

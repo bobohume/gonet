@@ -255,8 +255,8 @@ func (this *NavigationMesh) FindPath(start, end lmath.Point3F, path *vector.Vect
 			return true
 		}
 
-		for _, t := range roundVec.Values() {
-			tile := *t
+		for i := 0; i < roundVec.Len(); i++ {
+			tile := *roundVec.Get(i)
 			curTile := NewATile(tile, curPoint, endTile)
 			id := this.GetGridId(tile.x, tile.y)
 			if curTile.IsEqual(endTile) {

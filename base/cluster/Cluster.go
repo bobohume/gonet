@@ -204,8 +204,8 @@ func (c *Cluster) BindPacketFunc(callfunc network.PacketFunc) {
 }
 
 func (c *Cluster) HandlePacket(packet rpc.Packet) {
-	for _, v := range c.packetFuncList.Values() {
-		if v(packet) {
+	for i := 0; i < c.packetFuncList.Len(); i++ {
+		if c.packetFuncList.Get(i)(packet) {
 			break
 		}
 	}
