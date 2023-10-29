@@ -305,12 +305,12 @@ func (this *Detour) TryMove(start, end lmath.Point3F) (bool, lmath.Point3F) {
 }
 
 func (this *Detour) LineTestCloseToEnd(start, end lmath.Point3F, pos *lmath.Point3F) bool {
-	path := vector.NewVector()
+	path := vector.New[lmath.Point3F]()
 	if this.RayCast(start, end, path) != true {
 		return false
 	}
 
-	*pos = path.Back().(lmath.Point3F)
+	*pos = path.Back()
 	return true
 }
 
