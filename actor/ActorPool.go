@@ -7,9 +7,9 @@ import (
 	"sync"
 )
 
-//********************************************************
+// ********************************************************
 // actorpool 管理,不能动态分配
-//********************************************************
+// ********************************************************
 type (
 	ActorPool struct {
 		MGR       IActor
@@ -40,7 +40,7 @@ func (a *ActorPool) GetPoolSize() int {
 func (a *ActorPool) SendAcotr(head rpc.RpcHead, packet rpc.Packet) bool {
 	if a.MGR.HasRpc(packet.RpcPacket.FuncName) {
 		switch head.SendType {
-		case rpc.SEND_POINT:
+		case rpc.SEND_POINT, rpc.SEND_LOCAL:
 			index := head.Id % int64(a.actorSize)
 			a.actorList[index].Acotr().Send(head, packet)
 		default:
@@ -53,9 +53,9 @@ func (a *ActorPool) SendAcotr(head rpc.RpcHead, packet rpc.Packet) bool {
 	return false
 }
 
-//********************************************************
+// ********************************************************
 // actorpool 管理,这里的actor可以动态添加
-//********************************************************
+// ********************************************************
 type (
 	VirtualActor struct {
 		MGR       IActor
@@ -65,7 +65,7 @@ type (
 
 	IVirtualActor interface {
 		GetActor(Id int64) IActor //获取actor
-		AddActor(ac IActor)   //添加actor
+		AddActor(ac IActor)       //添加actor
 		DelActor(Id int64)        //删除actor
 		GetActorNum() int
 		GetMgr() IActor

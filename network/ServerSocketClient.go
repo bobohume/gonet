@@ -3,13 +3,11 @@ package network
 import (
 	"fmt"
 	"gonet/base"
-	"gonet/base/timer"
 	"gonet/rpc"
 	"hash/crc32"
 	"io"
 	"log"
 	"sync/atomic"
-	"time"
 )
 
 const (
@@ -31,7 +29,6 @@ type ServerSocketClient struct {
 	Socket
 	server   *ServerSocket
 	sendChan chan []byte //对外缓冲队列
-	timerId  *int64
 }
 
 func handleError(err error) {
@@ -43,7 +40,6 @@ func handleError(err error) {
 
 func (s *ServerSocketClient) Init(ip string, port int, params ...OpOption) bool {
 	s.Socket.Init(ip, port, params...)
-	s.timerId = new(int64)
 	return true
 }
 
@@ -54,10 +50,6 @@ func (s *ServerSocketClient) Start() bool {
 
 	if s.connectType == CLIENT_CONNECT {
 		s.sendChan = make(chan []byte, MAX_SEND_CHAN)
-		timer.StoreTimerId(s.timerId, int64(s.clientId)+1<<32)
-		timer.RegisterTimer(s.timerId, (HEART_TIME_OUT/3)*time.Second, func() {
-			s.Update()
-		})
 	}
 
 	if s.packetFuncList.Len() == 0 {
@@ -121,14 +113,11 @@ func (s *ServerSocketClient) OnNetFail(error int) {
 }
 
 func (s *ServerSocketClient) Stop() bool {
-	timer.RegisterTimer(s.timerId, timer.TICK_INTERVAL, func() {
-		timer.StopTimer(s.timerId)
-		if atomic.CompareAndSwapInt32(&s.state, SSF_RUN, SSF_STOP) {
-			if s.conn != nil {
-				s.conn.Close()
-			}
+	if atomic.CompareAndSwapInt32(&s.state, SSF_RUN, SSF_STOP) {
+		if s.conn != nil {
+			s.conn.Close()
 		}
-	})
+	}
 	return false
 }
 
@@ -175,7 +164,6 @@ func (s *ServerSocketClient) Run() bool {
 				return false
 			}
 		}
-		s.heartTime = int(time.Now().Unix()) + HEART_TIME_OUT
 		return true
 	}
 
@@ -188,16 +176,6 @@ func (s *ServerSocketClient) Run() bool {
 	s.Close()
 	fmt.Printf("%s关闭连接", s.ip)
 	return true
-}
-
-// heart
-func (s *ServerSocketClient) Update() {
-	now := int(time.Now().Unix())
-	// timeout
-	if s.heartTime < now {
-		s.OnNetFail(2)
-		return
-	}
 }
 
 func (s *ServerSocketClient) SendLoop() bool {

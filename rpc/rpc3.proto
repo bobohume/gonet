@@ -17,7 +17,8 @@ enum SERVICE{
 enum SEND{
     POINT = 0;//指定集群id
     BOARD_CAST = 1;//广播
-    //BALANCE = 2;//负载
+    LOCAL = 2;//本地
+    //BALANCE = 3;//负载
 };
 
 //rpc 包头

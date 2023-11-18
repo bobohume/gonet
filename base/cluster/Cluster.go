@@ -212,7 +212,9 @@ func (c *Cluster) HandlePacket(packet rpc.Packet) {
 }
 
 func (c *Cluster) SendMsg(head rpc.RpcHead, funcName string, params ...interface{}) {
-	head.SrcClusterId = c.Id()
+	if head.SendType != rpc.SEND_LOCAL {
+		head.SrcClusterId = c.Id()
+	}
 	c.Send(head, rpc.Marshal(&head, &funcName, params...))
 }
 
@@ -239,6 +241,8 @@ func (c *Cluster) Send(head rpc.RpcHead, packet rpc.Packet) {
 			}
 		}
 		c.conn.Publish(getRpcChannel(head), packet.Buff)
+	case rpc.SEND_LOCAL:
+		actor.MGR.SendActor(packet.RpcPacket.FuncName, head, packet)
 	default:
 		c.conn.Publish(getRpcTopicChannel(head), packet.Buff)
 	}
