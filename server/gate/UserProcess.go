@@ -86,6 +86,7 @@ func (u *UserPrcoess) PacketFunc(packet1 rpc.Packet) bool {
 		//客户端主动断开
 		if packetId == network.DISCONNECTINT {
 			stream := base.NewBitStream(buff, len(buff))
+			stream.ReadInt(32)
 			socketid = uint32(stream.ReadInt(32))
 			cluster.MGR.SendMsg(rpc.RpcHead{SendType: rpc.SEND_LOCAL}, "PlayerMgr.DEL_ACCOUNT", socketid)
 			cluster.MGR.SendMsg(rpc.RpcHead{SendType: rpc.SEND_LOCAL}, "UserPrcoess.DISCONNECT", socketid)
