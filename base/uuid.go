@@ -4,6 +4,7 @@ import (
 	"gonet/base/vector"
 	"log"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -98,7 +99,7 @@ func ParseUUID(id int64) (ts int64, workerId int64, seq int64) {
 	return ts, workerId, seq
 }
 
-//----------WorkIdQue----------//
+// ----------WorkIdQue----------//
 func (w *WorkIdQue) Init(id int) {
 	w.workMap = make(map[uint32]int)
 	w.idelVec = &vector.Vector[int]{}
@@ -160,3 +161,40 @@ func Uuid() int64{
 	uid |= int64(uint64(g_SeedId % 0xFFFF)) & (0x000000000000FFFF)//自增ID
 	return uid
 }*/
+
+/*
+这是一个获取UUID速度更快的生成器；
+
+	ID组成部分
+
+	16位的 srvID
+	32位的 时间戳
+	16位的 自增ID
+
+	|-- srvID 16位 --|-- 时间戳 32位 --|-- seed 16位 --|
+	XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+*/
+
+// IDGenerater 获取唯一的ID号
+type IDGenerater struct {
+	baseID uint64
+	seed   uint64
+}
+
+func NewIDGenerater(srvID uint64) *IDGenerater {
+	result := new(IDGenerater)
+	result.baseID = srvID
+	result.seed = uint64(time.Now().Unix()) << 16
+	return result
+}
+
+func (srv *IDGenerater) GenerateID() uint64 {
+	seed := atomic.AddUint64(&srv.seed, 1)
+	high := seed << 16 >> 16
+	tmptime := seed >> 16
+	for n := int64(tmptime - uint64(time.Now().Unix())); n > 0; n = int64(tmptime - uint64(time.Now().Unix())) {
+		time.Sleep(time.Duration(n-1)*time.Second + time.Millisecond*100)
+	}
+	result := srv.baseID<<48 | high
+	return result
+}
