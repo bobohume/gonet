@@ -127,7 +127,10 @@ func (a *AccountMgr) CreatePlayerRequest(ctx context.Context, packet *message.Cr
 				if err == nil {
 					base.LOG.Printf("账号[%d]创建玩家[%d]", accountId, playerId)
 					//登录游戏
-					a.AddAccount(accountId)
+					account := a.GetAccount(accountId)
+					if account != nil {
+						account.PlayerSimpleDataList = LoadSimplePlayerDatas(accountId)
+					}
 					a.LoginPlayerRequset(ctx, &message.LoginPlayerRequset{PlayerId: playerId})
 				}
 			}
