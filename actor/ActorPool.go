@@ -41,7 +41,7 @@ func (a *ActorPool) SendAcotr(head rpc.RpcHead, packet rpc.Packet) bool {
 	if a.MGR.HasRpc(packet.RpcPacket.FuncName) {
 		switch head.SendType {
 		case rpc.SEND_POINT, rpc.SEND_LOCAL:
-			index := head.Id % int64(a.actorSize)
+			index := base.UUIDHASH(head.Id) % int64(a.actorSize)
 			a.actorList[index].Acotr().Send(head, packet)
 		default:
 			for i := 0; i < a.actorSize; i++ {
@@ -51,6 +51,11 @@ func (a *ActorPool) SendAcotr(head rpc.RpcHead, packet rpc.Packet) bool {
 		return true
 	}
 	return false
+}
+
+func (a *ActorPool) GetActor(Id int64) (IActor, bool) {
+	index := base.UUIDHASH(Id) % int64(a.actorSize)
+	return a.actorList[index], true
 }
 
 // ********************************************************

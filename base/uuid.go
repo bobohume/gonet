@@ -98,7 +98,14 @@ func ParseUUID(id int64) (ts int64, workerId int64, seq int64) {
 	return ts, workerId, seq
 }
 
-//----------WorkIdQue----------//
+func UUIDHASH(id int64) int64 {
+	if id < twepoch {
+		return id
+	}
+	return (id >> timestampShift)
+}
+
+// ----------WorkIdQue----------//
 func (w *WorkIdQue) Init(id int) {
 	w.workMap = make(map[uint32]int)
 	w.idelVec = &vector.Vector[int]{}

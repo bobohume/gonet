@@ -232,7 +232,7 @@ func (c *Cluster) Send(head rpc.RpcHead, packet rpc.Packet) {
 		} else if head.ClusterId == 0 {
 			stubCount, bEx := c.Stub.StubCount[head.ActorName]
 			if bEx {
-				index := head.Id % stubCount
+				index := base.UUIDHASH(head.Id) % stubCount
 				stubType := rpc.STUB(rpc.STUB_value[head.ActorName])
 				pStub := c.StubMailBox.Get(stubType, index)
 				if pStub != nil {
@@ -265,7 +265,7 @@ func (c *Cluster) CallMsg(cb interface{}, head rpc.RpcHead, funcName string, par
 		} else if head.ClusterId == 0 {
 			stubCount, bEx := c.Stub.StubCount[head.ActorName]
 			if bEx {
-				index := head.Id % stubCount
+				index := base.UUIDHASH(head.Id) % stubCount
 				stubType := rpc.STUB(rpc.STUB_value[head.ActorName])
 				pStub := c.StubMailBox.Get(stubType, index)
 				if pStub != nil {
