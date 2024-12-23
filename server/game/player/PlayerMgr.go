@@ -48,6 +48,10 @@ func (p *PlayerMgr) LoginPlayerRequset(ctx context.Context, playerId int64, gate
 		}
 	}
 
+	//callmsg test
+	/*fmt.Println(cluster.MGR.CallMsg(func(ctx context.Context, res int) {
+		fmt.Println(res)
+	}, rpc.RpcHead{Id: 0}, "gm<-AccountMgr.Test"))*/
 	cluster.MGR.SendMsg(rpc.RpcHead{ClusterId: gateClusterId}, "gate<-EventProcess.G_Player_Login", socketId, *pMailBox)
 }
 

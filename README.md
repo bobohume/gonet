@@ -53,6 +53,8 @@ rpc模块脱离传统的注册-回调模式，只需要继承actor即可，actor
 如回调函数是:func (p *PlayerMgr) PlayerOnUnRegister(head rpc.RpcHead, playerId int64)
 自动生成代码,rpc发起就直接rpcgame.PlayerMgr.PlayerOnUnRegister(rpc.RpcHead{SendType: rpc.SEND_LOCAL}, p.PlayerId)
 
+## 进阶版有偿提供联系群主
+
 ## 流程图
 流程图替代一些配表,比如ai,目前在开发一个web段的流程图编辑器
 
@@ -84,6 +86,7 @@ rpc模块脱离传统的注册-回调模式，只需要继承actor即可，actor
 # 交流
 
 QQ群:950288306
+QQ群2:991398832
 
 # 服务器架构如下：
 ![image](框架.jpg)

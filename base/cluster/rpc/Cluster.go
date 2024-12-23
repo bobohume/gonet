@@ -122,8 +122,8 @@ func (c *Cluster) AddCluster(info *rpc.ClusterInfo) {
 	packet.Init()
 	packet.SetClusterId(info.Id())
 	client.BindPacketFunc(actor.MGR.PacketFunc)
-	for _, v := range c.packetFuncList.Values() {
-		client.BindPacketFunc(v)
+	for i := 0; i < c.packetFuncList.Len(); i++ {
+		client.BindPacketFunc(c.packetFuncList.Get(i))
 	}
 	c.clusterLocker.Lock()
 	c.clusterMap[info.Id()] = &ClusterNode{ClientSocket: client, ClusterInfo: info}

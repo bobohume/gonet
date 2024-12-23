@@ -55,7 +55,6 @@ type (
 		isHalf       bool
 		halfSize     int
 		packetParser PacketParser
-		heartTime    int
 		isKcp        bool
 	}
 
@@ -110,7 +109,6 @@ func (this *Socket) Init(ip string, port int, params ...OpOption) bool {
 	this.connectType = SERVER_CONNECT
 	this.isHalf = false
 	this.halfSize = 0
-	this.heartTime = 0
 	this.packetParser = NewPacketParser(PacketConfig{Func: this.HandlePacket})
 	if op.kcp {
 		this.isKcp = true
@@ -177,7 +175,6 @@ func (this *Socket) Clear() {
 	this.receiveBufferSize = 1024
 	this.isHalf = false
 	this.halfSize = 0
-	this.heartTime = 0
 }
 
 func (this *Socket) Close() {
@@ -218,8 +215,8 @@ func (this *Socket) CallMsg(head rpc.RpcHead, funcName string, params ...interfa
 
 func (this *Socket) HandlePacket(buff []byte) {
 	packet := rpc.Packet{Id: this.clientId, Buff: buff}
-	for _, v := range this.packetFuncList.Values() {
-		if v(packet) {
+	for i := 0; i < this.packetFuncList.Len(); i++ {
+		if this.packetFuncList.Get(i)(packet) {
 			break
 		}
 	}

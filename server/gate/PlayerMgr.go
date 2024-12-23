@@ -121,12 +121,13 @@ func (p *PlayerMgr) ADD_ACCOUNT(ctx context.Context, socketId uint32, mailbox rp
 }
 
 func (p *PlayerMgr) DEL_ACCOUNT(ctx context.Context, socketid uint32) {
+	base.LOG.Printf("DELACCOUNT Socket:%d ", socketid)
 	playerId := p.GetPlayerId(socketid)
 	p.ReleaseSocketMap(socketid, true)
 	SERVER.GetCluster().SendMsg(rpc.RpcHead{SendType: rpc.SEND_BOARD_CAST}, "game<-PlayerMgr.G_ClientLost", playerId)
 }
 
-//重连世界服务器，账号重新登录
+// 重连世界服务器，账号重新登录
 func (p *PlayerMgr) World_Relogin(ctx context.Context) {
 	playerMap := make(map[int64]uint32)
 	p.locker.RLock()

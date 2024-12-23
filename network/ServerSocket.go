@@ -5,6 +5,8 @@ import (
 	"gonet/rpc"
 	"log"
 	"net"
+	"net/http"
+	_ "net/http/pprof"
 	"sync"
 	"sync/atomic"
 
@@ -45,10 +47,6 @@ func (s *ServerSocket) Init(ip string, port int, params ...OpOption) bool {
 }
 
 func (s *ServerSocket) Start() bool {
-	if s.ip == "" {
-		s.ip = "127.0.0.1"
-	}
-
 	var strRemote = fmt.Sprintf("%s:%d", s.ip, s.port)
 	//初始tcp
 	tcpAddr, err := net.ResolveTCPAddr("tcp4", strRemote)
@@ -65,6 +63,7 @@ func (s *ServerSocket) Start() bool {
 	s.kcpListern, err = kcp.Listen(strRemote)
 	if err != nil {
 		log.Fatalf("%v", err)
+		return false
 	}
 
 	fmt.Printf("启动监听，等待链接！\n")
@@ -72,6 +71,18 @@ func (s *ServerSocket) Start() bool {
 	//defer ln.Close()
 	go s.Run()
 	go s.RunKcp()
+	return true
+}
+
+func (s *ServerSocket) StartHttp() bool {
+	var strRemote = fmt.Sprintf("%s:%d", s.ip, s.port)
+	go func() {
+		//参照cm.pprof火焰图
+		err := http.ListenAndServe(strRemote, nil)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
+	}()
 	return true
 }
 

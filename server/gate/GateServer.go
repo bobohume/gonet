@@ -15,6 +15,7 @@ type (
 		isInited  bool
 		playerMgr *PlayerMgr
 		cluster   *cluster.Cluster
+		stats     *StatsPrcoess
 	}
 
 	IServerMgr interface {
@@ -49,6 +50,10 @@ func (s *ServerMgr) GetCluster() *cluster.Cluster {
 
 func (s *ServerMgr) GetPlayerMgr() *PlayerMgr {
 	return s.playerMgr
+}
+
+func (s *ServerMgr) GetStats() *StatsPrcoess {
+	return s.stats
 }
 
 func (s *ServerMgr) Init() bool {
@@ -91,6 +96,10 @@ func (s *ServerMgr) Init() bool {
 
 	var packet1 EventProcess
 	packet1.Init()
+
+	stats := new(StatsPrcoess)
+	stats.Init()
+
 	s.cluster = new(cluster.Cluster)
 	s.cluster.InitCluster(&rpc.ClusterInfo{Type: rpc.SERVICE_GATE, Ip: CONF.Server.Ip, Port: int32(CONF.Server.Port)},
 		CONF.Etcd.Endpoints, CONF.Nats.Endpoints, cluster.WithStubMailBoxEtcd(CONF.Raft.Endpoints, &CONF.Stub))

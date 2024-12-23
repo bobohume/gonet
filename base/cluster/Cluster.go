@@ -204,15 +204,17 @@ func (c *Cluster) BindPacketFunc(callfunc network.PacketFunc) {
 }
 
 func (c *Cluster) HandlePacket(packet rpc.Packet) {
-	for _, v := range c.packetFuncList.Values() {
-		if v(packet) {
+	for i := 0; i < c.packetFuncList.Len(); i++ {
+		if c.packetFuncList.Get(i)(packet) {
 			break
 		}
 	}
 }
 
 func (c *Cluster) SendMsg(head rpc.RpcHead, funcName string, params ...interface{}) {
-	head.SrcClusterId = c.Id()
+	if head.SendType != rpc.SEND_LOCAL {
+		head.SrcClusterId = c.Id()
+	}
 	c.Send(head, rpc.Marshal(&head, &funcName, params...))
 }
 
@@ -230,7 +232,7 @@ func (c *Cluster) Send(head rpc.RpcHead, packet rpc.Packet) {
 		} else if head.ClusterId == 0 {
 			stubCount, bEx := c.Stub.StubCount[head.ActorName]
 			if bEx {
-				index := head.Id % stubCount
+				index := base.UUIDHASH(head.Id) % stubCount
 				stubType := rpc.STUB(rpc.STUB_value[head.ActorName])
 				pStub := c.StubMailBox.Get(stubType, index)
 				if pStub != nil {
@@ -239,6 +241,8 @@ func (c *Cluster) Send(head rpc.RpcHead, packet rpc.Packet) {
 			}
 		}
 		c.conn.Publish(getRpcChannel(head), packet.Buff)
+	case rpc.SEND_LOCAL:
+		actor.MGR.SendActor(packet.RpcPacket.FuncName, head, packet)
 	default:
 		c.conn.Publish(getRpcTopicChannel(head), packet.Buff)
 	}
@@ -261,7 +265,7 @@ func (c *Cluster) CallMsg(cb interface{}, head rpc.RpcHead, funcName string, par
 		} else if head.ClusterId == 0 {
 			stubCount, bEx := c.Stub.StubCount[head.ActorName]
 			if bEx {
-				index := head.Id % stubCount
+				index := base.UUIDHASH(head.Id) % stubCount
 				stubType := rpc.STUB(rpc.STUB_value[head.ActorName])
 				pStub := c.StubMailBox.Get(stubType, index)
 				if pStub != nil {

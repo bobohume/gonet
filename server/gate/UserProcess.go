@@ -4,6 +4,7 @@ import (
 	"context"
 	"gonet/actor"
 	"gonet/base"
+	"gonet/base/cluster"
 	"gonet/network"
 	"gonet/rpc"
 	"gonet/server/message"
@@ -86,9 +87,12 @@ func (u *UserPrcoess) PacketFunc(packet1 rpc.Packet) bool {
 		if packetId == network.DISCONNECTINT {
 			stream := base.NewBitStream(buff, len(buff))
 			stream.ReadInt(32)
-			SERVER.GetPlayerMgr().SendMsg(rpc.RpcHead{}, "DEL_ACCOUNT", uint32(stream.ReadInt(32)))
-			u.SendMsg(rpc.RpcHead{}, "DISCONNECT", socketid)
+			socketid = uint32(stream.ReadInt(32))
+			cluster.MGR.SendMsg(rpc.RpcHead{SendType: rpc.SEND_LOCAL}, "PlayerMgr.DEL_ACCOUNT", socketid)
+			cluster.MGR.SendMsg(rpc.RpcHead{SendType: rpc.SEND_LOCAL}, "UserPrcoess.DISCONNECT", socketid)
 		} else if packetId == network.HEART_PACKET { //心跳netsocket做处理，这里不处理
+			head := rpc.RpcHead{SendType: rpc.SEND_LOCAL}
+			cluster.MGR.SendMsg(head, "StatsPrcoess.Stats", socketid, "heart", 0)
 		} else {
 			base.LOG.Printf("包解析错误1  socket=%d", socketid)
 		}
@@ -123,6 +127,8 @@ func (u *UserPrcoess) PacketFunc(packet1 rpc.Packet) bool {
 		actor.MGR.PacketFunc(rpc.Packet{Id: socketid, Buff: rpcPacket.Buff})
 	}
 
+	head.SendType = rpc.SEND_LOCAL
+	cluster.MGR.SendMsg(head, "StatsPrcoess.Stats", socketid, packetName, packetRoute.Limit)
 	return true
 }
 

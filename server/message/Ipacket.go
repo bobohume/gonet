@@ -28,10 +28,29 @@ type (
 	}
 
 	PacketRoute struct {
-		Func func() proto.Message
+		Func     func() proto.Message
 		FuncName string
+		Limit    uint32
 	}
+
+	Op struct {
+		limit uint32 //一分钟多少次
+	}
+
+	OpOption func(*Op)
 )
+
+func (op *Op) applyOpts(opts []OpOption) {
+	for _, opt := range opts {
+		opt(op)
+	}
+}
+
+func WithLimit(limit uint32) OpOption {
+	return func(op *Op) {
+		op.limit = limit
+	}
+}
 
 func BuildPacketHead(id int64, destservertype rpc.SERVICE) *Ipacket {
 	ipacket := &Ipacket{
@@ -64,7 +83,9 @@ func Decode(buff []byte) (uint32, []byte) {
 	return packetId, buff[4:]
 }
 
-func RegisterPacket(packet proto.Message, funcName string) {
+func RegisterPacket(packet proto.Message, funcName string, opts ...OpOption) {
+	op := Op{}
+	op.applyOpts(opts)
 	packetName := GetMessageName(packet)
 	val := reflect.ValueOf(packet).Elem()
 	packetFunc := func() proto.Message {
@@ -74,12 +95,12 @@ func RegisterPacket(packet proto.Message, funcName string) {
 		return packet.Interface().(proto.Message)
 	}
 
-	packetRoute := &PacketRoute{packetFunc, funcName}
+	packetRoute := &PacketRoute{Func: packetFunc, FuncName: funcName, Limit: op.limit}
 	Packet_CreateFactorStringMap[packetName] = packetRoute
 	Packet_CreateFactorMap[base.GetMessageCode1(packetName)] = packetRoute
 }
 
-func GetPakcetRoute(packetId uint32) *PacketRoute{
+func GetPakcetRoute(packetId uint32) *PacketRoute {
 	packetRoute, exist := Packet_CreateFactorMap[packetId]
 	if exist {
 		return packetRoute
@@ -102,7 +123,7 @@ func init() {
 	Packet_CrcNamesMap = make(map[uint32]string)
 }
 
-//统计crc对应string
+// 统计crc对应string
 func initCrcNames() {
 	protoFiles := []protoreflect.MessageDescriptors{}
 	protoFiles = append(protoFiles, File_message_proto.Messages())
@@ -117,7 +138,7 @@ func initCrcNames() {
 	}
 }
 
-//网关防火墙
+// 网关防火墙
 func Init() {
 	initCrcNames()
 	//注册消息
@@ -125,14 +146,14 @@ func Init() {
 	RegisterPacket(&LoginAccountRequest{}, "gate<-UserPrcoess.LoginAccountRequest")
 	RegisterPacket(&LoginPlayerRequset{}, "gate<-UserPrcoess.LoginPlayerRequset")
 	RegisterPacket(&CreatePlayerRequest{}, "gm<-AccountMgr.CreatePlayerRequest")
-	RegisterPacket(&ChatMessageRequest{}, "gm<-ChatMgr.ChatMessageRequest")
+	RegisterPacket(&ChatMessageRequest{}, "gm<-ChatMgr.ChatMessageRequest", WithLimit(5))
 
 	RegisterPacket(&C_Z_LoginCopyMap{}, "zone<-MapMgr.C_Z_LoginCopyMap")
 	RegisterPacket(&C_Z_Move{}, "zone<-Map.C_Z_Move")
 	RegisterPacket(&C_Z_Skill{}, "zone<-Map.C_Z_Skill")
 }
 
-//client消息回调
+// client消息回调
 func InitClient() {
 	initCrcNames()
 	//注册消息

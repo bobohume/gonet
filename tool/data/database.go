@@ -15,6 +15,7 @@ import (
 
 const (
 	COL_NAME = iota
+	COL_SERVER_NAME
 	COL_CLIENT_NAME
 	COL_VSTO
 	COL_TYPE
@@ -37,10 +38,11 @@ func FILENAME(filename, sheetname, ext string) string {
 	return filenames[0] + "_" + sheetname + ext
 }
 
-//excel第一行 中文名字
-//excel第二行 客户端data下的列名
-//excel第三行 插件值
-//excel第四行 类型
+// excel第一行 中文名字
+// excel第二行 客户端data下的列名
+// excel第三行 服务端data下的列名
+// excel第四行 插件值
+// excel第五行 类型
 func OpenExcel(filename string) {
 	xlFile, err := xlsx.OpenFile(filename)
 	if err != nil {
@@ -78,6 +80,9 @@ func OpenExcel(filename string) {
 					stream.WriteString(cell.String())
 					continue
 				} else if i == COL_CLIENT_NAME { //客户端data下的列名
+					stream.WriteString(cell.String())
+					continue
+				} else if i == COL_SERVER_NAME { //客户端data下的列名
 					stream.WriteString(cell.String())
 					continue
 				} else if i == COL_VSTO { //插件值
@@ -253,10 +258,11 @@ func OpenExcel(filename string) {
 	}
 }
 
-//excel第一列 中文名字
-//excel第二列 客户端data下的列名
-//excel第三行 插件值
-//excel第四行 类型
+// excel第一行 中文名字
+// excel第二行 客户端data下的列名
+// excel第三行 服务端data下的列名
+// excel第四行 插件值
+// excel第五行 类型
 func SaveExcel(filename string) {
 	file, err := os.Open(filename)
 	if err != nil {
@@ -291,7 +297,7 @@ func SaveExcel(filename string) {
 	ColumNum := fstream.ReadInt(32)
 	Sheetname := fstream.ReadString()
 	//readstep := RecordNum * ColumNum
-	dataTypes := vector.NewVector()
+	dataTypes := &vector.Vector[int]{}
 	xfile := xlsx.NewFile()
 	sheet, err := xfile.AddSheet("~" + Sheetname)
 	if err != nil {
@@ -351,7 +357,7 @@ func SaveExcel(filename string) {
 		row := sheet.AddRow()
 		for j := 0; j < ColumNum; j++ {
 			cell := row.AddCell()
-			switch dataTypes.Get(j).(int) {
+			switch dataTypes.Get(j) {
 			case base.DType_String:
 				cell.SetString(fstream.ReadString())
 			case base.DType_S8:

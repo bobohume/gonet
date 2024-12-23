@@ -47,6 +47,8 @@ func OpenExceLua(filename string) {
 			for j, cell := range row.Cells {
 				if i == COL_NAME {
 					continue
+				} else if i == COL_SERVER_NAME {
+					continue
 				} else if i == COL_CLIENT_NAME {
 					colName := cell.String()
 					dataNames = append(dataNames, colName)

@@ -3,11 +3,9 @@ package network
 import (
 	"fmt"
 	"gonet/base"
-	"gonet/base/timer"
 	"gonet/rpc"
 	"io"
 	"sync/atomic"
-	"time"
 )
 
 type IWebSocketClient interface {
@@ -18,12 +16,10 @@ type WebSocketClient struct {
 	Socket
 	server   *WebSocket
 	sendChan chan []byte //对外缓冲队列
-	timerId  *int64
 }
 
 func (w *WebSocketClient) Init(ip string, port int, params ...OpOption) bool {
 	w.Socket.Init(ip, port, params...)
-	w.timerId = new(int64)
 	return true
 }
 
@@ -34,10 +30,6 @@ func (w *WebSocketClient) Start() bool {
 
 	if w.connectType == CLIENT_CONNECT {
 		w.sendChan = make(chan []byte, MAX_SEND_CHAN)
-		timer.StoreTimerId(w.timerId, int64(w.clientId)+1<<32)
-		timer.RegisterTimer(w.timerId, (HEART_TIME_OUT/3)*time.Second, func() {
-			w.Update()
-		})
 	}
 
 	if w.packetFuncList.Len() == 0 {
@@ -51,14 +43,11 @@ func (w *WebSocketClient) Start() bool {
 }
 
 func (w *WebSocketClient) Stop() bool {
-	timer.RegisterTimer(w.timerId, timer.TICK_INTERVAL, func() {
-		timer.StopTimer(w.timerId)
-		if atomic.CompareAndSwapInt32(&w.state, SSF_RUN, SSF_STOP) {
-			if w.conn != nil {
-				w.conn.Close()
-			}
+	if atomic.CompareAndSwapInt32(&w.state, SSF_RUN, SSF_STOP) {
+		if w.conn != nil {
+			w.conn.Close()
 		}
-	})
+	}
 	return false
 }
 
@@ -149,7 +138,6 @@ func (w *WebSocketClient) Run() bool {
 		if n > 0 {
 			w.packetParser.Read(buff[:n])
 		}
-		w.heartTime = int(time.Now().Unix()) + HEART_TIME_OUT
 		return true
 	}
 
@@ -161,16 +149,6 @@ func (w *WebSocketClient) Run() bool {
 
 	w.Close()
 	fmt.Printf("%s关闭连接", w.ip)
-	return true
-}
-
-// heart
-func (w *WebSocketClient) Update() bool {
-	now := int(time.Now().Unix())
-	if w.heartTime < now {
-		w.OnNetFail(2)
-		return false
-	}
 	return true
 }
 

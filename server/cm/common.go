@@ -54,7 +54,7 @@ func (r *RandGroup) RandEx(Id []int32, need int) []*RandUnit {
 	for ; nNeed > 0; nNeed-- {
 		nIndex := base.RandI(0, buffVec.Len()-1)
 		randomBuff = append(randomBuff, buffVec.Get(nIndex))
-		buffVec.Erase(nIndex)
+		buffVec.Remove(nIndex)
 	}
 	return randomBuff
 }

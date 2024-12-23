@@ -73,6 +73,8 @@ func OpenExceGo(filename string) {
 				if i == COL_NAME {
 					continue
 				} else if i == COL_CLIENT_NAME {
+					continue
+				} else if i == COL_SERVER_NAME {
 					colName := cell.String()
 					dataNames = append(dataNames, colName)
 					if colName != "" && colName != "0" {

@@ -13,12 +13,14 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unsafe"
 )
 
 const (
 	INT_MAX       = int(2147483647)
 	TCP_HEAD_SIZE = 4    //解决tpc粘包半包,包头固定长度
 	TCP_END       = "💞♡" //解决tpc粘包半包,特殊结束标志,pb采用Varint编码高位有特殊含义
+	size_int      = int(unsafe.Sizeof(int(0))) * 8
 )
 
 var (
@@ -351,4 +353,16 @@ func CopySlice[M ~[]V, V any](m M) M {
 	m1 := make(M, len(m))
 	copy(m1, m)
 	return m1
+}
+
+func SetBits[V ~int | ~uint](m map[int]V, index int, flag bool) {
+	if flag {
+		m[index/size_int] |= 1 << V(index%size_int)
+	} else {
+		m[index/size_int] &= ^(1 << V(index%size_int))
+	}
+}
+
+func GetBits[V ~int | ~uint](m map[int]V, index int) bool {
+	return m[index/size_int]&(1<<V(index%size_int)) != 0
 }

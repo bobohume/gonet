@@ -16,7 +16,7 @@ func (v *Vector[T]) Iterator() Iterator[T] {
 // If Next() was called for the first time, then it will point the iterator to the first element if it exists.
 // Modifies the state of the iterator.
 func (v *Iterator[T]) Next() bool {
-	if v.index < v.vec.elementCount {
+	if v.index < v.vec.count {
 		v.index++
 	}
 	return v.vec.withinRange(v.index)
@@ -44,6 +44,12 @@ func (v *Iterator[T]) Index() int {
 	return v.index
 }
 
+func (v *Iterator[T]) Remove() T {
+	index := v.index
+	v.Prev()
+	return v.vec.Remove(index)
+}
+
 // Begin resets the iterator to its initial state (one-before-first)
 // Call Next() to fetch the first element if any.
 func (v *Iterator[T]) Begin() {
@@ -53,7 +59,7 @@ func (v *Iterator[T]) Begin() {
 // End moves the iterator past the last element (one-past-the-end).
 // Call Prev() to fetch the last element if any.
 func (v *Iterator[T]) End() {
-	v.index = v.vec.elementCount
+	v.index = v.vec.count
 }
 
 // First moves the iterator to the first element and returns true if there was a first element in the container.
