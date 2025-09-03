@@ -2,6 +2,7 @@ package timer
 
 import (
 	"gonet/base"
+	"math"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -24,14 +25,13 @@ const (
 // 整个timer中毫秒的精度都是10ms，
 // 也就是说毫秒的一个三个位，但是最小的位被丢弃
 type (
-	TimerHandle func()
+	TimerHandle func(int64)
 	TimerNode   struct {
 		next   *TimerNode
 		expire uint32
 		handle TimerHandle
-		id     *int64
+		Id     int64
 		time   uint32
-		IsOnce bool
 	}
 
 	//这个队列可以换成无锁队列
@@ -53,7 +53,8 @@ type (
 	}
 
 	Op struct {
-		isOnce bool
+		Count   int
+		IsCount bool
 	}
 
 	OpOption func(*Op)
@@ -64,12 +65,12 @@ var (
 	g_Id  int64
 )
 
-func (t *TimerNode) LoadId() int64 {
-	return atomic.LoadInt64(t.id)
+func (t *TimerNode) IsStop() bool {
+	return atomic.LoadInt64(&t.Id) == 0
 }
 
-func StoreTimerId(id *int64, val int64) bool {
-	return atomic.LoadInt64(id) == 0 && atomic.CompareAndSwapInt64(id, 0, val)
+func (t *TimerNode) Stop() {
+	atomic.StoreInt64(&t.Id, 0)
 }
 
 func (op *Op) applyOpts(opts []OpOption) {
@@ -78,9 +79,10 @@ func (op *Op) applyOpts(opts []OpOption) {
 	}
 }
 
-func WithOnce() OpOption {
+func WithCount(count int) OpOption {
 	return func(op *Op) {
-		op.isOnce = true
+		op.Count = count
+		op.IsCount = true
 	}
 }
 
@@ -148,20 +150,16 @@ func (t *Timer) addNode(node *TimerNode) {
 }
 
 // 添加一个定时器
-func (t *Timer) Add(id *int64, time uint32, handle TimerHandle, opts ...OpOption) *TimerNode {
+func (t *Timer) Add(time uint32, handle TimerHandle, opts ...OpOption) (*TimerNode, Op) {
 	op := Op{}
 	op.applyOpts(opts)
-	node := &TimerNode{expire: time + t.time, handle: handle,
-		time: time, IsOnce: op.isOnce, id: id} //超时时间+当前计数
+	node := &TimerNode{handle: handle,
+		time: time, Id: uuid()} //超时时间+当前计数
 	t.lock.Lock()
+	node.expire = time + t.time
 	t.addNode(node)
 	t.lock.Unlock()
-	return node
-}
-
-// 删除一个定时器
-func (t *Timer) Delete(id *int64) {
-	atomic.StoreInt64(id, -1)
+	return node, op
 }
 
 // 移动某个级别的链表内容
@@ -202,12 +200,9 @@ func (t *Timer) shift() {
 // 派发消息到目标服务消息队列
 func (t *Timer) dispatch(current *TimerNode) {
 	for current != nil {
-		id := current.LoadId()
-		if id > 0 {
-			current.handle()
-			if !current.IsOnce {
-				t.loop_node = append(t.loop_node, current)
-			}
+		if !current.IsStop() {
+			current.handle(current.Id)
+			t.loop_node = append(t.loop_node, current)
 		}
 		current = current.next
 	}
@@ -281,12 +276,6 @@ func (t *Timer) run() {
 	t.pTimer.Stop()
 }
 
-func RegisterTimer(id *int64, duration time.Duration, handle TimerHandle, opts ...OpOption) *TimerNode {
-	return TIMER.Add(id, uint32(duration/TICK_INTERVAL), handle, opts...)
-}
-
-func StopTimer(id *int64) {
-	if id != nil {
-		TIMER.Delete(id)
-	}
+func RegisterTimer(duration time.Duration, handle TimerHandle, opts ...OpOption) (*TimerNode, Op) {
+	return TIMER.Add(uint32(math.Ceil(float64(duration)/float64(TICK_INTERVAL))), handle, opts...)
 }
