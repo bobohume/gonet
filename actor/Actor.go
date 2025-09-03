@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"gonet/base"
+	"gonet/base/cron"
 	"gonet/base/mpsc"
 	"gonet/base/timer"
 	"gonet/rpc"
@@ -39,7 +40,7 @@ type (
 
 	Actor struct {
 		ActorBase
-		acotrChan chan int //use for states
+		actorChan chan int //use for states
 		id        int64
 		state     int32
 		trace     traceInfo //trace func
@@ -47,8 +48,9 @@ type (
 		mailIn    [8]int64
 		mailChan  chan bool
 		timerId   *int64
-		pool      IActorPool         //ACTOR_TYPE_VIRTUAL,ACTOR_TYPE_POOL
-		timerMap  map[uintptr]func() //成员方法转func()会是闭包函数,定时器释放会有问题
+		pool      IActorPool //ACTOR_TYPE_VIRTUAL,ACTOR_TYPE_POOL
+		timerMap  map[int64]*timerUnit
+		cronMap   map[int64]*cronUnit
 	}
 
 	IActor interface {
@@ -57,7 +59,9 @@ type (
 		Start()
 		SendMsg(head rpc.RpcHead, funcName string, params ...interface{})
 		Send(head rpc.RpcHead, packet rpc.Packet)
-		RegisterTimer(duration time.Duration, fun func(), opts ...timer.OpOption) //注册定时器,时间为纳秒 1000 * 1000 * 1000
+		RegisterTimer(duration time.Duration, fun func(), opts ...timer.OpOption) int64 //注册定时器,时间为纳秒 1000 * 1000 * 1000
+		RegisterCron(cronStr string, fun func()) int64
+		StopTimer(int64)
 		GetId() int64
 		GetState() int32
 		GetRpcHead(ctx context.Context) rpc.RpcHead //rpc is safe
@@ -86,6 +90,19 @@ type (
 		fileName  string
 		filePath  string
 		className string
+	}
+
+	timerUnit struct {
+		timer.Op
+		*timer.TimerNode
+		fun func()
+	}
+
+	cronUnit struct {
+		cron.Schedule
+		nextTime time.Time
+		timerId  int64
+		fun      func()
 	}
 )
 
@@ -150,8 +167,9 @@ func (a *Actor) Acotr() *Actor {
 func (a *Actor) Init() {
 	a.mailChan = make(chan bool, 1)
 	a.mailBox = mpsc.New[*CallIO]()
-	a.acotrChan = make(chan int, 1)
-	a.timerMap = make(map[uintptr]func())
+	a.actorChan = make(chan int, 1)
+	a.timerMap = make(map[int64]*timerUnit)
+	a.cronMap = make(map[int64]*cronUnit)
 	//trance
 	a.trace.Init()
 	if a.id == 0 {
@@ -165,14 +183,65 @@ func (a *Actor) register(ac IActor, op Op) {
 	a.ActorBase = ActorBase{rType: rType, rVal: reflect.ValueOf(ac), Self: ac, actorName: op.name, actorType: op.actorType}
 }
 
-func (a *Actor) RegisterTimer(duration time.Duration, fun func(), opts ...timer.OpOption) {
-	timer.StoreTimerId(a.timerId, a.id)
-	//&fun这里有问题,会产生一对闭包函数,再释放的释放有问题
-	ptr := uintptr(reflect.ValueOf(fun).Pointer())
-	a.timerMap[ptr] = fun
-	timer.RegisterTimer(a.timerId, duration, func() {
-		a.SendMsg(rpc.RpcHead{ActorName: a.actorName}, "UpdateTimer", ptr)
+func (a *Actor) RegisterTimer(duration time.Duration, fun func(), opts ...timer.OpOption) int64 {
+	actorName := a.actorName
+	node, op := timer.RegisterTimer(duration, func(Id int64) {
+		a.SendMsg(rpc.RpcHead{ActorName: actorName}, "UpdateTimer", Id)
 	}, opts...)
+	a.timerMap[node.Id] = &timerUnit{Op: op, TimerNode: node, fun: fun}
+	return node.Id
+}
+
+func (a *Actor) StopTimer(timerId int64) {
+	timerUnit, bEx := a.timerMap[timerId]
+	if bEx {
+		timerUnit.Stop()
+		delete(a.timerMap, timerId)
+	}
+}
+
+func (a *Actor) RegisterCron(cronStr string, fun func()) int64 {
+	sched, err := cron.ParseStandard(cronStr)
+	if err != nil {
+		base.LOG.Fatalf("RegisterCron [%s] cronStr err", a.actorName)
+	} else {
+		now := time.Now()
+		nextTime := sched.Next(now)
+		if !nextTime.IsZero() {
+			id := AssignActorId()
+			timerId := a.RegisterTimer(nextTime.Sub(now)+timer.TICK_INTERVAL, func() { a.updateCron(id) }, timer.WithCount(1))
+			a.cronMap[id] = &cronUnit{Schedule: sched, nextTime: nextTime, timerId: timerId, fun: fun}
+			return id
+		}
+	}
+	return 0
+}
+
+func (a *Actor) updateCron(id int64) {
+	cronUnit, bEx := a.cronMap[id]
+	if bEx {
+		now := time.Now()
+		nextTime := cronUnit.Schedule.Next(cronUnit.nextTime)
+		if !nextTime.IsZero() {
+			cronUnit.nextTime = nextTime
+			if nextTime.Sub(now) >= 0 {
+				cronUnit.timerId = a.RegisterTimer(nextTime.Sub(now)+timer.TICK_INTERVAL, func() { a.updateCron(id) }, timer.WithCount(1))
+			} else {
+				cronUnit.timerId = a.RegisterTimer(timer.TICK_INTERVAL, func() { a.updateCron(id) }, timer.WithCount(1))
+			}
+			(cronUnit.fun)()
+		} else {
+			a.StopCron(id)
+		}
+	}
+}
+
+func (a *Actor) StopCron(id int64) {
+	cronUnit, bEx := a.cronMap[id]
+	if bEx {
+		delete(a.cronMap, id)
+		a.StopTimer(cronUnit.timerId)
+	}
 }
 
 func (a *Actor) clear() {
@@ -180,16 +249,15 @@ func (a *Actor) clear() {
 	a.setState(ASF_NULL)
 	//close(a.acotrChan)
 	//close(a.mailChan)
-	timer.StopTimer(a.timerId)
 }
 
 func (a *Actor) Stop() {
-	timer.RegisterTimer(a.timerId, timer.TICK_INTERVAL, func() {
-		timer.StopTimer(a.timerId)
-		if atomic.CompareAndSwapInt32(&a.state, ASF_RUN, ASF_STOP) {
-			a.acotrChan <- DESDORY_EVENT
-		}
-	})
+	for _, v := range a.timerMap {
+		v.Stop()
+	}
+	if atomic.CompareAndSwapInt32(&a.state, ASF_RUN, ASF_STOP) {
+		a.actorChan <- DESDORY_EVENT
+	}
 }
 
 func (a *Actor) Start() {
@@ -262,12 +330,18 @@ func (a *Actor) call(io *CallIO) {
 	}
 }
 
-func (a *Actor) UpdateTimer(ctx context.Context, ptr uintptr) {
-	fun, isEx := a.timerMap[ptr]
-	if isEx {
+func (a *Actor) UpdateTimer(ctx context.Context, timerId int64) {
+	timerUnit, bEx := a.timerMap[timerId]
+	if bEx {
+		if timerUnit.IsCount {
+			timerUnit.Count--
+		}
 		a.Trace("timer")
-		(fun)()
+		(timerUnit.fun)()
 		a.Trace("")
+		if timerUnit.IsCount && timerUnit.Count <= 0 {
+			a.StopTimer(timerId)
+		}
 	}
 }
 
@@ -288,7 +362,7 @@ func (a *Actor) loop() bool {
 	select {
 	case <-a.mailChan:
 		a.consume()
-	case msg := <-a.acotrChan:
+	case msg := <-a.actorChan:
 		if msg == DESDORY_EVENT {
 			return true
 		}
