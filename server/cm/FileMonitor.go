@@ -47,6 +47,7 @@ func (f *FileMonitor) AddFile(fileName string, pFunc FileRead) {
 func (f *FileMonitor) addFile(fileName string, pFunc FileRead) {
 	file, err := os.Open(fileName)
 	if err == nil {
+		defer file.Close()
 		fileInfo, err := file.Stat()
 		if err == nil {
 			f.filesMap[fileName] = &FileInfo{fileInfo, pFunc}
@@ -62,6 +63,7 @@ func (f *FileMonitor) update() {
 	for i, v := range f.filesMap {
 		file, err := os.Open(i)
 		if err == nil {
+			defer file.Close()
 			fileInfo, err := file.Stat()
 			if err == nil && v.Info.ModTime() != fileInfo.ModTime() {
 				v.Call()
