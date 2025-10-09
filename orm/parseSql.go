@@ -127,8 +127,8 @@ func parseSfSql(p *Properties, classField reflect.StructField, classVal reflect.
 			for classVal.Kind() == reflect.Ptr {
 				classVal = classVal.Elem()
 			}
-			data, err := marshalBlob(classVal)
-			parsesqlblob(sqlData, p, op, data)
+			data, err := json.Marshal(classVal.Interface())
+			parsesql(sqlData, p, op, string(data))
 			return err == nil
 		} else if p.IsIgnore() {
 			return true
@@ -162,8 +162,8 @@ func parseSfSql(p *Properties, classField reflect.StructField, classVal reflect.
 			for classVal.Kind() == reflect.Ptr {
 				classVal = classVal.Elem()
 			}
-			data, err := marshalBlob(classVal)
-			parsesqlblob(sqlData, p, op, data)
+			data, err := json.Marshal(classVal.Interface())
+			parsesql(sqlData, p, op, string(data))
 			return err == nil
 		} else if p.IsIgnore() {
 			return true
@@ -196,8 +196,8 @@ func parseSfSql(p *Properties, classField reflect.StructField, classVal reflect.
 			for classVal.Kind() == reflect.Ptr {
 				classVal = classVal.Elem()
 			}
-			data, err := marshalBlob(classVal)
-			parsesqlblob(sqlData, p, op, data)
+			data, err := json.Marshal(classVal.Interface())
+			parsesql(sqlData, p, op, string(data))
 			return err == nil
 		} else if p.IsIgnore() {
 			return true
