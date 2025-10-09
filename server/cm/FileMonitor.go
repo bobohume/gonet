@@ -4,22 +4,26 @@ import (
 	"context"
 	"fmt"
 	"gonet/actor"
+	"gonet/base"
 	"gonet/rpc"
 	"os"
+	"sync"
 	"time"
-	"unsafe"
 )
 
 type (
 	FileRead func() //reload
 	FileInfo struct {
-		Info os.FileInfo
-		Call FileRead //call reload
+		Name    string
+		ModTime time.Time
+		Call    FileRead //call reload
 	}
 
 	FileMonitor struct {
 		actor.Actor
-		filesMap map[string]*FileInfo
+		filesMap  map[string]*FileInfo
+		callsMap  map[string]FileRead
+		callsLock sync.Locker
 	}
 
 	IFileMonitor interface {
@@ -34,23 +38,24 @@ type (
 func (f *FileMonitor) Init() {
 	f.Actor.Init()
 	f.filesMap = map[string]*FileInfo{}
-	f.RegisterTimer(3*time.Second, f.update)
+	f.callsMap = map[string]FileRead{}
+	f.callsLock = &sync.Mutex{}
+	f.RegisterTimer(1*time.Second, f.update)
 	actor.MGR.RegisterActor(f)
 	f.Actor.Start()
 }
 
 func (f *FileMonitor) AddFile(fileName string, pFunc FileRead) {
-	ponit := unsafe.Pointer(&pFunc)
-	f.SendMsg(rpc.RpcHead{}, "Addfile", fileName, (*int64)(ponit))
+	f.callsLock.Lock()
+	defer f.callsLock.Unlock()
+	f.callsMap[fileName] = pFunc
+	f.SendMsg(rpc.RpcHead{SendType: rpc.SEND_LOCAL}, "Addfile", fileName)
 }
 
 func (f *FileMonitor) addFile(fileName string, pFunc FileRead) {
-	file, err := os.Open(fileName)
+	fileInfo, err := os.Stat(fileName)
 	if err == nil {
-		fileInfo, err := file.Stat()
-		if err == nil {
-			f.filesMap[fileName] = &FileInfo{fileInfo, pFunc}
-		}
+		f.filesMap[fileName] = &FileInfo{fileInfo.Name(), fileInfo.ModTime(), pFunc}
 	}
 }
 
@@ -60,23 +65,25 @@ func (f *FileMonitor) delFile(fileName string) {
 
 func (f *FileMonitor) update() {
 	for i, v := range f.filesMap {
-		file, err := os.Open(i)
-		if err == nil {
-			fileInfo, err := file.Stat()
-			if err == nil && v.Info.ModTime() != fileInfo.ModTime() {
-				v.Call()
-				v.Info = fileInfo
-				fmt.Println(fmt.Sprintf("file [%s] reload", v.Info.Name()))
-			}
+		fileInfo, err := os.Stat(i)
+		if err == nil && v.ModTime != fileInfo.ModTime() {
+			v.Call()
+			v.ModTime = fileInfo.ModTime()
+			base.LOG.Println(fmt.Sprintf("file [%s] reload", v.Name))
 		}
 	}
 }
 
-func (f *FileMonitor) Addfile(ctx context.Context, fileName string, p *int64) {
-	pFunc := (*FileRead)(unsafe.Pointer(p))
-	f.addFile(fileName, *pFunc)
+func (f *FileMonitor) Addfile(ctx context.Context, fileName string) {
+	f.callsLock.Lock()
+	defer f.callsLock.Unlock()
+	if pFunc, isOk := f.callsMap[fileName]; isOk {
+		f.addFile(fileName, pFunc)
+	}
 }
 
 func (f *FileMonitor) Delfile(ctx context.Context, fileName string) {
 	f.delFile(fileName)
 }
+
+var FILEMONITOR FileMonitor
