@@ -40,7 +40,7 @@ func (f *FileMonitor) Init() {
 	f.filesMap = map[string]*FileInfo{}
 	f.callsMap = map[string]FileRead{}
 	f.callsLock = &sync.Mutex{}
-	f.RegisterTimer(1*time.Second, f.update)
+	f.RegisterTimer(3*time.Second, f.update)
 	actor.MGR.RegisterActor(f)
 	f.Actor.Start()
 }
