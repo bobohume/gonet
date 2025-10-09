@@ -9,19 +9,6 @@ import (
 	"strconv"
 )
 
-func marshalBlob(value reflect.Value) ([]byte, error) {
-	buf := bytes.NewBuffer([]byte{})
-	enc := gob.NewEncoder(buf)
-	err := enc.Encode(value.Interface())
-	return buf.Bytes(), err
-}
-
-func unMarshalBlob(data []byte, value reflect.Value) error {
-	buf := bytes.NewBuffer(data)
-	dec := gob.NewDecoder(buf)
-	return dec.Decode(value.Addr().Interface())
-}
-
 func parsesql(sqlData *SqlData, p *Properties, op *Op, val string) {
 	switch op.sqlType {
 	case SQLTYPE_INSERT:
@@ -53,40 +40,14 @@ func parsesql(sqlData *SqlData, p *Properties, op *Op, val string) {
 	}
 }
 
-func parsesqlblob(sqlData *SqlData, p *Properties, op *Op, val []byte) {
-	switch op.sqlType {
-	case SQLTYPE_INSERT:
-		sqlData.Value += fmt.Sprintf("'%s',", val)
-		sqlData.Name += fmt.Sprintf("`%s`,", p.Name)
-	case SQLTYPE_DELETE:
-		break
-	case SQLTYPE_UPDATE:
-		if p.IsPrimary() {
-			sqlData.Key += fmt.Sprintf("`%s`='%s',", p.Name, val)
-		} else {
-			sqlData.NameValue += fmt.Sprintf("`%s`='%s',", p.Name, val)
-		}
-	case SQLTYPE_LOAD:
-		break
-	case SQLTYPE_SAVE:
-		sqlData.Value += fmt.Sprintf("'%s',", val)
-		sqlData.Name += fmt.Sprintf("`%s`,", p.Name)
-		if !p.IsPrimary() {
-			sqlData.NameValue += fmt.Sprintf("`%s`='%s',", p.Name, val)
-		}
-	case SQLTYPE_WHERE:
-		break
-	}
-}
-
 func parsesqlarray(sqlData *SqlData, p *Properties, op *Op, classVal reflect.Value) bool {
 	switch op.sqlType {
 	case SQLTYPE_INSERT:
 		for classVal.Kind() == reflect.Ptr {
 			classVal = classVal.Elem()
 		}
-		data, err := marshalBlob(classVal)
-		parsesqlblob(sqlData, p, op, data)
+		data, err := json.Marshal(classVal.Interface())
+		parsesql(sqlData, p, op, string(data))
 		return err == nil
 	case SQLTYPE_DELETE:
 		return true
@@ -94,8 +55,8 @@ func parsesqlarray(sqlData *SqlData, p *Properties, op *Op, classVal reflect.Val
 		for classVal.Kind() == reflect.Ptr {
 			classVal = classVal.Elem()
 		}
-		data, err := marshalBlob(classVal)
-		parsesqlblob(sqlData, p, op, data)
+		data, err := json.Marshal(classVal.Interface())
+		parsesql(sqlData, p, op, string(data))
 		return err == nil
 	case SQLTYPE_LOAD:
 		sqlData.Name += fmt.Sprintf("`%s`,", p.Name)
@@ -103,8 +64,8 @@ func parsesqlarray(sqlData *SqlData, p *Properties, op *Op, classVal reflect.Val
 		for classVal.Kind() == reflect.Ptr {
 			classVal = classVal.Elem()
 		}
-		data, err := marshalBlob(classVal)
-		parsesqlblob(sqlData, p, op, data)
+		data, err := json.Marshal(classVal.Interface())
+		parsesql(sqlData, p, op, string(data))
 		return err == nil
 	case SQLTYPE_WHERE:
 		return true
