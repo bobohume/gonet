@@ -21,11 +21,7 @@ func getLoadObjSql(p *Properties, classField reflect.StructField, classVal refle
 	if p.IsJson() {
 		return json.Unmarshal(row.Byte(classType), classVal.Addr().Interface()) == nil
 	} else if p.IsBlob() {
-		for classVal.Kind() == reflect.Ptr {
-			classVal = classVal.Elem()
-		}
-
-		return unMarshalBlob(row.Byte(classType), classVal) == nil
+		return json.Unmarshal(row.Byte(classType), classVal.Addr().Interface()) == nil
 	} else if p.IsIgnore() {
 		return true
 	} else if p.IsTable() {
