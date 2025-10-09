@@ -167,7 +167,7 @@ func parseLoadarray(classVal reflect.Value, classType string, row IRow) bool {
 		classVal = classVal.Elem()
 	}
 
-	return unMarshalBlob(row.Byte(classType), classVal) == nil
+	return json.Unmarshal(row.Byte(classType), classVal.Addr().Interface()) == nil
 }
 
 func parseLoadObjSql(obj interface{}, row IRow) bool {
