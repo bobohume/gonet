@@ -24,10 +24,12 @@ type (
 		fsm         fsm_type //状态机
 		StubMailBox rpc.StubMailBox
 		isRegister  int32
+		leaseTryCnt int
 	}
 )
 
 const STUB_TTL_TIME = et.STUB_TTL_TIME
+const LEASE_TRY_MAX_CNT = int(et.STUB_TTL_TIME/time.Second) - 3
 
 func (s *Stub) InitStub(stub rpc.STUB) {
 	s.StubMailBox.StubType = stub
@@ -42,6 +44,11 @@ func (s *Stub) IsRegister() bool {
 func (s *Stub) lease() {
 	err := MGR.StubMailBox.Lease(&s.StubMailBox)
 	if err != nil {
+		if s.leaseTryCnt < LEASE_TRY_MAX_CNT {
+			s.leaseTryCnt = s.leaseTryCnt + 1
+			time.Sleep(time.Second)
+			return
+		}
 		s.fsm = fsm_idle
 		atomic.StoreInt32(&s.isRegister, 0)
 		actor.MGR.SendMsg(rpc.RpcHead{SendType: rpc.SEND_BOARD_CAST}, fmt.Sprintf("%s.OnStubUnRegister", s.StubMailBox.StubType.String()))
@@ -55,6 +62,7 @@ func (s *Stub) publish() {
 	s.StubMailBox.Id = (s.StubMailBox.Id + 1) % MGR.Stub.StubCount[s.StubMailBox.StubType.String()]
 	if MGR.StubMailBox.Create(&s.StubMailBox) {
 		s.fsm = fsm_lease
+		s.leaseTryCnt = 0
 		atomic.StoreInt32(&s.isRegister, 1)
 		actor.MGR.SendMsg(rpc.RpcHead{SendType: rpc.SEND_BOARD_CAST}, fmt.Sprintf("%s.OnStubRegister", s.StubMailBox.StubType.String()))
 		base.LOG.Printf("stub [%s]注册成功[%d]", s.StubMailBox.StubType.String(), s.StubMailBox.Id)
